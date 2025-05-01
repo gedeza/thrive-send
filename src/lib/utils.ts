@@ -124,3 +124,15 @@ export function isValidEmail(email: string): boolean {
   const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return regex.test(email);
 }
+
+/**
+ * Checks if a path is active based on the current pathname
+ * Returns true if the current pathname matches or starts with the href
+ * Special case for root path "/"
+ */
+export function isActivePath(pathname: string, href: string): boolean {
+  if (href === "/") {
+    return pathname === href;
+  }
+  return pathname.startsWith(href);
+}

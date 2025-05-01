@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Activity, BarChart, Calendar, Users, Settings } from "lucide-react";
 
 interface DashboardLayoutProps {
@@ -42,9 +43,28 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </nav>
       </div>
 
+      {/* Mobile header - Only visible on mobile */}
+      <div className="md:hidden fixed top-0 left-0 right-0 border-b bg-background z-10">
+        <div className="flex items-center justify-between p-4">
+          <Link href="/" className="text-xl font-bold">
+            ThriveSend
+          </Link>
+          <button className="p-1 rounded-md hover:bg-muted">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
-        {children}
+      <main className="flex-1 overflow-auto pt-0 md:pt-0">
+        {/* Add padding-top on mobile for the fixed header */}
+        <div className="md:pb-0 pb-16">
+          {children}
+        </div>
       </main>
     </div>
   );

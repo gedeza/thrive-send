@@ -14,10 +14,10 @@ export default function Home() {
               Dashboard
             </Link>
             <Link 
-              href="/login"
+              href="/calendar"
               className="text-gray-600 hover:text-gray-900 text-sm font-medium"
             >
-              Login
+              Calendar
             </Link>
           </nav>
         </div>
@@ -40,10 +40,10 @@ export default function Home() {
               Go to Dashboard
             </Link>
             <Link
-              href="/about"
+              href="/calendar"
               className="border border-blue-500 text-blue-500 hover:bg-blue-50 px-6 py-3 rounded-md text-base font-medium inline-block"
             >
-              Learn More
+              View Calendar
             </Link>
           </div>
         </div>
