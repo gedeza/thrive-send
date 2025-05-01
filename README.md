@@ -1,5 +1,8 @@
 # ThriveSend Social Suite Platform
 
+[![ThriveSend CI](https://github.com/gedeza/thrive-send/actions/workflows/ci.yml/badge.svg)](https://github.com/gedeza/thrive-send/actions/workflows/ci.yml)
+[![ThriveSend Tests](https://github.com/gedeza/thrive-send/actions/workflows/test.yml/badge.svg)](https://github.com/gedeza/thrive-send/actions/workflows/test.yml)
+[![ThriveSend Deploy](https://github.com/gedeza/thrive-send/actions/workflows/deploy.yml/badge.svg)](https://github.com/gedeza/thrive-send/actions/workflows/deploy.yml)
 [![Documentation Version](https://img.shields.io/badge/documentation-v1.0.0-blue)](documentation_versions.md)
 
 ThriveSend is a comprehensive social media management platform designed for digital agencies, consultants, and service providers who want to deliver exceptional social media services to their diverse client base. Whether your clients are government agencies, private businesses, startups, influencers, or content creators, ThriveSend gives you the tools to manage and scale your social media services effectively.

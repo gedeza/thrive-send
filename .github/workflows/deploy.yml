@@ -26,14 +26,20 @@ jobs:
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
       
+    - name: Run tests
+      run: pnpm test:ci
+      
     - name: Build
       run: pnpm run build
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+        CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
       
-    # Uncomment and configure the Vercel deployment once you're ready
-    # - name: Deploy to Vercel
-    #   uses: amondnet/vercel-action@v25
-    #   with:
-    #     vercel-token: ${{ secrets.VERCEL_TOKEN }}
-    #     vercel-org-id: ${{ secrets.VERCEL_ORG_ID}}
-    #     vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID}}
-    #     working-directory: ./
+    - name: Deploy to Vercel
+      uses: amondnet/vercel-action@v25
+      with:
+        vercel-token: ${{ secrets.VERCEL_TOKEN }}
+        vercel-org-id: ${{ secrets.VERCEL_ORG_ID}}
+        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID}}
+        working-directory: ./
