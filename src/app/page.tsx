@@ -8,7 +8,7 @@ export default function Home() {
           <div className="text-xl font-bold">ThriveSend</div>
           <nav className="flex items-center gap-4">
             <Link 
-              href="/dashboard"
+              href="/"
               className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium"
             >
               Dashboard
@@ -34,7 +34,7 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link 
-              href="/dashboard"
+              href="/"
               className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-md text-base font-medium inline-block"
             >
               Go to Dashboard

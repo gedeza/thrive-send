@@ -1,10 +1,10 @@
 "use client"
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import MainLayout from '@/components/layout/main-layout';
 import ContentCalendar from '@/components/content/content-calendar';
 import ContentForm from '@/components/content/content-form';
-import { Activity, FileText, Users } from 'lucide-react';
+import { Activity, CalendarIcon, FileText, Plus, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -47,16 +47,27 @@ export default function CalendarPage() {
       }}
       sidebarItems={sidebarItems}
     >
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Content Calendar</h1>
-        <Button onClick={() => setShowContentForm(true)}>Create Content</Button>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Content Calendar</h1>
+          <p className="text-muted-foreground">
+            Schedule and manage your content publishing
+          </p>
+        </div>
+        <Button onClick={() => setShowContentForm(true)} className="flex items-center gap-1">
+          <Plus className="h-4 w-4" />
+          Create Content
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2">
           <Card>
-            <CardHeader>
-              <CardTitle>Monthly Calendar</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2">
+                <CalendarIcon className="h-5 w-5" />
+                Content Schedule
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <ContentCalendar onDateSelect={handleDateSelect} />

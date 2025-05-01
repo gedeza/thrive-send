@@ -8,8 +8,6 @@ export interface AnalyticMetric {
   value: number | string;
 }
 
-export default AnalyticsDashboard;
-
 interface AnalyticsDashboardProps {
   metrics?: AnalyticMetric[];
   fetchData?: () => Promise<AnalyticMetric[]>;
@@ -76,3 +74,6 @@ export function AnalyticsDashboard({
     </section>
   );
 }
+
+// Also export as default for components that prefer default imports
+export default AnalyticsDashboard;

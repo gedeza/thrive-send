@@ -1,150 +1,112 @@
-import Link from "next/link";
-import { Metadata } from "next";
+"use client"
 
-export const metadata: Metadata = {
-  title: "Clients | ThriveSend",
-  description: "Manage your clients in ThriveSend",
-};
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, Users } from "lucide-react";
 
 // Mock client data (will be replaced with actual data from the database)
 const clients = [
   {
     id: "1",
     name: "Metro City Government",
+    email: "contact@metrocity.gov",
     type: "MUNICIPALITY",
-    industry: "Government",
-    projects: 3,
-    createdAt: "2023-01-15T00:00:00.000Z"
+    status: "active"
   },
   {
     id: "2",
     name: "TechSpark Innovations",
+    email: "info@techspark.com",
     type: "BUSINESS",
-    industry: "Technology",
-    projects: 2,
-    createdAt: "2023-02-20T00:00:00.000Z"
+    status: "active"
   },
   {
     id: "3",
     name: "GreenLife Nonprofit",
+    email: "hello@greenlife.org",
     type: "NONPROFIT",
-    industry: "Environmental",
-    projects: 1,
-    createdAt: "2023-03-10T00:00:00.000Z"
+    status: "inactive"
   },
   {
     id: "4",
     name: "Sarah's Lifestyle Blog",
+    email: "sarah@lifestyle.blog",
     type: "INDIVIDUAL",
-    industry: "Lifestyle",
-    projects: 1,
-    createdAt: "2023-04-05T00:00:00.000Z"
+    status: "active"
   },
   {
     id: "5",
     name: "RapidGrowth Startup",
+    email: "team@rapidgrowth.io",
     type: "STARTUP",
-    industry: "Finance",
-    projects: 2,
-    createdAt: "2023-05-12T00:00:00.000Z"
+    status: "active"
   }
 ];
 
-// Helper to format date
-function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric"
-  });
-}
-
 export default function ClientsPage() {
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 p-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Clients</h1>
+          <h1 className="text-3xl font-bold">Clients</h1>
           <p className="text-muted-foreground">
-            Manage your client list and their details
+            Manage your client relationships
           </p>
         </div>
-        <Link
-          href="/clients/new"
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-        >
-          Add Client
-        </Link>
+        <Button asChild className="flex items-center gap-1">
+          <Link href="/clients/new">
+            <Plus className="h-4 w-4" />
+            Add Client
+          </Link>
+        </Button>
       </div>
       
-      <div className="rounded-md border">
-        <div className="relative w-full overflow-auto">
-          <table className="w-full caption-bottom text-sm">
-            <thead className="[&_tr]:border-b">
-              <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                  Name
-                </th>
-                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                  Type
-                </th>
-                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                  Industry
-                </th>
-                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                  Projects
-                </th>
-                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                  Created
-                </th>
-                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="[&_tr:last-child]:border-0">
-              {clients.map((client) => (
-                <tr 
-                  key={client.id}
-                  className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
-                >
-                  <td className="p-4 align-middle">
-                    <Link 
-                      href={`/clients/${client.id}`} 
-                      className="font-medium text-blue-600 hover:underline"
-                    >
-                      {client.name}
-                    </Link>
-                  </td>
-                  <td className="p-4 align-middle">
-                    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800">
-                      {client.type}
-                    </span>
-                  </td>
-                  <td className="p-4 align-middle">{client.industry}</td>
-                  <td className="p-4 align-middle">{client.projects}</td>
-                  <td className="p-4 align-middle">{formatDate(client.createdAt)}</td>
-                  <td className="p-4 align-middle">
-                    <div className="flex space-x-2">
-                      <Link
-                        href={`/clients/${client.id}/edit`}
-                        className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-3"
-                      >
-                        Edit
-                      </Link>
-                      <button
-                        className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-input hover:bg-accent hover:text-accent-foreground h-9 px-3"
-                      >
-                        View
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Client List
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border">
+            <div className="grid grid-cols-12 bg-muted/50 p-3 text-sm font-medium">
+              <div className="col-span-4">Name</div>
+              <div className="col-span-4">Email</div>
+              <div className="col-span-2">Type</div>
+              <div className="col-span-2">Status</div>
+            </div>
+            
+            {clients.map((client) => (
+              <div key={client.id} className="grid grid-cols-12 p-3 text-sm border-t">
+                <div className="col-span-4 font-medium">
+                  <Link href={`/clients/${client.id}`} className="text-blue-600 hover:underline">
+                    {client.name}
+                  </Link>
+                </div>
+                <div className="col-span-4">{client.email}</div>
+                <div className="col-span-2">
+                  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800">
+                    {client.type}
+                  </span>
+                </div>
+                <div className="col-span-2">
+                  <span 
+                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                      client.status === 'active' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-gray-100 text-gray-800'
+                    }`}
+                  >
+                    {client.status}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
