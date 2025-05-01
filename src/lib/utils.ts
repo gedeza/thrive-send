@@ -10,14 +10,19 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Format date to readable string (Month Day, Year)
+ * Format date to readable string with customizable options
  */
-export function formatDate(date: Date | string): string {
-  return new Date(date).toLocaleDateString("en-US", {
+export function formatDate(date: Date | string, options?: Intl.DateTimeFormatOptions): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  
+  const defaultOptions: Intl.DateTimeFormatOptions = {
     month: "short",
     day: "numeric",
     year: "numeric",
-  });
+    ...options
+  };
+  
+  return new Intl.DateTimeFormat('en-US', defaultOptions).format(dateObj);
 }
 
 /**
@@ -56,4 +61,66 @@ export function formatNumber(num: number): string {
     return (num / 1000).toFixed(1).replace(/\.0$/, "") + "K";
   }
   return num.toString();
+}
+
+/**
+ * Formats a number as currency
+ */
+export function formatCurrency(amount: number, currency = 'USD'): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency
+  }).format(amount);
+}
+
+/**
+ * Generates a random ID with optional prefix
+ */
+export function generateId(prefix = 'id'): string {
+  return `${prefix}-${Math.random().toString(36).substring(2, 9)}`;
+}
+
+/**
+ * Debounces a function to limit how often it can be called
+ */
+export function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout | null = null;
+  
+  return function(...args: Parameters<T>) {
+    if (timeout) clearTimeout(timeout);
+    
+    timeout = setTimeout(() => {
+      func(...args);
+    }, wait);
+  };
+}
+
+/**
+ * Creates a throttled function that only invokes func at most once per every wait milliseconds
+ */
+export function throttle<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let lastCall = 0;
+  
+  return function(...args: Parameters<T>) {
+    const now = Date.now();
+    
+    if (now - lastCall >= wait) {
+      lastCall = now;
+      func(...args);
+    }
+  };
+}
+
+/**
+ * Validates an email address
+ */
+export function isValidEmail(email: string): boolean {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
 }

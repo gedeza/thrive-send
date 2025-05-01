@@ -1,3 +1,5 @@
+
+
 {
   "compilerOptions": {
     "target": "ES2017",
@@ -13,6 +15,7 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    "baseUrl": ".",
     "plugins": [
       {
         "name": "next"
