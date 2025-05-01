@@ -1,4 +1,7 @@
-{
+"scripts": {
+  // ... other scripts
+  "test:coverage": "jest --coverage"
+}{
   "name": "thrive-send",
   "version": "0.1.0",
   "private": true,

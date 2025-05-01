@@ -1,4 +1,15 @@
-name: ThriveSend Tests
+# .github/workflows/test.yml
+# ... existing config
+
+- name: Run tests with coverage
+  run: pnpm test:coverage
+
+# Optional: Add a step to upload coverage reports
+- name: Upload coverage reports
+  uses: codecov/codecov-action@v3
+  # You'll need to sign up for codecov.io and add CODECOV_TOKEN to your GitHub secrets
+  # with:
+  #   token: ${{ secrets.CODECOV_TOKEN }}name: ThriveSend Tests
 
 on:
   push:
