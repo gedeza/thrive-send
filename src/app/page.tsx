@@ -6,12 +6,18 @@ export default function Home() {
       <header className="border-b py-4 px-6">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="text-xl font-bold">ThriveSend</div>
-          <nav>
+          <nav className="flex items-center gap-4">
             <Link 
               href="/dashboard"
               className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium"
             >
               Dashboard
+            </Link>
+            <Link 
+              href="/login"
+              className="text-gray-600 hover:text-gray-900 text-sm font-medium"
+            >
+              Login
             </Link>
           </nav>
         </div>
@@ -26,12 +32,20 @@ export default function Home() {
             The comprehensive social media management platform for digital agencies,
             consultants, and service providers.
           </p>
-          <Link 
-            href="/dashboard"
-            className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-md text-base font-medium inline-block"
-          >
-            Go to Dashboard
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link 
+              href="/dashboard"
+              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-md text-base font-medium inline-block"
+            >
+              Go to Dashboard
+            </Link>
+            <Link
+              href="/about"
+              className="border border-blue-500 text-blue-500 hover:bg-blue-50 px-6 py-3 rounded-md text-base font-medium inline-block"
+            >
+              Learn More
+            </Link>
+          </div>
         </div>
       </main>
       

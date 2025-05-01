@@ -1,20 +1,14 @@
-// This is a sample update for middleware.ts if it exists
-// Make sure any redirects point to the correct dashboard path
-
-import { authMiddleware } from "@clerk/nextjs";
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
  
-export default authMiddleware({
-  // Make sure the publicRoutes array includes all your public routes
-  publicRoutes: ["/", "/api/.*", "/about", "/pricing"],
-  
-  // Update this if needed to point to the correct dashboard
-  afterAuth(auth, req) {
-    if (auth.userId && req.url === "/") {
-      return Response.redirect(new URL("/dashboard", req.url));
-    }
-  }
-});
+export function middleware(request: NextRequest) {
+  // Simple middleware without auth dependencies
+  return NextResponse.next();
+}
  
 export const config = {
-  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
+  matcher: [
+    // Apply to all pages except static files and API routes
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
 };
