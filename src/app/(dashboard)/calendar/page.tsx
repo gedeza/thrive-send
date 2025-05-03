@@ -51,7 +51,7 @@ export default function CalendarPage() {
       {/* Navigation Tabs */}
       <div className="flex border-b mb-6">
         <div className="flex -mb-px">
-          <Link href="/" className="py-2 px-4 text-sm font-medium text-muted-foreground hover:text-foreground">
+          <Link href="/dashboard" className="py-2 px-4 text-sm font-medium text-muted-foreground hover:text-foreground">
             Overview
           </Link>
           <Link href="/analytics" className="py-2 px-4 text-sm font-medium text-muted-foreground hover:text-foreground">
@@ -75,7 +75,7 @@ export default function CalendarPage() {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" asChild>
-            <Link href="/">
+            <Link href="/dashboard">
               Back to Dashboard
             </Link>
           </Button>

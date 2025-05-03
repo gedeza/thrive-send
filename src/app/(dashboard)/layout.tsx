@@ -1,3 +1,5 @@
+"use client";
+
 import { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -8,13 +10,13 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  // Updated navigation items with correct routes
+  // Updated navigation items with correct routes that match the file system
   const navItems = [
     { key: "dashboard", href: "/dashboard", label: "Dashboard", icon: <Activity size={16} /> },
-    { key: "analytics", href: "/dashboard/analytics", label: "Analytics", icon: <BarChart size={16} /> },
-    { key: "calendar", href: "/dashboard/calendar", label: "Calendar", icon: <Calendar size={16} /> },
-    { key: "clients", href: "/dashboard/clients", label: "Clients", icon: <Users size={16} /> },
-    { key: "settings", href: "/dashboard/settings", label: "Settings", icon: <Settings size={16} /> },
+    { key: "analytics", href: "/analytics", label: "Analytics", icon: <BarChart size={16} /> },
+    { key: "calendar", href: "/calendar", label: "Calendar", icon: <Calendar size={16} /> },
+    { key: "clients", href: "/clients", label: "Clients", icon: <Users size={16} /> },
+    { key: "settings", href: "/settings", label: "Settings", icon: <Settings size={16} /> },
   ];
 
   return (

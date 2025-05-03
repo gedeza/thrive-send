@@ -31,13 +31,13 @@ export function MainLayout({
 }: MainLayoutProps) {
   const pathname = usePathname();
   
-  // Define default sidebar items
+  // Define default sidebar items with routes that match the filesystem structure
   const defaultSidebarItems: SidebarItem[] = [
     {
       key: 'dashboard',
       label: 'Dashboard',
       icon: <LayoutDashboard size={20} />,
-      href: '/'
+      href: '/dashboard'
     },
     {
       key: 'calendar',
@@ -68,7 +68,9 @@ export function MainLayout({
   // Check if we're in a dashboard route
   // IMPORTANT: This prevents duplicate sidebars by not rendering the sidebar
   // when the component is used within pages that are already wrapped in the dashboard layout
-  const isDashboardRoute = pathname === "/" || 
+  const isDashboardRoute = 
+    pathname === "/" || // root/landing page
+    pathname === "/dashboard" || // explicit dashboard page
     pathname?.startsWith("/calendar") || 
     pathname?.startsWith("/analytics") ||
     pathname?.startsWith("/clients") ||

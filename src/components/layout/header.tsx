@@ -78,20 +78,21 @@ export function Header({
             <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-600"></span>
           </Button>
           
+          {/* User menu */}
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="relative h-8 w-8 rounded-full p-0" aria-label="User menu">
-                  <Avatar className="h-8 w-8">
-                    {user.image && <AvatarImage src={user.image} alt={user.name} />}
-                    <AvatarFallback>
-                      {user.name
-                        .split(" ")
-                        .map(n => n[0])
-                        .join("")
-                        .toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+                  <Avatar
+                    src={user.image}
+                    fallback={user.name
+                      .split(" ")
+                      .map(n => n[0])
+                      .join("")
+                      .toUpperCase()}
+                    alt={user.name}
+                    className="h-8 w-8"
+                  />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">

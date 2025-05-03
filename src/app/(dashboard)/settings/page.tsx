@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { MainLayout } from "@/components/layout/main-layout";
 
 export default function SettingsPage() {
@@ -27,12 +26,7 @@ export default function SettingsPage() {
     console.log("Profile updated:", user);
   };
 
-  const handleEmailSettingsChange = (setting: keyof typeof emailSettings) => {
-    setEmailSettings({
-      ...emailSettings,
-      [setting]: !emailSettings[setting]
-    });
-  };
+  // No longer needed as we'll use the checked value directly
 
   return (
     <MainLayout
@@ -108,11 +102,16 @@ export default function SettingsPage() {
                       Receive emails about new features and offerings.
                     </p>
                   </div>
-                  <Switch 
-                    id="marketing-emails" 
-                    checked={emailSettings.marketingEmails}
-                    onCheckedChange={() => handleEmailSettingsChange('marketingEmails')}
-                  />
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      id="marketing-emails"
+                      className="sr-only peer"
+                      checked={emailSettings.marketingEmails}
+                      onChange={(e) => setEmailSettings({...emailSettings, marketingEmails: e.target.checked})}
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  </label>
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
@@ -121,11 +120,16 @@ export default function SettingsPage() {
                       Receive emails for social activity related to your content.
                     </p>
                   </div>
-                  <Switch 
-                    id="social-emails" 
-                    checked={emailSettings.socialNotifications}
-                    onCheckedChange={() => handleEmailSettingsChange('socialNotifications')}
-                  />
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      id="social-emails"
+                      className="sr-only peer"
+                      checked={emailSettings.socialNotifications}
+                      onChange={(e) => setEmailSettings({...emailSettings, socialNotifications: e.target.checked})}
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  </label>
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
@@ -134,11 +138,16 @@ export default function SettingsPage() {
                       Receive important updates about your account and security.
                     </p>
                   </div>
-                  <Switch 
-                    id="update-emails" 
-                    checked={emailSettings.updatesNotifications}
-                    onCheckedChange={() => handleEmailSettingsChange('updatesNotifications')}
-                  />
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      id="update-emails"
+                      className="sr-only peer"
+                      checked={emailSettings.updatesNotifications}
+                      onChange={(e) => setEmailSettings({...emailSettings, updatesNotifications: e.target.checked})}
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  </label>
                 </div>
               </CardContent>
               <CardFooter>
@@ -202,7 +211,14 @@ export default function SettingsPage() {
                       Enable advanced features for development and testing.
                     </p>
                   </div>
-                  <Switch />
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only peer"
+                      onChange={(e) => console.log("Developer mode:", e.target.checked)}
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  </label>
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
@@ -211,7 +227,14 @@ export default function SettingsPage() {
                       Enable API access for integrations.
                     </p>
                   </div>
-                  <Switch />
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only peer"
+                      onChange={(e) => console.log("API access:", e.target.checked)}
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  </label>
                 </div>
               </CardContent>
               <CardFooter>

@@ -46,7 +46,7 @@ export function Sidebar({
         className
       )}
     >
-      {/* Brand header - Updated to point to root instead of /dashboard */}
+      {/* Brand header - Link to dashboard which is at / */}
       <div className="p-4 border-b">
         <Link href="/" className={cn("flex items-center", isCollapsed ? "justify-center" : "justify-start")}>
           {brandLogo && <div className="mr-2">{brandLogo}</div>}
@@ -59,27 +59,24 @@ export function Sidebar({
       <nav className="flex-1 p-3 overflow-y-auto">
         <ul className="space-y-1">
           {items.map((item) => {
-            // Map dashboard href to root for sidebar items
-            const mappedHref = item.href === "/dashboard" ? "/" : item.href;
-            
-            // Ensure href is a valid route - normalize potentially problematic routes
-            const normalizedHref = mappedHref?.startsWith("/") 
-              ? mappedHref 
-              : mappedHref ? `/${mappedHref}` : undefined;
+            // Ensure href is valid, with special handling for settings page
+            const href = item.href === "/settings" ? "/settings" : 
+              item.href && (item.href.startsWith("/") ? item.href : `/${item.href}`);
               
-            // Check if the current path starts with the item's href to handle nested routes
+            // Check if the current path starts with the item's href or exact match for root
             const isActive = item.isActive ?? (
-              normalizedHref && (
-                pathname === normalizedHref || 
-                (pathname.startsWith(normalizedHref) && normalizedHref !== '/')
+              href && (
+                pathname === href || 
+                (pathname?.startsWith(href) && href !== "/") ||
+                (href === "/" && pathname === "/")
               )
             );
             
             return (
               <li key={item.key} data-testid={`sidebar-item-${item.key}`}>
-                {normalizedHref ? (
+                {href ? (
                   <Link
-                    href={normalizedHref}
+                    href={href}
                     className={cn(
                       "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
                       isActive
