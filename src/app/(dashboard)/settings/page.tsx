@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { MainLayout } from "@/components/layout/main-layout";
 
 export default function SettingsPage() {
+  const [activeTab, setActiveTab] = useState("profile");
   const [user, setUser] = useState({
     name: "John Doe",
     email: "john.doe@example.com"
@@ -26,8 +26,6 @@ export default function SettingsPage() {
     console.log("Profile updated:", user);
   };
 
-  // No longer needed as we'll use the checked value directly
-
   return (
     <MainLayout
       headerProps={{
@@ -43,25 +41,37 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        {/* Custom tabs implementation */}
         <div className="w-full">
-          <div className="flex border-b mb-4">
-            <button className="px-4 py-2 border-b-2 border-primary font-medium">
+          {/* Custom Tabs Implementation */}
+          <div className="flex border-b mb-6">
+            <button 
+              className={`px-4 py-2 font-medium ${activeTab === "profile" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
+              onClick={() => setActiveTab("profile")}
+            >
               Profile
             </button>
-            <button className="px-4 py-2 text-muted-foreground">
+            <button 
+              className={`px-4 py-2 font-medium ${activeTab === "email" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
+              onClick={() => setActiveTab("email")}
+            >
               Email
             </button>
-            <button className="px-4 py-2 text-muted-foreground">
+            <button 
+              className={`px-4 py-2 font-medium ${activeTab === "appearance" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
+              onClick={() => setActiveTab("appearance")}
+            >
               Appearance
             </button>
-            <button className="px-4 py-2 text-muted-foreground">
+            <button 
+              className={`px-4 py-2 font-medium ${activeTab === "advanced" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
+              onClick={() => setActiveTab("advanced")}
+            >
               Advanced
             </button>
           </div>
           
           {/* Profile Content */}
-          <div>
+          {activeTab === "profile" && (
             <Card>
               <form onSubmit={handleProfileSubmit}>
                 <CardHeader>
@@ -94,10 +104,10 @@ export default function SettingsPage() {
                 </CardFooter>
               </form>
             </Card>
-          </div>
+          )}
           
-          {/* Email Content - Hidden by default */}
-          <div className="hidden">
+          {/* Email Content */}
+          {activeTab === "email" && (
             <Card>
               <CardHeader>
                 <CardTitle>Email Notifications</CardTitle>
@@ -167,10 +177,10 @@ export default function SettingsPage() {
                 </Button>
               </CardFooter>
             </Card>
-          </div>
+          )}
           
-          {/* Appearance Content - Hidden by default */}
-          <div className="hidden">
+          {/* Appearance Content */}
+          {activeTab === "appearance" && (
             <Card>
               <CardHeader>
                 <CardTitle>Appearance</CardTitle>
@@ -205,10 +215,10 @@ export default function SettingsPage() {
                 </Button>
               </CardFooter>
             </Card>
-          </div>
+          )}
           
-          {/* Advanced Content - Hidden by default */}
-          <div className="hidden">
+          {/* Advanced Content */}
+          {activeTab === "advanced" && (
             <Card>
               <CardHeader>
                 <CardTitle>Advanced Settings</CardTitle>
@@ -261,7 +271,7 @@ export default function SettingsPage() {
                 </div>
               </CardFooter>
             </Card>
-          </div>
+          )}
         </div>
       </div>
     </MainLayout>
