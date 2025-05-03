@@ -43,15 +43,25 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="mb-4">
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="email">Email</TabsTrigger>
-            <TabsTrigger value="appearance">Appearance</TabsTrigger>
-            <TabsTrigger value="advanced">Advanced</TabsTrigger>
-          </TabsList>
+        {/* Custom tabs implementation */}
+        <div className="w-full">
+          <div className="flex border-b mb-4">
+            <button className="px-4 py-2 border-b-2 border-primary font-medium">
+              Profile
+            </button>
+            <button className="px-4 py-2 text-muted-foreground">
+              Email
+            </button>
+            <button className="px-4 py-2 text-muted-foreground">
+              Appearance
+            </button>
+            <button className="px-4 py-2 text-muted-foreground">
+              Advanced
+            </button>
+          </div>
           
-          <TabsContent value="profile">
+          {/* Profile Content */}
+          <div>
             <Card>
               <form onSubmit={handleProfileSubmit}>
                 <CardHeader>
@@ -84,9 +94,10 @@ export default function SettingsPage() {
                 </CardFooter>
               </form>
             </Card>
-          </TabsContent>
+          </div>
           
-          <TabsContent value="email">
+          {/* Email Content - Hidden by default */}
+          <div className="hidden">
             <Card>
               <CardHeader>
                 <CardTitle>Email Notifications</CardTitle>
@@ -156,9 +167,10 @@ export default function SettingsPage() {
                 </Button>
               </CardFooter>
             </Card>
-          </TabsContent>
+          </div>
           
-          <TabsContent value="appearance">
+          {/* Appearance Content - Hidden by default */}
+          <div className="hidden">
             <Card>
               <CardHeader>
                 <CardTitle>Appearance</CardTitle>
@@ -193,9 +205,10 @@ export default function SettingsPage() {
                 </Button>
               </CardFooter>
             </Card>
-          </TabsContent>
+          </div>
           
-          <TabsContent value="advanced">
+          {/* Advanced Content - Hidden by default */}
+          <div className="hidden">
             <Card>
               <CardHeader>
                 <CardTitle>Advanced Settings</CardTitle>
@@ -248,8 +261,8 @@ export default function SettingsPage() {
                 </div>
               </CardFooter>
             </Card>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </div>
     </MainLayout>
   );
