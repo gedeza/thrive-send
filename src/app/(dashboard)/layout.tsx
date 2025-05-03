@@ -8,13 +8,13 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  // Navigation items for the sidebar
+  // Updated navigation items with correct routes
   const navItems = [
-    { href: "/", label: "Dashboard", icon: <Activity size={16} /> },
-    { href: "/analytics", label: "Analytics", icon: <BarChart size={16} /> },
-    { href: "/calendar", label: "Calendar", icon: <Calendar size={16} /> },
-    { href: "/clients", label: "Clients", icon: <Users size={16} /> },
-    { href: "/settings", label: "Settings", icon: <Settings size={16} /> },
+    { key: "dashboard", href: "/dashboard", label: "Dashboard", icon: <Activity size={16} /> },
+    { key: "analytics", href: "/dashboard/analytics", label: "Analytics", icon: <BarChart size={16} /> },
+    { key: "calendar", href: "/dashboard/calendar", label: "Calendar", icon: <Calendar size={16} /> },
+    { key: "clients", href: "/dashboard/clients", label: "Clients", icon: <Users size={16} /> },
+    { key: "settings", href: "/dashboard/settings", label: "Settings", icon: <Settings size={16} /> },
   ];
 
   return (
@@ -22,14 +22,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Sidebar */}
       <div className="hidden md:flex w-64 flex-col border-r bg-background">
         <div className="p-4 border-b">
-          <Link href="/" className="text-xl font-bold">
+          <Link href="/dashboard" className="text-xl font-bold">
             ThriveSend
           </Link>
         </div>
         <nav className="flex-1 overflow-y-auto p-4">
           <ul className="space-y-2">
             {navItems.map((item) => (
-              <li key={item.label}>
+              <li key={item.key}>
                 <Link
                   href={item.href}
                   className="flex items-center gap-2 px-3 py-2 rounded-md text-sm hover:bg-muted"
@@ -46,7 +46,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Mobile header - Only visible on mobile */}
       <div className="md:hidden fixed top-0 left-0 right-0 border-b bg-background z-10">
         <div className="flex items-center justify-between p-4">
-          <Link href="/" className="text-xl font-bold">
+          <Link href="/dashboard" className="text-xl font-bold">
             ThriveSend
           </Link>
           <button className="p-1 rounded-md hover:bg-muted">

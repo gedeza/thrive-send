@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/main-layout';
 import { ContentCalendar } from '@/components/content/content-calendar';
-import { ContentForm } from '@/components/content/content-form';
+import ContentForm from '@/components/content/content-form';
 import { Activity, CalendarIcon, ChevronLeft, ChevronRight, FileText, Plus, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

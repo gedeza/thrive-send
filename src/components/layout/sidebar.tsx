@@ -46,7 +46,7 @@ export function Sidebar({
         className
       )}
     >
-      {/* Brand header */}
+      {/* Brand header - Updated to point to root instead of /dashboard */}
       <div className="p-4 border-b">
         <Link href="/" className={cn("flex items-center", isCollapsed ? "justify-center" : "justify-start")}>
           {brandLogo && <div className="mr-2">{brandLogo}</div>}
@@ -59,13 +59,27 @@ export function Sidebar({
       <nav className="flex-1 p-3 overflow-y-auto">
         <ul className="space-y-1">
           {items.map((item) => {
-            const isActive = item.isActive ?? (item.href && pathname === item.href);
+            // Map dashboard href to root for sidebar items
+            const mappedHref = item.href === "/dashboard" ? "/" : item.href;
+            
+            // Ensure href is a valid route - normalize potentially problematic routes
+            const normalizedHref = mappedHref?.startsWith("/") 
+              ? mappedHref 
+              : mappedHref ? `/${mappedHref}` : undefined;
+              
+            // Check if the current path starts with the item's href to handle nested routes
+            const isActive = item.isActive ?? (
+              normalizedHref && (
+                pathname === normalizedHref || 
+                (pathname.startsWith(normalizedHref) && normalizedHref !== '/')
+              )
+            );
             
             return (
               <li key={item.key} data-testid={`sidebar-item-${item.key}`}>
-                {item.href ? (
+                {normalizedHref ? (
                   <Link
-                    href={item.href}
+                    href={normalizedHref}
                     className={cn(
                       "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
                       isActive
@@ -80,10 +94,11 @@ export function Sidebar({
                     {!isCollapsed && <span>{item.label}</span>}
                   </Link>
                 ) : (
-                  <div
+                  <button
                     onClick={item.onClick}
+                    type="button"
                     className={cn(
-                      "flex items-center px-3 py-2 rounded-md text-sm cursor-pointer transition-colors",
+                      "flex items-center px-3 py-2 rounded-md text-sm cursor-pointer transition-colors w-full",
                       isActive
                         ? "bg-primary/10 text-primary font-medium"
                         : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
@@ -94,7 +109,7 @@ export function Sidebar({
                       <span className={cn("inline-flex", !isCollapsed && "mr-3")}>{item.icon}</span>
                     )}
                     {!isCollapsed && <span>{item.label}</span>}
-                  </div>
+                  </button>
                 )}
               </li>
             );

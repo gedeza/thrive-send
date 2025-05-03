@@ -27,7 +27,8 @@ const DefaultEditor: React.FC<{ value: string; onChange(v: string): void }> = ({
   />
 );
 
-const ContentForm: React.FC<ContentFormProps> = ({
+// Using named export for the component
+export const ContentForm: React.FC<ContentFormProps> = ({
   initialValues = {},
   onSubmit,
   Editor = DefaultEditor

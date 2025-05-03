@@ -2,16 +2,9 @@
 
 import * as React from "react";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
 import { Sidebar, SidebarItem } from "./sidebar";
-
-interface HeaderProps {
-  user?: {
-    name: string;
-    avatarUrl?: string;
-  };
-  onSearch?: (query: string) => void;
-}
+import { Header, HeaderProps } from "./header";
+import { LayoutDashboard, Calendar, BarChart, Users, Settings } from "lucide-react";
 
 export interface MainLayoutProps {
   children: React.ReactNode;
@@ -29,34 +22,67 @@ export interface MainLayoutProps {
  * It includes conditional sidebar rendering to prevent duplicate sidebars
  * when used within the dashboard layout which already has its own sidebar.
  */
-
 export function MainLayout({ 
   children, 
-  headerProps,
-  sidebarItems = [],
+  headerProps = {},
+  sidebarItems,
   // Default to true, but can be turned off when used within dashboard layout
   showSidebar = true
 }: MainLayoutProps) {
   const pathname = usePathname();
   
+  // Define default sidebar items
+  const defaultSidebarItems: SidebarItem[] = [
+    {
+      key: 'dashboard',
+      label: 'Dashboard',
+      icon: <LayoutDashboard size={20} />,
+      href: '/'
+    },
+    {
+      key: 'calendar',
+      label: 'Calendar',
+      icon: <Calendar size={20} />,
+      href: '/calendar'
+    },
+    {
+      key: 'analytics',
+      label: 'Analytics',
+      icon: <BarChart size={20} />,
+      href: '/analytics'
+    },
+    {
+      key: 'clients',
+      label: 'Clients',
+      icon: <Users size={20} />,
+      href: '/clients'
+    },
+    {
+      key: 'settings',
+      label: 'Settings',
+      icon: <Settings size={20} />,
+      href: '/settings'
+    }
+  ];
+  
   // Check if we're in a dashboard route
   // IMPORTANT: This prevents duplicate sidebars by not rendering the sidebar
   // when the component is used within pages that are already wrapped in the dashboard layout
-  const isDashboardRoute = pathname?.startsWith("/dashboard") || 
+  const isDashboardRoute = pathname === "/" || 
     pathname?.startsWith("/calendar") || 
     pathname?.startsWith("/analytics") ||
     pathname?.startsWith("/clients") ||
     pathname?.startsWith("/settings");
   
   // Exclude authentication pages from having the dashboard layout
-  const isAuthPage = pathname?.startsWith("/auth") || pathname === "/";
+  const isAuthPage = pathname?.startsWith("/auth");
 
   if (isAuthPage) {
     return <>{children}</>;
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden">
       {/* 
         Conditional sidebar rendering:
         Only show sidebar if:
@@ -64,55 +90,23 @@ export function MainLayout({
         2. We're not in a dashboard route (which already has a sidebar from the App Router layout)
       */}
       {showSidebar && !isDashboardRoute && (
-        <div className="hidden md:block h-screen">
-          <Sidebar 
-            items={sidebarItems} 
-            brandName="ThriveSend"
-            className="h-full"
-          />
-        </div>
+        <Sidebar 
+          items={sidebarItems || defaultSidebarItems} 
+          brandName="ThriveSend"
+          collapsible
+        />
       )}
 
-      {/* Main content */}
-      <main className={`flex-1 ${!showSidebar || isDashboardRoute ? 'md:ml-0' : ''}`}>
+      {/* Main content area */}
+      <div className="flex flex-col flex-1 overflow-hidden">
         {/* Header */}
-        {headerProps && (
-          <header className="border-b p-4">
-            <div className="flex items-center justify-between">
-              {headerProps.onSearch && (
-                <div className="relative w-full max-w-sm">
-                  <input
-                    type="search"
-                    placeholder="Search..."
-                    className="pl-8 w-full rounded-md border border-input bg-background px-3 py-2"
-                    onChange={(e) => headerProps.onSearch?.(e.target.value)}
-                  />
-                </div>
-              )}
-              
-              {headerProps.user && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">{headerProps.user.name}</span>
-                  {headerProps.user.avatarUrl && (
-                    <div className="h-8 w-8 rounded-full overflow-hidden border">
-                      <img 
-                        src={headerProps.user.avatarUrl} 
-                        alt={headerProps.user.name} 
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </header>
-        )}
+        <Header {...headerProps} />
         
         {/* Page content */}
-        <div className="p-6">
+        <main className="flex-1 overflow-y-auto bg-background p-6">
           {children}
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

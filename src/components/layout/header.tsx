@@ -2,14 +2,18 @@
 
 import * as React from "react";
 import { useState } from "react";
-import { User } from "lucide-react";
+import { Bell, Search, User } from "lucide-react";
+import Link from "next/link";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { cn } from "../../lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 
@@ -18,7 +22,7 @@ export interface HeaderProps {
   user?: {
     name: string;
     email?: string;
-    avatar?: string;
+    image?: string;
   };
   onSearch?: (query: string) => void;
   className?: string;
@@ -32,70 +36,86 @@ export function Header({
 }: HeaderProps) {
   const [query, setQuery] = useState('');
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setQuery(value);
-    onSearch?.(value);
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (onSearch) {
+      onSearch(query);
+    }
   };
+  
 
   return (
     <header 
-      className={cn("border-b border-border bg-card px-4 py-3 sticky top-0 z-10 flex items-center justify-between", className)}
+      className={cn("border-b border-border bg-card px-4 py-3 sticky top-0 z-10", className)}
       data-testid="header"
       role="banner"
     >
-      <div data-testid="header-logo" className="flex items-center">
-        {logo || <h1 className="text-xl font-semibold">ThriveSend</h1>}
-      </div>
-      
-      <div className="flex items-center space-x-4">
-        {onSearch && (
-          <div className="flex-1 max-w-sm">
-            <Input 
-              type="text" 
-              data-testid="header-search-input"
-              placeholder="Search..." 
-              value={query}
-              onChange={handleSearch}
-            />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div data-testid="header-logo" className="flex items-center">
+            {logo || <h1 className="text-xl font-semibold">ThriveSend</h1>}
           </div>
-        )}
+          
+          {onSearch && (
+            <form onSubmit={handleSearch} className="relative max-w-sm">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input 
+                type="search" 
+                data-testid="header-search-input"
+                placeholder="Search..." 
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="w-full pl-8"
+              />
+            </form>
+          )}
+        </div>
         
-        {user ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="rounded-full overflow-hidden" aria-label="User menu">
-                {user.avatar ? (
-                  <img 
-                    data-testid="header-avatar"
-                    src={user.avatar} 
-                    alt={`${user.name}'s avatar`}
-                    className="w-8 h-8 rounded-full"
-                  />
-                ) : (
-                  <User className="h-5 w-5" />
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>
-                <span data-testid="header-user-name">{user.name}</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                Logout
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : (
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="rounded-full"
-            aria-label="User menu"
-          >
-            <User className="h-5 w-5" />
+        <div className="flex items-center gap-4">
+          {/* Notifications */}
+          <Button variant="ghost" size="icon" className="relative">
+            <Bell className="h-5 w-5" />
+            <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-600"></span>
           </Button>
-        )}
+          
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="relative h-8 w-8 rounded-full p-0" aria-label="User menu">
+                  <Avatar className="h-8 w-8">
+                    {user.image && <AvatarImage src={user.image} alt={user.name} />}
+                    <AvatarFallback>
+                      {user.name
+                        .split(" ")
+                        .map(n => n[0])
+                        .join("")
+                        .toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/settings">Settings</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem>Profile</DropdownMenuItem>
+                <DropdownMenuItem>Billing</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Log out</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button 
+              variant="ghost" 
+              size="icon"
+              aria-label="User menu"
+            >
+              <User className="h-5 w-5" />
+            </Button>
+          )}
+        </div>
       </div>
     </header>
   );
