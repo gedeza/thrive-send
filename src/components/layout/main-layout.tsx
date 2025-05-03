@@ -17,9 +17,18 @@ export interface MainLayoutProps {
   children: React.ReactNode;
   headerProps?: HeaderProps;
   sidebarItems?: SidebarItem[];
-  // Add a prop to control sidebar visibility
+  /**
+   * Controls whether to show the sidebar.
+   * Set to false when used within pages that already have a sidebar from App Router layouts.
+   */
   showSidebar?: boolean;
 }
+
+/**
+ * MainLayout provides consistent layout structure for pages.
+ * It includes conditional sidebar rendering to prevent duplicate sidebars
+ * when used within the dashboard layout which already has its own sidebar.
+ */
 
 export function MainLayout({ 
   children, 
@@ -31,6 +40,8 @@ export function MainLayout({
   const pathname = usePathname();
   
   // Check if we're in a dashboard route
+  // IMPORTANT: This prevents duplicate sidebars by not rendering the sidebar
+  // when the component is used within pages that are already wrapped in the dashboard layout
   const isDashboardRoute = pathname?.startsWith("/dashboard") || 
     pathname?.startsWith("/calendar") || 
     pathname?.startsWith("/analytics") ||
@@ -46,7 +57,12 @@ export function MainLayout({
 
   return (
     <div className="flex min-h-screen">
-      {/* Only show sidebar if showSidebar is true AND we're not in a dashboard route */}
+      {/* 
+        Conditional sidebar rendering:
+        Only show sidebar if:
+        1. showSidebar prop is true AND
+        2. We're not in a dashboard route (which already has a sidebar from the App Router layout)
+      */}
       {showSidebar && !isDashboardRoute && (
         <div className="hidden md:block h-screen">
           <Sidebar 
