@@ -17,14 +17,25 @@ export interface MainLayoutProps {
   children: React.ReactNode;
   headerProps?: HeaderProps;
   sidebarItems?: SidebarItem[];
+  // Add a prop to control sidebar visibility
+  showSidebar?: boolean;
 }
 
 export function MainLayout({ 
   children, 
   headerProps,
-  sidebarItems = []
+  sidebarItems = [],
+  // Default to true, but can be turned off when used within dashboard layout
+  showSidebar = true
 }: MainLayoutProps) {
   const pathname = usePathname();
+  
+  // Check if we're in a dashboard route
+  const isDashboardRoute = pathname?.startsWith("/dashboard") || 
+    pathname?.startsWith("/calendar") || 
+    pathname?.startsWith("/analytics") ||
+    pathname?.startsWith("/clients") ||
+    pathname?.startsWith("/settings");
   
   // Exclude authentication pages from having the dashboard layout
   const isAuthPage = pathname?.startsWith("/auth") || pathname === "/";
@@ -35,17 +46,19 @@ export function MainLayout({
 
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar */}
-      <div className="hidden md:block h-screen">
-        <Sidebar 
-          items={sidebarItems} 
-          brandName="ThriveSend"
-          className="h-full"
-        />
-      </div>
+      {/* Only show sidebar if showSidebar is true AND we're not in a dashboard route */}
+      {showSidebar && !isDashboardRoute && (
+        <div className="hidden md:block h-screen">
+          <Sidebar 
+            items={sidebarItems} 
+            brandName="ThriveSend"
+            className="h-full"
+          />
+        </div>
+      )}
 
       {/* Main content */}
-      <main className="flex-1 md:ml-0">
+      <main className={`flex-1 ${!showSidebar || isDashboardRoute ? 'md:ml-0' : ''}`}>
         {/* Header */}
         {headerProps && (
           <header className="border-b p-4">
