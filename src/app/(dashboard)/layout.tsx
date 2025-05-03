@@ -3,7 +3,7 @@
 import { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, BarChart, Calendar, Users, Settings } from "lucide-react";
+import { Activity, BarChart, Calendar, Users, Settings, Layers } from "lucide-react";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -16,6 +16,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { key: "analytics", href: "/analytics", label: "Analytics", icon: <BarChart size={16} /> },
     { key: "calendar", href: "/calendar", label: "Calendar", icon: <Calendar size={16} /> },
     { key: "clients", href: "/clients", label: "Clients", icon: <Users size={16} /> },
+    { key: "demo", href: "/demo", label: "Demo UI", icon: <Layers size={16} /> },
     { key: "settings", href: "/settings", label: "Settings", icon: <Settings size={16} /> },
   ];
 
