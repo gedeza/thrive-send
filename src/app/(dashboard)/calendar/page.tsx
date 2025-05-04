@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/main-layout';
 import { ContentCalendar } from '@/components/content/content-calendar';
-import ContentForm from '@/components/content/content-form';
 import { Activity, CalendarIcon, ChevronLeft, ChevronRight, FileText, Plus, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,6 @@ import Link from 'next/link';
 
 export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [showContentForm, setShowContentForm] = useState(false);
 
   // Mock user for header
   const user = {
@@ -34,11 +32,6 @@ export default function CalendarPage() {
     setSelectedDate(date);
   };
 
-  const handleContentSubmit = (values: { title: string; body: string }) => {
-    console.log(`Saving content for date ${selectedDate}:`, values);
-    setShowContentForm(false);
-    // Here you would typically call an API to save the content
-  };
 
   return (
     <MainLayout 
@@ -79,10 +72,12 @@ export default function CalendarPage() {
               Back to Dashboard
             </Link>
           </Button>
-          <Button onClick={() => setShowContentForm(true)} className="flex items-center gap-1">
-            <Plus className="h-4 w-4" />
-            Create Content
-          </Button>
+          <Link href="/content/new">
+            <Button className="flex items-center gap-1">
+              <Plus className="h-4 w-4" />
+              Create Content
+            </Button>
+          </Link>
         </div>
       </div>
 
@@ -122,13 +117,11 @@ export default function CalendarPage() {
               {selectedDate ? (
                 <div>
                   <p className="mb-4">Scheduled content for this date:</p>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setShowContentForm(true)}
-                    className="w-full"
-                  >
-                    Add Content
-                  </Button>
+                  <Link href="/content/new">
+                    <Button variant="outline" className="w-full">
+                      Add Content
+                    </Button>
+                  </Link>
                 </div>
               ) : (
                 <p className="text-muted-foreground">Click a date on the calendar to view or add content</p>
@@ -138,36 +131,6 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      {showContentForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>
-                {selectedDate 
-                  ? `Create Content for ${new Date(selectedDate).toLocaleDateString()}` 
-                  : 'Create Content'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ContentForm
-                onSubmit={handleContentSubmit}
-              />
-              <div className="flex justify-end mt-4">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowContentForm(false)}
-                  className="mr-2"
-                >
-                  Cancel
-                </Button>
-                <Button>
-                  Save
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </MainLayout>
   );
 }
