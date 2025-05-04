@@ -65,16 +65,25 @@ export function MainLayout({
     }
   ];
   
+  // This array contains all the routes that should be considered part of the dashboard layout
+  // and therefore should not get a second sidebar from MainLayout
+  const dashboardRoutes = [
+    "/",
+    "/dashboard",
+    "/calendar",
+    "/analytics",
+    "/clients",
+    "/settings",
+    "/campaigns",
+    "/content" // Added in case it's also in the dashboard layout
+  ];
+  
   // Check if we're in a dashboard route
   // IMPORTANT: This prevents duplicate sidebars by not rendering the sidebar
   // when the component is used within pages that are already wrapped in the dashboard layout
-  const isDashboardRoute = 
-    pathname === "/" || // root/landing page
-    pathname === "/dashboard" || // explicit dashboard page
-    pathname?.startsWith("/calendar") || 
-    pathname?.startsWith("/analytics") ||
-    pathname?.startsWith("/clients") ||
-    pathname?.startsWith("/settings");
+  const isDashboardRoute = dashboardRoutes.some(route => 
+    pathname === route || pathname?.startsWith(`${route}/`)
+  );
   
   // Exclude authentication pages from having the dashboard layout
   const isAuthPage = pathname?.startsWith("/auth");

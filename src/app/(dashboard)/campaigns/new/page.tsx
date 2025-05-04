@@ -3,7 +3,7 @@
 import { MainLayout } from "@/components/layout/main-layout";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
-import CreateCampaign from "@/components/CreateCampaign";
+import CreateCampaign from "@/components/Campaign/CreateCampaign";
 
 export default function NewCampaignPage() {
 

@@ -5,7 +5,7 @@ import {
   TextField, 
   Typography, 
   Paper, 
-  Grid, 
+  Grid as MuiGrid, 
   MenuItem, 
   FormControl, 
   InputLabel, 
@@ -233,8 +233,8 @@ const CreateCampaign: React.FC = () => {
         <FormSection>
           <SectionTitle variant="h6">Campaign Details</SectionTitle>
           
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
+          <MuiGrid container spacing={3}>
+            <MuiGrid sx={{ gridColumn: 'span 12' }}>
               <TextField
                 fullWidth
                 label="Campaign Name"
@@ -246,9 +246,9 @@ const CreateCampaign: React.FC = () => {
                 placeholder="Summer Sale Announcement"
                 required
               />
-            </Grid>
+            </MuiGrid>
             
-            <Grid item xs={12} md={6}>
+            <MuiGrid sx={{ gridColumn: { xs: 'span 12', md: 'span 6' } }}>
               <FormControl fullWidth>
                 <InputLabel id="campaign-type-label">Campaign Type</InputLabel>
                 <Select
@@ -266,9 +266,9 @@ const CreateCampaign: React.FC = () => {
                   ))}
                 </Select>
               </FormControl>
-            </Grid>
+            </MuiGrid>
             
-            <Grid item xs={12} md={6}>
+            <MuiGrid sx={{ gridColumn: { xs: 'span 12', md: 'span 6' } }}>
               <LocalizationProvider dateAdapter={AdapterDateFns}>
                 <DatePicker
                   label="Schedule Date"
@@ -282,9 +282,9 @@ const CreateCampaign: React.FC = () => {
                   }}
                 />
               </LocalizationProvider>
-            </Grid>
+            </MuiGrid>
             
-            <Grid item xs={12}>
+            <MuiGrid sx={{ gridColumn: 'span 12' }}>
               <TextField
                 fullWidth
                 label="Description"
@@ -295,16 +295,16 @@ const CreateCampaign: React.FC = () => {
                 rows={3}
                 placeholder="Describe the purpose of this campaign"
               />
-            </Grid>
-          </Grid>
+            </MuiGrid>
+          </MuiGrid>
         </FormSection>
         
         {/* Email Details Section */}
         <FormSection>
           <SectionTitle variant="h6">Email Details</SectionTitle>
           
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
+          <MuiGrid container spacing={3}>
+            <MuiGrid sx={{ gridColumn: 'span 12' }}>
               <TextField
                 fullWidth
                 label="Subject Line"
@@ -316,9 +316,9 @@ const CreateCampaign: React.FC = () => {
                 placeholder="Don't Miss Our Summer Sale!"
                 required
               />
-            </Grid>
+            </MuiGrid>
             
-            <Grid item xs={12} md={6}>
+            <MuiGrid sx={{ gridColumn: { xs: 'span 12', md: 'span 6' } }}>
               <TextField
                 fullWidth
                 label="Sender Name"
@@ -330,9 +330,9 @@ const CreateCampaign: React.FC = () => {
                 placeholder="Your Company Name"
                 required
               />
-            </Grid>
+            </MuiGrid>
             
-            <Grid item xs={12} md={6}>
+            <MuiGrid sx={{ gridColumn: { xs: 'span 12', md: 'span 6' } }}>
               <TextField
                 fullWidth
                 label="Sender Email"
@@ -345,8 +345,8 @@ const CreateCampaign: React.FC = () => {
                 placeholder="marketing@yourcompany.com"
                 required
               />
-            </Grid>
-          </Grid>
+            </MuiGrid>
+          </MuiGrid>
         </FormSection>
         
         {/* Audience Section */}
