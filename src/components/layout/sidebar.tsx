@@ -46,9 +46,9 @@ export function Sidebar({
         className
       )}
     >
-      {/* Brand header - Link to dashboard which is at / */}
+      {/* Brand header - Link to dashboard */}
       <div className="p-4 border-b">
-        <Link href="/" className={cn("flex items-center", isCollapsed ? "justify-center" : "justify-start")}>
+        <Link href="/dashboard" className={cn("flex items-center", isCollapsed ? "justify-center" : "justify-start")}>
           {brandLogo && <div className="mr-2">{brandLogo}</div>}
           {!isCollapsed && <span className="font-semibold text-lg">{brandName}</span>}
           {isCollapsed && !brandLogo && <span className="font-bold text-xl">{brandName.charAt(0)}</span>}
@@ -59,16 +59,22 @@ export function Sidebar({
       <nav className="flex-1 p-3 overflow-y-auto">
         <ul className="space-y-1">
           {items.map((item) => {
-            // Ensure href is valid, with special handling for settings page
-            const href = item.href === "/settings" ? "/settings" : 
-              item.href && (item.href.startsWith("/") ? item.href : `/${item.href}`);
+            // Special case for dashboard to ensure it points to /dashboard
+            let href = item.href;
+            if (item.key === 'dashboard') {
+              // Always ensure dashboard points to /dashboard
+              href = '/dashboard';
+            } else if (item.href === "/settings") {
+              href = "/settings";
+            } else if (item.href) {
+              href = item.href.startsWith("/") ? item.href : `/${item.href}`;
+            }
               
-            // Check if the current path starts with the item's href or exact match for root
+            // Check if active based on current path
             const isActive = item.isActive ?? (
               href && (
                 pathname === href || 
-                (pathname?.startsWith(href) && href !== "/") ||
-                (href === "/" && pathname === "/")
+                (pathname?.startsWith(href) && href !== "/dashboard")
               )
             );
             
