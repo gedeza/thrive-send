@@ -1,5 +1,6 @@
 'use client';
-
+import FeatureAnalyticsTab from "./FeatureAnalyticsTab";
+import FeatureAudienceTab from "./FeatureAudienceTab";
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 // Import Link from Next.js for client-side navigation without full page reloads
@@ -152,84 +153,73 @@ const componentDocs = [
 
 // Demo overview content
 const OverviewContent = () => (
-  <Box sx={{ p: { xs: 2, sm: 3 } }}>
-    <Typography variant="h5" gutterBottom fontWeight={600}>
+  <div className="p-6 bg-neutral-background rounded-lg shadow">
+    <h2 className="text-2xl font-semibold text-primary-600 mb-2">
       Marketing Platform Demo
-    </Typography>
+    </h2>
     
-    <Typography variant="body1" paragraph>
+    <p className="mb-4 text-neutral-text">
       This demo showcases the key components of our Marketing Platform UI:
-    </Typography>
+    </p>
     
-    <Grid container spacing={3} sx={{ mt: 2 }}>
-      <Grid item xs={12} sm={6} md={4}>
-        <MuiCard variant="outlined" sx={{ height: '100%' }}>
-          <MuiCardContent>
-            <Typography variant="h6" color="primary" gutterBottom>
-              Enhanced Tabs
-            </Typography>
-            <Typography variant="body2">
-              Fully responsive tabs that work in both horizontal and vertical orientations.
-              Supports badges, icons, and animations.
-            </Typography>
-          </MuiCardContent>
-          <CardActions>
-            <MuiButton size="small">Learn More</MuiButton>
-          </CardActions>
-        </MuiCard>
-      </Grid>
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-2">
+      {/* Card 1: Uses Gradient */}
+      <div className="bg-gradient-to-r from-primary-500 to-gradient-purple text-custom-white p-4 rounded-md shadow h-full flex flex-col">
+        <h3 className="text-lg font-semibold mb-1">Enhanced Tabs</h3>
+        <p className="mb-3 text-neutral-text-light flex-grow">
+          Fully responsive tabs that work in both horizontal and vertical orientations.
+          Supports badges, icons, and animations.
+        </p>
+        <button className="bg-primary-600 hover:bg-primary-700 text-custom-white px-4 py-2 rounded-md self-start">
+          Learn More
+        </button>
+      </div>
       
-      <Grid item xs={12} sm={6} md={4}>
-        <MuiCard variant="outlined" sx={{ height: '100%' }}>
-          <MuiCardContent>
-            <Typography variant="h6" color="primary" gutterBottom>
-              Campaign Creation
-            </Typography>
-            <Typography variant="body2">
-              Comprehensive form for creating marketing campaigns with validation and audience selection.
-            </Typography>
-          </MuiCardContent>
-          <CardActions>
-            <MuiButton size="small">Learn More</MuiButton>
-          </CardActions>
-        </MuiCard>
-      </Grid>
+      {/* Card 2: Secondary/Success */}
+      <div className="bg-secondary-50 border border-secondary-200 p-4 rounded-md h-full flex flex-col">
+        <h3 className="text-lg font-semibold mb-1 text-secondary-700">
+          Campaign Creation
+        </h3>
+        <p className="mb-3 text-neutral-text-light flex-grow">
+          Comprehensive form for creating marketing campaigns with validation and audience selection.
+        </p>
+        <button className="bg-secondary-500 hover:bg-secondary-600 text-custom-white px-4 py-2 rounded-md self-start">
+          Learn More
+        </button>
+      </div>
       
-      <Grid item xs={12} sm={6} md={4}>
-        <MuiCard variant="outlined" sx={{ height: '100%' }}>
-          <MuiCardContent>
-            <Typography variant="h6" color="primary" gutterBottom>
-              Content Management
-            </Typography>
-            <Typography variant="body2">
-              Rich content editor with tagging and media uploads for creating engaging email content.
-            </Typography>
-          </MuiCardContent>
-          <CardActions>
-            <MuiButton size="small">Learn More</MuiButton>
-          </CardActions>
-        </MuiCard>
-      </Grid>
-    </Grid>
+      {/* Card 3: Accent/Warning */}
+      <div className="bg-accent-50 border border-accent-200 p-4 rounded-md h-full flex flex-col">
+        <h3 className="text-lg font-semibold mb-1 text-accent-700">
+          Content Management
+        </h3>
+        <p className="mb-3 text-neutral-text-light flex-grow">
+          Rich content editor with tagging and media uploads for creating engaging email content.
+        </p>
+        <button className="bg-accent-500 hover:bg-accent-600 text-custom-white px-4 py-2 rounded-md self-start">
+          Learn More
+        </button>
+      </div>
+    </div>
     
-    <Box sx={{ mt: 4 }}>
-      <Typography variant="h6" gutterBottom>
+    <div className="mt-8">
+      <h3 className="text-lg font-semibold mb-2">
         Recent Activity
-      </Typography>
+      </h3>
       
-      <Box sx={{ pl: 2, borderLeft: '4px solid', borderColor: 'primary.main' }}>
-        <Typography variant="body2" color="text.secondary" paragraph>
+      <div className="pl-4 border-l-4 border-primary-500">
+        <p className="text-sm text-neutral-text-light mb-2">
           <strong>Campaign Created:</strong> Summer Sale Announcement - 2 hours ago
-        </Typography>
-        <Typography variant="body2" color="text.secondary" paragraph>
+        </p>
+        <p className="text-sm text-neutral-text-light mb-2">
           <strong>Content Updated:</strong> Monthly Newsletter - 5 hours ago
-        </Typography>
-        <Typography variant="body2" color="text.secondary" paragraph>
+        </p>
+        <p className="text-sm text-neutral-text-light mb-2">
           <strong>Campaign Sent:</strong> Product Launch - Yesterday
-        </Typography>
-      </Box>
-    </Box>
-  </Box>
+        </p>
+      </div>
+    </div>
+  </div>
 );
 
 // Component Knowledge Base component
@@ -392,7 +382,7 @@ const FeatureDemos = () => {
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
   const [activeTab, setActiveTab] = useState(0);
   
-  // Define the main horizontal tabs
+  // Define the main horizontal tabs (demo features)
   const mainTabs: TabItem[] = [
     {
       label: "Create Campaign",
@@ -405,66 +395,12 @@ const FeatureDemos = () => {
     },
     {
       label: "Analytics",
-      content: (
-        <Box sx={{ p: { xs: 2, sm: 3 } }}>
-          <Typography variant="h5" gutterBottom fontWeight={600}>
-            Analytics Dashboard
-          </Typography>
-          
-          <Typography variant="body1" paragraph>
-            Analytics functionality will be implemented in future updates.
-          </Typography>
-          
-          <Paper 
-            variant="outlined" 
-            sx={{ 
-              p: 3, 
-              textAlign: 'center',
-              bgcolor: 'action.hover'
-            }}
-          >
-            <BarChartIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" gutterBottom>
-              Analytics Coming Soon
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              This section will contain charts and data visualizations for campaign performance.
-            </Typography>
-          </Paper>
-        </Box>
-      ),
+      content: <FeatureAnalyticsTab />,
       badge: "New",
     },
     {
       label: "Audience",
-      content: (
-        <Box sx={{ p: { xs: 2, sm: 3 } }}>
-          <Typography variant="h5" gutterBottom fontWeight={600}>
-            Audience Management
-          </Typography>
-          
-          <Typography variant="body1" paragraph>
-            Audience management functionality will be implemented in future updates.
-          </Typography>
-          
-          <Paper 
-            variant="outlined" 
-            sx={{ 
-              p: 3, 
-              textAlign: 'center',
-              bgcolor: 'action.hover'
-            }}
-          >
-            <PeopleIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" gutterBottom>
-              Audience Management Coming Soon
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              This section will allow you to manage your subscribers and audience segments.
-            </Typography>
-          </Paper>
-        </Box>
-      ),
+      content: <FeatureAudienceTab />,
     }
   ];
   
@@ -691,6 +627,12 @@ export default function Demo() {
   const theme = useTheme();
   const router = useRouter(); // Initialize Next.js router for programmatic navigation
   const [activeMainTab, setActiveMainTab] = useState(0);
+  
+  // HYDRATION FIX: Date is set client-side only to avoid mismatch!
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  useEffect(() => {
+    setLastUpdated(new Date().toLocaleDateString());
+  }, []);
 
   // Main sections of the demo page
   const mainSections = [
@@ -779,7 +721,7 @@ export default function Demo() {
       {/* Footer with navigation examples */}
       <Box sx={{ mt: 8, pt: 3, borderTop: 1, borderColor: 'divider' }}>
         <Typography variant="body2" color="text.secondary" align="center">
-          Demo Version 1.0.0 | Last Updated: {new Date().toLocaleDateString()}
+          Demo Version 1.0.0 | Last Updated: {lastUpdated || ""}
         </Typography>
         
         {/* Navigation menu example */}
