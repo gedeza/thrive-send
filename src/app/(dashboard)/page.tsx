@@ -109,6 +109,9 @@ export default function DashboardHomePage() {
               <Button variant="outline" asChild>
                 <Link href="/analytics">View Reports</Link>
               </Button>
+              <Button variant="outline" asChild>
+                <Link href="/landing" className="text-primary hover:underline">View Landing Page</Link>
+              </Button>
             </div>
           </CardContent>
         </Card>
