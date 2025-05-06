@@ -1,14 +1,15 @@
-import { ThemeProvider } from "@/components/theme-provider";
 import { Inter } from 'next/font/google';
-import type { Metadata } from "next";
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
 
-const inter = Inter({ subsets: ['latin'] });
+// Configure the Inter font
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
+});
 
-export const metadata: Metadata = {
-  title: "ThriveSend",
-  description: "Comprehensive social media management platform",
+export const metadata = {
+  title: 'ThriveSend',
+  description: 'Social media management platform',
 };
 
 export default function RootLayout({
@@ -17,16 +18,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-        >
-          {children}
-          <Toaster />
-        </ThemeProvider>
+    <html lang="en" className={inter.variable}>
+      <body className="font-sans">
+        {children}
       </body>
     </html>
   );

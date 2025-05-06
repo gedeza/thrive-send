@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useContext, useEffect, useState } from "react"
+import { theme, cssVariables } from "@/lib/theme"
 
 type Theme = "dark" | "light" | "system"
 
@@ -13,11 +14,17 @@ type ThemeProviderProps = {
 type ThemeProviderState = {
   theme: Theme
   setTheme: (theme: Theme) => void
+  themeValues: typeof theme
+  isDarkMode: boolean
+  toggleDarkMode: () => void
 }
 
 const initialState: ThemeProviderState = {
   theme: "system",
   setTheme: () => null,
+  themeValues: theme,
+  isDarkMode: false,
+  toggleDarkMode: () => null,
 }
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
@@ -36,6 +43,8 @@ export function ThemeProvider({
       return defaultTheme
     }
   )
+  
+  const [isDarkMode, setIsDarkMode] = useState(false)
 
   useEffect(() => {
     const root = window.document.documentElement
@@ -49,11 +58,30 @@ export function ThemeProvider({
         : "light"
 
       root.classList.add(systemTheme)
+      setIsDarkMode(systemTheme === "dark")
       return
     }
 
     root.classList.add(theme)
+    setIsDarkMode(theme === "dark")
   }, [theme])
+  
+  // Inject CSS variables
+  useEffect(() => {
+    const styleTag = document.createElement('style')
+    styleTag.innerHTML = cssVariables()
+    document.head.appendChild(styleTag)
+    
+    return () => {
+      document.head.removeChild(styleTag)
+    }
+  }, [])
+
+  const toggleDarkMode = () => {
+    const newTheme = isDarkMode ? "light" : "dark"
+    localStorage.setItem(storageKey, newTheme)
+    setTheme(newTheme)
+  }
 
   const value = {
     theme,
@@ -61,6 +89,9 @@ export function ThemeProvider({
       localStorage.setItem(storageKey, theme)
       setTheme(theme)
     },
+    themeValues: theme,
+    isDarkMode,
+    toggleDarkMode,
   }
 
   return (

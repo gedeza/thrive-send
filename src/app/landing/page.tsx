@@ -17,17 +17,10 @@ import {
   Instagram,
   Linkedin
 } from 'lucide-react';
-import Head from 'next/head';
 
 export default function LandingPage() {
   return (
-    <>
-      <Head>
-        <title>ThriveSend - Amplify Your Social Media Presence</title>
-        <meta name="description" content="ThriveSend helps enterprises, businesses, and content creators drive engagement, build stronger communities, and monetize their expertise." />
-      </Head>
-      
-      <div className="landing-page">
+    <div className="landing-page">
         <header className="bg-white border-b border-border sticky top-0 z-50 py-4">
           <div className="container mx-auto px-4">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
@@ -447,7 +440,6 @@ export default function LandingPage() {
           }
         `}</style>
       </div>
-    </>
   );
 }
 

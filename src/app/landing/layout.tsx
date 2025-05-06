@@ -1,10 +1,15 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import '../globals.css';
+
+// Import the global CSS from the correct location
+import '@/app/globals.css';
 
 // Using Inter font for consistent typography
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
+});
 
 export const metadata: Metadata = {
   title: 'ThriveSend - Amplify Your Social Media Presence',
@@ -18,7 +23,7 @@ export default function LandingLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${inter.variable} font-sans`}>
         <div className="landing-layout">
           {children}
         </div>

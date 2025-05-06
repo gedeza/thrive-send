@@ -1,0 +1,93 @@
+/* /styles/global-fonts.css */
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Roboto:wght@400;500;700&display=swap');
+
+:root {
+  /* ... rest of your CSS variables ... */
+}
+
+:root {
+  /* 1. DEFINE FONT FAMILIES */
+  --font-primary: 'Roboto', sans-serif; /* Example: Roboto as primary, with a generic sans-serif fallback */
+  --font-secondary: 'Merriweather', serif; /* Example: Merriweather for headings, with a generic serif fallback */
+  /* Ensure you import these fonts if they are web fonts, e.g., in your main HTML or CSS file:
+     @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Roboto:wght@400;500;700&display=swap');
+  */
+
+  /* 2. DEFINE FONT SIZES (example scale) */
+  --font-size-xs: 0.75rem;  /* 12px */
+  --font-size-sm: 0.875rem; /* 14px */
+  --font-size-base: 1rem;    /* 16px (typically the root font size) */
+  --font-size-md: 1.125rem; /* 18px */
+  --font-size-lg: 1.25rem;  /* 20px */
+  --font-size-xl: 1.5rem;   /* 24px */
+  --font-size-2xl: 2rem;    /* 32px */
+  --font-size-3xl: 2.5rem;  /* 40px */
+  --font-size-4xl: 3rem;    /* 48px */
+
+  /* 3. DEFINE FONT WEIGHTS */
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* 4. DEFINE LINE HEIGHTS */
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+}
+
+/* 5. APPLY BASE STYLES */
+body {
+  font-family: var(--font-primary);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+  color: #333; /* Example base text color */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 6. DEFINE STYLES FOR HEADINGS */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-secondary); /* Or var(--font-primary) if you prefer a single font family */
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  margin-top: 1.5em;
+  margin-bottom: 0.75em;
+}
+
+h1 { font-size: var(--font-size-3xl); }
+h2 { font-size: var(--font-size-2xl); }
+h3 { font-size: var(--font-size-xl); }
+h4 { font-size: var(--font-size-lg); }
+h5 { font-size: var(--font-size-md); }
+h6 { font-size: var(--font-size-base); }
+
+/* 7. OTHER COMMON ELEMENTS (Examples) */
+p {
+  margin-bottom: 1em;
+}
+
+a {
+  color: #007bff; /* Example link color */
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+small, .text-small {
+  font-size: var(--font-size-sm);
+}
+
+/* You can add more specific styles or utility classes as needed */
+.font-primary { font-family: var(--font-primary); }
+.font-secondary { font-family: var(--font-secondary); }
+
+.font-light { font-weight: var(--font-weight-light); }
+.font-normal { font-weight: var(--font-weight-normal); }
+.font-medium { font-weight: var(--font-weight-medium); }
+.font-semibold { font-weight: var(--font-weight-semibold); }
+.font-bold { font-weight: var(--font-weight-bold); }

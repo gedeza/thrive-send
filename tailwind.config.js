@@ -1,4 +1,8 @@
 /** @type {import('tailwindcss').Config} */
+
+// Import our theme constants
+const { theme } = require('./src/lib/theme');
+
 module.exports = {
   darkMode: ["class"],
   content: [
@@ -19,106 +23,36 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ["var(--font-sans)"],
+        mono: theme.typography.fontFamily.mono.split(', '),
       },
       colors: {
-        // Semantic color bindings for app-wide theming via CSS vars
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
+        // Use our theme colors
+        border: theme.colors.border,
+        input: theme.colors.border,
+        ring: theme.colors.primary[400],
+        background: theme.colors.background,
+        foreground: theme.colors.foreground,
         
-        // Keep CSS variable system for dashboard theming
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
-          // Extended color palette
-          50: "#eef2ff",
-          100: "#e0e7ff",
-          200: "#c7d2fe",
-          300: "#a5b4fc",
-          400: "#818cf8",
-          500: "#4F46E5", // Main primary color
-          600: "#4338CA",
-          700: "#3730a3",
-          800: "#312e81",
-          900: "#27265f",
-          950: "#1a1841",
-        },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-          // Extended color palette
-          50: "#ecfdf5",
-          100: "#d1fae5",
-          200: "#a7f3d0",
-          300: "#6ee7b7",
-          400: "#34D399",
-          500: "#10B981", // Main secondary color
-          600: "#059669",
-          700: "#047857",
-          800: "#065f46",
-          900: "#064e3b",
-          950: "#022c22",
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-          // Extended color palette
-          50: "#fffbeb",
-          100: "#fef3c7",
-          200: "#fde68a",
-          300: "#fcd34d",
-          400: "#fbbf24",
-          500: "#F59E0B", // Main accent color
-          600: "#d97706",
-          700: "#b45309",
-          800: "#92400e",
-          900: "#78350f",
-          950: "#451a03",
-        },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
+        primary: theme.colors.primary,
+        secondary: theme.colors.secondary,
+        destructive: theme.colors.destructive,
+        muted: theme.colors.muted,
+        accent: theme.colors.accent,
+        popover: theme.colors.popover,
+        card: theme.colors.card,
         
         // Additional neutral colors
-        neutral: {
-          "background": "#F9FAFB",
-          "background-dark": "#111827",
-          "text": "#1F2937",
-          "text-light": "#6B7280",
-          "text-dark": "#111827",
-          "card": "#FFFFFF",
-          "border": "#E5E7EB"
-        },
+        neutral: theme.colors.neutral,
         
         // Gradient colors
-        gradient: {
-          purple: "#7C3AED",
-        },
+        gradient: theme.colors.gradient,
         
         // Base colors
-        black: "#000000",
-        white: "#FFFFFF",
+        black: theme.colors.black,
+        white: theme.colors.white,
       },
-      borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
-      },
+      borderRadius: theme.borderRadius,
+      boxShadow: theme.shadows,
       keyframes: {
         "accordion-down": {
           from: { height: 0 },
