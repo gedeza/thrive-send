@@ -1,11 +1,6 @@
-import { Inter } from 'next/font/google';
+import '../../styles/global-fonts.css';
 import "./globals.css";
-
-// Configure the Inter font
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-sans',
-});
+import React from 'react';
 
 export const metadata = {
   title: 'ThriveSend',
@@ -18,8 +13,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable}>
-      <body className="font-sans">
+    <html lang="en">
+      <head>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Roboto:wght@400;500;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body>
         {children}
       </body>
     </html>
