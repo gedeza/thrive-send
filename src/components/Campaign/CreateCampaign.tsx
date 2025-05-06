@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { 
   Box, 
@@ -355,7 +357,7 @@ const CreateCampaign: React.FC = () => {
           
           <FormControl 
             fullWidth 
-            error={!!errors.audiences}
+        error={!!errors.audiences}
           >
             <InputLabel id="audience-label">Select Audience Segments</InputLabel>
             <Select
