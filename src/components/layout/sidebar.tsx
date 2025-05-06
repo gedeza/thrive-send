@@ -12,6 +12,7 @@ export interface SidebarItem {
   href?: string;
   onClick?: () => void;
   isActive?: boolean;
+  children?: SidebarItem[];
 }
 
 interface SidebarProps {
@@ -33,6 +34,37 @@ export function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = React.useState(defaultCollapsed);
+  
+  // Track which parent items are expanded
+  const [expandedItems, setExpandedItems] = React.useState<Record<string, boolean>>({});
+
+  // Toggle a parent item's expanded state
+  const toggleItemExpanded = (key: string) => {
+    setExpandedItems(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
+  // Debug: log and marker
+  // eslint-disable-next-line no-console
+  console.log('[Sidebar] Rendering with items:', items);
+  // Visual marker
+  React.useEffect(() => {
+    // Add marker to DOM when Sidebar is rendered
+    const el = document.createElement('div');
+    el.textContent = 'Sidebar Active';
+    el.style.position = 'fixed';
+    el.style.top = '0px';
+    el.style.left = '100px';
+    el.style.background = '#0ff';
+    el.style.color = '#333';
+    el.style.zIndex = '10001';
+    el.style.padding = '2px';
+    el.style.fontSize = '11px';
+    document.body.appendChild(el);
+    return () => { document.body.removeChild(el); };
+  }, []);
 
   // Only apply collapsed state if collapsible is true
   const isCollapsed = collapsible && collapsed;
@@ -42,7 +74,7 @@ export function Sidebar({
       data-testid="sidebar"
       className={cn(
         "h-full border-r border-border bg-background flex flex-col overflow-y-auto transition-all duration-300",
-        isCollapsed ? "w-16" : "w-64",
+        isCollapsed ? "w-16 collapsed" : "w-64 expanded",
         className
       )}
     >
@@ -78,6 +110,13 @@ export function Sidebar({
               )
             );
             
+            // Check if this item has children and if it's expanded
+            const hasChildren = item.children && item.children.length > 0;
+            const isExpanded = expandedItems[item.key];
+            
+            // Don't show children in collapsed mode
+            const showChildren = !isCollapsed && hasChildren && isExpanded;
+            
             return (
               <li key={item.key} data-testid={`sidebar-item-${item.key}`}>
                 {href ? (
@@ -94,11 +133,32 @@ export function Sidebar({
                     {item.icon && (
                       <span className={cn("inline-flex", !isCollapsed && "mr-3")}>{item.icon}</span>
                     )}
-                    {!isCollapsed && <span>{item.label}</span>}
+                    {!isCollapsed && <span className="flex-1">{item.label}</span>}
+                    {!isCollapsed && hasChildren && (
+                      <button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toggleItemExpanded(item.key);
+                        }}
+                        className="ml-auto"
+                      >
+                        {isExpanded ? 
+                          <span className="text-xs">▼</span> : 
+                          <span className="text-xs">▶</span>
+                        }
+                      </button>
+                    )}
                   </Link>
                 ) : (
                   <button
-                    onClick={item.onClick}
+                    onClick={() => {
+                      if (hasChildren) {
+                        toggleItemExpanded(item.key);
+                      } else if (item.onClick) {
+                        item.onClick();
+                      }
+                    }}
                     type="button"
                     className={cn(
                       "flex items-center px-3 py-2 rounded-md text-sm cursor-pointer transition-colors w-full",
@@ -111,8 +171,58 @@ export function Sidebar({
                     {item.icon && (
                       <span className={cn("inline-flex", !isCollapsed && "mr-3")}>{item.icon}</span>
                     )}
-                    {!isCollapsed && <span>{item.label}</span>}
+                    {!isCollapsed && <span className="flex-1">{item.label}</span>}
+                    {!isCollapsed && hasChildren && (
+                      <span className="ml-auto">
+                        {isExpanded ? 
+                          <span className="text-xs">▼</span> : 
+                          <span className="text-xs">▶</span>
+                        }
+                      </span>
+                    )}
                   </button>
+                )}
+                
+                {/* Render children if expanded */}
+                {showChildren && (
+                  <ul className="mt-1 ml-4 space-y-1">
+                    {item.children?.map(child => (
+                      <li key={child.key} data-testid={`sidebar-item-${child.key}`}>
+                        {child.href ? (
+                          <Link
+                            href={child.href.startsWith("/") ? child.href : `/${child.href}`}
+                            className={cn(
+                              "flex items-center px-3 py-1.5 rounded-md text-sm transition-colors",
+                              (child.isActive ?? (pathname === child.href || pathname?.startsWith(child.href)))
+                                ? "bg-primary/10 text-primary font-medium"
+                                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                            )}
+                          >
+                            {child.icon && (
+                              <span className="mr-3 inline-flex">{child.icon}</span>
+                            )}
+                            <span>{child.label}</span>
+                          </Link>
+                        ) : (
+                          <button
+                            onClick={child.onClick}
+                            type="button"
+                            className={cn(
+                              "flex items-center px-3 py-1.5 rounded-md text-sm cursor-pointer transition-colors w-full",
+                              child.isActive
+                                ? "bg-primary/10 text-primary font-medium"
+                                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                            )}
+                          >
+                            {child.icon && (
+                              <span className="mr-3 inline-flex">{child.icon}</span>
+                            )}
+                            <span>{child.label}</span>
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </li>
             );

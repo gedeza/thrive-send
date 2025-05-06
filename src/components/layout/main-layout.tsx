@@ -4,7 +4,7 @@ import * as React from "react";
 import { usePathname } from "next/navigation";
 import { Sidebar, SidebarItem } from "./sidebar";
 import { Header, HeaderProps } from "./header";
-import { LayoutDashboard, Calendar, BarChart, Users, Settings } from "lucide-react";
+import { ensureSidebarItems, defaultSidebarItems } from "./sidebar.defaults"; // Import canonical defaults
 
 export interface MainLayoutProps {
   children: React.ReactNode;
@@ -12,97 +12,42 @@ export interface MainLayoutProps {
   sidebarItems?: SidebarItem[];
   /**
    * Controls whether to show the sidebar.
-   * Set to false when used within pages that already have a sidebar from App Router layouts.
+   * You may set this to false to explicitly disable it on certain pages.
    */
   showSidebar?: boolean;
 }
 
 /**
  * MainLayout provides consistent layout structure for pages.
- * It includes conditional sidebar rendering to prevent duplicate sidebars
- * when used within the dashboard layout which already has its own sidebar.
+ * The sidebar is always rendered unless explicitly disabled by prop or on authentication pages.
  */
 export function MainLayout({ 
   children, 
   headerProps = {},
   sidebarItems,
-  // Default to true, but can be turned off when used within dashboard layout
   showSidebar = true
 }: MainLayoutProps) {
   const pathname = usePathname();
-  
-  // Define default sidebar items with routes that match the filesystem structure
-  const defaultSidebarItems: SidebarItem[] = [
-    {
-      key: 'dashboard',
-      label: 'Dashboard',
-      icon: <LayoutDashboard size={20} />,
-      href: '/dashboard'
-    },
-    {
-      key: 'calendar',
-      label: 'Calendar',
-      icon: <Calendar size={20} />,
-      href: '/calendar'
-    },
-    {
-      key: 'analytics',
-      label: 'Analytics',
-      icon: <BarChart size={20} />,
-      href: '/analytics'
-    },
-    {
-      key: 'clients',
-      label: 'Clients',
-      icon: <Users size={20} />,
-      href: '/clients'
-    },
-    {
-      key: 'settings',
-      label: 'Settings',
-      icon: <Settings size={20} />,
-      href: '/settings'
-    }
-  ];
-  
-  // This array contains all the routes that should be considered part of the dashboard layout
-  // and therefore should not get a second sidebar from MainLayout
-  const dashboardRoutes = [
-    "/",
-    "/dashboard",
-    "/calendar",
-    "/analytics",
-    "/clients",
-    "/settings",
-    "/campaigns",
-    "/content" // Added in case it's also in the dashboard layout
-  ];
-  
-  // Check if we're in a dashboard route
-  // IMPORTANT: This prevents duplicate sidebars by not rendering the sidebar
-  // when the component is used within pages that are already wrapped in the dashboard layout
-  const isDashboardRoute = dashboardRoutes.some(route => 
-    pathname === route || pathname?.startsWith(`${route}/`)
-  );
-  
-  // Exclude authentication pages from having the dashboard layout
+
+  // Exclude authentication pages from having the layout/sidebar
   const isAuthPage = pathname?.startsWith("/auth");
 
   if (isAuthPage) {
     return <>{children}</>;
   }
 
+  // Use all default sidebar items if none provided, otherwise ensure critical ones
+  const resolvedSidebarItems = sidebarItems ? ensureSidebarItems(sidebarItems) : defaultSidebarItems;
+  
+  // Debug: log to console when MainLayout renders
+  // eslint-disable-next-line no-console
+  console.log('[MainLayout] Rendering with sidebar items:', resolvedSidebarItems);
+
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* 
-        Conditional sidebar rendering:
-        Only show sidebar if:
-        1. showSidebar prop is true AND
-        2. We're not in a dashboard route (which already has a sidebar from the App Router layout)
-      */}
-      {showSidebar && !isDashboardRoute && (
+      {showSidebar && (
         <Sidebar 
-          items={sidebarItems || defaultSidebarItems} 
+          items={resolvedSidebarItems}
           brandName="ThriveSend"
           collapsible
         />

@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MainLayout } from "@/components/layout/main-layout";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("profile");
@@ -27,19 +26,13 @@ export default function SettingsPage() {
   };
 
   return (
-    <MainLayout
-      headerProps={{
-        user: { name: user.name },
-        onSearch: (query) => console.log("Search:", query)
-      }}
-    >
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Settings</h1>
-          <p className="text-muted-foreground">
-            Manage your account settings and preferences.
-          </p>
-        </div>
+    <div className="space-y-6 p-6">
+      <div>
+        <h1 className="text-3xl font-bold">Settings</h1>
+        <p className="text-muted-foreground">
+          Manage your account settings and preferences.
+        </p>
+      </div>
 
         <div className="w-full">
           {/* Custom Tabs Implementation */}
@@ -273,7 +266,6 @@ export default function SettingsPage() {
             </Card>
           )}
         </div>
-      </div>
-    </MainLayout>
+    </div>
   );
 }

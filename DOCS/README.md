@@ -19,6 +19,31 @@ The Marketing Platform UI provides a set of reusable components designed to crea
 
 ## Component Overview
 
+### Sidebar Navigation
+
+The Sidebar component provides the primary navigation system for the Marketing Platform.
+
+**Features:**
+- Persistent navigation across the entire application
+- Projects section always accessible as a primary navigation item
+- Responsive design that adapts to different screen sizes
+- Collapsible on mobile devices
+
+**Implementation:**
+```typescript
+{
+  key: 'projects',
+  label: 'Projects',
+  href: '/projects',
+  // icon: <ProjectsIcon />, // optional
+}
+```
+
+**Usage Guidelines:**
+- The Projects entry is always visible in the sidebar as a primary navigation item
+- Quick-access buttons may be provided in relevant sections (like client profiles) for convenience
+- All primary application features should be accessible through the sidebar
+
 ### Tabs Component
 
 The Tabs component provides a flexible navigation system that can be used throughout the application.

@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, PieChart, LineChart, Activity, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+
 export default function AnalyticsPage() {
-  return (
+return (
     <div className="space-y-6 p-6">
       <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
         <div>
