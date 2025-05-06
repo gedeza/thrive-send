@@ -13,7 +13,8 @@ import {
   PlusCircle,
   FileText,
   Home,
-  Layers
+  Layers,
+  Library
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -54,8 +55,13 @@ export function SidebarNavigation({ className, ...props }: SidebarNavProps) {
       variant: "default",
       submenu: [
         {
-          title: "Content Library",
+          title: "All Content",
           href: "/content",
+        },
+        {
+          title: "Content Library",
+          href: "/content-library",
+          icon: <Library className="h-4 w-4" />,
         },
         {
           title: "Create Content",
@@ -93,7 +99,19 @@ export function SidebarNavigation({ className, ...props }: SidebarNavProps) {
       title: "Projects",
       href: "/projects",
       icon: <FolderArchive className="h-5 w-5" />,
-      variant: "default"
+      variant: "default",
+      submenu: [
+        {
+          title: "All Projects",
+          href: "/projects",
+        },
+        {
+          title: "Create Project",
+          href: "/projects/new",
+          icon: <PlusCircle className="h-4 w-4" />,
+          highlight: true
+        }
+      ]
     },
     {
       title: "Settings",
@@ -119,7 +137,7 @@ export function SidebarNavigation({ className, ...props }: SidebarNavProps) {
                 <Link
                   href={route.href}
                   className={cn(
-                    "group flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+                    "group flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:bg-opacity-80 hover:text-accent-foreground",
                     pathname === route.href ? "bg-accent" : "transparent",
                     "transition-all"
                   )}
