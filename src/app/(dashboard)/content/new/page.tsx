@@ -1,7 +1,6 @@
-import React from 'react';
 import { Metadata } from 'next';
-import { Box, Typography, Breadcrumbs, Link as MuiLink } from '@mui/material';
 import Link from 'next/link';
+import { ChevronRight } from 'lucide-react';
 import ContentForm from '@/components/content/ContentForm';
 
 export const metadata: Metadata = {
@@ -11,37 +10,30 @@ export const metadata: Metadata = {
 
 export default function NewContentPage() {
   return (
-    <Box sx={{ padding: { xs: 2, md: 4 } }}>
+    <div className="space-y-6">
       {/* Breadcrumbs */}
-      <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 3 }}>
-        <Link href="/dashboard" passHref>
-          <MuiLink underline="hover" color="inherit">
-            Dashboard
-          </MuiLink>
+      <nav className="flex items-center text-sm text-muted-foreground mb-6">
+        <Link href="/dashboard" className="hover:text-foreground">
+          Dashboard
         </Link>
-        <Link href="/content" passHref>
-          <MuiLink underline="hover" color="inherit">
-            Content
-          </MuiLink>
+        <ChevronRight className="h-4 w-4 mx-2" />
+        <Link href="/content" className="hover:text-foreground">
+          Content
         </Link>
-        <Typography color="text.primary">New Content</Typography>
-      </Breadcrumbs>
-
+        <ChevronRight className="h-4 w-4 mx-2" />
+        <span className="text-foreground">New Content</span>
+      </nav>
+      
       {/* Page Heading */}
-      <Typography 
-        variant="h4" 
-        component="h1" 
-        gutterBottom
-        sx={{ 
-          fontWeight: 700,
-          mb: 4
-        }}
-      >
-        Create New Content
-      </Typography>
+      <div>
+        <h1 className="text-3xl font-bold">Create New Content</h1>
+        <p className="text-muted-foreground">
+          Create and manage content for your marketing campaigns.
+        </p>
+      </div>
 
-      {/* Content Creation Form */}
+      {/* Content Creation Form Component */}
       <ContentForm />
-    </Box>
+    </div>
   );
 }

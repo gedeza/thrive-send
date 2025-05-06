@@ -71,7 +71,8 @@ const CustomTabs = dynamic(() => import('@/components/Tabs/Tabs'), {
   ssr: false
 });
 
-const CreateCampaign = dynamic(() => import('@/components/CreateCampaign'), {
+// Use canonical component paths
+const CreateCampaign = dynamic(() => import('@/components/Campaign/CreateCampaign'), {
   loading: () => (
     <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
       <CircularProgress size={30} />
@@ -80,7 +81,7 @@ const CreateCampaign = dynamic(() => import('@/components/CreateCampaign'), {
   ssr: false
 });
 
-const ContentForm = dynamic(() => import('@/components/ContentForm'), {
+const ContentForm = dynamic(() => import('@/components/content/ContentForm'), {
   loading: () => (
     <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
       <CircularProgress size={30} />
@@ -261,7 +262,7 @@ const ComponentKnowledgeBase = () => {
       {/* Search and component browser */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className="md:col-span-1">
-          <div className="mb-4">
+      <div className="mb-4">
             <Input
               type="text"
               placeholder="Search components..."

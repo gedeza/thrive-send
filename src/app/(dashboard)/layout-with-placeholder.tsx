@@ -1,14 +1,15 @@
-"use client";
+import React from 'react';
+import { ThemeProvider } from '@/components/theme-provider';
+import { Search } from 'lucide-react';
+import Link from 'next/link';
+import { Input } from '@/components/ui/input';
+import { UserButton } from '@/components/ui/user-button';
 
-import * as React from "react";
-import { ThemeProvider } from "@/components/theme-provider";
-import { UserButton } from "@/components/ui/user-button";
-import { Search } from "lucide-react";
-import Link from "next/link";
-import { Input } from "@/components/ui/input";
-import { SidebarNavigation } from "@/components/ui/sidebar-navigation";
-
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <ThemeProvider
       attribute="class"
@@ -50,7 +51,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           
           <div className="ml-auto flex items-center gap-4">
-            {/* Using our custom UserButton instead of Clerk's */}
+            {/* Using our custom UserButton placeholder */}
             <UserButton afterSignOutUrl="/" />
           </div>
         </header>
@@ -58,7 +59,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="flex-1 items-start md:grid md:grid-cols-[220px_minmax(0,1fr)] md:gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-10">
           {/* Sidebar */}
           <aside className="fixed top-16 z-30 -ml-2 hidden h-[calc(100vh-4rem)] w-full shrink-0 md:sticky md:block">
-            <SidebarNavigation className="py-6 pr-1 lg:py-8" />
+            <div className="py-6 pr-1 lg:py-8">
+              {/* Sidebar content goes here */}
+            </div>
           </aside>
           
           {/* Main content */}
