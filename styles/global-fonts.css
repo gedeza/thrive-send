@@ -83,3 +83,16 @@ small, .text-small {
 .font-medium { font-weight: var(--font-weight-medium); }
 .font-semibold { font-weight: var(--font-weight-semibold); }
 .font-bold { font-weight: var(--font-weight-bold); }
+
+/* --- Custom Utility for White Text on Dark Backgrounds --- */
+.text-custom-white {
+  color: #fff !important;
+}
+
+/* --- Example usage --- */
+/*
+  <div className="bg-gray-900 text-custom-white">
+    <h1>Text on dark background</h1>
+    <p>White text for contrast, complies with spec.</p>
+  </div>
+*/

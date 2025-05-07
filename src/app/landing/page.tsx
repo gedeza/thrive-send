@@ -326,7 +326,7 @@ export default function LandingPage() {
           </div>
         </section>
         
-        <section className="py-24 bg-gradient-to-r from-primary to-primary-dark text-white text-center relative overflow-hidden">
+        <section className="py-24 bg-gradient-to-r from-primary to-primary-dark text-custom-white text-center relative overflow-hidden">
           <div className="absolute top-[-100px] right-[-100px] w-[300px] h-[300px] rounded-full bg-white/10 -z-10"></div>
           <div className="absolute bottom-[-100px] left-[-100px] w-[300px] h-[300px] rounded-full bg-white/10 -z-10"></div>
           
@@ -338,14 +338,14 @@ export default function LandingPage() {
               Join thousands of enterprises, businesses, and content creators who are enhancing their social media services and monetizing their expertise with ThriveSend.
             </p>
             <Link href="/calendar">
-              <Button size="lg" variant="default" className="bg-white text-primary hover:bg-white/90 text-lg px-8 py-6 h-auto">
+              <Button size="lg" variant="default" className="bg-custom-white text-primary hover:bg-custom-white/90 text-lg px-8 py-6 h-auto">
                 Start Your 14-Day Free Trial
               </Button>
             </Link>
           </div>
         </section>
         
-        <footer className="bg-gray-900 text-white py-20">
+        <footer className="bg-gray-900 text-custom-white py-20">
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-16">
               <div>
@@ -513,7 +513,7 @@ function PricingCard({ title, price, description, features, ctaText, popular }: 
       </ul>
       <Link href={popular ? "/calendar" : ctaText === "Contact Sales" ? "/dashboard" : "/calendar"}>
         <Button 
-          className={`w-full ${popular ? 'bg-primary hover:bg-primary-dark text-white' : ''}`}
+          className={`w-full ${popular ? 'bg-primary hover:bg-primary-dark text-custom-white' : ''}`}
           variant={popular ? "default" : "outline"}
         >
           {ctaText}
@@ -525,7 +525,7 @@ function PricingCard({ title, price, description, features, ctaText, popular }: 
 
 function SocialLink({ icon, name }: { icon: React.ReactNode, name: string }) {
   return (
-    <a href="#" className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-primary hover:transform hover:-translate-y-1 transition-all">
+    <a href="#" className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-custom-white hover:bg-primary hover:transform hover:-translate-y-1 transition-all">
       <span className="sr-only">{name}</span>
       {icon}
     </a>
@@ -536,7 +536,7 @@ function FooterLink({ href, label }: { href: string, label: string }) {
   return (
     <a 
       href={href} 
-      className="text-gray-400 hover:text-white hover:transform hover:translate-x-1 transition-all flex items-center gap-2"
+      className="text-gray-400 hover:text-custom-white hover:transform hover:translate-x-1 transition-all flex items-center gap-2"
     >
       <span className="text-xs">›</span>
       {label}
