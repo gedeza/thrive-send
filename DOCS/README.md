@@ -1,5 +1,18 @@
 # Marketing Platform UI Components
 
+---
+
+## 🚦 **Project Progress Snapshot**
+
+**Platform Progress:** [████████████████--------------------] **40%**
+
+- Core navigation and sidebar components are completed and fully responsive.
+- Calendar, dashboard, and landing UI sections are significantly improved.
+- Enhanced documentation and clearer code structure.
+- **Next up:** Authentication flows, mobile optimizations, advanced analytics, and deeper content management features.
+
+---
+
 This documentation provides an overview of the components implemented in our Marketing Platform UI, including details on their functionality, implementation, and usage guidelines.
 
 ## Table of Contents
