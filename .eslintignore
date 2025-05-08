@@ -1,0 +1,11 @@
+# Ignore build output and dependency folders for ESLint
+
+.next/
+dist/
+out/
+coverage/
+node_modules/
+pnpm-lock.yaml
+
+# Optional: ignore TypeScript build output if you have it
+*.tsbuildinfo

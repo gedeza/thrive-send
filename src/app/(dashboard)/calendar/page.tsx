@@ -128,7 +128,7 @@ export default function CalendarPage() {
     };
     
     loadTabData();
-  }, []);
+  }, [toast]);
   
   const handleCreateContent = useCallback(() => {
     router.push("/content/new");

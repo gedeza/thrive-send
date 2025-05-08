@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Metadata } from "next";
-
+import Image from "next/image"; // <--- Add this line
 export const metadata: Metadata = {
   title: "Client Details | ThriveSend",
   description: "View client details and manage their projects",
@@ -63,12 +63,19 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
             <div className="space-y-2">
               <h2 className="text-xl font-semibold tracking-tight">Client Information</h2>
               <div className="w-full h-40 bg-gray-200 rounded-md overflow-hidden flex items-center justify-center">
-                {client.logoUrl ? (
-                  <img src={client.logoUrl} alt={`${client.name} logo`} className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-gray-400">No logo</span>
-                )}
-              </div>
+              {client.logoUrl ? (
+                <Image
+                  src={client.logoUrl}
+                    alt={`${client.name} logo`}
+                      width={400}
+                        height={160}
+                          className="w-full h-full object-cover"
+                           priority
+                        />
+                       ) : (
+                      <span className="text-gray-400">No logo</span>
+                 )}
+            </div>
             </div>
             
             <div className="space-y-2">

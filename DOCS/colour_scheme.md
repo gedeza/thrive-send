@@ -1,233 +1,175 @@
-{\rtf1\ansi\ansicpg1252\cocoartf2821
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\paperw11900\paperh16840\margl1440\margr1440\vieww22060\viewh8400\viewkind0
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+# ThriveSend Color Scheme Policy & Enforcement (2024-06 Update)
 
-\f0\fs24 \cf0 # ThriveSend Color Scheme\
-\
-## Overview\
-\
-This document defines the official color scheme for ThriveSend, ensuring consistent visual identity across all interfaces and components. This color scheme replaces previous versions and should be used as the definitive reference for all development work.\
-\
-## Color Palette\
-\
-### Base Colors\
-- **White**: `#FFFFFF` - Used for text on dark backgrounds, card backgrounds in light mode\
-- **Black**: `#000000` - Used for extreme contrast needs, rarely needed directly\
-\
-### Primary (Indigo)\
-- **Main**: `#4F46E5` - Used for primary buttons, key UI elements, and brand identity\
-- **Light**: `#818CF8` - Used for hover states, backgrounds, and secondary elements\
-- **Dark**: `#4338CA` - Used for active states and contrast needs\
-\
-#### Full Shade Range\
-| Shade | Hex Code | Usage |\
-|-------|----------|-------|\
-| 50 | `#eef2ff` | Very light backgrounds, hover states in light mode |\
-| 100 | `#e0e7ff` | Light backgrounds, disabled states |\
-| 200 | `#c7d2fe` | Borders, dividers in light mode |\
-| 300 | `#a5b4fc` | Text on dark backgrounds |\
-| 400 | `#818cf8` | Secondary UI elements, light variant |\
-| 500 | `#4F46E5` | **Main** - Primary UI elements |\
-| 600 | `#4338CA` | **Dark** - Active states, pressed buttons |\
-| 700 | `#3730a3` | Strong emphasis, dark mode elements |\
-| 800 | `#312e81` | Very dark UI elements |\
-| 900 | `#27265f` | Extra dark UI elements |\
-| 950 | `#1a1841` | Extreme contrast situations |\
-\
-### Secondary (Green)\
-- **Main**: `#10B981` - Used for success states, badges, and highlights\
-- **Light**: `#34D399` - Used for lighter success states and backgrounds\
-\
-#### Full Shade Range\
-| Shade | Hex Code | Usage |\
-|-------|----------|-------|\
-| 50 | `#ecfdf5` | Very light success backgrounds |\
-| 100 | `#d1fae5` | Light success backgrounds |\
-| 200 | `#a7f3d0` | Borders, dividers for success states |\
-| 300 | `#6ee7b7` | Secondary success indicators |\
-| 400 | `#34D399` | **Light** - Light success variant |\
-| 500 | `#10B981` | **Main** - Primary success indicators, badges |\
-| 600 | `#059669` | Active success states |\
-| 700 | `#047857` | Strong success emphasis |\
-| 800 | `#065f46` | Very dark success elements |\
-| 900 | `#064e3b` | Extra dark success elements |\
-| 950 | `#022c22` | Extreme contrast situations |\
-\
-### Accent (Amber)\
-- **Main**: `#F59E0B` - Used for warnings, attention-grabbing elements, and highlights\
-\
-#### Full Shade Range\
-| Shade | Hex Code | Usage |\
-|-------|----------|-------|\
-| 50 | `#fffbeb` | Very light warning backgrounds |\
-| 100 | `#fef3c7` | Light warning backgrounds |\
-| 200 | `#fde68a` | Borders, dividers for warning states |\
-| 300 | `#fcd34d` | Secondary warning indicators |\
-| 400 | `#fbbf24` | Light warning variant |\
-| 500 | `#F59E0B` | **Main** - Primary warning indicators, badges |\
-| 600 | `#d97706` | Active warning states |\
-| 700 | `#b45309` | Strong warning emphasis |\
-| 800 | `#92400e` | Very dark warning elements |\
-| 900 | `#78350f` | Extra dark warning elements |\
-| 950 | `#451a03` | Extreme contrast situations |\
-\
-### Neutral\
-- **Text**: `#1F2937` - Main text color\
-- **Text Light**: `#6B7280` - Secondary text, descriptions, placeholders\
-- **Text Dark**: `#111827` - Text color for dark mode\
-- **Background**: `#F9FAFB` - Main background color\
-- **Background Dark**: `#111827` - Background color for dark mode\
-- **Card**: `#FFFFFF` - Card and container backgrounds\
-- **Border**: `#E5E7EB` - Borders, dividers, separators\
-\
-### Gradient\
-- **Purple**: `#7C3AED` - Used in gradients with primary colors\
-- **Gradient Example**: `bg-gradient-to-r from-primary-500 to-gradient-purple`\
-\
-## Usage Guidelines\
-\
-### Buttons\
-- **Primary Button**: Background `primary-500`, Hover `primary-600`, Text `white`\
-- **Secondary Button**: Background `white`, Border `primary-500`, Text `primary-500`\
-- **Success Button**: Background `secondary-500`, Hover `secondary-600`, Text `white`\
-- **Warning Button**: Background `accent-500`, Hover `accent-600`, Text `white`\
-\
-### Text\
-- **Headings**: `neutral-text`\
-- **Body**: `neutral-text`\
-- **Secondary Text**: `neutral-text-light`\
-- **Links**: `primary-500`, Hover `primary-600`\
-\
-### Backgrounds\
-- **Main Background**: `neutral-background`\
-- **Card Background**: `neutral-card`\
-- **Dark Mode Background**: `neutral-background-dark`\
-- **Dark Mode Card**: Darker shade than background\
-\
-### Borders\
-- **Regular Border**: `neutral-border`\
-- **Focus Border**: `primary-400`\
-- **Error Border**: `red-500` (use system red)\
-\
-### Status Indicators\
-- **Success**: `secondary-500`\
-- **Warning**: `accent-500`\
-- **Error**: `red-500` (use system red)\
-- **Info**: `primary-500`\
-\
-## Dark Mode Support\
-\
-ThriveSend supports dark mode using Tailwind's dark mode utilities. Dark mode should maintain the same color semantics but with adjusted brightnesses to maintain proper contrast.\
-\
-### Dark Mode Color Mappings\
-- **Background**: `neutral-background-dark`\
-- **Text**: `text-custom-white` (use this custom utility instead of text-white)\
-- **Cards**: Use darker shades than the background\
-- **Primary Actions**: Use `primary-400` instead of `primary-500` for better visibility\
-- **Borders**: Use darker borders with higher opacity for subtle definition\
-\
-### Important Note\
-When working with white text, use our custom utility class `text-custom-white` instead of Tailwind's `text-white` to avoid compilation issues. Similarly, use `text-custom-black` for black text.\
-\
-## Technical Implementation\
-\
-### Tailwind CSS\
-ThriveSend uses Tailwind CSS for styling, with a custom color configuration defined in `tailwind.config.ts`. Colors are accessible through class names following the pattern:\
-\
-- Primary: `bg-primary-500`, `text-primary-600`, etc.\
-- Secondary: `bg-secondary-400`, `border-secondary-300`, etc.\
-- Accent: `bg-accent-500`, `text-accent-700`, etc.\
-- Neutral: `bg-neutral-background`, `text-neutral-text`, etc.\
-- Gradients: `bg-gradient-to-r from-primary-500 to-gradient-purple`\
-\
-### Important Note on Tailwind 4.1.4\
-Tailwind CSS 4.1.4 has some changes in how utility classes work. Some basic utility classes like `text-white` and `font-semibold` may not be recognized. For common components, we've created custom CSS classes in globals.css that don't rely on Tailwind's @apply directive. \
-\
-When creating new components, prefer:\
-1. Use direct semantic classes like `text-primary-500` instead of `text-white`\
-2. For white text, use our custom `.text-custom-white` class\
-3. For complex components, use regular CSS properties instead of relying on Tailwind's @apply\
-\
-### Dark Mode\
-Use Tailwind's dark mode feature to define dark mode variants:\
-\
-```jsx\
-<div className="bg-neutral-card dark:bg-neutral-background-dark text-neutral-text dark:text-white">\
-  <h1 className="text-primary-500 dark:text-primary-400">Hello World</h1>\
-</div>\
-```\
-\
-### ShadCN UI Integration\
-When using ShadCN UI components, customize them with our color scheme:\
-\
-```jsx\
-<Button className="bg-primary-500 hover:bg-primary-600 text-white">\
-  Primary Button\
-</Button>\
-\
-<Button variant="outline" className="border-primary-500 text-primary-500">\
-  Secondary Button\
-</Button>\
-```\
-\
-### PWA Support\
-For PWA manifest and splash screens, use these color values:\
-\
-```json\
-\{\
-  "theme_color": "#4F46E5",\
-  "background_color": "#F9FAFB",\
-  "display": "standalone"\
-\}\
-```\
-\
-## Examples\
-\
-### Component Examples\
-```jsx\
-// Primary Button\
-<button className="bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-md">\
-  Click Me\
-</button>\
-\
-// Success Card\
-<div className="bg-secondary-50 border border-secondary-200 p-4 rounded-md">\
-  <p className="text-secondary-700">Success message goes here</p>\
-</div>\
-\
-// Warning Badge\
-<span className="bg-accent-500 text-white px-2 py-1 rounded-full text-xs font-semibold">\
-  New\
-</span>\
-```\
-\
-### Gradient Examples\
-```jsx\
-// Primary to Purple Gradient\
-<div className="bg-gradient-to-r from-primary-500 to-gradient-purple text-white p-4 rounded-md">\
-  Gradient Card\
-</div>\
-\
-// Green Success Gradient\
-<div className="bg-gradient-to-r from-secondary-400 to-secondary-600 text-white p-4 rounded-md">\
-  Success Gradient\
-</div>\
-```\
-\
-## Migration Guide\
-\
-If you're updating from a previous color scheme, please follow these steps:\
-\
-1. Update your imports to use the new color tokens\
-2. Replace old color values with the new semantic color names\
-3. Test all UI components in both light and dark modes\
-4. Pay special attention to contrast and accessibility\
-\
-## Versioning\
-\
-**Current Version**: 2.0.0  \
-**Last Updated**: 2025-01  \
-**Previous Version**: 1.0.0 (Original design system) }
+> **Notice (2024-06):**  
+> This document defines the **single source of truth** for all color usage in ThriveSend.  
+> **ALL color styling must use the semantic tokens included below.**  
+> No raw hex, `text-white`, `text-black`, or Tailwind default colors outside the token system are allowed.  
+> Compliance is enforced through regular [color scheme audits](color_scheme_compliance_audit.md) and CI/linting.  
+> **See:** [README.md](../README.md), [PRD.md](../PRD.md), and [color_scheme_compliance_audit.md](color_scheme_compliance_audit.md) for rationale, workflow, and enforcement.
+
+---
+## Overview
+
+This document contains:
+- The official ThriveSend color palette as semantic tokens for backgrounds, text, states, and accents.
+- Usage rules for all code and design artifacts.
+- Migration requirements from previous schemes.
+- Technical integration notes (Tailwind, CSS, ShadCN UI, tokens).
+- How this doc links to the compliance audit and development workflow.
+
+---
+## Color Palette (Tokens)
+
+### Base Colors
+
+- **white**: `#FFFFFF`  
+- **black**: `#000000`  
+- **background**: `#F9FAFB`  
+- **background-dark**: `#111827`  
+- **card**: `#FFFFFF`  
+- **border**: `#E5E7EB`  
+### Primary (Indigo)
+
+| Name         | Token / Tailwind         | Hex       | Usage                                        |
+|--------------|-------------------------|-----------|----------------------------------------------|
+| Main         | `primary-500`           | #4F46E5   | Buttons, highlights, brand identity          |
+| Light        | `primary-400`/`primary-100` | #818CF8/#e0e7ff | Hover, cards, backgrounds, secondary |
+| Dark         | `primary-600`           | #4338CA   | Active states, pressed buttons               |
+| ...shades... | ...see below...         | ...       | ...                                          |
+
+**Full shade series (for backgrounds, states, gradients) is available in the Tailwind config and design tokens.**
+### Secondary (Green)
+
+| Name     | Token / Tailwind   | Hex     | Usage                 |
+|----------|-------------------|---------|-----------------------|
+| Main     | `secondary-500`   | #10B981 | Success, badges       |
+| Light    | `secondary-400`   | #34D399 | Lighter success/states|
+### Accent (Amber)
+
+| Name     | Token / Tailwind   | Hex     | Usage                     |
+|----------|-------------------|---------|---------------------------|
+| Main     | `accent-500`      | #F59E0B | Warnings, highlights      |
+| Light    | `accent-400`      | #fbbf24 | Light warning/secondary   |
+### Neutral / Utility
+
+| Purpose          | Token                | Hex       |
+|------------------|---------------------|-----------|
+| Text             | `neutral-text`      | #1F2937   |
+| Text Light       | `neutral-text-light`| #6B7280   |
+| Text Dark        | `neutral-text-dark` | #111827   |
+| Card             | `neutral-card`      | #FFFFFF   |
+| Border           | `neutral-border`    | #E5E7EB   |
+| Background       | `neutral-background`| #F9FAFB   |
+| Background Dark  | `neutral-background-dark` | #111827 |
+
+### Gradients
+
+- **purple**: `#7C3AED`
+- Example: `bg-gradient-to-r from-primary-500 to-gradient-purple`
+
+--- 
+## Usage Rules & Guidelines
+
+### 🔹 STRICT COLOR ENFORCEMENT
+
+- **ALL colors must be referenced via semantic tokens defined above and in Tailwind config.**
+- **DO NOT use:**
+  - Raw hex codes in components or stylesheets
+  - Tailwind default classes like `text-white`, `text-black`, `bg-blue-500`
+  - Named CSS colors ("red", "blue", etc.)
+- **ALWAYS use:**
+  - `bg-primary-500`, `text-secondary-600`, `border-accent-200`, etc. (from token palette)
+  - `.text-custom-white`, `.text-custom-black` for white/black text when needed (defined in global CSS).
+  - Existing util classes mapped to centralized tokens.
+
+> **Non-compliant code will fail audit and may be blocked from merging.**
+
+### Button, Card & Badge Examples
+
+```jsx
+// Primary Button
+<button className="bg-primary-500 hover:bg-primary-600 text-custom-white px-4 py-2 rounded-md">
+  Click Me
+</button>
+
+// Success Card
+<div className="bg-secondary-50 border border-secondary-200 p-4 rounded-md">
+  <p className="text-secondary-700">Success message goes here</p>
+</div>
+
+// Warning Badge
+<span className="bg-accent-500 text-custom-white px-2 py-1 rounded-full text-xs font-semibold">
+  New
+</span>
+```
+---
+
+## Technical Integration
+
+### Tailwind CSS
+
+- All tokens are mapped in `tailwind.config.js`.
+- Use classnames like `bg-primary-500`, `text-neutral-text`, etc.
+- For dark mode, use `dark:bg-neutral-background-dark`, `dark:text-custom-white`, etc.
+
+### ShadCN UI / Other Libraries
+
+- Customize their color props and classes to use **our tokens**, not their built-in/vanilla palettes.
+- Do NOT use out-of-the-box MUI or ShadCN colors for production—always override with semantic tokens.
+
+### Custom Utility Classes
+
+- Use `.text-custom-white` instead of Tailwind's `text-white` for white text.
+- Use `.text-custom-black` likewise for black text.
+- Utilities are defined in `global.css` and used consistently everywhere.
+
+---
+
+## Compliance Audit & Developer Workflow
+
+- **All UI code is subject to regular color scheme compliance audits, tracked in [color_scheme_compliance_audit.md](color_scheme_compliance_audit.md).**
+- See audit file for known gaps, open issues, and audit status.
+- CI/CD will (or soon will) run automated linters/scripts to catch unauthorized color usage.
+- Contributors MUST check both this doc and the audit file before styling components.
+---
+
+## Migration Guide
+
+1. Refactor any use of legacy/previous color classes or hardcoded values in components/styles.
+2. Replace with the correct semantic token class (as above).
+3. Test in **both light and dark modes** for accessibility and proper contrast.
+4. DO NOT submit code using deprecated color classes or direct hex codes.
+5. Any newly-touched UI code must be brought into compliance even if it's unrelated to the main PR change.
+
+---
+
+## FAQ & Best Practices
+
+**Q: Can I use a hex value directly if it matches a token?**  
+A: **No!** Always use the semantic class/token so theming is future-proof and auditable.
+
+**Q: I need a color not in this list, what do I do?**  
+A: Discuss it in an issue or with design leads—**never add colors ad hoc.** New color tokens are added centrally after review.
+
+**Q: How do I ensure my code passes the audit?**  
+A: Run the compliance script or check [color_scheme_compliance_audit.md](color_scheme_compliance_audit.md) for what to check, and validate classnames.
+---
+
+## Versioning & Changelog
+
+- **Version:** 3.0.0  
+- **Last Updated:** 2024-06  
+- **Major changes (2024-06):**
+  - **Centralized token-based color enforcement**
+  - **Audit and compliance workflow documented**
+  - **Strict ban on all non-token color, Tailwind class, or hex usage**
+  - **Custom classes for special cases enacted**
+  - **Readme/doc alignment with enforced design system**
+  - **Technical implementation guidance updated**
+
+Old version(s) and migration history are retained for audit trail and onboarding.
+
+---
+
+> This document is the single source of truth for ThriveSend's visual identity and color policy.  
+> ALL contributors must read and follow this for every PR, review, and design decision.

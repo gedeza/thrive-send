@@ -69,7 +69,7 @@ export default function NewProjectPage({ params }: { params: { id: string } }) {
             <CardTitle>Client Not Found</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="mb-4">The client you're trying to create a project for doesn't exist.</p>
+            <p className="mb-4">The client you&apos;re trying to create a project for doesn&apos;t exist.</p>
             <Button 
               onClick={() => router.push('/clients')}
               className="w-full"
