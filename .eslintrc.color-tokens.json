@@ -1,0 +1,32 @@
+{
+  "overrides": [
+    {
+      "files": [
+        "**/*.{js,jsx,ts,tsx}"
+      ],
+      "excludedFiles": [
+        "src/lib/theme.ts"
+      ],
+      "rules": {
+        "no-restricted-syntax": [
+          "error",
+          {
+            "selector": "Literal[value=/^#[0-9a-fA-F]{3,8}$/]",
+            "message": "Do not use hard-coded hex colors. Use theme tokens from theme.ts."
+          }
+        ],
+        "no-restricted-properties": [
+          "error",
+          {
+            "property": "rgba",
+            "message": "Use hexToRgba or theme tokens for rgba values. Do not use inline rgba hard-coded values."
+          },
+          {
+            "property": "rgb",
+            "message": "Use theme tokens for rgb values. Do not use inline rgb hard-coded values."
+          }
+        ]
+      }
+    }
+  ]
+}

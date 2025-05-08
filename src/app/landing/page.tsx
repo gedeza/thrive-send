@@ -21,12 +21,12 @@ import {
 export default function LandingPage() {
   return (
     <div className="landing-page">
-        <header className="bg-white border-b border-border sticky top-0 z-50 py-4">
-          <div className="container mx-auto px-4">
+        <header className="bg-surface border-b border-border sticky top-0 z-50 py-4">
+          <div className="container mx-auto px-4 max-w-7xl">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <div className="flex items-center">
                 <Send className="w-6 h-6 mr-2 text-primary" />
-                <span className="text-2xl font-extrabold bg-gradient-to-r from-primary to-purple-600 text-transparent bg-clip-text">
+                <span className="text-2xl font-extrabold bg-gradient-to-r from-primary to-accent text-transparent bg-clip-text">
                   ThriveSend
                 </span>
               </div>
@@ -40,10 +40,10 @@ export default function LandingPage() {
               
               <div className="flex gap-4">
                 <Link href="/dashboard">
-                  <Button variant="outline">Dashboard</Button>
+                  <Button variant="outline" className="rounded-lg transition-colors">Dashboard</Button>
                 </Link>
                 <Link href="/calendar">
-                  <Button>Calendar</Button>
+                  <Button className="rounded-lg shadow-sm transition-colors">Calendar</Button>
                 </Link>
               </div>
             </div>
@@ -51,12 +51,12 @@ export default function LandingPage() {
         </header>
         
         <section className="hero py-24 relative overflow-hidden">
-          <div className="absolute top-[-200px] right-[-200px] w-[600px] h-[600px] rounded-full bg-primary/5 -z-10"></div>
-          <div className="absolute bottom-[-200px] left-[-200px] w-[500px] h-[500px] rounded-full bg-green-500/5 -z-10"></div>
+          <div className="absolute top-[-200px] right-[-200px] w-[600px] h-[600px] rounded-full bg-primary-bg -z-10"></div>
+          <div className="absolute bottom-[-200px] left-[-200px] w-[500px] h-[500px] rounded-full bg-accent-bg -z-10"></div>
           
-          <div className="container mx-auto px-4">
+          <div className="container mx-auto px-4 max-w-7xl">
             <div className="flex flex-col items-center max-w-4xl mx-auto text-center">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6 bg-gradient-to-r from-gray-800 to-primary text-transparent bg-clip-text">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6 bg-gradient-to-r from-primary to-accent text-transparent bg-clip-text">
                 Amplify Your Social Media Presence
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-3xl">
@@ -64,24 +64,24 @@ export default function LandingPage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
                 <Link href="/calendar">
-                  <Button size="lg" className="min-w-[200px]">
+                  <Button size="lg" className="min-w-[200px] rounded-lg shadow-sm transition-colors">
                     Start 14-Day Free Trial
                   </Button>
                 </Link>
                 <Link href="/dashboard">
-                  <Button size="lg" variant="outline" className="min-w-[200px]">
+                  <Button size="lg" variant="outline" className="min-w-[200px] rounded-lg transition-colors">
                     Schedule a Demo
                   </Button>
                 </Link>
                 <div className="flex items-center text-sm text-muted-foreground">
-                  <Check className="w-4 h-4 mr-2 text-green-500" />
+                  <Check className="w-4 h-4 mr-2 text-success" />
                   No credit card required
                 </div>
               </div>
             </div>
             
             <div className="flex justify-center mt-16">
-              <div className="bg-white rounded-xl shadow-lg p-6 flex flex-col md:flex-row gap-10 animate-float">
+              <div className="bg-surface rounded-xl shadow-sm border border-border p-6 flex flex-col md:flex-row gap-10 animate-float">
                 <div className="stat text-center">
                   <div className="text-2xl font-bold text-primary">250+</div>
                   <div className="text-sm text-muted-foreground">New Subscribers</div>
@@ -99,12 +99,12 @@ export default function LandingPage() {
           </div>
         </section>
         
-        <section id="features" className="py-24 bg-white relative overflow-hidden">
+        <section id="features" className="py-24 bg-surface relative overflow-hidden">
           <div className="absolute inset-0 bg-grid-pattern opacity-5 -z-10"></div>
           
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-extrabold mb-4 bg-gradient-to-r from-primary to-green-500 text-transparent bg-clip-text inline-block">
+              <h2 className="text-3xl md:text-4xl font-extrabold mb-4 bg-gradient-to-r from-primary to-accent text-transparent bg-clip-text inline-block">
                 Powerful Features for Everyone
               </h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
@@ -153,11 +153,11 @@ export default function LandingPage() {
         </section>
         
         <section id="testimonials" className="py-24 bg-background relative">
-          <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-amber-500/5 rounded-full -z-10"></div>
+          <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-accent-bg rounded-full -z-10"></div>
           
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-extrabold mb-4 bg-gradient-to-r from-primary to-green-500 text-transparent bg-clip-text inline-block">
+              <h2 className="text-3xl md:text-4xl font-extrabold mb-4 bg-gradient-to-r from-primary to-accent text-transparent bg-clip-text inline-block">
                 What Our Users Say
               </h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
@@ -190,12 +190,12 @@ export default function LandingPage() {
           </div>
         </section>
         
-        <section id="pricing" className="py-24 bg-white relative overflow-hidden">
+        <section id="pricing" className="py-24 bg-surface relative overflow-hidden">
           <div className="absolute inset-0 bg-grid-pattern opacity-5 -z-10"></div>
           
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-extrabold mb-4 bg-gradient-to-r from-primary to-green-500 text-transparent bg-clip-text inline-block">
+              <h2 className="text-3xl md:text-4xl font-extrabold mb-4 bg-gradient-to-r from-primary to-accent text-transparent bg-clip-text inline-block">
                 Transparent Pricing for All Needs
               </h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
@@ -255,12 +255,12 @@ export default function LandingPage() {
         </section>
         
         <section id="about" className="py-24 bg-background relative">
-          <div className="absolute top-0 left-0 w-[300px] h-[300px] bg-blue-500/5 rounded-full -z-10"></div>
+          <div className="absolute top-0 left-0 w-[300px] h-[300px] bg-info-bg rounded-full -z-10"></div>
           
           <div className="container mx-auto px-4">
             <div className="grid md:grid-cols-2 gap-16 items-center">
               <div>
-                <h2 className="text-3xl md:text-4xl font-extrabold mb-6 bg-gradient-to-r from-primary to-green-500 text-transparent bg-clip-text inline-block">
+                <h2 className="text-3xl md:text-4xl font-extrabold mb-6 bg-gradient-to-r from-primary to-accent text-transparent bg-clip-text inline-block">
                   About ThriveSend
                 </h2>
                 <p className="text-lg text-muted-foreground mb-6">
@@ -274,26 +274,26 @@ export default function LandingPage() {
                 </p>
                 <div className="flex flex-wrap gap-4 mt-8">
                   <div className="flex items-center gap-2">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                    <div className="w-12 h-12 rounded-full bg-primary-bg flex items-center justify-center text-primary">
                       <Users className="w-6 h-6" />
                     </div>
                     <div className="font-semibold">10k+ Users</div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                    <div className="w-12 h-12 rounded-full bg-primary-bg flex items-center justify-center text-primary">
                       <Calendar className="w-6 h-6" />
                     </div>
                     <div className="font-semibold">Since 2023</div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                    <div className="w-12 h-12 rounded-full bg-primary-bg flex items-center justify-center text-primary">
                       <Rocket className="w-6 h-6" />
                     </div>
                     <div className="font-semibold">Backed by YC</div>
                   </div>
                 </div>
               </div>
-              <div className="bg-white p-8 rounded-xl shadow-lg">
+              <div className="bg-surface border border-border p-8 rounded-xl shadow-sm">
                 <h3 className="text-xl font-bold mb-4">Our Mission</h3>
                 <p className="text-muted-foreground mb-6">
                   To empower businesses and content creators to build thriving communities and maximize their social media potential with intuitive, powerful tools.
@@ -326,11 +326,11 @@ export default function LandingPage() {
           </div>
         </section>
         
-        <section className="py-24 bg-gradient-to-r from-primary to-primary-dark text-custom-white text-center relative overflow-hidden">
-          <div className="absolute top-[-100px] right-[-100px] w-[300px] h-[300px] rounded-full bg-white/10 -z-10"></div>
-          <div className="absolute bottom-[-100px] left-[-100px] w-[300px] h-[300px] rounded-full bg-white/10 -z-10"></div>
+        <section className="py-24 bg-gradient-to-r from-primary to-primary-dark text-on-accent text-center relative overflow-hidden">
+          <div className="absolute top-[-100px] right-[-100px] w-[300px] h-[300px] rounded-full bg-on-accent/10 -z-10"></div>
+          <div className="absolute bottom-[-100px] left-[-100px] w-[300px] h-[300px] rounded-full bg-on-accent/10 -z-10"></div>
           
-          <div className="container mx-auto px-4 relative z-10">
+          <div className="container mx-auto px-4 max-w-7xl relative z-10">
             <h2 className="text-3xl md:text-4xl font-extrabold mb-6">
               Ready to transform your social media management?
             </h2>
@@ -338,21 +338,21 @@ export default function LandingPage() {
               Join thousands of enterprises, businesses, and content creators who are enhancing their social media services and monetizing their expertise with ThriveSend.
             </p>
             <Link href="/calendar">
-              <Button size="lg" variant="default" className="bg-custom-white text-primary hover:bg-custom-white/90 text-lg px-8 py-6 h-auto">
+              <Button size="lg" variant="accent" className="text-on-accent text-lg px-8 py-6 h-auto rounded-lg shadow-md">
                 Start Your 14-Day Free Trial
               </Button>
             </Link>
           </div>
         </section>
         
-        <footer className="bg-gray-900 text-custom-white py-20">
-          <div className="container mx-auto px-4">
+        <footer className="bg-footer text-on-footer py-20">
+          <div className="container mx-auto px-4 max-w-7xl">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-16">
               <div>
-                <div className="text-2xl font-extrabold mb-4 bg-gradient-to-r from-primary-light to-purple-300 text-transparent bg-clip-text inline-block">
+                <div className="text-2xl font-extrabold mb-4 bg-gradient-to-r from-primary-light to-accent text-transparent bg-clip-text inline-block">
                   ThriveSend
                 </div>
-                <p className="text-gray-400 mb-6">
+                <p className="text-muted-foreground mb-6">
                   Amplifying social media presence for enterprises, businesses, and content creators worldwide.
                 </p>
                 <div className="flex gap-4">
@@ -394,7 +394,7 @@ export default function LandingPage() {
               </div>
             </div>
             
-            <div className="text-center text-gray-500 text-sm pt-8 border-t border-gray-800">
+            <div className="text-center text-footer-muted text-sm pt-8 border-t border-border">
               &copy; {new Date().getFullYear()} ThriveSend. All rights reserved.
             </div>
           </div>
@@ -446,13 +446,13 @@ export default function LandingPage() {
 // Helper Components
 function FeatureCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
   return (
-    <div className="bg-background border border-border rounded-xl p-6 transition-all hover:transform hover:-translate-y-2 hover:shadow-lg group">
-      <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mb-6 text-primary transition-all group-hover:scale-110 group-hover:bg-primary/20">
+    <div className="bg-surface border border-border rounded-xl p-6 transition-all hover:-translate-y-2 hover:shadow-lg group">
+      <div className="w-14 h-14 bg-primary-bg rounded-xl flex items-center justify-center mb-6 text-primary transition-all group-hover:scale-110 group-hover:bg-primary-bg-hover">
         {icon}
       </div>
       <h3 className="text-xl font-bold mb-4">{title}</h3>
       <p className="text-muted-foreground">{description}</p>
-      <div className="h-1 w-0 bg-gradient-to-r from-primary to-green-500 rounded mt-6 transition-all group-hover:w-full"></div>
+      <div className="h-1 w-0 bg-gradient-to-r from-primary to-accent rounded mt-6 transition-all group-hover:w-full"></div>
     </div>
   );
 }
@@ -464,13 +464,13 @@ function TestimonialCard({ content, authorName, authorRole, avatarText }: {
   avatarText: string 
 }) {
   return (
-    <div className="bg-card border border-border rounded-xl p-6 hover:transform hover:-translate-y-2 hover:shadow-lg transition-all">
+    <div className="bg-surface border border-border rounded-xl p-6 hover:-translate-y-2 hover:shadow-lg transition-all">
       <p className="relative pl-6 mb-6 text-foreground leading-relaxed">
         <span className="absolute left-0 top-0 text-5xl text-primary-light font-serif leading-none">"</span>
         {content}
       </p>
       <div className="flex items-center">
-        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white font-semibold mr-4">
+        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-primary-foreground font-semibold mr-4">
           {avatarText}
         </div>
         <div>
@@ -491,9 +491,9 @@ function PricingCard({ title, price, description, features, ctaText, popular }: 
   popular: boolean 
 }) {
   return (
-    <div className={`bg-card border ${popular ? 'border-primary' : 'border-border'} rounded-xl p-8 flex flex-col relative ${popular ? 'shadow-lg shadow-primary/10 scale-105' : ''}`}>
+    <div className={`bg-surface border ${popular ? 'border-primary' : 'border-border'} rounded-xl p-8 flex flex-col relative ${popular ? 'shadow-lg shadow-primary/10 scale-105' : 'shadow-sm'}`}>
       {popular && (
-        <div className="absolute top-0 right-0 bg-primary text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">
+        <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">
           MOST POPULAR
         </div>
       )}
@@ -513,7 +513,7 @@ function PricingCard({ title, price, description, features, ctaText, popular }: 
       </ul>
       <Link href={popular ? "/calendar" : ctaText === "Contact Sales" ? "/dashboard" : "/calendar"}>
         <Button 
-          className={`w-full ${popular ? 'bg-primary hover:bg-primary-dark text-custom-white' : ''}`}
+          className="w-full rounded-lg"
           variant={popular ? "default" : "outline"}
         >
           {ctaText}
@@ -525,7 +525,7 @@ function PricingCard({ title, price, description, features, ctaText, popular }: 
 
 function SocialLink({ icon, name }: { icon: React.ReactNode, name: string }) {
   return (
-    <a href="#" className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-custom-white hover:bg-primary hover:transform hover:-translate-y-1 transition-all">
+    <a href="#" className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-foreground hover:bg-primary hover:text-primary-foreground hover:-translate-y-1 transition-all">
       <span className="sr-only">{name}</span>
       {icon}
     </a>
@@ -536,7 +536,7 @@ function FooterLink({ href, label }: { href: string, label: string }) {
   return (
     <a 
       href={href} 
-      className="text-gray-400 hover:text-custom-white hover:transform hover:translate-x-1 transition-all flex items-center gap-2"
+      className="text-muted-foreground hover:text-foreground hover:translate-x-1 transition-all flex items-center gap-2"
     >
       <span className="text-xs">›</span>
       {label}

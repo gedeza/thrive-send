@@ -3,6 +3,7 @@ import { Typography, Box, Paper, Grid, Chip, Button as MuiButton, List, ListItem
 import PeopleIcon from "@mui/icons-material/People";
 import AddIcon from "@mui/icons-material/Add";
 import GroupWorkIcon from "@mui/icons-material/GroupWork";
+import { theme } from '@/lib/theme';
 
 export default function FeatureAudienceTab() {
   // Placeholder data
@@ -33,7 +34,7 @@ export default function FeatureAudienceTab() {
       >
         <PeopleIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
         <Typography variant="h6" gutterBottom>
-          Total Subscribers: <span style={{ color: "#1976d2" }}>5,432</span>
+          Total Subscribers: <span style={{ color: theme.colors.primary.DEFAULT }}>5,432</span>
         </Typography>
         <Typography variant="body2" color="text.secondary">
           Grow your audience by adding signup forms, importing contacts, and using referral campaigns.

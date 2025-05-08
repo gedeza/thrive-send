@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import {
   Box,
-  Button,
   TextField,
   Typography,
   Paper,
-  Grid,
   FormControl,
   InputLabel,
   Select,
@@ -14,6 +12,8 @@ import {
   FormHelperText,
   CircularProgress,
 } from '@mui/material';
+import { Button } from '@/components/ui/button'; // Use custom DS button
+import Grid from '@mui/material/Unstable_Grid2';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -93,6 +93,9 @@ const ContentForm: React.FC<ContentFormProps> = ({ initialDate }) => {
     'Product Update',
     'Announcement'
   ];
+  
+  // Responsive "span" logic using sx prop for flexibility
+  const halfWidthSx = { gridColumn: { xs: 'span 12', md: 'span 6' } };
 
   return (
     <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
@@ -109,8 +112,8 @@ const ContentForm: React.FC<ContentFormProps> = ({ initialDate }) => {
       )}
       
       <form onSubmit={handleSubmit}>
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
+        <Grid container spacing={3} columns={12}>
+          <Grid xs={12}>
             <TextField
               fullWidth
               label="Title"
@@ -122,7 +125,7 @@ const ContentForm: React.FC<ContentFormProps> = ({ initialDate }) => {
             />
           </Grid>
           
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <FormControl fullWidth>
               <InputLabel id="category-label">Category</InputLabel>
               <Select
@@ -139,7 +142,7 @@ const ContentForm: React.FC<ContentFormProps> = ({ initialDate }) => {
             </FormControl>
           </Grid>
           
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <LocalizationProvider dateAdapter={AdapterDateFns}>
               <DatePicker
                 label="Publish Date"
@@ -155,7 +158,7 @@ const ContentForm: React.FC<ContentFormProps> = ({ initialDate }) => {
             </LocalizationProvider>
           </Grid>
           
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <TextField
               fullWidth
               label="Tags"
@@ -178,7 +181,7 @@ const ContentForm: React.FC<ContentFormProps> = ({ initialDate }) => {
             </Box>
           </Grid>
           
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <TextField
               fullWidth
               label="Content"
@@ -192,19 +195,20 @@ const ContentForm: React.FC<ContentFormProps> = ({ initialDate }) => {
             />
           </Grid>
           
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
               <Button
-                variant="outlined"
-                color="primary"
+                variant="outline"
+                size="md"
                 disabled={isSubmitting}
+                type="button"
               >
                 Save Draft
               </Button>
               <Button
                 type="submit"
-                variant="contained"
-                color="primary"
+                variant="primary"
+                size="md"
                 disabled={isSubmitting}
                 startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : undefined}
               >

@@ -1,4 +1,6 @@
 import React, { useState, useRef } from 'react';
+import { theme } from '@/lib/theme';
+import { hexToRgba } from '@/lib/colorUtils';
 import { 
   Box, 
   Button, 
@@ -392,7 +394,9 @@ const ContentForm: React.FC = () => {
           {/* Placeholder for rich text editor */}
           <Box 
             sx={{ 
-              border: errors.body ? '1px solid #d32f2f' : '1px solid rgba(0, 0, 0, 0.23)', 
+              border: errors.body 
+                ? `1px solid ${theme.colors.error}` 
+                : `1px solid ${hexToRgba(theme.colors.foreground, 0.23)}`,
               borderRadius: 1,
               minHeight: 300,
               p: 2,

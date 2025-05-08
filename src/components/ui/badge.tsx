@@ -1,36 +1,82 @@
-import * as React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
+import React from "react";
+import { theme } from "@/lib/theme";
 
-import { cn } from "@/lib/utils";
-
-const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-  {
-    variants: {
-      variant: {
-        default:
-          "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
-        secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        destructive:
-          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        outline: "text-foreground",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-    },
-  }
-);
-
-export interface BadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof badgeVariants> {}
-
-function Badge({ className, variant, ...props }: BadgeProps) {
-  return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
-  );
+type BadgeVariant = "primary" | "secondary" | "tertiary" | "muted" | "success" | "error";
+interface BadgeProps {
+  children: React.ReactNode;
+  variant?: BadgeVariant;
+  style?: React.CSSProperties;
 }
 
-export { Badge, badgeVariants };
+// Helper: get color with fallback if missing
+function safeThemeColor(path: string, fallback: string): string {
+  const parts = path.split(".");
+  let ref: any = theme.colors;
+  for (let k of parts) {
+    if (!ref || !(k in ref)) return fallback;
+    ref = ref[k];
+  }
+  return typeof ref === "string" ? ref : fallback;
+}
+
+const variantMap = {
+  primary: {
+    background: safeThemeColor("primary.DEFAULT", "#4F46E5"),
+    color: "#fff"
+  },
+  secondary: {
+    background: safeThemeColor("secondary.DEFAULT", "#10B981"),
+    color: "#fff"
+  },
+  tertiary: {
+    background: safeThemeColor("tertiary.DEFAULT", "#3B82F6"),
+    color: "#fff"
+  },
+  muted: {
+    background: safeThemeColor("muted.DEFAULT", "#F3F4F6"),
+    color: "#374151"
+  },
+  success: {
+    background: "#22c55e",
+    color: "#fff"
+  },
+  error: {
+    background: "#ef4444",
+    color: "#fff"
+  }
+};
+
+export const Badge: React.FC<BadgeProps> = ({
+  children,
+  variant = "primary",
+  style,
+}) => {
+  const token = variantMap[variant] || variantMap.primary;
+  // Warn if fallback is being used (development only)
+  if (process.env.NODE_ENV !== "production") {
+    if (
+      (variant === "primary" && token.background === "#4F46E5") ||
+      (variant === "secondary" && token.background === "#10B981") ||
+      (variant === "tertiary" && token.background === "#3B82F6") ||
+      (variant === "muted" && token.background === "#F3F4F6")
+    ) {
+      console.warn(`[Badge] Theme token missing or malformed for variant "${variant}". Used fallback color.`);
+    }
+  }
+  return (
+    <span style={{
+      display: "inline-block",
+      padding: "0.25em 0.75em",
+      fontSize: "0.875em",
+      fontWeight: 600,
+      borderRadius: theme.border.radius.sm,
+      background: token.background,
+      color: token.color,
+      ...style
+    }}>
+      {children}
+    </span>
+  );
+};
+
+export default Badge;

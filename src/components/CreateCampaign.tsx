@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Button, TextField, Box, Typography, Paper, Grid } from '@mui/material';
+import { Button, TextField, Box, Typography, Paper } from '@mui/material';
+import Grid from '@mui/material/Unstable_Grid2';
 
 interface CampaignFormData {
   name: string;
@@ -52,6 +53,9 @@ const CreateCampaign: React.FC = () => {
     }
   };
 
+  // Helper for responsive columns
+  const halfWidthSx = { gridColumn: { xs: 'span 12', sm: 'span 6' } };
+
   return (
     <Paper elevation={3} sx={{ p: 4, maxWidth: 800, mx: 'auto', mt: 4 }}>
       <Typography variant="h5" component="h2" gutterBottom>
@@ -59,8 +63,8 @@ const CreateCampaign: React.FC = () => {
       </Typography>
       
       <Box component="form" onSubmit={handleSubmit} noValidate>
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
+        <Grid container columns={12} spacing={3}>
+          <Grid span={12}>
             <TextField
               required
               fullWidth
@@ -73,7 +77,7 @@ const CreateCampaign: React.FC = () => {
             />
           </Grid>
           
-          <Grid item xs={12}>
+          <Grid span={12}>
             <TextField
               fullWidth
               id="description"
@@ -87,7 +91,7 @@ const CreateCampaign: React.FC = () => {
             />
           </Grid>
           
-          <Grid item xs={12} sm={6}>
+          <Grid span={12} sx={halfWidthSx}>
             <TextField
               required
               fullWidth
@@ -102,7 +106,7 @@ const CreateCampaign: React.FC = () => {
             />
           </Grid>
           
-          <Grid item xs={12} sm={6}>
+          <Grid span={12} sx={halfWidthSx}>
             <TextField
               required
               fullWidth
@@ -117,7 +121,7 @@ const CreateCampaign: React.FC = () => {
             />
           </Grid>
           
-          <Grid item xs={12} sm={6}>
+          <Grid span={12} sx={halfWidthSx}>
             <TextField
               required
               fullWidth
@@ -132,7 +136,7 @@ const CreateCampaign: React.FC = () => {
             />
           </Grid>
           
-          <Grid item xs={12} sm={6}>
+          <Grid span={12} sx={halfWidthSx}>
             <TextField
               fullWidth
               id="target"
@@ -144,7 +148,7 @@ const CreateCampaign: React.FC = () => {
             />
           </Grid>
           
-          <Grid item xs={12}>
+          <Grid span={12}>
             <Button
               type="submit"
               variant="contained"

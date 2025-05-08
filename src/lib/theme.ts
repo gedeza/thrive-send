@@ -1,8 +1,8 @@
 /**
  * ThriveSend Theme Configuration
  * 
- * This file contains all design tokens and theme constants used throughout the application.
- * Import this file whenever you need to use theme values for consistency.
+ * Central and exhaustive design token theme for ThriveSend.
+ * Use this single source for all color, typography, spacing, button, border, shadow, and transition information.
  */
 
 export const theme = {
@@ -22,7 +22,7 @@ export const theme = {
       dark: '#059669',
     },
     
-    // Accent colors
+    // Tertiary/accent colors
     accent: {
       DEFAULT: '#f59e0b', // Amber
       light: '#fbbf24',
@@ -62,6 +62,65 @@ export const theme = {
       foreground: '#111827',
     },
   },
+  
+  // Button styles
+  button: {
+    primary: {
+      background: '#4f46e5', // Uses theme.colors.primary.DEFAULT
+      color: '#ffffff', // On brand background
+      hoverBackground: '#3730a3', // theme.colors.primary.dark
+      border: '#4f46e5',
+      disabledBackground: '#9ca3af', // Gray for disabled state
+      disabledColor: '#f3f4f6', // theme.colors.muted.DEFAULT
+    },
+    secondary: {
+      background: '#ffffff',
+      color: '#4f46e5',
+      border: '#4f46e5',
+      hoverBackground: '#f3f4f6', // Light gray on hover
+      hoverBorder: '#3730a3', // Darker border on hover
+      disabledBackground: '#ffffff',
+      disabledColor: '#9ca3af',
+      disabledBorder: '#d1d5db',
+    },
+    text: {
+      background: 'transparent',
+      color: '#4f46e5',
+      border: 'transparent',
+      hoverBackground: 'transparent',
+      hoverColor: '#3730a3',
+      disabledColor: '#9ca3af',
+    },
+    ghost: {
+      background: 'transparent',
+      color: '#4f46e5',
+      border: 'transparent',
+      hoverBackground: '#f3f4f6',
+      hoverColor: '#3730a3',
+      disabledColor: '#9ca3af',
+    },
+      outline: {
+      background: 'transparent',
+      color: '#4f46e5',
+      border: '#4f46e5',
+      hoverBackground: '#f3f4f6',
+      hoverColor: '#3730a3',
+      hoverBorder: '#3730a3',
+      disabledColor: '#9ca3af',
+      disabledBorder: '#d1d5db',
+     },
+     default: {
+      background: '#ffffff',
+      color: '#4f46e5',
+      border: '#4f46e5',
+      hoverBackground: '#f3f4f6',
+      hoverColor: '#3730a3',
+      hoverBorder: '#3730a3',
+      disabledBackground: '#f3f4f6',
+      disabledColor: '#9ca3af',
+      disabledBorder: '#d1d5db'
+    },
+    },
   
   // Typography
   typography: {
@@ -138,21 +197,33 @@ export const theme = {
     96: '24rem',     // 384px
   },
   
-  // Border radius
-  borderRadius: {
-    none: '0',
-    sm: '0.125rem',     // 2px
-    DEFAULT: '0.25rem', // 4px
-    md: '0.375rem',     // 6px
-    lg: '0.5rem',       // 8px
-    xl: '0.75rem',      // 12px
-    '2xl': '1rem',      // 16px
-    '3xl': '1.5rem',    // 24px
-    full: '9999px',
+  // Border styles
+  border: {
+    color: {
+      DEFAULT: '#e5e7eb', // theme.colors.border
+      focus: '#818cf8', // Lighter brand color for focus outline
+    },
+    radius: {
+      none: '0',
+      sm: '0.125rem',     // 2px
+      DEFAULT: '0.25rem', // 4px
+      md: '0.375rem',     // 6px
+      lg: '0.5rem',       // 8px
+      xl: '0.75rem',      // 12px
+      '2xl': '1rem',      // 16px
+      '3xl': '1.5rem',    // 24px
+      full: '9999px',
+    },
+    width: {
+      thin: '1px',
+      DEFAULT: '1px',
+      medium: '2px',
+      thick: '3px',
+    },
   },
   
   // Shadows
-  shadows: {
+  shadow: {
     sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
     DEFAULT: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
     md: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
@@ -175,7 +246,7 @@ export const theme = {
   },
   
   // Transitions
-  transitions: {
+  transition: {
     DEFAULT: '150ms cubic-bezier(0.4, 0, 0.2, 1)',
     fast: '100ms cubic-bezier(0.4, 0, 0.2, 1)',
     slow: '300ms cubic-bezier(0.4, 0, 0.2, 1)',
@@ -225,16 +296,27 @@ export const cssVariables = () => `
     
     --color-background: ${theme.colors.background};
     --color-foreground: ${theme.colors.foreground};
-    --color-border: ${theme.colors.border};
+    --color-border: ${theme.border.color.DEFAULT};
     
     /* Typography */
     --font-sans: ${theme.typography.fontFamily.sans};
     --font-mono: ${theme.typography.fontFamily.mono};
     
-    /* Other design tokens */
-    --border-radius: ${theme.borderRadius.DEFAULT};
-    --shadow-default: ${theme.shadows.DEFAULT};
-    --transition-default: ${theme.transitions.DEFAULT};
+    /* Borders */
+    --border-radius: ${theme.border.radius.DEFAULT};
+    --border-width: ${theme.border.width.DEFAULT};
+    
+    /* Shadows */
+    --shadow-default: ${theme.shadow.DEFAULT};
+    
+    /* Transitions */
+    --transition-default: ${theme.transition.DEFAULT};
+    
+    /* Button styles */
+    --button-primary-bg: ${theme.button.primary.background};
+    --button-primary-color: ${theme.button.primary.color};
+    --button-secondary-bg: ${theme.button.secondary.background};
+    --button-secondary-color: ${theme.button.secondary.color};
   }
 `;
 

@@ -1,0 +1,109 @@
+// In your theme setup
+const theme = {
+  colors: {
+    primary: 'hsl(var(--primary))',
+    card: 'hsl(var(--card))',
+    // ... other tokens
+  }
+};
+
+// In your styled component
+import styled from 'styled-components';
+const StyledButton = styled.button`
+  background-color: ${props => props.theme.colors.primary};
+`;
+
+:root {
+  /* Primary Colors */
+  --primary: 240 79% 59%;           /* Indigo 600 (#4F46E5) */
+  --primary-foreground: 210 40% 98%; /* Near-white */
+  --primary-light: 235 91% 74%;     /* Indigo 400 (#818CF8) */
+  --primary-dark: 240 80% 42%;      /* Indigo 700 (#4338CA) */
+  
+  /* Semantic Colors */
+  --success: 160 84% 39%;           /* Emerald 500 (#10B981) */
+  --success-foreground: 210 40% 98%;
+  --warning: 37 92% 50%;            /* Amber 500 (#F59E0B) */
+  --warning-foreground: 210 40% 98%;
+  --destructive: 0 84% 60%;         /* Red 500 (#EF4444) */
+  --destructive-foreground: 210 40% 98%;
+  
+  /* UI Element Colors */
+  --foreground: 215 30% 18%;        /* Slate 800 (#1E293B) */
+  --muted-foreground: 215 25% 47%;  /* Slate 500 (#64748B) */
+  --background: 210 20% 98%;        /* Slate 50 (#F8FAFC) */
+  --card: 0 0% 100%;                /* White (#FFFFFF) */
+  --card-foreground: 215 30% 18%;   /* Same as foreground */
+  --border: 214 32% 91%;            /* Slate 200 (#E2E8F0) */
+  --highlight: 53 97% 77%;          /* Yellow 200 (#fef08a) */
+
+  /* Spacing Scale */
+  --space-1: 0.25rem; /* 4px */
+  --space-2: 0.5rem;  /* 8px */
+  --space-3: 0.75rem; /* 12px */
+  --space-4: 1rem;    /* 16px */
+  --space-5: 1.25rem; /* 20px */
+  --space-6: 1.5rem;  /* 24px */
+  --space-8: 2rem;    /* 32px */
+  --space-10: 2.5rem; /* 40px */
+  --space-12: 3rem;   /* 48px */
+  --space-16: 4rem;   /* 64px */
+  --space-20: 5rem;   /* 80px */
+  --space-24: 6rem;   /* 96px */
+
+  /* Border Radius */
+  --radius-sm: 0.125rem; /* 2px */
+  --radius-md: 0.375rem; /* 6px */
+  --radius-lg: 0.5rem;   /* 8px */
+  --radius-xl: 0.75rem;  /* 12px */
+  --radius-2xl: 1rem;    /* 16px */
+  --radius-full: 9999px; /* for circles */
+
+  /* Shadow Tokens */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  
+  /* Typography */
+  --font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  
+  /* Font Weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  
+  /* Font Sizes */
+  --font-size-xs: 0.75rem;  /* 12px */
+  --font-size-sm: 0.875rem; /* 14px */
+  --font-size-base: 1rem;   /* 16px */
+  --font-size-lg: 1.125rem; /* 18px */
+  --font-size-xl: 1.25rem;  /* 20px */
+  --font-size-2xl: 1.5rem;  /* 24px */
+  --font-size-3xl: 1.875rem; /* 30px */
+  --font-size-4xl: 2.25rem;  /* 36px */
+  --font-size-5xl: 3rem;     /* 48px */
+  --font-size-6xl: 3.75rem;  /* 60px */
+  
+  /* Page container widths */
+  --container-max-width: 80rem; /* 1280px */
+  --container-sm: 40rem;  /* 640px */
+  --container-md: 48rem;  /* 768px */
+  --container-lg: 64rem;  /* 1024px */
+  --container-xl: 80rem;  /* 1280px */
+  --container-2xl: 96rem; /* 1536px */
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: 215 30% 10%;
+    --foreground: 210 40% 98%;
+    --card: 215 30% 12%;
+    --card-foreground: 210 40% 98%;
+    --border: 215 28% 17%;
+    --muted-foreground: 215 20% 65%;
+    --highlight: 53 97% 32%;
+  }
+}
