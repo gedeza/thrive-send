@@ -1,50 +1,92 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Copy, Edit, Trash } from 'lucide-react';
 import Link from 'next/link';
+import { templates, type Template } from "./templates.mock-data";
+import { Input } from "@/components/ui/input";
+
+const statusBadgeMap: Record<Template["status"], string> = {
+  published: "bg-green-100 text-green-800",
+  draft: "bg-yellow-100 text-yellow-900",
+  archived: "bg-gray-100 text-gray-600"
+};
+
+const categoryBadgeMap: Record<Template["category"], string> = {
+  Email: "bg-blue-100 text-blue-800",
+  "Social Media": "bg-indigo-100 text-indigo-800",
+  Form: "bg-green-100 text-green-800",
+  Notification: "bg-pink-100 text-pink-800",
+  Blog: "bg-orange-100 text-orange-800"
+};
 
 export default function TemplatesPage() {
-  // Sample templates - replace with your real data
-  const templates = [
-    { id: '1', name: 'Welcome Email', category: 'Email', lastUpdated: '2023-10-15' },
-    { id: '2', name: 'Weekly Newsletter', category: 'Email', lastUpdated: '2023-11-02' },
-    { id: '3', name: 'Product Announcement', category: 'Social Media', lastUpdated: '2023-11-10' },
-    { id: '4', name: 'Customer Survey', category: 'Form', lastUpdated: '2023-10-28' }
-  ];
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return templates;
+    return templates.filter(template =>
+      template.name.toLowerCase().includes(search.toLowerCase()) ||
+      template.author.toLowerCase().includes(search.toLowerCase()) ||
+      (template.description?.toLowerCase().includes(search.toLowerCase())) ||
+      template.category.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [search]);
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Templates</h1>
           <p className="text-muted-foreground">
             Create and manage reusable content templates
           </p>
         </div>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Create Template
-        </Button>
+        <div className="flex gap-3">
+          <Input
+            type="search"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search by name, category, author..."
+            className="max-w-xs"
+            aria-label="Search templates"
+          />
+          <Button asChild>
+            <Link href="/templates/new">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Create Template
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {templates.map(template => (
-          <Card key={template.id} className="overflow-hidden">
-            <CardHeader className="pb-3">
-              <CardTitle>{template.name}</CardTitle>
-              <span className="text-xs bg-blue-100 text-blue-800 rounded-full px-2 py-1">
-                {template.category}
-              </span>
+        {filtered.length > 0 ? filtered.map(template => (
+          <Card key={template.id} className="overflow-hidden group shadow-sm border">
+            <CardHeader className="pb-3 flex flex-row justify-between items-center">
+              <div>
+                <CardTitle>{template.name}</CardTitle>
+                <span className={`text-xs rounded-full px-2 py-1 capitalize ml-2 ${categoryBadgeMap[template.category]}`}>
+                  {template.category}
+                </span>
+                <span className={`ml-2 text-xs rounded-full px-2 py-1 capitalize ${statusBadgeMap[template.status]}`}>
+                  {template.status}
+                </span>
+              </div>
+              <div>
+                <span className="text-xs text-muted-foreground ml-2">by {template.author}</span>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="h-24 bg-gray-50 rounded flex items-center justify-center text-gray-400">
+              <div className="h-24 bg-gray-50 rounded flex items-center justify-center text-gray-400 text-sm">
                 Template Preview
               </div>
-              <p className="text-xs text-muted-foreground mt-3">
-                Last updated: {template.lastUpdated}
+              <p className="text-xs text-muted-foreground mt-3 mb-2">
+                Last updated: {new Date(template.lastUpdated).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
               </p>
+              <p className="text-xs mb-2">{template.description}</p>
             </CardContent>
             <CardFooter className="flex justify-between border-t p-3 bg-gray-50">
               <Button variant="ghost" size="sm">
@@ -67,7 +109,9 @@ export default function TemplatesPage() {
               </div>
             </CardFooter>
           </Card>
-        ))}
+        )) : (
+          <div className="text-center py-8 col-span-full text-muted-foreground border rounded-lg">No templates found</div>
+        )}
       </div>
     </div>
   );
