@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -194,7 +195,7 @@ export default function TemplateEditorPage({ params }: { params: { id: string } 
         ${baseStyles}
       </head>
       <body>
-        <div class="email-container">
+        <div className="email-container">
           ${elementsHtml}
         </div>
       </body>

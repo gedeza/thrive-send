@@ -9,6 +9,15 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: ButtonSize;
   children: React.ReactNode;
   asChild?: boolean;
+  className?: string;
+}
+
+// Utility to strip color* or text-* Tailwind classes from passed className (prevent override)
+function sanitizeButtonClassName(className: string = "", enforceColor: string | undefined) {
+  if (!enforceColor) return className;
+  // Remove any Tailwind 'text-*' classes (quick-and-simple regex for common cases)
+  const noTextColor = className.replace(/\btext-\w+\b/g, "").replace(/\s+/g, " ").trim();
+  return noTextColor;
 }
 
 const sizeMap = {
@@ -30,7 +39,7 @@ const sizeMap = {
 };
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = "primary", size = "md", disabled, children, asChild, ...props }, ref) => {
+  ({ variant = "primary", size = "md", disabled, children, asChild, className, ...props }, ref) => {
   // Robust token lookup
   const token = theme.button[variant] || theme.button.primary;
   // Optional: developer warning for wrong variant
@@ -41,9 +50,15 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   }
   const sizeToken = sizeMap[size];
 
+  // Always enforce correct text color for primary/accent
+  const enforceColor = (!disabled && (variant === "primary" || variant === "accent"))
+    ? token.color : undefined;
+  const enforceBg = (!disabled && (variant === "primary" || variant === "accent"))
+    ? token.background : undefined;
+
   const baseStyle: React.CSSProperties = {
-    background: disabled ? token.disabledBackground : token.background,
-    color: disabled ? token.disabledColor : token.color,
+    background: disabled ? token.disabledBackground : enforceBg || token.background,
+    color: disabled ? token.disabledColor : enforceColor || token.color,
     border: `1px solid ${disabled && token.disabledBorder ? token.disabledBorder : token.border}`,
     cursor: disabled ? "not-allowed" : "pointer",
     fontWeight: 600,
@@ -63,6 +78,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     border: hover && !disabled && token.hoverBorder ? `1px solid ${token.hoverBorder}` : baseStyle.border,
   };
 
+  const cleanClassName = sanitizeButtonClassName(className, enforceColor);
+
   // Remove asChild prop before passing to native element
   const { asChild: _drop, ...passProps } = props;
 
@@ -72,6 +89,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       type="button"
       style={appliedStyle}
       disabled={disabled}
+      className={cleanClassName}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       {...passProps}

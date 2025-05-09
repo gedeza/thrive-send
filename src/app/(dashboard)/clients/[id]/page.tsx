@@ -166,7 +166,7 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
               <div className="space-y-3">
                 {client.socialAccounts.map((account) => (
                   <div key={account.id} className="flex items-center space-x-3 p-3 rounded-md border">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                    <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600">
                       {platformIconMap[account.platform] || account.platform.charAt(0)}
                     </div>
                     <div>
