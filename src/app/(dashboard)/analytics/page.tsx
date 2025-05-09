@@ -1,12 +1,30 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, PieChart, LineChart, Activity, Users } from 'lucide-react';
+import { BarChart, PieChart, LineChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { metricsData, Metric } from './metrics.mock';
 
+// Shared metric card component for summary/grid
+function MetricCard({ title, value, icon: Icon, comparison }: Metric) {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center justify-between">
+          <p className="text-2xl font-bold">{value}</p>
+          {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">{comparison}</p>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function AnalyticsPage() {
-return (
+  return (
     <div className="space-y-6 p-6">
       <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
         <div>
@@ -20,55 +38,11 @@ return (
         </div>
       </div>
 
+      {/* Metric summary grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Views</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <p className="text-2xl font-bold">21,120</p>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">+12% from last month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Engagement Rate</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <p className="text-2xl font-bold">63%</p>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">+8% from last month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <p className="text-2xl font-bold">49%</p>
-              <PieChart className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">+4% from last month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <p className="text-2xl font-bold">$12,500</p>
-              <BarChart className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">+2% from last month</p>
-          </CardContent>
-        </Card>
+        {metricsData.map((metric) => (
+          <MetricCard key={metric.title} {...metric} />
+        ))}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -81,6 +55,7 @@ return (
           </CardHeader>
           <CardContent>
             <div className="h-[200px] flex items-center justify-center bg-muted/20 rounded-md">
+              {/* TODO: Replace with audience growth chart */}
               <p className="text-muted-foreground">Growth chart will display here</p>
             </div>
           </CardContent>
@@ -95,6 +70,7 @@ return (
           </CardHeader>
           <CardContent>
             <div className="h-[200px] flex items-center justify-center bg-muted/20 rounded-md">
+              {/* TODO: Replace with engagement pie chart */}
               <p className="text-muted-foreground">Engagement chart will display here</p>
             </div>
           </CardContent>
@@ -109,6 +85,7 @@ return (
           </CardHeader>
           <CardContent>
             <div className="h-[200px] flex items-center justify-center bg-muted/20 rounded-md">
+              {/* TODO: Replace with performance line chart */}
               <p className="text-muted-foreground">Trends chart will display here</p>
             </div>
           </CardContent>
