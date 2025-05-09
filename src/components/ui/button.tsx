@@ -1,7 +1,7 @@
 import React from "react";
 import { theme } from "@/lib/theme";
 
-type ButtonVariant = "primary" | "secondary" | "text";
+type ButtonVariant = "primary" | "secondary" | "text" | "accent";
 type ButtonSize = "sm" | "md" | "lg";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {

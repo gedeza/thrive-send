@@ -99,7 +99,18 @@ export const theme = {
       hoverColor: '#3730a3',
       disabledColor: '#9ca3af',
     },
-      outline: {
+    accent: {
+      background: '#f59e0b',
+      color: '#ffffff',
+      border: '#f59e0b',
+      hoverBackground: '#d97706',
+      hoverColor: '#ffffff',
+      hoverBorder: '#b45309',
+      disabledBackground: '#fbbf24',
+      disabledColor: '#fffbe4',
+      disabledBorder: '#fbbf24',
+    },
+    outline: {
       background: 'transparent',
       color: '#4f46e5',
       border: '#4f46e5',
@@ -317,6 +328,8 @@ export const cssVariables = () => `
     --button-primary-color: ${theme.button.primary.color};
     --button-secondary-bg: ${theme.button.secondary.background};
     --button-secondary-color: ${theme.button.secondary.color};
+    --button-accent-bg: ${theme.button.accent.background};
+    --button-accent-color: ${theme.button.accent.color};
   }
 `;
 

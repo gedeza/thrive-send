@@ -15,6 +15,11 @@ export interface MainLayoutProps {
    * You may set this to false to explicitly disable it on certain pages.
    */
   showSidebar?: boolean;
+  /**
+   * Controls whether the sidebar can be collapsed by the user.
+   * @default true
+   */
+  collapsibleSidebar?: boolean;
 }
 
 /**
@@ -25,7 +30,8 @@ export function MainLayout({
   children, 
   headerProps = {},
   sidebarItems,
-  showSidebar = true
+  showSidebar = true,
+  collapsibleSidebar = true
 }: MainLayoutProps) {
   const pathname = usePathname();
 
@@ -40,8 +46,12 @@ export function MainLayout({
   const resolvedSidebarItems = sidebarItems ? ensureSidebarItems(sidebarItems) : defaultSidebarItems;
   
   // Debug: log to console when MainLayout renders
-  // eslint-disable-next-line no-console
-  console.log('[MainLayout] Rendering with sidebar items:', resolvedSidebarItems);
+  React.useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log('[MainLayout] Rendering with sidebar items:', resolvedSidebarItems);
+    // eslint-disable-next-line no-console
+    console.log('[MainLayout] Rendering with collapsibleSidebar:', collapsibleSidebar);
+  }, [resolvedSidebarItems, collapsibleSidebar]);
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -49,7 +59,8 @@ export function MainLayout({
         <Sidebar 
           items={resolvedSidebarItems}
           brandName="ThriveSend"
-          collapsible
+          collapsible={collapsibleSidebar}
+          defaultCollapsed={false} // Start expanded by default
         />
       )}
 

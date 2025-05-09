@@ -6,7 +6,10 @@ import { UserButton } from "@/components/ui/user-button";
 import { Search } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
-import { SidebarNavigation } from "@/components/ui/sidebar-navigation";
+
+// Canonical sidebar
+import { Sidebar } from "@/components/layout/sidebar";
+import { defaultSidebarItems } from "@/components/layout/sidebar.defaults";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -55,14 +58,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
         
-        <div className="flex-1 items-start md:grid md:grid-cols-[220px_minmax(0,1fr)] md:gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-10">
+        {/* Unified, collapsible Sidebar layout */}
+        <div className="flex-1 flex flex-row min-h-0">
           {/* Sidebar */}
-          <aside className="fixed top-16 z-30 -ml-2 hidden h-[calc(100vh-4rem)] w-full shrink-0 md:sticky md:block">
-            <SidebarNavigation className="py-6 pr-1 lg:py-8" />
+          <aside
+            className="flex flex-col"
+            style={{
+              minWidth: 0,
+              zIndex: 30,
+            }}
+          >
+            <Sidebar
+              items={defaultSidebarItems}
+              brandName="ThriveSend"
+              collapsible={true}
+              defaultCollapsed={false}
+            />
           </aside>
           
           {/* Main content */}
-          <main className="flex w-full flex-col overflow-hidden p-4 md:py-8 md:px-8">
+          <main className="flex-1 flex w-full flex-col overflow-hidden p-4 md:py-8 md:px-8">
             {children}
           </main>
         </div>

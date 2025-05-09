@@ -33,7 +33,31 @@ export function Sidebar({
   defaultCollapsed = false
 }: SidebarProps) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = React.useState(defaultCollapsed);
+  
+  // Hydration-detection
+  const [hydrated, setHydrated] = React.useState(false);
+  React.useEffect(() => {
+    setHydrated(true);
+  }, []);
+  
+  // Enhanced state management with proper initialization
+  const [collapsed, setCollapsed] = React.useState(() => {
+    if (typeof window !== "undefined" && collapsible) {
+      const savedState = localStorage.getItem("sidebar-collapsed");
+      return savedState ? JSON.parse(savedState) : defaultCollapsed;
+    }
+    return defaultCollapsed;
+  });
+  
+  // Only apply collapsed state if collapsible is true
+  const isCollapsed = collapsible && collapsed;
+  
+  // Update localStorage when collapsed state changes
+  React.useEffect(() => {
+    if (typeof window !== "undefined" && collapsible) {
+      localStorage.setItem("sidebar-collapsed", JSON.stringify(collapsed));
+    }
+  }, [collapsed, collapsible]);
   
   // Track which parent items are expanded
   const [expandedItems, setExpandedItems] = React.useState<Record<string, boolean>>({});
@@ -46,44 +70,39 @@ export function Sidebar({
     }));
   };
 
-  // Debug: log and marker
-  // eslint-disable-next-line no-console
-  console.log('[Sidebar] Rendering with items:', items);
-  // Visual marker
-  React.useEffect(() => {
-    // Add marker to DOM when Sidebar is rendered
-    const el = document.createElement('div');
-    el.textContent = 'Sidebar Active';
-    el.style.position = 'fixed';
-    el.style.top = '0px';
-    el.style.left = '100px';
-    el.style.background = '#0ff';
-    el.style.color = '#333';
-    el.style.zIndex = '10001';
-    el.style.padding = '2px';
-    el.style.fontSize = '11px';
-    document.body.appendChild(el);
-    return () => { document.body.removeChild(el); };
+  // Toggle collapsed state
+  const toggleCollapsed = React.useCallback(() => {
+    setCollapsed(prevState => !prevState);
   }, []);
 
-  // Only apply collapsed state if collapsible is true
-  const isCollapsed = collapsible && collapsed;
 
   return (
     <aside
       data-testid="sidebar"
+      data-collapsible={collapsible ? "true" : "false"}
+      data-collapsed={isCollapsed ? "true" : "false"}
+      role="navigation"
+      aria-label="Main sidebar"
       className={cn(
         "h-full border-r border-border bg-background flex flex-col overflow-y-auto transition-all duration-300",
         isCollapsed ? "w-16 collapsed" : "w-64 expanded",
         className
       )}
+      style={{
+        transition: "width 0.3s ease-in-out"
+      }}
     >
       {/* Brand header - Link to dashboard */}
       <div className="p-4 border-b">
         <Link href="/dashboard" className={cn("flex items-center", isCollapsed ? "justify-center" : "justify-start")}>
           {brandLogo && <div className="mr-2">{brandLogo}</div>}
-          {!isCollapsed && <span className="font-semibold text-lg">{brandName}</span>}
-          {isCollapsed && !brandLogo && <span className="font-bold text-xl">{brandName.charAt(0)}</span>}
+          {/* HYDRATION FIX: Always render full brand name on SSR; after hydration, allow abbreviation */}
+          {(!isCollapsed || !hydrated) && (
+            <span className="font-semibold text-lg">{brandName}</span>
+          )}
+          {isCollapsed && hydrated && !brandLogo && (
+            <span className="font-bold text-xl">{brandName.charAt(0)}</span>
+          )}
         </Link>
       </div>
 
@@ -142,6 +161,11 @@ export function Sidebar({
                           toggleItemExpanded(item.key);
                         }}
                         className="ml-auto"
+                        aria-label={isExpanded ? `Collapse ${item.label}` : `Expand ${item.label}`}
+                        aria-expanded={isExpanded}
+                        aria-controls={`sidebar-children-${item.key}`}
+                        tabIndex={0}
+                        type="button"
                       >
                         {isExpanded ? 
                           <span className="text-xs">▼</span> : 
@@ -167,6 +191,10 @@ export function Sidebar({
                         : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                       isCollapsed && "justify-center"
                     )}
+                    aria-label={item.label}
+                    aria-expanded={hasChildren ? isExpanded : undefined}
+                    aria-controls={hasChildren ? `sidebar-children-${item.key}` : undefined}
+                    tabIndex={0}
                   >
                     {item.icon && (
                       <span className={cn("inline-flex", !isCollapsed && "mr-3")}>{item.icon}</span>
@@ -185,7 +213,7 @@ export function Sidebar({
                 
                 {/* Render children if expanded */}
                 {showChildren && (
-                  <ul className="mt-1 ml-4 space-y-1">
+                  <ul className="mt-1 ml-4 space-y-1" id={`sidebar-children-${item.key}`}>
                     {item.children?.map(child => (
                       <li key={child.key} data-testid={`sidebar-item-${child.key}`}>
                         {child.href ? (
@@ -230,16 +258,22 @@ export function Sidebar({
         </ul>
       </nav>
 
-      {/* Collapse control button (if collapsible) */}
+      {/* Collapse control button with improved accessibility */}
       {collapsible && (
         <div className="p-3 border-t">
           <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="w-full flex items-center justify-center p-2 rounded-md hover:bg-accent text-muted-foreground"
+            onClick={toggleCollapsed}
+            className="w-full flex items-center justify-center p-2 rounded-md bg-accent/50 hover:bg-accent text-foreground hover:text-accent-foreground"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-pressed={collapsed}
+            aria-expanded={!collapsed}
             data-testid="sidebar-collapse-button"
+            style={{ position: 'relative', zIndex: 10 }}
+            type="button"
+            tabIndex={0}
           >
-            <span aria-hidden="true">{collapsed ? "→" : "←"}</span>
+            <span aria-hidden="true" className="text-lg font-bold">{collapsed ? "→" : "←"}</span>
+            {!collapsed && <span className="ml-2 text-sm">Collapse</span>}
           </button>
         </div>
       )}
