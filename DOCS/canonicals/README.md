@@ -6,7 +6,7 @@ Welcome to the **ThriveSend Documentation Directory**. This folder contains all 
 
 ## 🚦 **Project Progress Snapshot**
 
-**Platform Progress:** [████████████████--------------------] **40%**
+**Platform Progress:** [███████████████████----------------] **55%**
 
 - Core navigation and sidebar components are completed and fully responsive.
 - Calendar, dashboard, and landing UI sections are significantly improved.
