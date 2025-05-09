@@ -82,10 +82,10 @@ export const defaultSidebarItems: SidebarItem[] = [
     href: "/projects",
   },
   {
-    key: "demo-ui",
-    label: "Demo UI",
+    key: "demo",
+    label: "Demo",
     icon: <Palette size={18} />,
-    href: "/demo-ui",
+    href: "/demo",
   },
   {
     key: "settings",

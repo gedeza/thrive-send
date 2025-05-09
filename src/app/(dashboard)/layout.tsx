@@ -62,7 +62,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="flex-1 flex flex-row min-h-0">
           {/* Sidebar */}
           <aside
-            className="flex flex-col"
+            className="h-full min-h-0 flex flex-col"
             style={{
               minWidth: 0,
               zIndex: 30,
