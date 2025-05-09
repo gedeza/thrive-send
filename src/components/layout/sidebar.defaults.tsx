@@ -1,4 +1,5 @@
 import { SidebarItem } from "./sidebar";
+import { SidebarItemWithRoles, Role, filterSidebarItemsForRole } from "./sidebar-role-utils";
 import { 
   LayoutDashboard, 
   FileText, 
@@ -15,43 +16,51 @@ import {
 
 /**
  * Default sidebar items that should appear in most application contexts
+ * Items with roles property will only be shown to users with those roles
+ * Items without roles property will be shown to all users
  */
-export const defaultSidebarItems: SidebarItem[] = [
+export const defaultSidebarItems: SidebarItemWithRoles[] = [
   {
     key: "dashboard",
     label: "Dashboard",
     icon: <LayoutDashboard size={18} />,
     href: "/dashboard",
+    // No roles specified = available to everyone
   },
   {
     key: "analytics",
     label: "Analytics",
     icon: <BarChart3 size={18} />,
     href: "/analytics",
+    roles: ["admin", "manager"], // Only admins and managers
   },
   {
     key: "calendar",
     label: "Calendar",
     icon: <Calendar size={18} />,
     href: "/calendar",
+    roles: ["admin", "manager", "user"], // Not for viewers or guests
   },
   {
     key: "clients",
     label: "Clients",
     icon: <Users size={18} />,
     href: "/clients",
+    roles: ["admin", "manager"], // Only admins and managers
   },
   {
     key: "campaigns",
     label: "Campaigns",
     icon: <Mail size={18} />,
     href: "/campaigns",
+    roles: ["admin", "manager", "user"],
     children: [
       {
         key: "campaigns-new",
         label: "Create Campaign",
         icon: <Plus size={16} />,
         href: "/campaigns/new",
+        roles: ["admin", "user"], // Only admins and users can create
       }
     ]
   },
@@ -60,12 +69,14 @@ export const defaultSidebarItems: SidebarItem[] = [
     label: "Content",
     icon: <FileCode size={18} />,
     href: "/content",
+    roles: ["admin", "manager", "user", "viewer"], // Not for guests
     children: [
       {
         key: "content-new",
         label: "Create Content",
         icon: <Plus size={16} />,
         href: "/content/new",
+        roles: ["admin", "user"], // Only admins and users can create
       }
     ]
   },
@@ -74,31 +85,42 @@ export const defaultSidebarItems: SidebarItem[] = [
     label: "Templates",
     icon: <FileText size={18} />,
     href: "/templates",
+    // No roles specified = available to everyone
   },
   {
     key: "projects",
     label: "Projects",
     icon: <Folder size={18} />,
     href: "/projects",
+    roles: ["admin", "manager"], // Only admins and managers
   },
   {
     key: "demo",
     label: "Demo",
     icon: <Palette size={18} />,
     href: "/demo",
+    roles: ["admin", "manager", "user", "viewer"], // Not for guests
   },
   {
     key: "settings",
     label: "Settings",
     icon: <Settings size={18} />,
     href: "/settings",
+    roles: ["admin"], // Only admins
   },
 ];
 
 /**
  * Critical navigation items that should always be present in the sidebar
+ * based on user role
  */
-const CRITICAL_KEYS = ["dashboard", "templates", "projects", "settings"];
+export const CRITICAL_ITEMS_BY_ROLE: Record<Role, string[]> = {
+  admin: ["dashboard", "templates", "projects", "settings"],
+  manager: ["dashboard", "templates", "projects"],
+  user: ["dashboard", "templates"],
+  viewer: ["dashboard", "templates"],
+  guest: ["dashboard"]
+};
 
 /**
  * Ensures that critical sidebar items are always present
@@ -112,16 +134,47 @@ export function ensureSidebarItems(items: SidebarItem[]): SidebarItem[] {
   // Map of keys that are already present
   const existingKeys = new Set(items.map(item => item.key));
   
+  // Default to admin critical items if no role-specific logic is provided
+  const criticalKeys = ["dashboard", "templates", "projects", "settings"];
+  
   // Add any missing critical items from defaults
-  for (const criticalKey of CRITICAL_KEYS) {
+  for (const criticalKey of criticalKeys) {
     if (!existingKeys.has(criticalKey)) {
       // Find this item in the defaults
       const defaultItem = defaultSidebarItems.find(item => item.key === criticalKey);
       if (defaultItem) {
-        resultItems.push(defaultItem);
+        // Remove roles property before adding
+        const { roles, ...itemWithoutRoles } = defaultItem;
+        resultItems.push(itemWithoutRoles);
       }
     }
   }
   
   return resultItems;
 }
+
+/**
+ * Gets sidebar items filtered by the user's role
+ * @param userRole The current user's role
+ * @returns Array of sidebar items the user can access
+ */
+export function getSidebarItemsForRole(userRole: Role): SidebarItem[] {
+  // Filter items based on role
+  const filteredItems = filterSidebarItemsForRole(defaultSidebarItems, userRole);
+  
+  // Ensure critical items for this role are present
+  return ensureSidebarItems(filteredItems);
+}
+
+/**
+ * Example usage:
+ * 
+ * // In your layout component:
+ * import { getSidebarItemsForRole } from "./sidebar.defaults";
+ * 
+ * // Get the current user's role from your auth system
+ * const userRole = getCurrentUserRole(); // e.g., "admin", "user", etc.
+ * 
+ * // Get sidebar items for this role
+ * const sidebarItems = getSidebarItemsForRole(userRole as Role);
+ */

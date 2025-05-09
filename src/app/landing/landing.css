@@ -1,0 +1,81 @@
+/* 
+Landing Page Specific Styles
+
+This file will be reviewed to see what styles were previously applied to the landing page.
+If there are any important styles that need to be preserved, they will be incorporated
+into the inline styles in the landing page component.
+
+After review, this file should be removed as the new implementation uses JSX styles.
+*/
+
+:root {
+  --color-primary: #4F46E5;
+  --color-primary-light: #818CF8;
+  --color-primary-dark: #4338CA;
+  --color-secondary: #10B981;
+  --color-accent: #F59E0B;
+}
+
+/* Hero Section Background Styling */
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -200px;
+  right: -200px;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(79, 70, 229, 0.1) 0%, rgba(79, 70, 229, 0) 70%);
+  z-index: -1;
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: -200px;
+  left: -200px;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0) 70%);
+  z-index: -1;
+}
+
+/* Feature Card Hover Effect */
+.feature-card:hover::after {
+  transform: scaleX(1);
+}
+
+/* Animation for Stats Card */
+@keyframes float {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite alternate-reverse;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .hero-stats {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .hero-title {
+    font-size: 2.25rem;
+  }
+  
+  .hero-cta {
+    flex-direction: column;
+    align-items: center;
+  }
+}

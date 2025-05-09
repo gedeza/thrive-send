@@ -1,9 +1,16 @@
 # ThriveSend Social Suite Platform
 
-[![ThriveSend CI](https://github.com/gedeza/thrive-send/actions/workflows/ci.yml/badge.svg)](https://github.com/gedeza/thrive-send/actions/workflows/ci.yml)
-[![ThriveSend Tests](https://github.com/gedeza/thrive-send/actions/workflows/test.yml/badge.svg)](https://github.com/gedeza/thrive-send/actions/workflows/test.yml)
-[![ThriveSend Deploy](https://github.com/gedeza/thrive-send/actions/workflows/deploy.yml/badge.svg)](https://github.com/gedeza/thrive-send/actions/workflows/deploy.yml)
-[![Documentation Version](https://img.shields.io/badge/documentation-v1.0.0-blue)](documentation_versions.md)
+[![# ThriveSend Social Suite Platform
+
+---
+
+## 🚦 Build & Progress Status
+
+| CI Pipeline | Tests | Deploy | Docs Version |
+|:---:|:---:|:---:|:---:|
+| [![ThriveSend CI](https://github.com/gedeza/thrive-send/actions/workflows/ci.yml/badge.svg)](https://github.com/gedeza/thrive-send/actions/workflows/ci.yml) | [![ThriveSend Tests](https://github.com/gedeza/thrive-send/actions/workflows/test.yml/badge.svg)](https://github.com/gedeza/thrive-send/actions/workflows/test.yml) | [![ThriveSend Deploy](https://github.com/gedeza/thrive-send/actions/workflows/deploy.yml/badge.svg)](https://github.com/gedeza/thrive-send/actions/workflows/deploy.yml) | [![Documentation Version](https://img.shields.io/badge/documentation-v1.0.0-blue)](documentation_versions.md) |
+
+---ation Version](https://img.shields.io/badge/documentation-v1.0.0-blue)](documentation_versions.md)
 
 ThriveSend is a comprehensive social media management platform designed for digital agencies, consultants, and service providers who want to deliver exceptional social media services to their diverse client base. Whether your clients are government agencies, private businesses, startups, influencers, or content creators, ThriveSend gives you the tools to manage and scale your social media services effectively.
 
@@ -16,6 +23,33 @@ ThriveSend is a comprehensive social media management platform designed for digi
 - **Boost Marketplace**: Create additional revenue streams
 - **Compliance-Ready**: Built-in features for government and regulated industries
 - **Scalable Infrastructure**: Grow your business without technical limitations
+
+## Key Features
+...
+
+## 🎨 Design Tokens & Color Scheme
+
+ThriveSend enforces a centralized, token-based color system for all UI development.
+
+- All UI colors must be referenced via semantic tokens defined in [`colour_scheme.md`](DOCS/colour_scheme.md).
+- Raw hex codes, `text-white`/`text-black`, and generic Tailwind color classes are strictly prohibited in production code.
+- All UI contributions must pass the [color scheme compliance audit](DOCS/color_scheme_compliance_audit.md) before merging.
+- This ensures brand consistency, robust dark/light support, rapid theme changes, and easy maintainability.
+
+...
+
+## Technology Stack
+- **Design Tokens:** Strict, semantic token-based system ([`colour_scheme.md`](DOCS/colour_scheme.md))
+
+## Development Guidelines
+  - **Centralized Color Scheme:**  
+  - All UI colors are now managed as semantic tokens in [`colour_scheme.md`](colour_scheme.md). No more raw hex/Tailwind overrides; design consistency enforced by audit.
+  - Tailwind & UI Library Integration: Core theme and light/dark support are centralized and easy to maintain.
+  - Color Audit and Enforcement: All new and updated code passes the [color scheme compliance audit](color_scheme_compliance_audit.md).
+  - Documentation: README and design/implementation specs updated to reflect the color policy and compliance process.
+  - Only reference colors via semantic tokens in [`colour_scheme.md`](DOCS/colour_scheme.md).
+  - No raw hex, `text-white`, `text-black`, or Tailwind default classes in application code.
+  - Every UI PR must pass the [color scheme compliance audit](DOCS/color_scheme_compliance_audit.md).
 
 ## Documentation
 

@@ -4,62 +4,36 @@ import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ContentCalendar } from "@/components/content/content-calendar";
 import { useToast } from "@/components/ui/use-toast";
-import { Plus, Calendar, Clock } from "lucide-react";
+import { Plus, Calendar, Clock, Twitter, Linkedin, Facebook, Instagram, Mail, FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-// Types
-export interface CalendarEvent {
-  id: string;
-  title: string;
-  description: string;
-  date: string;
-  time: string;
-  type: string;
-  status: string;
-}
+import { mockEvents, CalendarEvent } from "./calendar.mock-data";
 
-// Mock API functions - replace with real API calls
-const mockEvents: CalendarEvent[] = [
-  {
-    id: "1",
-    title: "Weekly Newsletter",
-    description: "Send out weekly updates to subscribers",
-    date: new Date().toISOString().split("T")[0],
-    time: "09:00",
-    type: "email",
-    status: "scheduled"
-  },
-  {
-    id: "2",
-    title: "Product Launch Tweet",
-    description: "Announce new feature on Twitter",
-    date: new Date().toISOString().split("T")[0],
-    time: "12:00",
-    type: "social",
-    status: "draft"
-  },
-  {
-    id: "3",
-    title: "Blog Post: Marketing Tips",
-    description: "Publish blog post about email marketing",
-    date: new Date(Date.now() + 86400000).toISOString().split("T")[0], // Tomorrow
-    time: "10:00",
-    type: "blog",
-    status: "scheduled"
-  },
-  {
-    id: "4",
-    title: "Monthly Report",
-    description: "Send monthly performance report",
-    date: new Date(Date.now() - 86400000).toISOString().split("T")[0], // Yesterday
-    time: "14:00",
-    type: "email",
-    status: "sent"
-  }
-];
+// Icon mapping for each type
+const typeIconMap: Record<
+  CalendarEvent["type"],
+  React.ComponentType<{ className?: string }>
+> = {
+  email: Mail,
+  blog: FileText,
+  social: Calendar,      // fallback, rarely used in mock
+  twitter: Twitter,
+  linkedin: Linkedin,
+  facebook: Facebook,
+  instagram: Instagram
+};
 
-// Mock API functions
+const typeLabelMap: Record<CalendarEvent["type"], string> = {
+  email: "Email",
+  blog: "Blog",
+  social: "Social",
+  twitter: "Twitter",
+  linkedin: "LinkedIn",
+  facebook: "Facebook",
+  instagram: "Instagram"
+};
+
 const fetchEvents = async (): Promise<CalendarEvent[]> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 1000));
@@ -297,48 +271,52 @@ export default function CalendarPage() {
             </div>
           ) : (
             <div className="divide-y">
-              {upcomingEvents.map(event => (
-                <div key={event.id} className="p-4 hover:bg-accent/10">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-medium">{event.title}</h3>
-                        <Badge variant="outline">{event.type}</Badge>
+              {upcomingEvents.map(event => {
+                const Icon = typeIconMap[event.type];
+                return (
+                  <div key={event.id} className="p-4 hover:bg-accent/10">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          {Icon && <Icon className="h-4 w-4" />}
+                          <h3 className="font-medium">{event.title}</h3>
+                          <Badge variant="outline">{typeLabelMap[event.type]}</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">{event.description}</p>
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <Calendar className="h-4 w-4 mr-1" />
+                          <span className="mr-4">{formatDate(event.date)}</span>
+                          {event.time && (
+                            <>
+                              <Clock className="h-4 w-4 mr-1" />
+                              <span>{event.time}</span>
+                            </>
+                      )}
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground mb-2">{event.description}</p>
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        <span className="mr-4">{formatDate(event.date)}</span>
-                        {event.time && (
-                          <>
-                            <Clock className="h-4 w-4 mr-1" />
-                            <span>{event.time}</span>
-                          </>
-                        )}
+                      <div className="flex gap-2">
+                        <button 
+                          className="px-3 py-1 text-sm border rounded-md hover:bg-accent"
+                          onClick={() => {
+                            // Implement edit functionality
+                            alert(`Edit event: ${event.id}`);
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          className="px-3 py-1 text-sm border rounded-md text-destructive hover:bg-destructive/10"
+                          onClick={() => {
+                            handleEventDelete(event.id);
+                          }}
+                        >
+                          Cancel
+                        </button>
                       </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button 
-                        className="px-3 py-1 text-sm border rounded-md hover:bg-accent"
-                        onClick={() => {
-                          // Implement edit functionality
-                          alert(`Edit event: ${event.id}`);
-                        }}
-                      >
-                        Edit
-                      </button>
-                      <button 
-                        className="px-3 py-1 text-sm border rounded-md text-destructive hover:bg-destructive/10"
-                        onClick={() => {
-                          handleEventDelete(event.id);
-                        }}
-                      >
-                        Cancel
-                      </button>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -358,50 +336,54 @@ export default function CalendarPage() {
             </div>
           ) : (
             <div className="divide-y">
-              {completedEvents.map(event => (
-                <div key={event.id} className="p-4 hover:bg-accent/10">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-medium">{event.title}</h3>
-                        <Badge variant="outline">{event.type}</Badge>
-                        <Badge variant="outline" className="bg-green-100 text-green-800">Sent</Badge>
+              {completedEvents.map(event => {
+                const Icon = typeIconMap[event.type];
+                return (
+                  <div key={event.id} className="p-4 hover:bg-accent/10">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          {Icon && <Icon className="h-4 w-4" />}
+                          <h3 className="font-medium">{event.title}</h3>
+                          <Badge variant="outline">{typeLabelMap[event.type]}</Badge>
+                          <Badge variant="outline" className="bg-green-100 text-green-800">Sent</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">{event.description}</p>
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <Calendar className="h-4 w-4 mr-1" />
+                          <span className="mr-4">{formatDate(event.date)}</span>
+                          {event.time && (
+                            <>
+                              <Clock className="h-4 w-4 mr-1" />
+                              <span>{event.time}</span>
+                            </>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground mb-2">{event.description}</p>
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        <span className="mr-4">{formatDate(event.date)}</span>
-                        {event.time && (
-                          <>
-                            <Clock className="h-4 w-4 mr-1" />
-                            <span>{event.time}</span>
-                          </>
-                        )}
+                      <div className="flex gap-2">
+                        <button 
+                          className="px-3 py-1 text-sm border rounded-md hover:bg-accent"
+                          onClick={() => {
+                            // Implement view report functionality
+                            alert(`View report for: ${event.id}`);
+                          }}
+                        >
+                          View Report
+                        </button>
+                        <button 
+                          className="px-3 py-1 text-sm border rounded-md hover:bg-accent"
+                          onClick={() => {
+                            // Implement duplicate functionality
+                            alert(`Duplicate event: ${event.id}`);
+                          }}
+                        >
+                          Duplicate
+                        </button>
                       </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button 
-                        className="px-3 py-1 text-sm border rounded-md hover:bg-accent"
-                        onClick={() => {
-                          // Implement view report functionality
-                          alert(`View report for: ${event.id}`);
-                        }}
-                      >
-                        View Report
-                      </button>
-                      <button 
-                        className="px-3 py-1 text-sm border rounded-md hover:bg-accent"
-                        onClick={() => {
-                          // Implement duplicate functionality
-                          alert(`Duplicate event: ${event.id}`);
-                        }}
-                      >
-                        Duplicate
-                      </button>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

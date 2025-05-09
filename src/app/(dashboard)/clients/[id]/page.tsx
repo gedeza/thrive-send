@@ -1,35 +1,70 @@
 import Link from "next/link";
 import { Metadata } from "next";
-import Image from "next/image"; // <--- Add this line
+import Image from "next/image";
+import { notFound } from "next/navigation";
+import { Globe, Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 export const metadata: Metadata = {
   title: "Client Details | ThriveSend",
   description: "View client details and manage their projects",
 };
 
-// This would normally be fetched from the database
-const client = {
-  id: "1",
-  name: "Metro City Government",
-  type: "MUNICIPALITY",
-  industry: "Government",
-  website: "https://metrocity.gov",
-  logoUrl: "https://placehold.co/400",
-  createdAt: "2023-01-15T00:00:00.000Z",
-  socialAccounts: [
-    { id: "1", platform: "FACEBOOK", handle: "@MetroCityGov" },
-    { id: "2", platform: "TWITTER", handle: "@MetroCityGov" },
-    { id: "3", platform: "INSTAGRAM", handle: "@metrocitygov" }
-  ],
-  projects: [
-    { id: "1", name: "Summer Events Campaign", status: "ACTIVE" },
-    { id: "2", name: "Citizen Engagement Initiative", status: "PLANNED" },
-    { id: "3", name: "Annual Report Distribution", status: "COMPLETED" }
-  ]
+// Mock data for clients
+const clients = [
+  {
+    id: "1",
+    name: "Metro City Government",
+    type: "MUNICIPALITY",
+    industry: "Government",
+    website: "https://metrocity.gov",
+    logoUrl: "https://placehold.co/400",
+    createdAt: "2023-01-15T00:00:00.000Z",
+    socialAccounts: [
+      { id: "1", platform: "FACEBOOK", handle: "@MetroCityGov" },
+      { id: "2", platform: "TWITTER", handle: "@MetroCityGov" },
+      { id: "3", platform: "INSTAGRAM", handle: "@metrocitygov" }
+    ],
+    projects: [
+      { id: "1", name: "Summer Events Campaign", status: "ACTIVE" },
+      { id: "2", name: "Citizen Engagement Initiative", status: "PLANNED" },
+      { id: "3", name: "Annual Report Distribution", status: "COMPLETED" }
+    ]
+  },
+  {
+    id: "2",
+    name: "TechNova Solutions",
+    type: "CORPORATE",
+    industry: "Technology",
+    website: "https://technova.com",
+    logoUrl: "https://placehold.co/400/blue/white",
+    createdAt: "2022-11-05T00:00:00.000Z",
+    socialAccounts: [
+      { id: "4", platform: "LINKEDIN", handle: "@technovasolutions" },
+      { id: "5", platform: "TWITTER", handle: "@TechNovaSol" }
+    ],
+    projects: [
+      { id: "4", name: "Product Launch Campaign", status: "ACTIVE" },
+      { id: "5", name: "Developer Conference", status: "PLANNED" }
+    ]
+  }
+];
+
+// Map of social platform icons
+const platformIconMap: Record<string, JSX.Element> = {
+  FACEBOOK: <Facebook className="h-5 w-5" />,
+  TWITTER: <Twitter className="h-5 w-5" />,
+  INSTAGRAM: <Instagram className="h-5 w-5" />,
+  LINKEDIN: <Linkedin className="h-5 w-5" />,
 };
 
+// Function to get client by ID
+function getClientById(id: string) {
+  return clients.find(c => c.id === id);
+}
+
 export default function ClientDetailPage({ params }: { params: { id: string } }) {
-  // In a real app, we would fetch the client data using the ID
-  // const { id } = params;
+  const client = getClientById(params.id);
+  
+  if (!client) return notFound();
   
   return (
     <div className="space-y-6">
@@ -91,7 +126,8 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
                 <div className="text-sm font-medium">Website:</div>
                 <div className="text-sm">
                   {client.website ? (
-                    <a href={client.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                    <a href={client.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1">
+                      <Globe className="h-4 w-4" />
                       Visit Site
                     </a>
                   ) : (
@@ -131,7 +167,7 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
                 {client.socialAccounts.map((account) => (
                   <div key={account.id} className="flex items-center space-x-3 p-3 rounded-md border">
                     <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                      {account.platform.charAt(0)}
+                      {platformIconMap[account.platform] || account.platform.charAt(0)}
                     </div>
                     <div>
                       <div className="font-medium">{account.platform}</div>
@@ -170,7 +206,12 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
                     className="flex items-center justify-between p-3 rounded-md border hover:bg-accent"
                   >
                     <div className="font-medium">{project.name}</div>
-                    <div className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
+                    <div className={`text-xs px-2 py-1 rounded-full ${
+                      project.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
+                      project.status === 'PLANNED' ? 'bg-blue-100 text-blue-800' :
+                      project.status === 'COMPLETED' ? 'bg-gray-100 text-gray-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>
                       {project.status}
                     </div>
                   </Link>
