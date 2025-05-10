@@ -1,6 +1,6 @@
 {
-  "project": "Thrive Send",
-  "last_reviewed": "2024-06-08",
+  "project": "ThriveSend",
+  "last_reviewed": "2024-06-09",
   "tasks": [
     {
       "id": "T001",
@@ -8,14 +8,16 @@
       "status": "complete",
       "doc_refs": [
         "clerk-setup-guide.md",
-        "implementation-plan.md"
+        "implementation-plan.md",
+        "progress-snapshot.md"
       ],
       "implemented_in": [
         "src/lib/api.ts",
-        "src/app"
+        "src/app",
+        "middleware.ts"
       ],
-      "notes": "Auth setup matches documentation. Covered in both the setup guide and impl plan.",
-      "last_reviewed": "2024-06-08",
+      "notes": "Auth setup matches documentation. Minor hydration/auth issues fixed (body className, Filler plugin Chart.js). Fully aligned with docs as of review.",
+      "last_reviewed": "2024-06-09",
       "discrepancies": []
     },
     {
@@ -28,17 +30,46 @@
         "MVP_Specification.md"
       ],
       "implemented_in": [
-        "components/ui"
+        "components/ui",
+        "components/analytics/LineChartWidget.tsx"
       ],
-      "notes": "Style and behavior partially implemented; needs further review.",
-      "last_reviewed": "2024-06-08",
+      "notes": "Style and behavior partially implemented; color audit (tokens/semantic compliance) still in progress.",
+      "last_reviewed": "2024-06-09",
       "discrepancies": [
-        "Color scheme not fully consistent with 'colour_scheme.md'."
+        "Color scheme not fully consistent with 'colour_scheme.md'; legacy code to be refactored."
       ]
+    },
+    {
+      "id": "T003",
+      "title": "Fix Chart.js fill warning (Filler plugin)",
+      "status": "complete",
+      "doc_refs": [
+        "progress-snapshot.md"
+      ],
+      "implemented_in": [
+        "components/analytics/LineChartWidget.tsx"
+      ],
+      "notes": "Chart.js Filler plugin now registered; no client warnings. Aligned with analytics implementation.",
+      "last_reviewed": "2024-06-09",
+      "discrepancies": []
+    },
+    {
+      "id": "T004",
+      "title": "Resolve Next.js hydration warning (body className)",
+      "status": "complete",
+      "doc_refs": [
+        "progress-snapshot.md"
+      ],
+      "implemented_in": [
+        "src/app/layout.tsx"
+      ],
+      "notes": "Explicit className on <body> fixes SSR/client hydration mismatch. No more console warnings.",
+      "last_reviewed": "2024-06-09",
+      "discrepancies": []
     }
   ],
   "discrepancy_summary": [
-    "T002: Color inconsistency flagged. To be discussed in next review."
+    "T002: UI color inconsistency (tokens/semantic compliance) flagged; to be handled in next design sprint."
   ],
-  "next_review_due": "2024-06-15"
+  "next_review_due": "2024-06-16"
 }

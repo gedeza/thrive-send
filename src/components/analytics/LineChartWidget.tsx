@@ -6,11 +6,12 @@ import {
   LinearScale,
   PointElement,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 
-ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend);
+ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend, Filler);
 
 type LineChartWidgetProps = {
   title: string;
@@ -21,6 +22,7 @@ type LineChartWidgetProps = {
       data: number[];
       borderColor?: string;
       backgroundColor?: string;
+      fill?: boolean | string;
     }[];
   };
   options?: object;

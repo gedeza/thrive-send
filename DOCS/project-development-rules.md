@@ -126,6 +126,17 @@
 
 ---
 
+## 10. Ongoing Documentation Analysis & Consolidation
+
+- All documentation must undergo regular analysis against project changes, implementation plans, and actual progress.
+- When new features, structural changes, or paradigm shifts are undertaken:
+  1. Existing docs must be reviewed for relevance, accuracy, and potential overlap.
+  2. Merges, consolidation, or clear deprecation must be executed (as with the visual consistency checklist: now unified under `/design-system/visual-consistency-checklist.md`).
+  3. Every contributor is responsible for ensuring that their changes prompt this process, rather than accumulating obsolete or fragmented knowledge.
+- Documentation status and consolidation reviews should be included as a checklist item on all major releases and retro/planning cycles.
+
+---
+
 ## Appendix: Highly Recommended Reference Docs
 
 | Area       | File                                                        | Notes                                             |

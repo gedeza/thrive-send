@@ -1,0 +1,82 @@
+graph TD
+    A[DOCS]
+    subgraph Architecture
+        B[complete-progress-snapshot]
+        C[component-architecture.md]
+        D[theme-integration-guide.md]
+        E[ui-components-integration.md]
+        F[ui-components.md]
+        G[ui-consistency-guide.md]
+    end
+    subgraph Archive
+    end
+    subgraph Automation
+        H[doc_implementation_alignment_process.md]
+        I[task_doc_reconciliation.json]
+        J[task_review_automation.py]
+    end
+    subgraph Canonicals
+        K[MVP_Specification.md]
+        L[PRD.md]
+        M[README.md]
+    end
+    subgraph Checklists
+        N[visual-consistency-checklist.md]%% (Should be empty if fully merged)
+    end
+    subgraph DesignSystem
+        O[color_scheme_compliance_audit.md]
+        P[color-audit-advanced-findings.md]
+        Q[color-audit-report.md]
+        R[color-docs-revision-checklist.md]
+        S[color-reference.md]
+        T[color-usage-quick-guide.md]
+        U[colour_scheme.md]
+        V[eslint-color-token-enforcement.md]
+        W[visual-consistency-checklist.md]
+    end
+    subgraph Guides
+        X[authentication-alternatives.md]
+        Y[clerk-setup-guide.md]
+        Z[git-workflow.md]
+        AA[SETUP_STORYBOOK.md]
+    end
+    AB[implementation-plan.md]
+    subgraph Management
+        AC[client-management-plan.md]
+    end
+    AD[migration-checklist.md]
+    subgraph Planning
+        AE[demo-page-consolidation-plan.md]
+        AF[implementation-plan-update.md]
+        AG[implementation-plan.md]
+        AH[project-reset-plan.md]
+        AI[remaining-implementation-tasks.md]
+    end
+    subgraph Progress
+        AJ[progress-snapshot.md]
+        AK[project-progress-update.md]
+        AL[project-progress.md]
+    end
+    AM[progress-snapshot.md]
+    AN[project-development-rules.md]
+    AO[project-progress.md]
+    AP[README.md]
+    AQ[task_doc_reconciliation.json]
+
+    A --> Architecture
+    A --> Archive
+    A --> Automation
+    A --> Canonicals
+    A --> Checklists
+    A --> DesignSystem
+    A --> Guides
+    A --> AB
+    A --> Management
+    A --> AD
+    A --> Planning
+    A --> Progress
+    A --> AM
+    A --> AN
+    A --> AO
+    A --> AP
+    A --> AQ

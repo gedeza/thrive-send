@@ -11,7 +11,7 @@ Welcome to the `DOCS` directory. Here you'll find all critical documentation, or
   - [README.md](./canonicals/README.md) — Canonical onboarding and project intro
   - [MVP_Specification.md](./canonicals/MVP_Specification.md) — Minimum Viable Product scope
 
-- [design-system/](./design-system/) — Color tokens, UI design audits, color usage/enforcement
+- [design-system/](./design-system/) — Colors, UI design audits, visual consistency checklists
   - [colour_scheme.md](./design-system/colour_scheme.md) — Central color and token reference
   - [color_scheme_compliance_audit.md](./design-system/color_scheme_compliance_audit.md) — Audit log for color usage
   - [color-usage-quick-guide.md](./design-system/color-usage-quick-guide.md)
@@ -20,6 +20,7 @@ Welcome to the `DOCS` directory. Here you'll find all critical documentation, or
   - [color-reference.md](./design-system/color-reference.md)
   - [color-audit-advanced-findings.md](./design-system/color-audit-advanced-findings.md)
   - [eslint-color-token-enforcement.md](./design-system/eslint-color-token-enforcement.md) — Lint rule details
+  - [visual-consistency-checklist.md](./design-system/visual-consistency-checklist.md) — UI consistency verification
 
 - [planning/](./planning/) — Implementation plans, resets, milestone docs
   - [implementation-plan.md](./planning/implementation-plan.md)
@@ -54,8 +55,7 @@ Welcome to the `DOCS` directory. Here you'll find all critical documentation, or
 - [management/](./management/) — Project and client management policy/docs
   - [client-management-plan.md](./management/client-management-plan.md)
 
-- [checklists/](./checklists/) — Consistency and QA checklists
-  - [visual-consistency-checklist.md](./checklists/visual-consistency-checklist.md)
+- [checklists/](./checklists/) — Non-UI process and QA checklists
 
 - [archive/](./archive/) — Deprecated/legacy/draft or merged docs (move outdated content here for clarity)
 
@@ -84,6 +84,15 @@ See the latest status and what's complete, outstanding, or in progress:
 - Place new docs in the appropriate subdirectory.
 - Update this index with any major documentation or structural changes.
 - For high-level project context, see the repo root [README.md](../README.md).
+
+---
+
+### 🔄 **Recent Updates (2024-06)**
+
+- The **Visual Consistency Checklist** has been merged into the [design-system/](./design-system/visual-consistency-checklist.md) folder for unified design audit processes.
+- Checklists folder now only contains non-UI or other process lists (if any).
+- All progress and planning docs are in their respective folders.
+- Any duplicate or legacy content has been archived for clarity.
 
 ---
 
