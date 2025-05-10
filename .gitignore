@@ -84,3 +84,6 @@ update-*.sh
 remove-*.sh
 check-*.sh
 src/app/layout-without-clerk.tsx
+
+# clerk configuration (can include secrets)
+/.clerk/

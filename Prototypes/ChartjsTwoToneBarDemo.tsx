@@ -1,6 +1,21 @@
-// Install dependencies if not done:
-// npm install chart.js react-chartjs-2
-
+/**
+ * ChartjsTwoToneBarDemo
+ *
+ * Demo component rendering two bar charts (vertical and horizontal) using Chart.js and react-chartjs-2.
+ * - Vertical chart: Monthly UVs, alternating blue and green bars.
+ * - Horizontal chart: Feature usage, alternating green and blue bars.
+ *
+ * Dependencies:
+ *   - chart.js
+ *   - react-chartjs-2
+ *
+ * Usage:
+ *   <ChartjsTwoToneBarDemo />
+ *
+ * Customization:
+ *   - Change the BLUE and GREEN constants for different color schemes.
+ *   - Update the data arrays for different datasets.
+ */
 import React from "react";
 import {
   Chart as ChartJS,

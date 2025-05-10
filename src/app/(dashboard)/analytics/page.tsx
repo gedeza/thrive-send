@@ -4,6 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, PieChart, LineChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { metricsData, Metric } from './metrics.mock';
+import BarChartWidget from "@/components/analytics/BarChartWidget";
+import PieChartWidget from "@/components/analytics/PieChartWidget";
+import LineChartWidget from "@/components/analytics/LineChartWidget";
+import { audienceGrowthData, engagementPieData, performanceLineData } from './charts.mock';
 
 // Shared metric card component for summary/grid
 function MetricCard({ title, value, icon: Icon, comparison }: Metric) {
@@ -54,10 +58,14 @@ export default function AnalyticsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[200px] flex items-center justify-center bg-muted/20 rounded-md">
-              {/* TODO: Replace with audience growth chart */}
-              <p className="text-muted-foreground">Growth chart will display here</p>
-            </div>
+            <BarChartWidget
+              title="Audience Growth"
+              data={audienceGrowthData}
+              options={{
+                responsive: true,
+                plugins: { legend: { display: false } },
+              }}
+            />
           </CardContent>
         </Card>
 
@@ -69,10 +77,14 @@ export default function AnalyticsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[200px] flex items-center justify-center bg-muted/20 rounded-md">
-              {/* TODO: Replace with engagement pie chart */}
-              <p className="text-muted-foreground">Engagement chart will display here</p>
-            </div>
+            <PieChartWidget
+              title="Engagement Breakdown"
+              data={engagementPieData}
+              options={{
+                responsive: true,
+                plugins: { legend: { position: "bottom" } },
+              }}
+            />
           </CardContent>
         </Card>
 
@@ -84,10 +96,15 @@ export default function AnalyticsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[200px] flex items-center justify-center bg-muted/20 rounded-md">
-              {/* TODO: Replace with performance line chart */}
-              <p className="text-muted-foreground">Trends chart will display here</p>
-            </div>
+            <LineChartWidget
+              title="Performance Trends"
+              data={performanceLineData}
+              options={{
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } },
+              }}
+            />
           </CardContent>
         </Card>
       </div>

@@ -1,5 +1,6 @@
 "use client"
 
+import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/nextjs";
 import {
   TrendingUp,
   UserPlus,
@@ -21,7 +22,9 @@ import { StatSummaryCard } from "./components/stat-card";
 
 export default function DashboardPage() {
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-8">
+    <>
+      <SignedIn>
+        <div className="flex flex-col gap-6 p-4 md:p-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
@@ -250,6 +253,11 @@ export default function DashboardPage() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+        </div>
+      </SignedIn>
+      <SignedOut>
+        <RedirectToSignIn />
+      </SignedOut>
+    </>
   );
 }

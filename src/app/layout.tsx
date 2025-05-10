@@ -1,6 +1,7 @@
 import '../../styles/global-fonts.css';
 import "./globals.css";
 import React from 'react';
+import { ClerkProvider } from '@clerk/nextjs';
 
 export const metadata = {
   title: 'ThriveSend',
@@ -21,7 +22,9 @@ export default function RootLayout({
         />
       </head>
       <body>
-        {children}
+        <ClerkProvider>
+          {children}
+        </ClerkProvider>
       </body>
     </html>
   );

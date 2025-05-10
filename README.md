@@ -62,6 +62,28 @@ For detailed information about the platform, please refer to:
 - [System Architecture](architecture/system-overview.md) - Technical architecture overview
 - [Terminology Glossary](terminology_glossary.md) - Standard terminology definitions
 
+## Prototypes & Demos
+
+The `Prototypes` directory contains experimental implementations and isolated demo components for visualization, UI concepts, or integration feasibility studies. These are intended for internal development reference and are not part of the production application.
+
+### ChartjsTwoToneBarDemo
+
+- **File:** `Prototypes/ChartjsTwoToneBarDemo.tsx`
+- **Purpose:** Demonstrates the use of Chart.js and `react-chartjs-2` for advanced chart rendering in React.
+    - Features two bar charts: a vertical bar for Monthly UVs and a horizontal bar for Feature Usage, each with two-tone alternating color schemes.
+- **Dependencies:**
+    - `chart.js`
+    - `react-chartjs-2`
+- **Usage:**  
+    Import and use `<ChartjsTwoToneBarDemo />` in any React component/page for a showcase of customizable chart components.
+- **Customization:**  
+    - Easily adjust color schemes by modifying the `BLUE` and `GREEN` constants in the component.
+    - Update data arrays to visualize different datasets.
+- See inline file documentation for further details.
+
+**Note:**  
+Prototypes are provided to speed up UI research and are not guaranteed to align with all design token restrictions, linting standards, or code review policies applicable to the `/src` production code. Use them as references or starting points for new feature work.
+
 ## Project Overview
 
 ThriveSend follows a B2B2G (Business to Business to Government) model, primarily selling to service providers who serve municipalities and other organizations. The platform combines features inspired by Beehiiv's successful newsletter platform with specialized tools for traffic amplification and audience engagement.
@@ -81,7 +103,7 @@ ThriveSend follows a B2B2G (Business to Business to Government) model, primarily
 - **Frontend**: React.js with Next.js 14+ (App Router)
 - **Package Manager**: PNPM for efficient dependency management
 - **Database**: Neon serverless Postgres for cost-effectiveness
-- **Authentication**: Clerk for comprehensive user management
+- **Authentication**: BetterAuth (in-house/optimized solution) for secure, scalable, and cost-efficient user management
 - **UI Component Library**: Tailwind CSS
 - **Icons**: Lucide React
 - **Deployment**: Vercel for seamless deployment and scaling
@@ -143,9 +165,11 @@ thrivesend/
 
 1. Clone the repository
 2. Install dependencies with `pnpm install`
-3. Set up environment variables for Neon database and Clerk authentication
+3. Set up environment variables for Neon database and BetterAuth authentication
 4. Run the development server with `pnpm dev`
 5. Build for production with `pnpm build`
+
+> **Note:** The platform now uses BetterAuth for all authentication to standardize our stack, ensure best-practice user management, and optimize for long-term cost savings. All older docs or guides referencing Clerk or Supabase are deprecated.
 
 ## Development Guidelines
 
