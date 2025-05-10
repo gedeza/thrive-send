@@ -1,6 +1,8 @@
 "use client"
 
+import { useState } from "react";
 import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/nextjs";
+import MobileMenu from "./components/MobileMenu";
 // Mock analytics metrics similar to statCards
 const mockAnalyticsStats = [
   {
@@ -135,17 +137,37 @@ import {
 import { StatSummaryCard } from "./components/stat-card";
 
 export default function DashboardPage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <>
       <SignedIn>
-        <div className="flex flex-col gap-6 p-4 md:p-8">
+        {/* Mobile Menu */}
+        <MobileMenu open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
+        
+        <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight mb-1">Welcome to your ThriveSend dashboard</h1>
-          <p className="text-muted-foreground">
-            Monitor your stats, audience growth, recent campaigns, and more—all in one place.
-          </p>
+        <div className="flex items-center gap-2">
+          {/* Hamburger only on mobile */}
+          <button
+            className="md:hidden p-2 rounded hover:bg-accent focus:outline-none transition"
+            aria-label="Open menu"
+            onClick={() => setMobileMenuOpen(true)}
+          >
+            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"
+              viewBox="0 0 24 24">
+              <line x1="4" y1="7" x2="20" y2="7"/>
+              <line x1="4" y1="12" x2="20" y2="12"/>
+              <line x1="4" y1="17" x2="20" y2="17"/>
+            </svg>
+          </button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight mb-1">Welcome to your ThriveSend dashboard</h1>
+            <p className="text-muted-foreground">
+              Monitor your stats, audience growth, recent campaigns, and more—all in one place.
+            </p>
+          </div>
         </div>
         <Button asChild className="w-full md:w-auto">
           <Link href="/campaigns/new">Create Campaign</Link>
@@ -377,7 +399,7 @@ export default function DashboardPage() {
                   <thead>
                     <tr className="text-muted-foreground border-b">
                       <th className="p-2 text-left">Campaign</th>
-                      <th className="p-2 text-right">Sent</th>
+                  <th className="p-2 text-right">Sent</th>
                       <th className="p-2 text-right">Opened</th>
                       <th className="p-2 text-right">Clicked</th>
                       <th className="p-2 text-left">Status</th>

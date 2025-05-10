@@ -20,18 +20,27 @@ export interface MainLayoutProps {
    * @default true
    */
   collapsibleSidebar?: boolean;
+  /**
+   * Tailwind padding classes for main content (e.g., 'p-6', 'p-4'). Defaults to 'p-6'.
+   */
+  contentPadding?: string;
 }
+
+export default MainLayout;
 
 /**
  * MainLayout provides consistent layout structure for pages.
  * The sidebar is always rendered unless explicitly disabled by prop or on authentication pages.
+ * The header is always rendered (with props), providing cross-page consistency.
+ * Page-level padding is controlled here. Do NOT set additional padding within pages for consistency.
  */
 export function MainLayout({ 
   children, 
   headerProps = {},
   sidebarItems,
   showSidebar = true,
-  collapsibleSidebar = true
+  collapsibleSidebar = true,
+  contentPadding = "p-6"
 }: MainLayoutProps) {
   const pathname = usePathname();
 
@@ -51,7 +60,9 @@ export function MainLayout({
     console.log('[MainLayout] Rendering with sidebar items:', resolvedSidebarItems);
     // eslint-disable-next-line no-console
     console.log('[MainLayout] Rendering with collapsibleSidebar:', collapsibleSidebar);
-  }, [resolvedSidebarItems, collapsibleSidebar]);
+    // eslint-disable-next-line no-console
+    console.log('[MainLayout] Using contentPadding:', contentPadding);
+  }, [resolvedSidebarItems, collapsibleSidebar, contentPadding]);
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -70,7 +81,7 @@ export function MainLayout({
         <Header {...headerProps} />
         
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto bg-background p-6">
+        <main className={`flex-1 overflow-y-auto bg-background ${contentPadding}`}>
           {children}
         </main>
       </div>
