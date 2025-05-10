@@ -34,7 +34,7 @@ export default function AnalyticsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
           <p className="text-muted-foreground">
-            Track your audience engagement and performance metrics
+            Track your audience engagement and performance metrics.
           </p>
         </div>
         <div>

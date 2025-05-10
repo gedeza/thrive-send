@@ -1,17 +1,131 @@
 "use client"
 
 import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/nextjs";
+// Mock analytics metrics similar to statCards
+const mockAnalyticsStats = [
+  {
+    title: "Total Campaign Views",
+    value: "18,240",
+    icon: "activity",
+    desc: "+12% last 30 days"
+  },
+  {
+    title: "Unique Opens",
+    value: "8,931",
+    icon: "mail",
+    desc: "+2.3% week over week"
+  },
+  {
+    title: "Link Clicks",
+    value: "1,520",
+    icon: "click",
+    desc: "+5.4% week over week"
+  },
+  {
+    title: "Unsubscribes",
+    value: "67",
+    icon: "users",
+    desc: "-8% compared to last month"
+  }
+];
+
+// Mock chart data for open rate over months
+const mockOpenRateTrend = [
+  { month: "Jan", value: 21 },
+  { month: "Feb", value: 22 },
+  { month: "Mar", value: 23 },
+  { month: "Apr", value: 24 },
+  { month: "May", value: 25 }
+];
 import {
   TrendingUp,
   UserPlus,
   BarChart,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  CheckCircle,
+  Loader2,
+  AlertOctagon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import Link from "next/link";
+
+// More detailed demo/mock data for campaigns/subscribers
+const campaigns = [
+  {
+    id: 101,
+    name: "Spring Sale",
+    status: "Sent",
+    sent: 500,
+    opened: 350,
+    clicked: 80,
+    date: "2024-06-01 09:00",
+  },
+  {
+    id: 102,
+    name: "Newsletter May",
+    status: "Draft",
+    sent: 0,
+    opened: 0,
+    clicked: 0,
+    date: "2024-05-25 13:45",
+  },
+  {
+    id: 103,
+    name: "Beta Invite",
+    status: "Scheduled",
+    sent: 0,
+    opened: 0,
+    clicked: 0,
+    date: "2024-06-12 10:30",
+  },
+];
+
+const subscribers = [
+  {
+    email: "alice@email.com",
+    joinedAt: "2024-06-01",
+    status: "active",
+  },
+  {
+    email: "bob@email.com",
+    joinedAt: "2024-05-30",
+    status: "bounced",
+  },
+  {
+    email: "chris@email.com",
+    joinedAt: "2024-05-29",
+    status: "unsubscribed",
+  },
+  {
+    email: "dan@email.com",
+    joinedAt: "2024-05-28",
+    status: "active",
+  },
+];
+
+function statusBadge(status: string) {
+  switch (status) {
+    case "Sent":
+      return <Badge variant="success"><CheckCircle className="w-4 h-4 mr-1" />Sent</Badge>;
+    case "Draft":
+      return <Badge variant="secondary"><Loader2 className="w-4 h-4 animate-spin mr-1" />Draft</Badge>;
+    case "Scheduled":
+      return <Badge variant="accent"><CalendarIcon className="w-4 h-4 mr-1" />Scheduled</Badge>;
+    case "active":
+      return <Badge variant="success"><CheckCircle className="w-4 h-4 mr-1" />Active</Badge>;
+    case "bounced":
+      return <Badge variant="destructive"><AlertOctagon className="w-4 h-4 mr-1" />Bounced</Badge>;
+    case "unsubscribed":
+      return <Badge variant="outline"><UserPlus className="w-4 h-4 mr-1" />Unsubscribed</Badge>;
+    default:
+      return <Badge>{status}</Badge>;
+  }
+}
+
 import {
   statCards,
   mockCampaignData,
@@ -211,18 +325,77 @@ export default function DashboardPage() {
           </Card>
         </TabsContent>
         
-        <TabsContent value="analytics" className="mt-4">
+        <TabsContent value="analytics" className="mt-4 space-y-6">
+          {/* Stat Cards for quick metrics */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {mockAnalyticsStats.map((card) => (
+              <StatSummaryCard key={card.title} {...card} />
+            ))}
+          </div>
+
+          {/* Open Rate Trend (chart-like) */}
           <Card>
             <CardHeader>
-              <CardTitle>Campaign Analytics</CardTitle>
+              <CardTitle>Open Rate Trend</CardTitle>
               <CardDescription>
-                Detailed performance metrics for all your campaigns will appear here.
+                Average open rate across all campaigns, last 5 months
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-center py-20 text-muted-foreground">
-                Detailed analytics to be implemented.
-              </p>
+              <div className="h-[200px] flex items-end justify-between gap-2">
+                {mockOpenRateTrend.map((month) => (
+                  <div key={month.month} className="flex flex-col items-center gap-2">
+                    <div
+                      className="bg-primary/90 w-10 rounded-md"
+                      style={{ height: `${(month.value / 30) * 160}px` }}
+                      title={`${month.value}%`}
+                    ></div>
+                    <span className="text-xs font-medium">{month.month}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 text-center">
+                <div className="text-xl font-bold">Last: {mockOpenRateTrend[mockOpenRateTrend.length - 1].value}%</div>
+                <p className="text-xs text-muted-foreground">
+                  +4% change since Jan
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Table: Campaign Analytics Breakdown */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Campaign Performance Breakdown</CardTitle>
+              <CardDescription>
+                Opens, clicks and status, recent campaigns
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border rounded-lg bg-white">
+                  <thead>
+                    <tr className="text-muted-foreground border-b">
+                      <th className="p-2 text-left">Campaign</th>
+                      <th className="p-2 text-right">Sent</th>
+                      <th className="p-2 text-right">Opened</th>
+                      <th className="p-2 text-right">Clicked</th>
+                      <th className="p-2 text-left">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mockCampaignData.map((c) => (
+                      <tr key={c.id} className="border-b last:border-b-0">
+                        <td className="p-2">{c.name}</td>
+                        <td className="p-2 text-right">{c.sent}</td>
+                        <td className="p-2 text-right">{c.opened}</td>
+                        <td className="p-2 text-right">{c.clicked}</td>
+                        <td className="p-2">{statusBadge(c.status)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -230,12 +403,54 @@ export default function DashboardPage() {
         <TabsContent value="campaigns" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>All Campaigns</CardTitle>
+              <div className="flex flex-row items-center justify-between">
+                <CardTitle>Campaigns</CardTitle>
+                <Button asChild size="sm" variant="primary">
+                  <Link href="/campaigns/new">+ New Campaign</Link>
+                </Button>
+              </div>
+              <CardDescription>
+                Your recent campaigns and their performance.
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-center py-20 text-muted-foreground">
-                Campaign list with detailed metrics will be displayed here.
-              </p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border rounded-lg bg-white">
+                  <thead>
+                    <tr className="text-muted-foreground border-b">
+                      <th className="p-2 text-left">Campaign</th>
+                      <th className="p-2 text-left">Status</th>
+                      <th className="p-2 text-right">Sent</th>
+                      <th className="p-2 text-right">Opened</th>
+                      <th className="p-2 text-right">Clicked</th>
+                      <th className="p-2 text-left">Date</th>
+                      <th className="p-2 text-right"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {campaigns.map((c) => (
+                      <tr key={c.id} className="border-b last:border-b-0">
+                        <td className="p-2">{c.name}</td>
+                        <td className="p-2">{statusBadge(c.status)}</td>
+                        <td className="p-2 text-right">{c.sent}</td>
+                        <td className="p-2 text-right">{c.opened}</td>
+                        <td className="p-2 text-right">{c.clicked}</td>
+                        <td className="p-2">{c.date}</td>
+                        <td className="p-2 text-right">
+                          <Button asChild size="sm" variant="link">
+                            <Link href={`/campaigns/${c.id}`}>View</Link>
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex justify-end mt-2">
+                <Link href="/campaigns" className="text-sm text-primary hover:underline">
+                  View all campaigns →
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -243,12 +458,45 @@ export default function DashboardPage() {
         <TabsContent value="subscribers" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Subscriber Management</CardTitle>
+              <div className="flex flex-row items-center justify-between">
+                <CardTitle>Subscribers</CardTitle>
+                <Button asChild size="sm" variant="primary">
+                  <Link href="/subscribers">Manage Subscribers</Link>
+                </Button>
+              </div>
+              <CardDescription>
+                Latest subscribers and status.
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-center py-20 text-muted-foreground">
-                Subscriber management interface to be implemented here.
-              </p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border rounded-lg bg-white">
+                  <thead>
+                    <tr className="text-muted-foreground border-b">
+                      <th className="p-2 text-left">Email</th>
+                      <th className="p-2 text-left">Status</th>
+                      <th className="p-2 text-left">Joined</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {subscribers.map((s, i) => (
+                      <tr key={i} className="border-b last:border-b-0">
+                        <td className="p-2">{s.email}</td>
+                        <td className="p-2">{statusBadge(s.status)}</td>
+                        <td className="p-2">{s.joinedAt}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex justify-between items-center mt-4">
+                <div>
+                  <span className="font-semibold">{subscribers.length}</span> recent subscribers
+                </div>
+                <Link href="/subscribers" className="text-sm text-primary hover:underline">
+                  See all subscribers →
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

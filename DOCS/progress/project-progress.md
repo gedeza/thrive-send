@@ -29,6 +29,7 @@
 - ✅ Explicit `className` on layout `<body>` for Next.js hydration consistency.
 
 ### Layout & Navigation
+- ✅ MainLayout: margin/spacing, and header control refactored for consistency. All pages updated to use layout for padding.
 - ✅ Sidebar, header, and navigation issues resolved and cross-platform ready.
 - ✅ Responsive, collapsible sidebar.
 - ✅ Updated documentation for main layout/components.
@@ -42,6 +43,11 @@
 ## Remaining Tasks
 
 ### High Priority
+
+#### Fix Layout Issues
+- [x] Resolve margin and spacing issues in MainLayout
+- [x] Standardize padding across all pages
+- [x] Ensure consistent header behavior across pages
 
 #### Mobile & UI
 - [ ] Complete mobile nav (slide-out, hamburger menu, animations).
@@ -77,6 +83,10 @@
 ## Technical Debt & Future Enhancements
 
 - Ongoing: Color scheme compliance, archived/deprecated doc review, cross-team onboarding improvements.
+
+## Recent Changelog
+
+- **Layout Fixes**: Resolved all margin/spacing issues in MainLayout, standardized padding across pages, and ensured consistent header behavior.
 
 ---
 
