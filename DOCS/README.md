@@ -42,8 +42,8 @@ Welcome to the `DOCS` directory. Here you'll find all critical documentation, or
   - [theme-integration-guide.md](./architecture/theme-integration-guide.md)
 
 - [guides/](./guides/) — Setup, workflow, integration, best practice tutorials
+  - [clerk-setup-guide.md](./guides/clerk-setup-guide.md) — **Primary reference for authentication setup (Clerk)**
   - [git-workflow.md](./guides/git-workflow.md)
-  - [clerk-setup-guide.md](./guides/clerk-setup-guide.md)
   - [authentication-alternatives.md](./guides/authentication-alternatives.md)
   - [SETUP_STORYBOOK.md](./guides/SETUP_STORYBOOK.md)
 
@@ -84,11 +84,13 @@ See the latest status and what's complete, outstanding, or in progress:
 - Place new docs in the appropriate subdirectory.
 - Update this index with any major documentation or structural changes.
 - For high-level project context, see the repo root [README.md](../README.md).
+- For authentication: **Follow [clerk-setup-guide.md](./guides/clerk-setup-guide.md) as the standard reference.**
 
 ---
 
 ### 🔄 **Recent Updates (2024-06)**
 
+- Standardized on **Clerk authentication**, see `guides/clerk-setup-guide.md`.
 - The **Visual Consistency Checklist** has been merged into the [design-system/](./design-system/visual-consistency-checklist.md) folder for unified design audit processes.
 - Checklists folder now only contains non-UI or other process lists (if any).
 - All progress and planning docs are in their respective folders.

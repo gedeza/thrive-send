@@ -40,6 +40,7 @@ ThriveSend enforces a centralized, token-based color system for all UI developme
 
 ## Technology Stack
 - **Design Tokens:** Strict, semantic token-based system ([`colour_scheme.md`](DOCS/colour_scheme.md))
+- **Authentication:** Clerk (see `DOCS/guides/clerk-setup-guide.md` for full integration steps)
 
 ## Development Guidelines
   - **Centralized Color Scheme:**  
@@ -61,6 +62,7 @@ For detailed information about the platform, please refer to:
 - [Wireframe Description](wireframe_description.md) - UI/UX specifications
 - [System Architecture](architecture/system-overview.md) - Technical architecture overview
 - [Terminology Glossary](terminology_glossary.md) - Standard terminology definitions
+- [Authentication Setup Guide](DOCS/guides/clerk-setup-guide.md) - Setup and best practices for Clerk Auth
 
 ## Prototypes & Demos
 
@@ -103,7 +105,7 @@ ThriveSend follows a B2B2G (Business to Business to Government) model, primarily
 - **Frontend**: React.js with Next.js 14+ (App Router)
 - **Package Manager**: PNPM for efficient dependency management
 - **Database**: Neon serverless Postgres for cost-effectiveness
-- **Authentication**: BetterAuth (in-house/optimized solution) for secure, scalable, and cost-efficient user management
+- **Authentication**: Clerk for secure, scalable, and robust user management
 - **UI Component Library**: Tailwind CSS
 - **Icons**: Lucide React
 - **Deployment**: Vercel for seamless deployment and scaling
@@ -165,11 +167,11 @@ thrivesend/
 
 1. Clone the repository
 2. Install dependencies with `pnpm install`
-3. Set up environment variables for Neon database and BetterAuth authentication
+3. Set up environment variables for Neon database and Clerk authentication (see [`clerk-setup-guide.md`](DOCS/guides/clerk-setup-guide.md))
 4. Run the development server with `pnpm dev`
 5. Build for production with `pnpm build`
 
-> **Note:** The platform now uses BetterAuth for all authentication to standardize our stack, ensure best-practice user management, and optimize for long-term cost savings. All older docs or guides referencing Clerk or Supabase are deprecated.
+> **Note:** The platform standardizes on Clerk for authentication. If you find references to BetterAuth or Supabase in older documentation, treat those as outdated.
 
 ## Development Guidelines
 

@@ -53,16 +53,6 @@ export function MainLayout({
 
   // Use all default sidebar items if none provided, otherwise ensure critical ones
   const resolvedSidebarItems = sidebarItems ? ensureSidebarItems(sidebarItems) : defaultSidebarItems;
-  
-  // Debug: log to console when MainLayout renders
-  React.useEffect(() => {
-    // eslint-disable-next-line no-console
-    console.log('[MainLayout] Rendering with sidebar items:', resolvedSidebarItems);
-    // eslint-disable-next-line no-console
-    console.log('[MainLayout] Rendering with collapsibleSidebar:', collapsibleSidebar);
-    // eslint-disable-next-line no-console
-    console.log('[MainLayout] Using contentPadding:', contentPadding);
-  }, [resolvedSidebarItems, collapsibleSidebar, contentPadding]);
 
   return (
     <div className="flex h-screen overflow-hidden">

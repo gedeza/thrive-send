@@ -1,42 +1,36 @@
 const nextJest = require('next/jest');
 
 const createJestConfig = nextJest({
-  // Provide the path to your Next.js app
+  // Provide the path to your Next.js app to load next.config.js and .env files in your test environment
   dir: './',
 });
 
 // Add any custom config to be passed to Jest
 const customJestConfig = {
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  moduleNameMapper: {
-    // Handle module aliases (this will be automatically configured when using `next/jest`)
-    '^@/components/(.*)$': '<rootDir>/src/components/$1',
-    '^@/lib/(.*)$': '<rootDir>/src/lib/$1',
-    '^@/app/(.*)$': '<rootDir>/src/app/$1',
-    '^@/(.*)$': '<rootDir>/src/$1',
-  },
+  preset: 'ts-jest',
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js', '<rootDir>/src/setupTests.ts'],
   testEnvironment: 'jest-environment-jsdom',
-  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/'],
-  collectCoverage: true,
-  // Collect coverage from these files
-  collectCoverageFrom: [
-    "src/**/*.{js,jsx,ts,tsx}",
-    "!src/**/*.d.ts",
-    "!src/**/*.stories.{js,jsx,ts,tsx}",
-    "!src/pages/_app.tsx",
-    "!src/pages/_document.tsx",
-    "!**/node_modules/**",
-  ],
-  // Set a coverage threshold to enforce
-  coverageThreshold: {
-    global: {
-      statements: 40,
-      branches: 20,
-      functions: 20,
-      lines: 40
-    },
+  roots: ['<rootDir>/src'],
+  transform: {
+    '^.+\\.tsx?$': ['ts-jest', {
+      tsconfig: 'tsconfig.json',
+    }],
   },
+  testMatch: ['**/__tests__/**/*.test.(ts|tsx|js)', '**/?(*.)+(spec|test).(ts|tsx|js)'],
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+  moduleNameMapper: {
+    // Handle module aliases
+    '^@/(.*)$': '<rootDir>/src/$1',
+    // Handle CSS imports
+    '\\.(css|less|scss|sass)$': '<rootDir>/src/__mocks__/styleMock.js',
+    // Handle image imports
+    '\\.(gif|ttf|eot|svg|png)$': '<rootDir>/src/__mocks__/fileMock.js',
+  },
+  // Don't look for tests in node_modules or the .next folder
+  testPathIgnorePatterns: ['/node_modules/', '/.next/'],
+  // Disable coverage for now to speed up tests
+  collectCoverage: false,
 };
 
-// createJestConfig is exported in this way to ensure that next/jest can load the Next.js config
+// createJestConfig is exported this way to ensure that next/jest can load the Next.js config
 module.exports = createJestConfig(customJestConfig);

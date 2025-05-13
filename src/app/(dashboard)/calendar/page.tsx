@@ -2,13 +2,12 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ContentCalendar } from "@/components/content/content-calendar";
+import { ContentCalendar, CalendarEvent } from "@/components/content/content-calendar";
 import { useToast } from "@/components/ui/use-toast";
 import { Plus, Calendar, Clock, Twitter, Linkedin, Facebook, Instagram, Mail, FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-import { mockEvents, CalendarEvent } from "./calendar.mock-data";
+import { fetchEvents, createEvent, updateEvent, deleteEvent } from "@/lib/api/calendar-service";
 
 // Icon mapping for each type
 const typeIconMap: Record<
@@ -34,32 +33,6 @@ const typeLabelMap: Record<CalendarEvent["type"], string> = {
   instagram: "Instagram"
 };
 
-const fetchEvents = async (): Promise<CalendarEvent[]> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  return [...mockEvents];
-};
-
-const createEvent = async (event: Omit<CalendarEvent, "id">): Promise<CalendarEvent> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  return {
-    ...event,
-    id: Math.random().toString(36).substring(2, 9)
-  };
-};
-
-const updateEvent = async (event: CalendarEvent): Promise<CalendarEvent> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  return { ...event };
-};
-
-const deleteEvent = async (id: string): Promise<boolean> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  return true;
-};
 
 export default function CalendarPage() {
   const router = useRouter();

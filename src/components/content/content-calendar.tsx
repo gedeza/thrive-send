@@ -164,7 +164,7 @@ export function ContentCalendar({
   // Get events for a specific day
   const getEventsForDay = (day: Date) => {
     const dayStr = format(day, "yyyy-MM-dd");
-    return filteredEvents.filter(event => event.date.startsWith(dayStr));
+    return filteredEvents.filter(event => typeof event.date === "string" && event.date.startsWith(dayStr));
   };
 
   // Render loading state
@@ -568,9 +568,18 @@ export function ContentCalendar({
             </div>
           ) : (
             filteredEvents
-              .sort((a, b) => a.date.localeCompare(b.date) || (a.time || "").localeCompare(b.time || ""))
+              .sort((a, b) => {
+                // Safeguard for missing date/time values
+                const dateA = typeof a.date === "string" ? a.date : '';
+                const dateB = typeof b.date === "string" ? b.date : '';
+                const dateResult = dateA.localeCompare(dateB);
+                if (dateResult !== 0) return dateResult;
+                const timeA = typeof a.time === "string" ? a.time : '';
+                const timeB = typeof b.time === "string" ? b.time : '';
+                return timeA.localeCompare(timeB);
+              })
               .map((event) => {
-                const eventDate = parseISO(event.date);
+                const eventDate = event.date ? parseISO(event.date) : new Date();
                 
                 return (
                   <div key={event.id} className="p-4 hover:bg-muted/30 flex items-center space-x-4">
@@ -589,7 +598,7 @@ export function ContentCalendar({
                       </div>
                     </div>
                     <div className="text-sm text-right">
-                      <div className="font-medium">{format(eventDate, "MMM d, yyyy")}</div>
+                      <div className="font-medium">{event.date ? format(eventDate, "MMM d, yyyy") : "No date"}</div>
                       {event.time && <div className="text-muted-foreground">{event.time}</div>}
                     </div>
                     <div className="flex items-center space-x-2">

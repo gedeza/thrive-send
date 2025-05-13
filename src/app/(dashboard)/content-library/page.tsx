@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -28,9 +28,30 @@ export default function ContentLibraryPage() {
       { id: '3', name: 'Testimonial Block', category: 'Copy', created: 'April 20, 2023' },
     ]
   };
+  
+  // Filter content based on search query
+  const filteredContent = useMemo(() => {
+    if (!searchQuery.trim()) return contentLibrary;
+    
+    const query = searchQuery.toLowerCase();
+    return {
+      templates: contentLibrary.templates.filter(item => 
+        item.name.toLowerCase().includes(query) || 
+        item.category.toLowerCase().includes(query)
+      ),
+      media: contentLibrary.media.filter(item => 
+        item.name.toLowerCase().includes(query) || 
+        item.type.toLowerCase().includes(query)
+      ),
+      snippets: contentLibrary.snippets.filter(item => 
+        item.name.toLowerCase().includes(query) || 
+        item.category.toLowerCase().includes(query)
+      )
+    };
+  }, [searchQuery, contentLibrary]);
 
   return (
-    <div className="p-6">
+    <div className="p-6" data-testid="content-library-page">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">Content Library</h1>
@@ -55,6 +76,7 @@ export default function ContentLibraryPage() {
           placeholder="Search content library..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          data-testid="search-input"
         />
       </div>
       
@@ -65,10 +87,11 @@ export default function ContentLibraryPage() {
           <TabsTrigger value="snippets">Snippets</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="templates">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {contentLibrary.templates.map(template => (
-              <Card key={template.id}>
+        <TabsContent value="templates" data-testid="tabpanel-templates">
+          {filteredContent.templates.length > 0 ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {filteredContent.templates.map(template => (
+                <Card key={template.id} data-testid={`template-${template.id}`}>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg">{template.name}</CardTitle>
                 </CardHeader>
@@ -91,15 +114,28 @@ export default function ContentLibraryPage() {
                     </Button>
                   </div>
                 </CardContent>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card className="text-center p-6" data-testid="empty-templates">
+              <CardContent className="pt-6">
+                <p className="mb-4">No templates found</p>
+                <Button asChild>
+                  <Link href="/content/new?library=true">
+                    Add New Template
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
         
-        <TabsContent value="media">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {contentLibrary.media.map(item => (
-              <Card key={item.id}>
+        <TabsContent value="media" data-testid="tabpanel-media">
+          {filteredContent.media.length > 0 ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {filteredContent.media.map(item => (
+                <Card key={item.id} data-testid={`media-${item.id}`}>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg">{item.name}</CardTitle>
                 </CardHeader>
@@ -126,15 +162,28 @@ export default function ContentLibraryPage() {
                     </Button>
                   </div>
                 </CardContent>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card className="text-center p-6" data-testid="empty-media">
+              <CardContent className="pt-6">
+                <p className="mb-4">No media found</p>
+                <Button asChild>
+                  <Link href="/content/new?library=true">
+                    Add New Media
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
         
-        <TabsContent value="snippets">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {contentLibrary.snippets.map(snippet => (
-              <Card key={snippet.id}>
+        <TabsContent value="snippets" data-testid="tabpanel-snippets">
+          {filteredContent.snippets.length > 0 ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {filteredContent.snippets.map(snippet => (
+                <Card key={snippet.id} data-testid={`snippet-${snippet.id}`}>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg">{snippet.name}</CardTitle>
                 </CardHeader>
@@ -157,24 +206,22 @@ export default function ContentLibraryPage() {
                     </Button>
                   </div>
                 </CardContent>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card className="text-center p-6" data-testid="empty-snippets">
+              <CardContent className="pt-6">
+                <p className="mb-4">No snippets found</p>
+                <Button asChild>
+                  <Link href="/content/new?library=true">
+                    Add New Snippet
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
-
-        {/* Empty state that shows when a tab has no items */}
-        {Object.values(contentLibrary).some(collection => collection.length === 0) && (
-          <Card className="text-center p-6 mt-4">
-            <CardContent className="pt-6">
-              <p className="mb-4">No items found in this category</p>
-              <Button asChild>
-                <Link href="/content/new?library=true">
-                  Add New Item
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        )}
       </Tabs>
     </div>
   );

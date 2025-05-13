@@ -40,63 +40,61 @@ const sizeMap = {
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ variant = "primary", size = "md", disabled, children, asChild, className, ...props }, ref) => {
-  // Robust token lookup
-  const token = theme.button[variant] || theme.button.primary;
-  // Optional: developer warning for wrong variant
-  if (!theme.button[variant]) {
-    if (process.env.NODE_ENV !== "production") {
-      console.warn(`Button variant "${variant}" does not exist in theme.button. Defaulting to "primary".`);
+    const token = theme.button[variant] || theme.button.primary;
+    if (!theme.button[variant]) {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn(`Button variant "${variant}" does not exist in theme.button. Defaulting to "primary".`);
+      }
     }
+    const sizeToken = sizeMap[size];
+
+    const enforceColor = (!disabled && (variant === "primary" || variant === "accent"))
+      ? token.color : undefined;
+    const enforceBg = (!disabled && (variant === "primary" || variant === "accent"))
+      ? token.background : undefined;
+
+    const baseStyle: React.CSSProperties = {
+      background: disabled ? token.disabledBackground : enforceBg || token.background,
+      color: disabled ? token.disabledColor : enforceColor || token.color,
+      border: `1px solid ${disabled && token.disabledBorder ? token.disabledBorder : token.border}`,
+      cursor: disabled ? "not-allowed" : "pointer",
+      fontWeight: 600,
+      ...sizeToken,
+      boxShadow: theme.shadow.sm,
+      transition: theme.transition.DEFAULT,
+      outline: "none",
+      opacity: disabled ? 0.7 : 1,
+    };
+
+    // Simple JS hover/focus
+    const [hover, setHover] = React.useState(false);
+    const appliedStyle = {
+      ...baseStyle,
+      background: hover && !disabled && token.hoverBackground ? token.hoverBackground : baseStyle.background,
+      color: hover && !disabled && token.hoverColor ? token.hoverColor : baseStyle.color,
+      border: hover && !disabled && token.hoverBorder ? `1px solid ${token.hoverBorder}` : baseStyle.border,
+    };
+
+    const cleanClassName = sanitizeButtonClassName(className, enforceColor);
+
+    // Remove asChild prop before passing to native element
+    const { asChild: _drop, ...passProps } = props;
+
+    return (
+      <button
+        ref={ref}
+        type="button"
+        style={appliedStyle}
+        disabled={disabled}
+        className={cleanClassName}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+        {...passProps}
+      >
+        {children}
+      </button>
+    );
   }
-  const sizeToken = sizeMap[size];
-
-  // Always enforce correct text color for primary/accent
-  const enforceColor = (!disabled && (variant === "primary" || variant === "accent"))
-    ? token.color : undefined;
-  const enforceBg = (!disabled && (variant === "primary" || variant === "accent"))
-    ? token.background : undefined;
-
-  const baseStyle: React.CSSProperties = {
-    background: disabled ? token.disabledBackground : enforceBg || token.background,
-    color: disabled ? token.disabledColor : enforceColor || token.color,
-    border: `1px solid ${disabled && token.disabledBorder ? token.disabledBorder : token.border}`,
-    cursor: disabled ? "not-allowed" : "pointer",
-    fontWeight: 600,
-    ...sizeToken,
-    boxShadow: theme.shadow.sm,
-    transition: theme.transition.DEFAULT,
-    outline: "none",
-    opacity: disabled ? 0.7 : 1,
-  };
-
-  // Simple JS hover/focus (for demo or if no CSS-in-JS)
-  const [hover, setHover] = React.useState(false);
-  const appliedStyle = {
-    ...baseStyle,
-    background: hover && !disabled && token.hoverBackground ? token.hoverBackground : baseStyle.background,
-    color: hover && !disabled && token.hoverColor ? token.hoverColor : baseStyle.color,
-    border: hover && !disabled && token.hoverBorder ? `1px solid ${token.hoverBorder}` : baseStyle.border,
-  };
-
-  const cleanClassName = sanitizeButtonClassName(className, enforceColor);
-
-  // Remove asChild prop before passing to native element
-  const { asChild: _drop, ...passProps } = props;
-
-  return (
-    <button
-      ref={ref}
-      type="button"
-      style={appliedStyle}
-      disabled={disabled}
-      className={cleanClassName}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      {...passProps}
-    >
-      {children}
-    </button>
-  );
-});
+);
 
 export default Button;

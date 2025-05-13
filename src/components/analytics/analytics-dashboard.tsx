@@ -8,41 +8,78 @@ export interface AnalyticMetric {
   value: number | string;
 }
 
+export interface DateRange {
+  start: string;
+  end: string;
+}
+
+export interface AnalyticsFilter {
+  category?: string;
+  [key: string]: any;
+}
+
 interface AnalyticsDashboardProps {
   metrics?: AnalyticMetric[];
-  fetchData?: () => Promise<AnalyticMetric[]>;
-  dateRange?: {
-    start: string;
-    end: string;
-  };
+  fetchData?: (params?: any) => Promise<AnalyticMetric[]>;
+  dateRange?: DateRange;
+  filter?: AnalyticsFilter;
+  refreshInterval?: number;
 }
 
 export function AnalyticsDashboard({ 
   metrics: initialMetrics = [], 
   fetchData,
-  dateRange 
+  dateRange,
+  filter,
+  refreshInterval
 }: AnalyticsDashboardProps) {
   const [metrics, setMetrics] = useState<AnalyticMetric[]>(initialMetrics);
   const [loading, setLoading] = useState<boolean>(!!fetchData);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (fetchData) {
+  const loadData = async () => {
+    if (!fetchData) return;
+    
+    try {
       setLoading(true);
       setError(null);
       
-      fetchData()
-        .then(data => {
-          setMetrics(data);
-          setLoading(false);
-        })
-        .catch(err => {
-          setError("Failed to load analytics data");
-          setLoading(false);
-          console.error("Analytics fetch error:", err);
-        });
+      const params: any = {};
+      
+      if (dateRange) {
+        params.startDate = dateRange.start;
+        params.endDate = dateRange.end;
+      }
+      
+      if (filter) {
+        Object.assign(params, filter);
+      }
+      
+      const data = await fetchData(params);
+      setMetrics(data);
+    } catch (err) {
+      setError("Failed to load analytics data");
+      console.error("Analytics fetch error:", err);
+    } finally {
+      setLoading(false);
     }
-  }, [fetchData, dateRange]);
+  };
+
+  // Load data on initial render and when dependencies change
+  useEffect(() => {
+    loadData();
+  }, [fetchData, dateRange, filter]);
+
+  // Set up refresh interval if provided
+  useEffect(() => {
+    if (!refreshInterval) return;
+    
+    const intervalId = setInterval(() => {
+      loadData();
+    }, refreshInterval);
+    
+    return () => clearInterval(intervalId);
+  }, [refreshInterval, fetchData]);
 
   if (loading) {
     return <div data-testid="analytics-loading">Loading analytics...</div>;
@@ -64,12 +101,19 @@ export function AnalyticsDashboard({
       {metrics.length === 0 ? (
         <p data-testid="analytics-empty">No analytics data available</p>
       ) : (
-        metrics.map((m) => (
-          <div key={m.key} data-testid={`analytics-metric-${m.key}`} style={{ marginBottom: 8 }}>
-            <strong>{m.label}: </strong>
-            <span>{m.value}</span>
-          </div>
-        ))
+        <div className="analytics-grid">
+          {metrics.map((m) => (
+            <div 
+              key={m.key} 
+              data-testid={`analytics-metric-${m.key}`} 
+              className="analytics-card"
+              style={{ marginBottom: 8 }}
+            >
+              <strong>{m.label}: </strong>
+              <span>{m.value}</span>
+            </div>
+          ))}
+        </div>
       )}
     </section>
   );
