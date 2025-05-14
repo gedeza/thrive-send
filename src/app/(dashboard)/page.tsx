@@ -15,7 +15,6 @@ export default function DashboardHomePage() {
           Welcome to your ThriveSend dashboard
         </p>
       </div>
-
       {/* Navigation Tabs */}
       <div className="flex border-b">
         <div className="flex -mb-px">
@@ -33,7 +32,6 @@ export default function DashboardHomePage() {
           </Link>
         </div>
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -60,7 +58,7 @@ export default function DashboardHomePage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <FileText className="h-4 w-4 text-muted-foreground text-green-600 dark:text-green-400" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">49%</div>
@@ -79,7 +77,6 @@ export default function DashboardHomePage() {
           </CardContent>
         </Card>
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -97,7 +94,7 @@ export default function DashboardHomePage() {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Quick Actions</CardTitle>
             <Link href="/calendar">
-              <Calendar className="h-5 w-5 text-muted-foreground hover:text-foreground" />
+              <Calendar className="h-5 w-5 text-muted-foreground hover:text-foreground text-green-600 dark:text-green-400" />
             </Link>
           </CardHeader>
           <CardContent>
@@ -116,14 +113,13 @@ export default function DashboardHomePage() {
           </CardContent>
         </Card>
       </div>
-      
       {/* Calendar Preview Section */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Upcoming Schedule</CardTitle>
           <Button variant="outline" size="sm" asChild>
             <Link href="/calendar" className="flex items-center gap-1">
-              <Calendar className="h-4 w-4" />
+              <Calendar className="h-4 w-4 text-green-600 dark:text-green-400" />
               View Full Calendar
             </Link>
           </Button>

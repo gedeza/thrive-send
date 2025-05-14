@@ -22,7 +22,6 @@ export default function FeatureAudienceTab() {
       <Typography variant="body1" paragraph>
         Segment and understand your audience. Build targeted groups to maximize campaign performance.
       </Typography>
-
       <Paper 
         variant="outlined" 
         sx={{ 
@@ -32,7 +31,9 @@ export default function FeatureAudienceTab() {
           mb: 3
         }}
       >
-        <PeopleIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+        <PeopleIcon
+          sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }}
+          className="text-green-600 dark:text-green-400" />
         <Typography variant="h6" gutterBottom>
           Total Subscribers: <span style={{ color: theme.colors.primary.DEFAULT }}>5,432</span>
         </Typography>
@@ -42,14 +43,17 @@ export default function FeatureAudienceTab() {
         <MuiButton
           variant="contained"
           color="primary"
-          startIcon={<AddIcon />}
+          startIcon={<AddIcon
+            className="text-green-600 dark:text-green-400"
+            sx={{
+              color: "#16A34A"
+            }} />}
           sx={{ mt: 3 }}
           disabled
         >
           Add New Segment (Coming Soon)
         </MuiButton>
       </Paper>
-
       <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
         <Typography variant="subtitle1" gutterBottom>
           Audience Segments
@@ -57,7 +61,9 @@ export default function FeatureAudienceTab() {
         <List>
           {audienceSegments.map((segment, idx) => (
             <ListItem key={idx} disableGutters>
-              <GroupWorkIcon sx={{ color: 'text.secondary', mr: 2 }} />
+              <GroupWorkIcon
+                sx={{ color: 'text.secondary', mr: 2 }}
+                className="text-green-600 dark:text-green-400" />
               <ListItemText
                 primary={segment.name}
                 secondary={`${segment.count} members`}
@@ -68,7 +74,6 @@ export default function FeatureAudienceTab() {
           ))}
         </List>
       </Paper>
-      
       <Typography variant="caption" color="text.secondary">
         More audience features coming soon: engagement scoring, advanced filters, integrations.
       </Typography>

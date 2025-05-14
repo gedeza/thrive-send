@@ -2,6 +2,28 @@
  * API client for interacting with backend services
  */
 
+// Helper to handle API errors more gracefully
+async function handleApiResponse(response: Response) {
+  if (!response.ok) {
+    let errorMessage = `API request failed with status ${response.status}`;
+    try {
+      const errorBody = await response.json(); // Try to parse JSON error body
+      errorMessage += `: ${errorBody.message || JSON.stringify(errorBody)}`;
+    } catch (e) {
+      // If not JSON, try to get text
+      try {
+        const textBody = await response.text();
+        if (textBody) errorMessage += `: ${textBody}`;
+      } catch (e2) {
+        // Fallback if no body or body can't be read
+        errorMessage += ` - ${response.statusText}`;
+      }
+    }
+    throw new Error(errorMessage);
+  }
+  return response.json();
+}
+
 // User related API functions
 export async function updateUserProfile(userId: string, data: any) {
   try {
@@ -12,12 +34,7 @@ export async function updateUserProfile(userId: string, data: any) {
       },
       body: JSON.stringify(data),
     });
-    
-    if (!response.ok) {
-      throw new Error('Failed to update user profile');
-    }
-    
-    return await response.json();
+    return handleApiResponse(response);
   } catch (error) {
     console.error('Error updating user profile:', error);
     throw error;
@@ -33,12 +50,7 @@ export async function uploadUserAvatar(userId: string, file: File) {
       method: 'POST',
       body: formData,
     });
-    
-    if (!response.ok) {
-      throw new Error('Failed to upload avatar');
-    }
-    
-    return await response.json();
+    return handleApiResponse(response);
   } catch (error) {
     console.error('Error uploading avatar:', error);
     throw error;
@@ -58,12 +70,7 @@ export async function fetchAnalyticsData(params: {
     if (params.metrics) queryParams.append('metrics', params.metrics.join(','));
     
     const response = await fetch(`/api/analytics?${queryParams.toString()}`);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch analytics data');
-    }
-    
-    return await response.json();
+    return handleApiResponse(response);
   } catch (error) {
     console.error('Error fetching analytics data:', error);
     throw error;
@@ -71,7 +78,7 @@ export async function fetchAnalyticsData(params: {
 }
 
 // Content related API functions
-export async function saveContent(data: any) {
+export async function saveContent(data: any & { id?: string }) {
   try {
     const method = data.id ? 'PUT' : 'POST';
     const url = data.id ? `/api/content/${data.id}` : '/api/content';
@@ -83,12 +90,7 @@ export async function saveContent(data: any) {
       },
       body: JSON.stringify(data),
     });
-    
-    if (!response.ok) {
-      throw new Error('Failed to save content');
-    }
-    
-    return await response.json();
+    return handleApiResponse(response);
   } catch (error) {
     console.error('Error saving content:', error);
     throw error;
@@ -98,12 +100,7 @@ export async function saveContent(data: any) {
 export async function fetchContentById(id: string) {
   try {
     const response = await fetch(`/api/content/${id}`);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch content');
-    }
-    
-    return await response.json();
+    return handleApiResponse(response);
   } catch (error) {
     console.error('Error fetching content:', error);
     throw error;
@@ -120,12 +117,7 @@ export async function fetchScheduledContent(params?: {
     if (params?.endDate) queryParams.append('endDate', params.endDate);
     
     const response = await fetch(`/api/content/scheduled?${queryParams.toString()}`);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch scheduled content');
-    }
-    
-    return await response.json();
+    return handleApiResponse(response);
   } catch (error) {
     console.error('Error fetching scheduled content:', error);
     throw error;
@@ -144,14 +136,31 @@ export async function updateContentSchedule(contentId: string, scheduleData: {
       },
       body: JSON.stringify(scheduleData),
     });
-    
-    if (!response.ok) {
-      throw new Error('Failed to update content schedule');
-    }
-    
-    return await response.json();
+    return handleApiResponse(response);
   } catch (error) {
     console.error('Error updating content schedule:', error);
+    throw error;
+  }
+}
+
+// Campaign related API functions
+/**
+ * Creates a new campaign.
+ * @param campaignData - The data for the new campaign.
+ * @returns The created campaign data from the server.
+ */
+export async function createCampaign(campaignData: any) {
+  try {
+    const response = await fetch('/api/campaigns', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(campaignData),
+    });
+    return handleApiResponse(response);
+  } catch (error) {
+    console.error('Error creating campaign:', error);
     throw error;
   }
 }

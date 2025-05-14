@@ -49,6 +49,7 @@ model Organization {
   contentItems   ContentItem[]
   socialAccounts SocialAccount[]
   subscription   Subscription?
+  campaigns      Campaign[]
 }
 
 // Organization Member with role
@@ -84,6 +85,7 @@ model Client {
   socialAccounts SocialAccount[]
   projects       Project[]
   analytics      Analytics[]
+  campaigns      Campaign[]
 }
 
 // Project represents a campaign or initiative for a client
@@ -106,6 +108,7 @@ model Project {
   managerId      String?
   contentPieces  ContentPiece[]
   contentItems   ContentItem[]
+  campaigns      Campaign[]
 }
 
 // Social Media Account
@@ -148,6 +151,8 @@ model ContentPiece {
   organizationId String
   project        Project?     @relation(fields: [projectId], references: [id])
   projectId      String?
+  campaign       Campaign?    @relation(fields: [campaignId], references: [id])
+  campaignId     String?
   socialPosts    SocialPost[]
   engagements    Engagement[]
 }
@@ -200,6 +205,29 @@ model Analytics {
   // Relations
   client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
   clientId String
+}
+
+// Campaign
+model Campaign {
+  id          String         @id @default(cuid())
+  name        String
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  budget      Float?
+  goals       String?        @db.Text
+  status      CampaignStatus @default(DRAFT)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+  client         Client?      @relation(fields: [clientId], references: [id])
+  clientId       String?
+  project        Project?     @relation(fields: [projectId], references: [id])
+  projectId      String?
+  contentPieces  ContentPiece[]
 }
 
 // Subscription
@@ -260,6 +288,14 @@ enum Role {
   ADMIN
   MANAGER
   MEMBER
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
 }
 
 enum ClientType {

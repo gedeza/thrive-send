@@ -1,30 +1,27 @@
+
+
 'use client';
 
-import React, { useState } from 'react';
-import { 
-  Box, 
-  Button, 
-  TextField, 
-  Typography, 
-  Paper, 
-  Grid as MuiGrid, 
-  MenuItem, 
-  FormControl, 
-  InputLabel, 
-  Select,
-  Chip,
-  Divider,
-  FormHelperText,
-  Alert,
-  AlertTitle,
-  CircularProgress
+import React, { useEffect, useState } from 'react';
+import {
+  Box, Button, TextField, Typography, Paper, Grid as MuiGrid, MenuItem,
+  FormControl, InputLabel, Select, Divider, CircularProgress, Alert, FormHelperText
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { styled } from '@mui/material/styles';
 
-// Styled components
+// --- ENUMS ---
+const CAMPAIGN_STATUSES = [
+  { value: 'DRAFT', label: 'Draft' },
+  { value: 'ACTIVE', label: 'Active' },
+  { value: 'PAUSED', label: 'Paused' },
+  { value: 'COMPLETED', label: 'Completed' },
+  { value: 'CANCELLED', label: 'Cancelled' }
+];
+
+// --- Styled Components ---
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
   [theme.breakpoints.up('md')]: {
@@ -33,62 +30,47 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   boxShadow: theme.shadows[2],
   borderRadius: theme.shape.borderRadius * 2,
 }));
-
 const FormSection = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(4),
 }));
-
 const SectionTitle = styled(Typography)(({ theme }) => ({
   fontWeight: 600,
   marginBottom: theme.spacing(2),
 }));
 
-// Campaign types
-const campaignTypes = [
-  { value: 'newsletter', label: 'Newsletter' },
-  { value: 'promotional', label: 'Promotional' },
-  { value: 'announcement', label: 'Announcement' },
-  { value: 'event', label: 'Event Invitation' },
-  { value: 'survey', label: 'Survey' },
-];
-
-// Audience segments
-const audienceSegments = [
-  { value: 'all-subscribers', label: 'All Subscribers' },
-  { value: 'active-users', label: 'Active Users' },
-  { value: 'new-customers', label: 'New Customers' },
-  { value: 'inactive-users', label: 'Inactive Users' },
-  { value: 'high-value', label: 'High Value Customers' },
-];
+// --- Types ---
+type Organization = { id: string; name: string };
+type Client = { id: string; name: string };
+type Project = { id: string; name: string };
 
 interface CampaignFormData {
   name: string;
   description: string;
-  type: string;
-  subject: string;
-  senderName: string;
-  senderEmail: string;
-  audiences: string[];
-  scheduledDate: Date | null;
+  startDate: Date | null;
+  endDate: Date | null;
+  budget: number | '';
+  goals: string;
+  status: string;
+  organizationId: string;
+  clientId: string;
+  projectId: string;
 }
 
 interface FormErrors {
-  name?: string;
-  subject?: string;
-  senderName?: string;
-  senderEmail?: string;
-  audiences?: string;
+  [key: string]: string | undefined;
 }
 
 const initialFormData: CampaignFormData = {
   name: '',
   description: '',
-  type: '',
-  subject: '',
-  senderName: '',
-  senderEmail: '',
-  audiences: [],
-  scheduledDate: null,
+  startDate: null,
+  endDate: null,
+  budget: '',
+  goals: '',
+  status: 'DRAFT',
+  organizationId: '',
+  clientId: '',
+  projectId: '',
 };
 
 const CreateCampaign: React.FC = () => {
@@ -97,311 +79,255 @@ const CreateCampaign: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState('');
-  
-  // Handle text/select input changes
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
-    const { name, value } = e.target;
-    if (name) {
-      setFormData(prev => ({ ...prev, [name]: value }));
-      
-      // Clear error when field is edited
-      if (errors[name as keyof FormErrors]) {
-        setErrors(prev => ({ ...prev, [name]: undefined }));
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // --- Fetch dropdown options ---
+  useEffect(() => {
+    (async function fetchDropdowns() {
+      setLoading(true);
+      try {
+        // -- These endpoints must return arrays of {id, name}
+        const [orgs, clis, pros] = await Promise.all([
+          fetch('/api/organizations').then(r => r.json()),
+          fetch('/api/clients').then(r => r.json()),
+          fetch('/api/projects').then(r => r.json()),
+        ]);
+        setOrganizations(orgs);
+        setClients(clis);
+        setProjects(pros);
+      } catch (err) {
+        setSubmitError("Failed to load organization/client/project options.");
+      } finally {
+        setLoading(false);
       }
-    }
-  };
-  
-  // Handle date change
-  const handleDateChange = (date: Date | null) => {
-    setFormData(prev => ({ ...prev, scheduledDate: date }));
-  };
-  
-  // Handle audience selection change
-  const handleAudienceChange = (event: React.ChangeEvent<{ value: unknown }>) => {
-    const value = event.target.value as string[];
-    setFormData(prev => ({ ...prev, audiences: value }));
-    
-    if (errors.audiences) {
-      setErrors(prev => ({ ...prev, audiences: undefined }));
-    }
-  };
-  
-  // Validate form
+    })();
+  }, []);
+
+  // --- Validation ---
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
-    
-    if (!formData.name.trim()) {
-      newErrors.name = 'Campaign name is required';
-    }
-    
-    if (!formData.subject.trim()) {
-      newErrors.subject = 'Subject line is required';
-    }
-    
-    if (!formData.senderName.trim()) {
-      newErrors.senderName = 'Sender name is required';
-    }
-    
-    if (!formData.senderEmail.trim()) {
-      newErrors.senderEmail = 'Sender email is required';
-    } else {
-      // Simple email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.senderEmail)) {
-        newErrors.senderEmail = 'Please enter a valid email address';
-      }
-    }
-    
-    if (formData.audiences.length === 0) {
-      newErrors.audiences = 'Please select at least one audience segment';
-    }
-    
+    if (!formData.name.trim()) newErrors.name = "Name is required";
+    if (!formData.startDate) newErrors.startDate = "Start date is required";
+    if (!formData.endDate) newErrors.endDate = "End date is required";
+    if (formData.startDate && formData.endDate && formData.startDate > formData.endDate)
+      newErrors.endDate = "End date must be after start date";
+    if (!formData.status) newErrors.status = "Select a status";
+    if (!formData.organizationId) newErrors.organizationId = "Organization required";
+    if (formData.budget !== '' && (isNaN(Number(formData.budget)) || Number(formData.budget) < 0))
+      newErrors.budget = "Budget must be a positive number";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  
-  // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
+
+  // --- Change Handlers ---
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name as string]: value }));
+    setErrors((prev) => ({ ...prev, [name as string]: undefined }));
+  };
+  const handleDateChange = (name: "startDate" | "endDate", date: Date | null) => {
+    setFormData((prev) => ({ ...prev, [name]: date }));
+    setErrors((prev) => ({ ...prev, [name]: undefined }));
+  };
+
+  // --- Submit Handler ---
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    
-    // Reset submission states
     setSubmitSuccess(false);
     setSubmitError('');
-    
-    // Validate form
-    if (!validateForm()) {
-      return;
-    }
-    
+    if (!validateForm()) return;
     setIsSubmitting(true);
-    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      console.log('Campaign data submitted:', formData);
-      
-      // Show success message
+      const payload = {
+        ...formData,
+        startDate: formData.startDate ? formData.startDate.toISOString() : null,
+        endDate: formData.endDate ? formData.endDate.toISOString() : null,
+        budget: formData.budget === '' ? null : Number(formData.budget),
+        clientId: formData.clientId || undefined,
+        projectId: formData.projectId || undefined,
+      };
+      const response = await fetch('/api/campaigns', {
+        method: 'POST',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Failed to create campaign");
       setSubmitSuccess(true);
-      
-      // Reset form after success (optional)
-      // setFormData(initialFormData);
-    } catch (error) {
-      console.error('Error submitting campaign:', error);
-      setSubmitError('An error occurred while creating the campaign. Please try again.');
+      setFormData(initialFormData);
+    } catch (err: any) {
+      setSubmitError(err.message || "Server error");
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }
 
+  // --- JSX ---
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} autoComplete="off">
       <StyledPaper>
-        {/* Header */}
-        <Typography variant="h5" component="h1" gutterBottom fontWeight={600}>
-          Create New Campaign
+        <Typography variant="h5" fontWeight={600} gutterBottom>
+          Create Campaign
         </Typography>
-        <Typography variant="body1" color="text.secondary" paragraph>
-          Fill in the details below to create a new email campaign.
-        </Typography>
-        
-        <Divider sx={{ my: 3 }} />
-        
-        {/* Success message */}
-        {submitSuccess && (
-          <Alert 
-            severity="success" 
-            sx={{ mb: 3 }}
-            onClose={() => setSubmitSuccess(false)}
-          >
-            <AlertTitle>Success</AlertTitle>
-            Campaign created successfully! You can now proceed to the content editor.
-          </Alert>
-        )}
-        
-        {/* Error message */}
-        {submitError && (
-          <Alert 
-            severity="error" 
-            sx={{ mb: 3 }}
-            onClose={() => setSubmitError('')}
-          >
-            <AlertTitle>Error</AlertTitle>
-            {submitError}
-          </Alert>
-        )}
-        
-        {/* Campaign Details Section */}
+        <Divider sx={{ my: 3 }}/>
+
+        {submitSuccess && <Alert severity="success" sx={{ mb: 2 }}>Campaign created!</Alert>}
+        {submitError && <Alert severity="error" sx={{ mb: 2 }}>{submitError}</Alert>}
+        {loading && <Box sx={{ display: "flex", justifyContent: "center", pb: 3 }}><CircularProgress size={24}/></Box>}
+
+        {/* Campaign Details */}
         <FormSection>
           <SectionTitle variant="h6">Campaign Details</SectionTitle>
-          
           <MuiGrid container spacing={3}>
-            <MuiGrid sx={{ gridColumn: 'span 12' }}>
+            <MuiGrid xs={12} md={6}>
               <TextField
-                fullWidth
-                label="Campaign Name"
-                name="name"
+                fullWidth required label="Name" name="name"
                 value={formData.name}
                 onChange={handleChange}
-                error={!!errors.name}
-                helperText={errors.name}
-                placeholder="Summer Sale Announcement"
-                required
+                error={!!errors.name} helperText={errors.name}
               />
             </MuiGrid>
-            
-            <MuiGrid sx={{ gridColumn: { xs: 'span 12', md: 'span 6' } }}>
-              <FormControl fullWidth>
-                <InputLabel id="campaign-type-label">Campaign Type</InputLabel>
+            <MuiGrid xs={12} md={6}>
+              <FormControl fullWidth required error={!!errors.status}>
+                <InputLabel id="status-label">Status</InputLabel>
                 <Select
-                  labelId="campaign-type-label"
-                  id="type"
-                  name="type"
-                  value={formData.type}
+                  labelId="status-label"
+                  name="status"
+                  value={formData.status}
                   onChange={handleChange}
-                  label="Campaign Type"
+                  label="Status"
                 >
-                  {campaignTypes.map((type) => (
-                    <MenuItem key={type.value} value={type.value}>
-                      {type.label}
-                    </MenuItem>
-                  ))}
+                  {CAMPAIGN_STATUSES.map(opt => <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>)}
                 </Select>
+                {errors.status && <FormHelperText>{errors.status}</FormHelperText>}
               </FormControl>
             </MuiGrid>
-            
-            <MuiGrid sx={{ gridColumn: { xs: 'span 12', md: 'span 6' } }}>
+            <MuiGrid xs={12}>
+              <TextField
+                fullWidth multiline rows={3} label="Description"
+                name="description" value={formData.description}
+                onChange={handleChange}
+              />
+            </MuiGrid>
+          </MuiGrid>
+        </FormSection>
+
+        {/* Timing & Budget */}
+        <FormSection>
+          <SectionTitle variant="h6">Timing and Financial</SectionTitle>
+          <MuiGrid container spacing={3}>
+            <MuiGrid xs={12} md={4}>
               <LocalizationProvider dateAdapter={AdapterDateFns}>
                 <DatePicker
-                  label="Schedule Date"
-                  value={formData.scheduledDate}
-                  onChange={handleDateChange}
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      variant: 'outlined'
-                    }
-                  }}
+                  label="Start Date" value={formData.startDate}
+                  onChange={date => handleDateChange("startDate", date)}
+                  slotProps={{ textField: { fullWidth: true, error: !!errors.startDate, helperText: errors.startDate } }}
                 />
               </LocalizationProvider>
             </MuiGrid>
-            
-            <MuiGrid sx={{ gridColumn: 'span 12' }}>
+            <MuiGrid xs={12} md={4}>
+              <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <DatePicker
+                  label="End Date" value={formData.endDate}
+                  onChange={date => handleDateChange("endDate", date)}
+                  slotProps={{ textField: { fullWidth: true, error: !!errors.endDate, helperText: errors.endDate } }}
+                />
+              </LocalizationProvider>
+            </MuiGrid>
+            <MuiGrid xs={12} md={4}>
               <TextField
-                fullWidth
-                label="Description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                multiline
-                rows={3}
-                placeholder="Describe the purpose of this campaign"
+                fullWidth label="Budget ($)" name="budget" type="number"
+                value={formData.budget} onChange={handleChange}
+                error={!!errors.budget} helperText={errors.budget}
               />
             </MuiGrid>
           </MuiGrid>
         </FormSection>
-        
-        {/* Email Details Section */}
+
+        {/* Associations */}
         <FormSection>
-          <SectionTitle variant="h6">Email Details</SectionTitle>
-          
+          <SectionTitle variant="h6">Associations</SectionTitle>
           <MuiGrid container spacing={3}>
-            <MuiGrid sx={{ gridColumn: 'span 12' }}>
-              <TextField
-                fullWidth
-                label="Subject Line"
-                name="subject"
-                value={formData.subject}
-                onChange={handleChange}
-                error={!!errors.subject}
-                helperText={errors.subject}
-                placeholder="Don't Miss Our Summer Sale!"
-                required
-              />
+            <MuiGrid xs={12} md={4}>
+              <FormControl fullWidth required error={!!errors.organizationId}>
+                <InputLabel id="org-label">Organization</InputLabel>
+                <Select
+                  labelId="org-label"
+                  name="organizationId"
+                  value={formData.organizationId}
+                  onChange={handleChange}
+                  label="Organization"
+                >
+                  {organizations.map(org =>
+                    <MenuItem value={org.id} key={org.id}>{org.name}</MenuItem>
+                  )}
+                </Select>
+                {errors.organizationId && <FormHelperText>{errors.organizationId}</FormHelperText>}
+              </FormControl>
             </MuiGrid>
-            
-            <MuiGrid sx={{ gridColumn: { xs: 'span 12', md: 'span 6' } }}>
-              <TextField
-                fullWidth
-                label="Sender Name"
-                name="senderName"
-                value={formData.senderName}
-                onChange={handleChange}
-                error={!!errors.senderName}
-                helperText={errors.senderName}
-                placeholder="Your Company Name"
-                required
-              />
+            <MuiGrid xs={12} md={4}>
+              <FormControl fullWidth>
+                <InputLabel id="client-label">Client (optional)</InputLabel>
+                <Select
+                  labelId="client-label"
+                  name="clientId"
+                  value={formData.clientId}
+                  onChange={handleChange}
+                  label="Client (optional)"
+                >
+                  <MenuItem value="">None</MenuItem>
+                  {clients.map(cli =>
+                    <MenuItem value={cli.id} key={cli.id}>{cli.name}</MenuItem>
+                  )}
+                </Select>
+              </FormControl>
             </MuiGrid>
-            
-            <MuiGrid sx={{ gridColumn: { xs: 'span 12', md: 'span 6' } }}>
-              <TextField
-                fullWidth
-                label="Sender Email"
-                name="senderEmail"
-                type="email"
-                value={formData.senderEmail}
-                onChange={handleChange}
-                error={!!errors.senderEmail}
-                helperText={errors.senderEmail}
-                placeholder="marketing@yourcompany.com"
-                required
-              />
+            <MuiGrid xs={12} md={4}>
+              <FormControl fullWidth>
+                <InputLabel id="project-label">Project (optional)</InputLabel>
+                <Select
+                  labelId="project-label"
+                  name="projectId"
+                  value={formData.projectId}
+                  onChange={handleChange}
+                  label="Project (optional)"
+                >
+                  <MenuItem value="">None</MenuItem>
+                  {projects.map(proj =>
+                    <MenuItem value={proj.id} key={proj.id}>{proj.name}</MenuItem>
+                  )}
+                </Select>
+              </FormControl>
             </MuiGrid>
           </MuiGrid>
         </FormSection>
-        
-        {/* Audience Section */}
+
+        {/* Objectives */}
         <FormSection>
-          <SectionTitle variant="h6">Target Audience</SectionTitle>
-          
-          <FormControl 
-            fullWidth 
-        error={!!errors.audiences}
-          >
-            <InputLabel id="audience-label">Select Audience Segments</InputLabel>
-            <Select
-              labelId="audience-label"
-              id="audiences"
-              name="audiences"
-              multiple
-              value={formData.audiences}
-              onChange={handleAudienceChange}
-              label="Select Audience Segments"
-              renderValue={(selected) => (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {(selected as string[]).map((value) => {
-                    const segment = audienceSegments.find(seg => seg.value === value);
-                    return (
-                      <Chip key={value} label={segment?.label || value} />
-                    );
-                  })}
-                </Box>
-              )}
-            >
-              {audienceSegments.map((segment) => (
-                <MenuItem key={segment.value} value={segment.value}>
-                  {segment.label}
-                </MenuItem>
-              ))}
-            </Select>
-            {errors.audiences && (
-              <FormHelperText>{errors.audiences}</FormHelperText>
-            )}
-          </FormControl>
+          <SectionTitle variant="h6">Goals & Objectives</SectionTitle>
+          <TextField
+            fullWidth multiline minRows={4} name="goals"
+            label="Goals / Objectives"
+            value={formData.goals}
+            onChange={handleChange}
+            placeholder="Describe the campaign's main objectives, KPIs etc."
+          />
         </FormSection>
         
-        {/* Submit Button */}
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+        {/* Submit */}
+        <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
           <Button
             type="submit"
             variant="contained"
             color="primary"
             size="large"
-            disabled={isSubmitting}
-            startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : undefined}
+            disabled={isSubmitting || loading}
+            startIcon={isSubmitting ? <CircularProgress color="inherit" size={20}/> : undefined}
           >
-            {isSubmitting ? 'Creating...' : 'Create Campaign'}
+            {isSubmitting ? "Creating..." : "Create Campaign"}
           </Button>
         </Box>
       </StyledPaper>

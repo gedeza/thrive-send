@@ -12,7 +12,6 @@ export default function FeatureAnalyticsTab() {
       <Typography variant="body1" paragraph>
         Get insights on your campaign performance. The chart and statistics below are sample data for demo purposes.
       </Typography>
-
       <Paper 
         variant="outlined" 
         sx={{ 
@@ -23,7 +22,9 @@ export default function FeatureAnalyticsTab() {
         }}
       >
         {/* Replace this icon with a real chart component if available */}
-        <BarChartIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+        <BarChartIcon
+          sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }}
+          className="text-green-600 dark:text-green-400" />
         <Typography variant="h6" gutterBottom>
           Open & Click Rates (Sample)
         </Typography>
