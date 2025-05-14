@@ -53,8 +53,16 @@ export async function updateContentSchedule(contentId: string, data: any) {
  * Saves content (creates or updates)
  */
 export async function saveContent(data: any) {
-  // Implementation would go here in a real app
-  return { success: true, id: '123' };
+  // POST to /api/content
+  const res = await fetch('/api/content', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    throw new Error(`Save content failed: ${res.status}`);
+  }
+  return await res.json();
 }
 
 /**
@@ -70,4 +78,23 @@ export async function fetchContentById(contentId: string) {
     scheduledDate: new Date().toISOString(),
     status: 'draft'
   };
+}
+
+/**
+ * Uploads media files for ContentForm and editor
+ */
+export async function uploadMedia(file: File): Promise<{ url: string, filename: string }> {
+  const form = new FormData();
+  form.append('file', file);
+  
+  const res = await fetch('/api/media/upload', {
+    method: 'POST',
+    body: form,
+  });
+  
+  if (!res.ok) {
+    throw new Error(`Media upload failed: ${res.status}`);
+  }
+  
+  return await res.json();
 }

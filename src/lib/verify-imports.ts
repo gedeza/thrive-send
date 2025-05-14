@@ -20,7 +20,6 @@ import { AnalyticsDashboard } from '@/components/analytics/analytics-dashboard';
 import AnalyticsCard from '@/components/analytics/analytics-card';
 
 import ContentCalendar from '@/components/content/content-calendar';
-import ContentForm from '@/components/content/content-form';
 
 import ProfileCard from '@/components/user/profile-card';
 
@@ -45,7 +44,6 @@ export const componentCheck = {
   AnalyticsDashboard,
   AnalyticsCard,
   ContentCalendar,
-  ContentForm,
   ProfileCard,
   ThemeProvider
 };

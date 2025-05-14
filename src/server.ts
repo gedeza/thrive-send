@@ -1,6 +1,9 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import calendarRoutes from './routes/calendarRoutes';
+import contentRoutes from './routes/contentRoutes';
+import mediaRoutes from './routes/mediaRoutes';
 
 // Create Express server
 const app = express();
@@ -11,8 +14,13 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve uploads as static (for persistent file URLs)
+app.use('/uploads', express.static(path.join(__dirname, '../../public/uploads')));
+
 // Routes
 app.use('/api/calendar', calendarRoutes);
+app.use('/api/content', contentRoutes);
+app.use('/api/media', mediaRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

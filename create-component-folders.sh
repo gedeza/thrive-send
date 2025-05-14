@@ -31,7 +31,6 @@ touch src/components/analytics/analytics-card.tsx
 
 # Content Components
 touch src/components/content/content-calendar.tsx
-touch src/components/content/content-form.tsx
 
 # User Components
 touch src/components/user/profile-card.tsx

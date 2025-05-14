@@ -1,15 +1,15 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { 
-  Box, 
-  Button, 
-  TextField, 
-  Typography, 
-  Paper, 
-  Grid, 
-  Divider, 
-  IconButton, 
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Paper,
+  Grid,
+  Divider,
+  IconButton,
   InputAdornment,
   FormControl,
   InputLabel,
@@ -20,20 +20,16 @@ import {
   Alert,
   AlertTitle,
   CircularProgress,
-  LinearProgress
+  LinearProgress,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import ImageIcon from '@mui/icons-material/Image';
-import InsertLinkIcon from '@mui/icons-material/InsertLink';
+import { uploadMedia, saveContent } from '../../lib/api';
+import RichTextEditor from './RichTextEditor';
 
-// Rich text editor (you'll need to install this library)
-// import { Editor } from 'react-draft-wysiwyg';
-// import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css';
-
-// Styled components
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
   [theme.breakpoints.up('md')]: {
@@ -42,16 +38,13 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   boxShadow: theme.shadows[2],
   borderRadius: theme.shape.borderRadius * 2,
 }));
-
 const FormSection = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(4),
 }));
-
 const SectionTitle = styled(Typography)(({ theme }) => ({
   fontWeight: 600,
   marginBottom: theme.spacing(2),
 }));
-
 const MediaPreviewItem = styled(Box)(({ theme }) => ({
   border: `1px solid ${theme.palette.divider}`,
   borderRadius: theme.shape.borderRadius,
@@ -60,7 +53,6 @@ const MediaPreviewItem = styled(Box)(({ theme }) => ({
   alignItems: 'center',
   marginBottom: theme.spacing(1),
 }));
-
 const UploadButton = styled(Button)(({ theme }) => ({
   marginBottom: theme.spacing(2),
   '& .MuiButton-startIcon': {
@@ -68,7 +60,6 @@ const UploadButton = styled(Button)(({ theme }) => ({
   },
 }));
 
-// Content types
 const contentTypes = [
   { value: 'html', label: 'HTML' },
   { value: 'text', label: 'Plain Text' },
@@ -76,19 +67,12 @@ const contentTypes = [
   { value: 'amp', label: 'AMP' },
 ];
 
-// Placeholder for editor toolbar options
-const editorToolbarOptions = {
-  options: ['inline', 'blockType', 'fontSize', 'list', 'textAlign', 'link', 'image', 'history'],
-  inline: {
-    options: ['bold', 'italic', 'underline'],
-  },
-  blockType: {
-    options: ['Normal', 'H1', 'H2', 'H3', 'H4', 'Blockquote'],
-  },
-  textAlign: {
-    options: ['left', 'center', 'right'],
-  },
-};
+// For uploaded media file info
+interface UploadedFile {
+  url: string;
+  name: string;
+  size: number;
+}
 
 interface ContentFormData {
   title: string;
@@ -96,15 +80,13 @@ interface ContentFormData {
   tags: string[];
   content: string;
   preheaderText: string;
-  mediaFiles: File[];
+  mediaFiles: UploadedFile[];
 }
-
 interface FormErrors {
   title?: string;
   content?: string;
   preheaderText?: string;
 }
-
 const initialFormData: ContentFormData = {
   title: '',
   contentType: 'html',
@@ -122,24 +104,26 @@ const ContentForm: React.FC = () => {
   const [submitError, setSubmitError] = useState('');
   const [newTag, setNewTag] = useState('');
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
-  
-  // References
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  // Handle text/select input changes
+
+  // For all text/select fields (title, preheader, etc)
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
     const { name, value } = e.target;
     if (name) {
       setFormData(prev => ({ ...prev, [name]: value }));
-      
-      // Clear error when field is edited
       if (errors[name as keyof FormErrors]) {
         setErrors(prev => ({ ...prev, [name]: undefined }));
       }
     }
   };
-  
-  // Handle tag input
+
+  // TipTap content update
+  const handleContentChange = (html: string) => {
+    setFormData(prev => ({ ...prev, content: html }));
+    if (errors.content) setErrors(prev => ({ ...prev, content: undefined }));
+  };
+
+  // Tags
   const handleTagAdd = () => {
     if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
       setFormData(prev => ({
@@ -149,118 +133,85 @@ const ContentForm: React.FC = () => {
       setNewTag('');
     }
   };
-  
   const handleTagDelete = (tagToDelete: string) => {
     setFormData(prev => ({
       ...prev,
       tags: prev.tags.filter(tag => tag !== tagToDelete)
     }));
   };
-  
-  // Handle file upload
+
+  // File upload for MEDIA section (NOT editor-inserted images)
   const handleFileUploadClick = () => {
     fileInputRef.current?.click();
   };
-  
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      // Simulate upload progress
       setUploadProgress(0);
-      const interval = setInterval(() => {
+      // Fake progress
+      const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
           if (prev === null || prev >= 100) {
-            clearInterval(interval);
+            clearInterval(progressInterval);
             return 100;
           }
-          return prev + 10;
+          return prev + 12;
         });
-      }, 200);
-      
-      // Add files to state
+      }, 120);
+
       const filesArray = Array.from(e.target.files);
-      setFormData(prev => ({
-        ...prev,
-        mediaFiles: [...prev.mediaFiles, ...filesArray]
-      }));
-      
-      // Clear input value to allow selecting the same file again
-      e.target.value = '';
-      
-      // Reset progress after "upload" completes
-      setTimeout(() => {
-        setUploadProgress(null);
-      }, 2500);
+      try {
+        const uploaded = await Promise.all(
+          filesArray.map(async (file) => {
+            const res = await uploadMedia(file);
+            return { url: res.url, name: file.name, size: file.size };
+          })
+        );
+        setFormData(prev => ({
+          ...prev,
+          mediaFiles: [...prev.mediaFiles, ...uploaded]
+        }));
+      } catch (err) {
+        setSubmitError('Media upload failed.');
+      } finally {
+        e.target.value = '';
+        setTimeout(() => setUploadProgress(null), 400);
+      }
     }
   };
-  
   const handleFileDelete = (index: number) => {
     setFormData(prev => ({
       ...prev,
       mediaFiles: prev.mediaFiles.filter((_, i) => i !== index)
     }));
   };
-  
-  // Handle content editor change
-  const handleEditorChange = (content: string) => {
-    setFormData(prev => ({ ...prev, content }));
-    
-    if (errors.content) {
-      setErrors(prev => ({ ...prev, content: undefined }));
-    }
-  };
-  
-  // Validate form
+
+  // Validation
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
-    
-    if (!formData.title.trim()) {
-      newErrors.title = 'Content title is required';
-    }
-    
-    if (!formData.content.trim()) {
-      newErrors.content = 'Content cannot be empty';
-    }
-    
-    if (formData.preheaderText.length > 100) {
-      newErrors.preheaderText = 'Preheader text must be less than 100 characters';
-    }
-    
+    if (!formData.title.trim()) newErrors.title = 'Content title is required';
+    if (!formData.content.trim()) newErrors.content = 'Content cannot be empty';
+    if (formData.preheaderText.length > 100) newErrors.preheaderText = 'Preheader text must be less than 100 characters';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  
-  // Handle form submission
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Reset submission states
     setSubmitSuccess(false);
     setSubmitError('');
-    
-    // Validate form
-    if (!validateForm()) {
-      return;
-    }
-    
+    if (!validateForm()) return;
     setIsSubmitting(true);
-    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      console.log('Content data submitted:', formData);
-      
-      // Show success message
+      await saveContent(formData);
       setSubmitSuccess(true);
+      setFormData(initialFormData); // Optionally reset form
     } catch (error) {
-      console.error('Error submitting content:', error);
-      setSubmitError('An error occurred while saving the content. Please try again.');
+      setSubmitError('An error occurred while saving content');
     } finally {
       setIsSubmitting(false);
     }
   };
-  
-  // Format file size
+
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return bytes + ' bytes';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
@@ -270,20 +221,16 @@ const ContentForm: React.FC = () => {
   return (
     <form onSubmit={handleSubmit}>
       <StyledPaper>
-        {/* Header */}
         <Typography variant="h5" component="h1" gutterBottom fontWeight={600}>
           Create Content
         </Typography>
         <Typography variant="body1" color="text.secondary" paragraph>
           Create and edit content for your marketing campaigns.
         </Typography>
-        
         <Divider sx={{ my: 3 }} />
-        
-        {/* Success message */}
         {submitSuccess && (
-          <Alert 
-            severity="success" 
+          <Alert
+            severity="success"
             sx={{ mb: 3 }}
             onClose={() => setSubmitSuccess(false)}
           >
@@ -291,11 +238,9 @@ const ContentForm: React.FC = () => {
             Content saved successfully!
           </Alert>
         )}
-        
-        {/* Error message */}
         {submitError && (
-          <Alert 
-            severity="error" 
+          <Alert
+            severity="error"
             sx={{ mb: 3 }}
             onClose={() => setSubmitError('')}
           >
@@ -303,11 +248,9 @@ const ContentForm: React.FC = () => {
             {submitError}
           </Alert>
         )}
-        
-        {/* Content Details Section */}
+        {/* Content Details */}
         <FormSection>
           <SectionTitle variant="h6">Content Details</SectionTitle>
-          
           <Grid container spacing={3}>
             <Grid item xs={12}>
               <TextField
@@ -322,7 +265,6 @@ const ContentForm: React.FC = () => {
                 required
               />
             </Grid>
-            
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
                 <InputLabel id="content-type-label">Content Type</InputLabel>
@@ -342,7 +284,6 @@ const ContentForm: React.FC = () => {
                 </Select>
               </FormControl>
             </Grid>
-            
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -358,11 +299,9 @@ const ContentForm: React.FC = () => {
             </Grid>
           </Grid>
         </FormSection>
-        
         {/* Tags Section */}
         <FormSection>
           <SectionTitle variant="h6">Tags</SectionTitle>
-          
           <Box sx={{ mb: 2 }}>
             <Grid container spacing={2}>
               <Grid item xs={12} sm={9}>
@@ -381,8 +320,8 @@ const ContentForm: React.FC = () => {
                   InputProps={{
                     endAdornment: (
                       <InputAdornment position="end">
-                        <IconButton 
-                          onClick={handleTagAdd} 
+                        <IconButton
+                          onClick={handleTagAdd}
                           edge="end"
                           disabled={!newTag.trim()}
                         >
@@ -395,7 +334,6 @@ const ContentForm: React.FC = () => {
               </Grid>
             </Grid>
           </Box>
-          
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
             {formData.tags.map((tag, index) => (
               <Chip
@@ -413,63 +351,40 @@ const ContentForm: React.FC = () => {
             )}
           </Box>
         </FormSection>
-        
         {/* Content Editor Section */}
         <FormSection>
           <SectionTitle variant="h6">Content</SectionTitle>
-          
-          {/* Placeholder for rich text editor */}
-          <Box 
-            sx={{ 
-              border: errors.content ? '1px solid #d32f2f' : '1px solid rgba(0, 0, 0, 0.23)', 
+          <Box
+            sx={{
+              border: errors.content ? '1px solid #d32f2f' : '1px solid rgba(0, 0, 0, 0.23)',
               borderRadius: 1,
-              minHeight: 300,
+              minHeight: 320,
               p: 2,
-              mb: 1
+              mb: 1,
+              backgroundColor: 'white'
             }}
           >
-            {/* Uncomment when using actual editor */}
-            {/* <Editor
-              editorState={editorState}
-              onEditorStateChange={setEditorState}
-              wrapperClassName="rich-editor-wrapper"
-              editorClassName="rich-editor"
-              toolbar={editorToolbarOptions}
-            /> */}
-            
-            {/* Placeholder textarea until rich editor is implemented */}
-            <TextField
-              fullWidth
-              multiline
-              rows={10}
-              variant="standard"
-              placeholder="Enter your content here or use the rich text editor..."
-              InputProps={{ disableUnderline: true }}
-              name="content"
+            <RichTextEditor
               value={formData.content}
-              onChange={handleChange}
+              onChange={handleContentChange}
             />
           </Box>
-          
           {errors.content && (
             <Typography color="error" variant="caption">
               {errors.content}
             </Typography>
           )}
         </FormSection>
-        
         {/* Media Section */}
         <FormSection>
           <SectionTitle variant="h6">Media Assets</SectionTitle>
-          
-          <input 
-            type="file" 
+          <input
+            type="file"
             ref={fileInputRef}
             style={{ display: 'none' }}
             onChange={handleFileChange}
             multiple
           />
-          
           <UploadButton
             variant="outlined"
             startIcon={<CloudUploadIcon />}
@@ -477,21 +392,17 @@ const ContentForm: React.FC = () => {
           >
             Upload Media
           </UploadButton>
-          
-          {/* Upload progress */}
           {uploadProgress !== null && (
             <Box sx={{ width: '100%', mb: 2 }}>
-              <LinearProgress 
-                variant="determinate" 
-                value={uploadProgress} 
+              <LinearProgress
+                variant="determinate"
+                value={uploadProgress}
               />
               <Typography variant="caption" color="text.secondary">
                 Uploading... {uploadProgress}%
               </Typography>
             </Box>
           )}
-          
-          {/* Media files list */}
           <Stack spacing={1}>
             {formData.mediaFiles.length === 0 ? (
               <Typography variant="body2" color="text.secondary">
@@ -509,8 +420,8 @@ const ContentForm: React.FC = () => {
                       {formatFileSize(file.size)}
                     </Typography>
                   </Box>
-                  <IconButton 
-                    size="small" 
+                  <IconButton
+                    size="small"
                     onClick={() => handleFileDelete(index)}
                     aria-label="delete file"
                   >
@@ -521,8 +432,6 @@ const ContentForm: React.FC = () => {
             )}
           </Stack>
         </FormSection>
-        
-        {/* Submit Button */}
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
           <Button
             type="submit"
