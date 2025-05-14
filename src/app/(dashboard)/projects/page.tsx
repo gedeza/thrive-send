@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { ProjectCard, Project } from "@/components/projects/ProjectCard";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 const STATUS_OPTIONS = ["All", "In Progress", "Planned", "Completed"];
 
@@ -13,6 +14,12 @@ export default function ProjectsPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("All");
+
+  // Filter button color sets from theme (for clarity)
+  const FILTER_BUTTON_VARIANTS = {
+    active: "bg-primary text-white border-primary hover:bg-primary/90",
+    inactive: "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
+  };
 
   useEffect(() => {
     // Simulated async fetch, replace with real API call
@@ -103,14 +110,17 @@ export default function ProjectsPage() {
             aria-label="Search projects"
             data-testid="search-projects"
           />
-          <Link
-            href="/projects/new"
-            className="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
+          <Button
+            asChild
+            variant="primary"
             data-testid="create-project-main"
+            className="px-4 py-2"
           >
-            <span className="mr-2 text-lg font-bold">+</span>
-            Create Project
-          </Link>
+            <Link href="/projects/new">
+              <span className="mr-2 text-lg font-bold">+</span>
+              Create Project
+            </Link>
+          </Button>
         </div>
       </header>
       
@@ -121,12 +131,13 @@ export default function ProjectsPage() {
               key={status}
               onClick={() => setStatusFilter(status)}
               type="button"
-              className={`rounded-full px-3 py-1 text-xs font-semibold border transition-colors ${
-                statusFilter === status
-                  ? "bg-blue-600 text-white border-blue-600"
-                  : "bg-white text-muted-foreground border-gray-300 hover:bg-gray-100"
-              }`}
+              className={`rounded-full px-4 py-1 text-xs font-semibold border transition-colors outline-none
+                ${statusFilter === status 
+                  ? FILTER_BUTTON_VARIANTS.active
+                  : FILTER_BUTTON_VARIANTS.inactive
+                }`}
               aria-pressed={statusFilter === status}
+              tabIndex={0}
             >
               {status}
             </button>

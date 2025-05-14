@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { contentItems, type ContentItem } from "./content.mock-data";
 
 const statusBadgeMap: Record<ContentItem["status"], string> = {
@@ -43,14 +44,17 @@ export default function ContentPage() {
             className="max-w-xs"
             aria-label="Search content"
           />
-          <Link
-            href="/content/new"
-            className="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
+          <Button
+            asChild
+            variant="primary"
             data-testid="create-content"
+            className="px-4 py-2"
           >
-            <span className="mr-2 text-lg font-bold">+</span>
-            Create Content
-          </Link>
+            <Link href="/content/new">
+              <span className="mr-2 text-lg font-bold">+</span>
+              Create Content
+            </Link>
+          </Button>
         </div>
       </div>
       

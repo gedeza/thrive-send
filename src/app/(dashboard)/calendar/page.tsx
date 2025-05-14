@@ -7,6 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Plus, Calendar, Clock, Twitter, Linkedin, Facebook, Instagram, Mail, FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { fetchEvents, createEvent, updateEvent, deleteEvent } from "@/lib/api/calendar-service";
 
 // Icon mapping for each type
@@ -161,13 +162,16 @@ export default function CalendarPage() {
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <button 
+          <Button
             onClick={handleCreateContent}
-            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 flex items-center"
+            variant="primary"
+            type="button"
+            className="flex items-center"
+            data-testid="create-content"
           >
             <Plus className="mr-2 h-4 w-4" />
             New Content
-          </button>
+          </Button>
         </div>
       </div>
       
@@ -234,13 +238,15 @@ export default function CalendarPage() {
           ) : upcomingEvents.length === 0 ? (
             <div className="p-8 text-center">
               <p className="text-muted-foreground">No upcoming events scheduled.</p>
-              <button 
-                onClick={handleCreateContent} 
-                className="mt-4 px-4 py-2 border border-input rounded-md hover:bg-accent"
+              <Button
+                onClick={handleCreateContent}
+                variant="outline"
+                type="button"
+                className="mt-4"
               >
-                <Plus className="h-4 w-4 inline-block mr-2" />
+                <Plus className="h-4 w-4 mr-2" />
                 Schedule Content
-              </button>
+              </Button>
             </div>
           ) : (
             <div className="divide-y">
