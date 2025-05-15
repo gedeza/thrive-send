@@ -1,2 +1,9 @@
 onlyBuiltDependencies:
   - '@clerk/shared'
+  - '@prisma/client'
+
+ignoredBuiltDependencies:
+  - '@prisma/engines'
+  - esbuild
+  - prisma
+  - unrs-resolver

@@ -1,22 +1,48 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { getAuth } from "@clerk/nextjs/server"; // Clerk
+
+// Mock projects data
+const mockProjects = [
+  {
+    id: "proj1",
+    name: "Website Redesign",
+    status: "ACTIVE",
+    clientId: "2", // References Horizon Tech client
+    createdAt: "2023-05-12T08:30:00Z"
+  },
+  {
+    id: "proj2",
+    name: "Summer Marketing Campaign",
+    status: "PLANNING",
+    clientId: "1", // References Starlight Municipality client
+    createdAt: "2023-06-18T13:45:00Z"
+  },
+  {
+    id: "proj3",
+    name: "Product Launch",
+    status: "ACTIVE",
+    clientId: "2", // References Horizon Tech client
+    createdAt: "2023-07-22T10:15:00Z"
+  },
+  {
+    id: "proj4",
+    name: "Annual Fundraiser",
+    status: "COMPLETED",
+    clientId: "3", // References GreenLeaf Nonprofit client
+    createdAt: "2023-03-30T16:20:00Z"
+  }
+];
 
 export async function GET(req: NextRequest) {
-  const { userId } = getAuth(req);
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  // All orgs for user
-  const memberships = await db.organizationMember.findMany({
-    where: { user: { clerkId: userId } },
-    select: { organizationId: true },
-  });
-
-  const orgIds = memberships.map(m => m.organizationId);
-  const projects = await db.project.findMany({
-    where: { organizationId: { in: orgIds } },
-    select: { id: true, name: true }
-  });
-
-  return NextResponse.json(projects);
+  try {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    return NextResponse.json(mockProjects);
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch projects" },
+      { status: 500 }
+    );
+  }
 }

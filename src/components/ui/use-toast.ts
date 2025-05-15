@@ -74,26 +74,45 @@ export function useToast() {
   };
 }
 
-// Standalone toast function for use outside of components
-let toastFn: (props: Omit<Toast, "id">) => { id: string; dismiss: () => void; update: (props: Partial<Omit<Toast, "id">>) => void };
+// Create a singleton instance for the toast function
+let toastFn: (props: Omit<Toast, "id">) => { 
+  id: string; 
+  dismiss: () => void; 
+  update: (props: Partial<Omit<Toast, "id">>) => void 
+};
 
-if (typeof window !== "undefined") {
-  // Initialize with default implementation
-  toastFn = ({ title, description, type = "default", duration = DEFAULT_TOAST_DURATION }) => {
-    console.warn("Toast function called before it was initialized");
+// Initialize with a default implementation that works on both client and server
+toastFn = ({ title, description, type = "default", duration = DEFAULT_TOAST_DURATION }) => {
+  // Server-side or uninitialized client-side fallback
+  if (typeof window === "undefined") {
     return {
-      id: "",
+      id: "server-toast",
       dismiss: () => {},
       update: () => {},
     };
+  }
+  
+  console.warn("Toast function called before it was initialized by ToastProvider");
+  return {
+    id: "",
+    dismiss: () => {},
+    update: () => {},
   };
-}
+};
 
+/**
+ * Standalone toast function for use outside of components
+ */
 export function toast(props: Omit<Toast, "id">) {
   return toastFn(props);
 }
 
-// This function will be called by the ToastProvider to set the actual implementation
+/**
+ * This function will be called by the ToastProvider to set the actual implementation
+ */
 export function setToastFunction(fn: typeof toastFn) {
   toastFn = fn;
 }
+
+// Add static methods to useToast for easier access
+useToast.toast = toast;

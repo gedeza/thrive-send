@@ -4,7 +4,7 @@
 
 import React, { useEffect, useState } from 'react';
 import {
-  Box, Button, TextField, Typography, Paper, Grid as MuiGrid, MenuItem,
+  Box, Button, TextField, Typography, Paper, Grid, MenuItem,
   FormControl, InputLabel, Select, Divider, CircularProgress, Alert, FormHelperText
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -181,16 +181,16 @@ const CreateCampaign: React.FC = () => {
         {/* Campaign Details */}
         <FormSection>
           <SectionTitle variant="h6">Campaign Details</SectionTitle>
-          <MuiGrid container spacing={3}>
-            <MuiGrid xs={12} md={6}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
               <TextField
                 fullWidth required label="Name" name="name"
                 value={formData.name}
                 onChange={handleChange}
                 error={!!errors.name} helperText={errors.name}
               />
-            </MuiGrid>
-            <MuiGrid xs={12} md={6}>
+            </Grid>
+            <Grid item xs={12} md={6}>
               <FormControl fullWidth required error={!!errors.status}>
                 <InputLabel id="status-label">Status</InputLabel>
                 <Select
@@ -204,22 +204,22 @@ const CreateCampaign: React.FC = () => {
                 </Select>
                 {errors.status && <FormHelperText>{errors.status}</FormHelperText>}
               </FormControl>
-            </MuiGrid>
-            <MuiGrid xs={12}>
+            </Grid>
+            <Grid item xs={12}>
               <TextField
                 fullWidth multiline rows={3} label="Description"
                 name="description" value={formData.description}
                 onChange={handleChange}
               />
-            </MuiGrid>
-          </MuiGrid>
+            </Grid>
+          </Grid>
         </FormSection>
 
         {/* Timing & Budget */}
         <FormSection>
           <SectionTitle variant="h6">Timing and Financial</SectionTitle>
-          <MuiGrid container spacing={3}>
-            <MuiGrid xs={12} md={4}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={4}>
               <LocalizationProvider dateAdapter={AdapterDateFns}>
                 <DatePicker
                   label="Start Date" value={formData.startDate}
@@ -227,8 +227,8 @@ const CreateCampaign: React.FC = () => {
                   slotProps={{ textField: { fullWidth: true, error: !!errors.startDate, helperText: errors.startDate } }}
                 />
               </LocalizationProvider>
-            </MuiGrid>
-            <MuiGrid xs={12} md={4}>
+            </Grid>
+            <Grid item xs={12} md={4}>
               <LocalizationProvider dateAdapter={AdapterDateFns}>
                 <DatePicker
                   label="End Date" value={formData.endDate}
@@ -236,22 +236,22 @@ const CreateCampaign: React.FC = () => {
                   slotProps={{ textField: { fullWidth: true, error: !!errors.endDate, helperText: errors.endDate } }}
                 />
               </LocalizationProvider>
-            </MuiGrid>
-            <MuiGrid xs={12} md={4}>
+            </Grid>
+            <Grid item xs={12} md={4}>
               <TextField
                 fullWidth label="Budget ($)" name="budget" type="number"
                 value={formData.budget} onChange={handleChange}
                 error={!!errors.budget} helperText={errors.budget}
               />
-            </MuiGrid>
-          </MuiGrid>
+            </Grid>
+          </Grid>
         </FormSection>
 
         {/* Associations */}
         <FormSection>
           <SectionTitle variant="h6">Associations</SectionTitle>
-          <MuiGrid container spacing={3}>
-            <MuiGrid xs={12} md={4}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={4}>
               <FormControl fullWidth required error={!!errors.organizationId}>
                 <InputLabel id="org-label">Organization</InputLabel>
                 <Select
@@ -267,8 +267,8 @@ const CreateCampaign: React.FC = () => {
                 </Select>
                 {errors.organizationId && <FormHelperText>{errors.organizationId}</FormHelperText>}
               </FormControl>
-            </MuiGrid>
-            <MuiGrid xs={12} md={4}>
+            </Grid>
+            <Grid item xs={12} md={4}>
               <FormControl fullWidth>
                 <InputLabel id="client-label">Client (optional)</InputLabel>
                 <Select
@@ -284,8 +284,8 @@ const CreateCampaign: React.FC = () => {
                   )}
                 </Select>
               </FormControl>
-            </MuiGrid>
-            <MuiGrid xs={12} md={4}>
+            </Grid>
+            <Grid item xs={12} md={4}>
               <FormControl fullWidth>
                 <InputLabel id="project-label">Project (optional)</InputLabel>
                 <Select
@@ -301,8 +301,8 @@ const CreateCampaign: React.FC = () => {
                   )}
                 </Select>
               </FormControl>
-            </MuiGrid>
-          </MuiGrid>
+            </Grid>
+          </Grid>
         </FormSection>
 
         {/* Objectives */}

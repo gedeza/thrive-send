@@ -1,14 +1,31 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { campaigns, type Campaign } from "./campaigns.mock-data";
-import { BarChart2, Mail, Smartphone, Globe2, PauseCircle, Archive } from "lucide-react";
+import { BarChart2, Mail, Smartphone, Globe2, PauseCircle, Archive, RefreshCcw, AlertCircle } from "lucide-react";
+
+// Campaign type definition
+type CampaignStatus = "Scheduled" | "Sent" | "Draft" | "Paused" | "Archived";
+type CampaignChannel = "Email" | "SMS" | "Social" | "Push";
+
+interface Campaign {
+  id: string;
+  name: string;
+  status: CampaignStatus;
+  sentDate: string | null;
+  openRate: string | null;
+  channel: CampaignChannel;
+  audience: string;
+  createdAt: string;
+  clientName?: string | null;
+  clientId?: string | null;
+}
 
 // Badge color map
-const statusBadgeMap: Record<Campaign["status"], string> = {
+const statusBadgeMap: Record<CampaignStatus, string> = {
   Scheduled: "bg-blue-100 text-blue-800",
   Sent: "bg-green-100 text-green-800",
   Draft: "bg-yellow-100 text-yellow-900",
@@ -16,7 +33,7 @@ const statusBadgeMap: Record<Campaign["status"], string> = {
   Archived: "bg-gray-100 text-gray-600"
 };
 
-const channelIcons: Record<Campaign["channel"], JSX.Element> = {
+const channelIcons: Record<CampaignChannel, JSX.Element> = {
   Email: <Mail className="h-4 w-4 inline-block" />,
   SMS: <Smartphone className="h-4 w-4 inline-block" />,
   Social: <Globe2 className="h-4 w-4 inline-block" />,
@@ -30,6 +47,116 @@ function prettyDate(d: string | null) {
 }
 
 export default function CampaignsPage() {
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Helper function to map database status to UI status
+  function mapDatabaseStatusToUI(status: string): CampaignStatus {
+    const statusMap: Record<string, CampaignStatus> = {
+      'draft': 'Draft',
+      'active': 'Scheduled',
+      'completed': 'Sent',
+      'paused': 'Paused',
+      'archived': 'Archived'
+    };
+    
+    return statusMap[status] || 'Draft';
+  }
+
+  // Helper function to validate channel
+  function validateChannel(channel: string): CampaignChannel {
+    const validChannels: CampaignChannel[] = ['Email', 'SMS', 'Social', 'Push'];
+    return validChannels.includes(channel as CampaignChannel) 
+      ? (channel as CampaignChannel) 
+      : 'Email';
+  }
+
+  const fetchCampaigns = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      console.log('Fetching campaigns from API...');
+      const res = await fetch("/api/campaigns", {
+        // Add cache: 'no-store' to prevent caching issues during development
+        cache: 'no-store',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      // Log the raw response for debugging
+      console.log('API Response status:', res.status);
+      console.log('API Response headers:', Object.fromEntries(res.headers.entries()));
+      
+      if (!res.ok) {
+        let errorMessage = `Server responded with status: ${res.status}`;
+        
+        try {
+          const errorData = await res.json();
+          console.error("API Error Response:", {
+            status: res.status,
+            statusText: res.statusText,
+            errorData
+          });
+          
+          if (errorData && errorData.error) {
+            errorMessage = errorData.error;
+            if (errorData.details) {
+              errorMessage += `: ${errorData.details}`;
+            }
+          }
+        } catch (parseError) {
+          console.error("Failed to parse error response:", parseError);
+        }
+        
+        throw new Error(errorMessage);
+      }
+      
+      // Check if the response is valid JSON
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('Unexpected content type:', contentType);
+        throw new Error('API response is not valid JSON');
+      }
+      
+      const data = await res.json();
+      console.log('Campaign data received:', data);
+      
+      if (!Array.isArray(data)) {
+        console.error('Expected array of campaigns, received:', typeof data);
+        throw new Error('Invalid data format received from API');
+      }
+      
+      // Transform the data to match the Campaign interface
+      const transformedData: Campaign[] = data.map(campaign => ({
+        id: campaign.id,
+        name: campaign.name,
+        status: mapDatabaseStatusToUI(campaign.status),
+        sentDate: campaign.sentDate || null,
+        openRate: campaign.openRate || null,
+        // Ensure channel is a valid CampaignChannel
+        channel: validateChannel(campaign.channel),
+        audience: campaign.audience || 'All Users',
+        createdAt: campaign.createdAt,
+        clientName: campaign.client?.name || campaign.clientName || null,
+        clientId: campaign.clientId || null
+      }));
+      
+      setCampaigns(transformedData);
+      setLoading(false);
+    } catch (err: any) {
+      console.error("Failed to load campaigns:", err);
+      const errorMessage = err.message || "Unable to load campaign data. Please try again later.";
+      setError(errorMessage);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCampaigns();
+  }, []);
 
   return (
     <div className="p-6 space-y-6">
@@ -49,15 +176,64 @@ export default function CampaignsPage() {
         </Button>
       </div>
       
-      {campaigns.length > 0 ? (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2">
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 justify-between">
+            <div className="flex items-center gap-2">
               <BarChart2 className="h-5 w-5" />
               Campaign List
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+            </div>
+            {error && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={fetchCampaigns}
+                className="flex items-center gap-1"
+              >
+                <RefreshCcw className="h-4 w-4" />
+                Retry
+              </Button>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading && (
+            <div className="flex justify-center items-center py-12">
+              <div className="flex flex-col items-center gap-2">
+                <div className="h-8 w-8 rounded-full border-t-2 border-b-2 border-blue-500 animate-spin"></div>
+                <div className="text-sm text-muted-foreground">Loading campaigns...</div>
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <AlertCircle className="h-10 w-10 text-red-500 mb-3" />
+              <p className="text-red-500 mb-3">{error}</p>
+              <Button 
+                variant="outline" 
+                onClick={fetchCampaigns}
+                className="flex items-center gap-1"
+              >
+                <RefreshCcw className="h-4 w-4" />
+                Try Again
+              </Button>
+            </div>
+          )}
+
+          {!loading && !error && campaigns.length === 0 && (
+            <div className="text-center p-6">
+              <p className="mb-4">No campaigns found</p>
+              <p className="text-sm text-muted-foreground mb-4">Create your first campaign to get started</p>
+              <Button asChild>
+                <Link href="/campaigns/new">
+                  Create Your First Campaign
+                </Link>
+              </Button>
+            </div>
+          )}
+
+          {!loading && !error && campaigns.length > 0 && (
             <div className="rounded-md border divide-y">
               {/* Table Head */}
               <div className="grid grid-cols-12 bg-muted/50 p-3 text-sm font-medium">
@@ -76,17 +252,20 @@ export default function CampaignsPage() {
                       {campaign.name}
                     </Link>
                     <span className="text-xs text-muted-foreground">Created: {prettyDate(campaign.createdAt)}</span>
+                    {campaign.clientName && (
+                      <span className="text-xs text-muted-foreground">Client: {campaign.clientName}</span>
+                    )}
                   </div>
                   {/* Channel */}
                   <div className="col-span-2 flex items-center gap-2">
-                    {channelIcons[campaign.channel]}
+                    {channelIcons[campaign.channel] || <Mail className="h-4 w-4 inline-block" />}
                     {campaign.channel}
                   </div>
                   {/* Audience */}
                   <div className="col-span-2">{campaign.audience}</div>
                   {/* Status */}
                   <div className="col-span-2">
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadgeMap[campaign.status]}`}>
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadgeMap[campaign.status as CampaignStatus] || "bg-gray-100 text-gray-600"}`}>
                       {campaign.status}
                     </span>
                     {campaign.status === "Paused" && (
@@ -111,21 +290,9 @@ export default function CampaignsPage() {
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="text-center p-6">
-          <CardContent className="pt-6">
-            <p className="mb-4">No campaigns found</p>
-            <p className="text-sm text-muted-foreground mb-4">Create your first campaign to get started</p>
-            <Button asChild>
-              <Link href="/campaigns/new">
-                Create Your First Campaign
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

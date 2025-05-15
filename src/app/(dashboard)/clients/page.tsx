@@ -1,11 +1,37 @@
 "use client"
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Users, Globe, Facebook, Twitter, Instagram, Linkedin, Mail, User } from "lucide-react";
-import { clients as mockClients, type Client } from "./clients.mock-data";
+import { Plus, Users, Globe, Facebook, Twitter, Instagram, Linkedin, Mail, User, RefreshCcw } from "lucide-react";
+
+// Types
+type ClientType = "MUNICIPALITY" | "BUSINESS" | "STARTUP" | "INDIVIDUAL" | "NONPROFIT";
+type ClientStatus = "active" | "inactive";
+type SocialAccount = {
+  id: string;
+  platform: "FACEBOOK" | "TWITTER" | "INSTAGRAM" | "LINKEDIN";
+  handle: string;
+};
+type Project = {
+  id: string;
+  name: string;
+  status: "ACTIVE" | "PLANNED" | "COMPLETED";
+};
+type Client = {
+  id: string;
+  name: string;
+  email: string;
+  type: ClientType;
+  status: ClientStatus;
+  industry: string;
+  website?: string;
+  logoUrl?: string;
+  createdAt: string;
+  socialAccounts: SocialAccount[];
+  projects: Project[];
+};
 
 // Badge coloring for client types
 const typeBadge = {
@@ -41,17 +67,46 @@ function formatDate(dateString?: string) {
 }
 
 export default function ClientsPage() {
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+
+  const fetchClients = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const res = await fetch("/api/clients");
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || `Server responded with status: ${res.status}`);
+      }
+      
+      const data = await res.json();
+      setClients(Array.isArray(data) ? data : []);
+      setLoading(false);
+    } catch (err: any) {
+      console.error("Failed to load clients:", err);
+      setError("Unable to load client data. Please try again later.");
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchClients();
+  }, []);
 
   // For large datasets, memoization prevents unnecessary filtering
   const filteredClients = useMemo(() => {
     const term = search.trim().toLowerCase();
-    if (!term) return mockClients;
-    return mockClients.filter(client =>
+    if (!term) return clients;
+    return clients.filter(client =>
       client.name.toLowerCase().includes(term) ||
       client.email.toLowerCase().includes(term)
     );
-  }, [search]);
+  }, [search, clients]);
 
   return (
     <div className="space-y-6 p-6">
@@ -99,8 +154,31 @@ export default function ClientsPage() {
               <div className="col-span-1">More</div>
             </div>
             
+            {loading && (
+              <div className="p-8 text-center text-gray-500">
+                <div className="flex justify-center mb-3">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+                Loading clients...
+              </div>
+            )}
+
+            {error && (
+              <div className="p-8 text-center">
+                <div className="text-red-500 mb-4">{error}</div>
+                <Button
+                  variant="outline"
+                  onClick={fetchClients}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCcw className="h-4 w-4" />
+                  Try Again
+                </Button>
+              </div>
+            )}
+
             {/* Empty State Display */}
-            {filteredClients.length === 0 && (
+            {!loading && !error && filteredClients.length === 0 && (
               <div className="p-8 text-center text-gray-500">
                 <div className="flex justify-center mb-2">
                   <Users className="h-10 w-10 opacity-30" />
@@ -110,7 +188,7 @@ export default function ClientsPage() {
               </div>
             )}
             
-            {filteredClients.map((client) => (
+            {!loading && !error && filteredClients.map((client) => (
               <div key={client.id} className="grid grid-cols-12 p-3 text-sm border-t items-center">
                 <div className="col-span-3 font-medium">
                   <Link href={`/clients/${client.id}`} className="text-blue-600 hover:underline flex items-center gap-2">
@@ -119,6 +197,11 @@ export default function ClientsPage() {
                         src={client.logoUrl}
                         alt={`Logo for ${client.name}`}
                         className="w-8 h-8 rounded-full object-cover border mr-2"
+                        onError={(e) => {
+                          // Handle image loading errors
+                          e.currentTarget.style.display = 'none';
+                          console.warn(`Failed to load logo for client: ${client.name}`);
+                        }}
                       />
                     ) : (
                       <span
@@ -139,33 +222,35 @@ export default function ClientsPage() {
                     <span className="truncate">{client.email}</span>
                   </span>
                   <span className="flex items-center gap-2">
-                    {client.socialAccounts.map(a => (
-                      <a 
-                        key={a.id} 
-                        href={
-                          a.platform === "FACEBOOK"
-                          ? `https://facebook.com/${a.handle.replace(/^@|^\/+/, "")}`
-                          : a.platform === "TWITTER"
-                          ? `https://twitter.com/${a.handle.replace(/^@/, "")}`
-                          : a.platform === "INSTAGRAM"
-                      ? `https://instagram.com/${a.handle.replace(/^@/, "")}`
-                          : a.platform === "LINKEDIN"
-                          ? `https://linkedin.com${a.handle.startsWith("/") ? "" : "/"}${a.handle}`
-                          : "#"
-                        }
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        title={a.platform}
-                        className="text-gray-500 hover:text-gray-700"
-                      >
-                        {platformIconMap[a.platform] || <User className="h-4 w-4" />}
-                      </a>
-                    ))}
+                    {client.socialAccounts && client.socialAccounts.length > 0 ? (
+                      client.socialAccounts.map(a => (
+                        <a 
+                          key={a.id} 
+                          href={
+                            a.platform === "FACEBOOK"
+                            ? `https://facebook.com/${a.handle.replace(/^@|^\/+/, "")}`
+                            : a.platform === "TWITTER"
+                            ? `https://twitter.com/${a.handle.replace(/^@/, "")}`
+                            : a.platform === "INSTAGRAM"
+                            ? `https://instagram.com/${a.handle.replace(/^@/, "")}`
+                            : a.platform === "LINKEDIN"
+                            ? `https://linkedin.com${a.handle.startsWith("/") ? "" : "/"}${a.handle}`
+                            : "#"
+                          }
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          title={a.platform}
+                          className="text-gray-500 hover:text-gray-700"
+                        >
+                          {platformIconMap[a.platform] || <User className="h-4 w-4" />}
+                        </a>
+                      ))
+                    ) : null}
                   </span>
                 </div>
                 <div className="col-span-2">
-                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${typeBadge[client.type as keyof typeof typeBadge]}`}>
-                    {client.type.charAt(0) + client.type.slice(1).toLowerCase()}
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${typeBadge[client.type as keyof typeof typeBadge] || 'bg-gray-100 text-gray-800'}`}>
+                    {client.type ? client.type.charAt(0) + client.type.slice(1).toLowerCase() : 'Unknown'}
                   </span>
                 </div>
                 <div className="col-span-2">{client.industry || "—"}</div>
@@ -179,7 +264,7 @@ export default function ClientsPage() {
                         : 'bg-yellow-100 text-yellow-800'
                     }`}
                   >
-                    {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
+                    {client.status ? client.status.charAt(0).toUpperCase() + client.status.slice(1) : 'Unknown'}
                   </span>
                 </div>
                 <div className="col-span-1 flex gap-2">

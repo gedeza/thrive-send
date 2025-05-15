@@ -1,23 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { getAuth } from "@clerk/nextjs/server"; // Clerk
+import mockClients from "./mock";
 
-export async function GET(req: NextRequest) {
-  const { userId } = getAuth(req);
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+// GET: List all clients
+export async function GET(request: NextRequest) {
+  try {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    return NextResponse.json(mockClients);
+  } catch (error) {
+    console.error("Error fetching clients:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch clients" },
+      { status: 500 }
+    );
+  }
+}
 
-  // Get all organizations the user is part of
-  const memberships = await db.organizationMember.findMany({
-    where: { user: { clerkId: userId } },
-    select: { organizationId: true },
-  });
-
-  // Then, all clients in those organizations
-  const orgIds = memberships.map(m => m.organizationId);
-  const clients = await db.client.findMany({
-    where: { organizationId: { in: orgIds } },
-    select: { id: true, name: true }
-  });
-
-  return NextResponse.json(clients);
+// POST: Create a new client
+export async function POST(req: NextRequest) {
+  try {
+    const data = await req.json();
+    
+    // Validate required fields
+    if (!data.name || !data.email || !data.type) {
+      return NextResponse.json(
+        { error: "Missing required fields: name, email, and type are required" },
+        { status: 400 }
+      );
+    }
+    
+    // Simulate client creation with mock data
+    console.log("[API] Mock mode: Simulating client creation");
+    
+    // Return a mock success response
+    return NextResponse.json(
+      { 
+        ...data, 
+        id: `mock-${Date.now()}`,
+        createdAt: new Date().toISOString()
+      }, 
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error('[API] Error creating client:', error);
+    return NextResponse.json({ error: "Failed to create client" }, { status: 500 });
+  }
 }
