@@ -1,511 +1,320 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo } from "react";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
+import { PlusCircle, Copy, Edit, Trash, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
-import { templates as mockTemplates, Template } from '../../templates.mock-data';
-import { ArrowLeft, Save, Eye, Copy, Layout, Image, Type, Button as ButtonIcon, Plus, Trash } from 'lucide-react';
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/use-toast";
+import { useRouter } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useOrganization } from "@clerk/nextjs";
+import { Template, fetchTemplates, deleteTemplate, duplicateTemplate } from "@/lib/api/templates-service";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
-const componentTemplates = [
-  {
-    id: 'header-template',
-    type: 'header',
-    label: 'Header',
-    icon: <Type size={16} />,
-    content: '<h2 style="color: #4f46e5; padding: 15px 0;">New Section Header</h2>'
-  },
-  {
-    id: 'text-template',
-    type: 'text',
-    label: 'Text Block',
-    icon: <Type size={16} />,
-    content: '<p style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">Add your text content here. This is a paragraph that you can edit.</p>'
-  },
-  {
-    id: 'image-template',
-    type: 'image',
-    label: 'Image',
-    icon: <Image size={16} />,
-    content: '<div style="text-align: center; padding: 10px;"><img src="https://via.placeholder.com/600x200" alt="Image" style="max-width: 100%; height: auto;" /></div>'
-  },
-  {
-    id: 'button-template',
-    type: 'button',
-    label: 'Button',
-    icon: <ButtonIcon size={16} />,
-    content: '<div style="text-align: center; padding: 15px;"><a href="#" style="background-color: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">Click Here</a></div>'
-  },
-  {
-    id: 'divider-template',
-    type: 'divider',
-    label: 'Divider',
-    icon: <Separator className="w-4 h-4" />,
-    content: '<hr style="border: 0; border-top: 1px solid #eaeaea; margin: 20px 0;" />'
-  },
-  {
-    id: 'spacer-template',
-    type: 'spacer',
-    label: 'Spacer',
-    icon: <Layout size={16} />,
-    content: '<div style="height: 30px;"></div>'
-  }
-];
-
-// Type for template elements
-type TemplateElement = {
-  id: string;
-  type: string;
-  content: string;
+const statusBadgeMap: Record<string, string> = {
+  published: "bg-green-100 text-green-800",
+  draft: "bg-yellow-100 text-yellow-900",
+  archived: "bg-gray-100 text-gray-600"
 };
 
-export default function TemplateEditorPage({ params }: { params: { id: string } }) {
-  const { id } = params;
-  const router = useRouter();
+const categoryBadgeMap: Record<string, string> = {
+  Email: "bg-blue-100 text-blue-800",
+  "Social Media": "bg-indigo-100 text-indigo-800",
+  Form: "bg-green-100 text-green-800",
+  Notification: "bg-pink-100 text-pink-800",
+  Blog: "bg-orange-100 text-orange-800"
+};
 
-  const [template, setTemplate] = useState<any>(null);
-  const [activeElementId, setActiveElementId] = useState<string | null>(null);
-  const [currentTab, setCurrentTab] = useState("edit");
-  const [editingHtml, setEditingHtml] = useState<string | null>(null);
+export default function TemplatesPage() {
+  const { toast } = useToast();
+  const { organization } = useOrganization();
 
-  // Data initialization and loading from localStorage
+  const [search, setSearch] = useState("");
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
+
   useEffect(() => {
-    let templatesList = mockTemplates;
-    if (typeof window !== "undefined" && localStorage.getItem("templates")) {
-      templatesList = JSON.parse(localStorage.getItem("templates") || "[]");
-    }
-    const found = templatesList.find((t: any) => t.id === id);
-    if (found && !('elements' in found)) found.elements = [];
-    setTemplate(found ?? null);
-  }, [id]);
+    async function loadTemplates() {
+      if (!organization) return;
 
-  // Persist to localStorage utility
-  const saveToLocal = (updatedTemplate: any) => {
-    if (typeof window !== "undefined") {
-      const templates = JSON.parse(localStorage.getItem("templates") || "[]");
-      const idx = templates.findIndex((t: any) => t.id === updatedTemplate.id);
-      if (idx !== -1) {
-        templates[idx] = updatedTemplate;
-      } else {
-        templates.push(updatedTemplate);
+      setIsLoading(true);
+      try {
+        const data = await fetchTemplates({
+          organizationId: organization.id,
+        });
+        setTemplates(data);
+      } catch (err) {
+        setError("Failed to load templates. Please try again.");
+        toast({
+          title: "Error",
+          description: "Failed to load templates.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
       }
-      localStorage.setItem("templates", JSON.stringify(templates));
+    }
+    loadTemplates();
+  }, [organization, toast]);
+
+  const handleDelete = async (id: string) => {
+    setIsDeleting(id);
+    try {
+      const success = await deleteTemplate(id);
+      if (success) {
+        setTemplates(templates.filter(t => t.id !== id));
+        toast({
+          title: "Success",
+          description: "Template deleted successfully.",
+        });
+      } else {
+        throw new Error("Failed to delete template");
+      }
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to delete template.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(null);
     }
   };
 
-  // Drag-and-drop handlers
-  const handleDragEnd = (result: DropResult) => {
-    const { source, destination, draggableId } = result;
-
-    if (!destination || !template) return;
-
-    // Insert from componentTemplates
-    if (source.droppableId === "component-templates") {
-      const componentTemplate = componentTemplates.find((c) => c.id === draggableId);
-      if (!componentTemplate) return;
-      const newElement: TemplateElement = {
-        id: `${componentTemplate.type}-${Date.now()}`,
-        type: componentTemplate.type,
-        content: componentTemplate.content,
-      };
-      const newElements = Array.from(template.elements);
-      newElements.splice(destination.index, 0, newElement);
-      setTemplate({ ...template, elements: newElements });
-      return;
-    }
-
-    // Reorder within template elements
-    if (
-      source.droppableId === "template-elements" &&
-      destination.droppableId === "template-elements"
-    ) {
-      const newElements = Array.from(template.elements);
-      const [moved] = newElements.splice(source.index, 1);
-      newElements.splice(destination.index, 0, moved);
-      setTemplate({ ...template, elements: newElements });
-      return;
+  const handleDuplicate = async (id: string) => {
+    setIsDuplicating(id);
+    try {
+      const duplicated = await duplicateTemplate(id);
+      if (duplicated) {
+        setTemplates([...templates, duplicated]);
+        toast({
+          title: "Success",
+          description: "Template duplicated successfully.",
+        });
+      } else {
+        throw new Error("Failed to duplicate template");
+      }
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to duplicate template.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDuplicating(null);
     }
   };
 
-  // Update element content
-  const updateElementContent = (elementId: string, newContent: string) => {
-    if (!template) return;
-    const updatedElements = template.elements.map((element: TemplateElement) =>
-      element.id === elementId ? { ...element, content: newContent } : element
+  const filtered = useMemo(() => {
+    if (!search.trim()) return templates;
+    return templates.filter(template =>
+      template.name.toLowerCase().includes(search.toLowerCase()) ||
+      template.author.toLowerCase().includes(search.toLowerCase()) ||
+      (template.description?.toLowerCase().includes(search.toLowerCase())) ||
+      template.category.toLowerCase().includes(search.toLowerCase())
     );
-    setTemplate({ ...template, elements: updatedElements });
-    setEditingHtml(null);
-  };
+  }, [search, templates]);
 
-  // Delete an element
-  const deleteElement = (elementId: string) => {
-    if (!template) return;
-    const updatedElements = template.elements.filter((element: TemplateElement) => element.id !== elementId);
-    setTemplate({ ...template, elements: updatedElements });
-    setActiveElementId(null);
-  };
-
-  // Duplicate element
-  const duplicateElement = (elementId: string) => {
-    if (!template) return;
-    const elementToDuplicate = template.elements.find((element: TemplateElement) => element.id === elementId);
-    if (!elementToDuplicate) return;
-    const duplicated = {
-      ...elementToDuplicate,
-      id: `${elementToDuplicate.type}-${Date.now()}`,
-    };
-    const idx = template.elements.findIndex((element: TemplateElement) => element.id === elementId);
-    const updatedElements = Array.from(template.elements);
-    updatedElements.splice(idx + 1, 0, duplicated);
-    setTemplate({ ...template, elements: updatedElements });
-  };
-
-  // Save template (persist to localStorage for now)
-  const handleSave = () => {
-    if (!template) return;
-    const updated = { ...template, lastUpdated: new Date().toISOString() };
-    setTemplate(updated);
-    saveToLocal(updated);
-  };
-
-  // Render HTML
-  const renderTemplateHtml = () => {
-    const baseStyles = `
-      <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-        .email-container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
-      </style>
-    `;
-    const elementsHtml = template.elements.map((element: TemplateElement) => element.content).join('');
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${template.name}</title>
-        ${baseStyles}
-      </head>
-      <body>
-        <div className="email-container">
-          ${elementsHtml}
-        </div>
-      </body>
-      </html>
-    `;
-  };
-
-  // Element editing
-  const ElementEditor = ({ element }: { element: TemplateElement }) => {
-    const [localContent, setLocalContent] = useState(element.content);
-
-    return (
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-medium">Edit {element.type.charAt(0).toUpperCase() + element.type.slice(1)}</h3>
-          <Button size="sm" variant="ghost" onClick={() => setActiveElementId(null)}>
-            <ArrowLeft className="h-4 w-4 mr-2" /> Back
-          </Button>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="html-content">HTML Content</Label>
-          <Textarea
-            id="html-content"
-            value={localContent}
-            onChange={(e) => setLocalContent(e.target.value)}
-            className="font-mono text-sm h-60"
-          />
-        </div>
-        <Button onClick={() => updateElementContent(element.id, localContent)}>
-          Save Changes
-        </Button>
-      </div>
-    );
-  };
-
-  if (template === null) {
-    return (
-      <div className="flex flex-col items-center gap-8 p-10">
-        <Card>
-          <CardContent className="p-8 text-center">
-            <h2 className="text-xl font-bold mb-4">Template Not Found</h2>
-            <p>The template you're looking for doesn't exist.</p>
-            <Button className="mt-6" asChild>
-              <Link href="/templates">
-                Back to Templates
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // UI
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/templates">
-              <ArrowLeft className="h-4 w-4" />
+    <div className="space-y-6 p-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Templates</h1>
+          <p className="text-muted-foreground">
+            Create and manage reusable content templates
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Input
+            type="search"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search by name, category, author..."
+            className="max-w-xs"
+            aria-label="Search templates"
+          />
+          <Button asChild>
+            <Link href="/templates/editor/new">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Create Template
             </Link>
           </Button>
-          <div>
-            <Input
-              className="text-2xl font-bold tracking-tight px-0 py-1 border-0 focus:ring-0 focus:outline-none bg-transparent"
-              style={{ maxWidth: 350, fontSize: 24 }}
-              value={template.name}
-              onChange={(e) => setTemplate((t: any) => ({ ...t, name: e.target.value }))}
-              placeholder="Template name"
-            />
-            <Textarea
-              className="text-sm text-muted-foreground px-0 py-0 border-0 focus:ring-0 focus:outline-none bg-transparent mt-1"
-              style={{ maxWidth: 350, resize: "none" }}
-              value={template.description}
-              onChange={(e) => setTemplate((t: any) => ({ ...t, description: e.target.value }))}
-              placeholder="Description"
-              rows={2}
-            />
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setCurrentTab("preview")}>
-            <Eye className="mr-2 h-4 w-4" />
-            Preview
-          </Button>
-          <Button size="sm" onClick={handleSave}>
-            <Save className="mr-2 h-4 w-4" />
-            Save Template
-          </Button>
         </div>
       </div>
-
-      {/* Main Layout */}
-      <div className="grid gap-6 md:grid-cols-12">
-        {/* Editor Sidebar */}
-        <div className="md:col-span-4 space-y-4">
-          <Tabs value={currentTab} onValueChange={setCurrentTab}>
-            <TabsList className="grid grid-cols-2">
-              <TabsTrigger value="edit">Edit</TabsTrigger>
-              <TabsTrigger value="html">HTML</TabsTrigger>
-            </TabsList>
-            {/* Edit Tab */}
-            <TabsContent value="edit" className="space-y-4 mt-4">
-              {activeElementId ? (
-                <ElementEditor
-                  element={template.elements.find((el: TemplateElement) => el.id === activeElementId)!}
-                />
-              ) : (
-                <>
-                  <Card>
-                    <CardContent className="p-4">
-                      <h3 className="text-sm font-medium mb-2">Components</h3>
-                      <p className="text-xs text-muted-foreground mb-4">
-                        Drag components to add them to your template.
-                      </p>
-                      <DragDropContext onDragEnd={handleDragEnd}>
-                        <Droppable droppableId="component-templates" isDropDisabled={true}>
-                          {(provided) => (
-                            <div
-                              {...provided.droppableProps}
-                              ref={provided.innerRef}
-                              className="grid grid-cols-2 gap-2"
-                            >
-                              {componentTemplates.map((component, index) => (
-                                <Draggable key={component.id} draggableId={component.id} index={index}>
-                                  {(provided) => (
-                                    <div
-                                      ref={provided.innerRef}
-                                      {...provided.draggableProps}
-                                      {...provided.dragHandleProps}
-                                      className="border rounded-md p-2 flex flex-col items-center justify-center gap-1 bg-white cursor-grab hover:border-primary"
-                                    >
-                                      {component.icon}
-                                      <span className="text-xs">{component.label}</span>
-                                    </div>
-                                  )}
-                                </Draggable>
-                              ))}
-                              {provided.placeholder}
-                            </div>
-                          )}
-                        </Droppable>
-                      </DragDropContext>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4">
-                      <h3 className="text-sm font-medium mb-2">Template Settings</h3>
-                      <div className="space-y-3">
-                        <div className="space-y-1">
-                          <Label htmlFor="template-name">Template Name</Label>
-                          <Input
-                            id="template-name"
-                            value={template.name}
-                            onChange={(e) =>
-                              setTemplate((t: any) => ({ ...t, name: e.target.value }))
-                            }
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label htmlFor="template-description">Description</Label>
-                          <Textarea
-                            id="template-description"
-                            value={template.description}
-                            onChange={(e) =>
-                              setTemplate((t: any) => ({ ...t, description: e.target.value }))
-                            }
-                            className="resize-none h-20"
-                          />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </>
-              )}
-            </TabsContent>
-            {/* HTML Tab */}
-            <TabsContent value="html" className="space-y-4 mt-4">
-              <Card>
-                <CardContent className="p-4">
-                  <h3 className="text-sm font-medium mb-2">HTML Source</h3>
-                  <p className="text-xs text-muted-foreground mb-4">View or edit the complete HTML of your template.</p>
-                  <Textarea
-                    value={renderTemplateHtml()}
-                    className="font-mono text-xs h-[400px]"
-                    readOnly
-                  />
-                  <div className="mt-4">
-                    <Button size="sm" variant="outline" onClick={() => {
-                      navigator.clipboard.writeText(renderTemplateHtml());
-                    }}>
-                      <Copy className="mr-2 h-4 w-4" />
-                      Copy HTML
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="overflow-hidden shadow-sm border">
+              <CardHeader className="pb-3">
+                <Skeleton className="h-6 w-3/4" />
+                <div className="flex gap-2 mt-2">
+                  <Skeleton className="h-5 w-20" />
+                  <Skeleton className="h-5 w-16" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-4 w-1/2 mt-3" />
+                <Skeleton className="h-4 w-3/4 mt-2" />
+              </CardContent>
+              <CardFooter className="flex justify-between border-t p-3 bg-gray-50">
+                <Skeleton className="h-8 w-24" />
+                <div className="flex space-x-1">
+                  <Skeleton className="h-8 w-8" />
+                  <Skeleton className="h-8 w-8" />
+                </div>
+              </CardFooter>
+            </Card>
+          ))}
         </div>
-        {/* Preview Area */}
-        <div className="md:col-span-8">
-          <Card className="border-2">
-            <CardContent className="p-0">
-              <div className="bg-gray-100 flex justify-center p-4">
-                <div
-                  className="bg-white w-full max-w-[600px] min-h-[600px] shadow-md"
-                  style={{ outline: currentTab === "edit" ? "2px solid #f3f4f6" : "none" }}
-                >
-                  {currentTab === "edit" ? (
-                    <DragDropContext onDragEnd={handleDragEnd}>
-                      <Droppable droppableId="template-elements">
-                        {(provided) => (
-                          <div
-                            {...provided.droppableProps}
-                            ref={provided.innerRef}
-                            className="min-h-[600px]"
-                          >
-                            {template.elements.length === 0 ? (
-                              <div className="h-[600px] flex flex-col items-center justify-center text-center p-4">
-                                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                                  <Plus className="h-8 w-8 text-muted-foreground" />
-                                </div>
-                                <h3 className="font-medium mb-1">Add Components</h3>
-                                <p className="text-sm text-muted-foreground mb-4">
-                                  Drag and drop components from the sidebar to build your template
-                                </p>
-                              </div>
-                            ) : (
-                              template.elements.map((element: TemplateElement, index: number) => (
-                                <Draggable key={element.id} draggableId={element.id} index={index}>
-                                  {(provided, snapshot) => (
-                                    <div
-                                      ref={provided.innerRef}
-                                      {...provided.draggableProps}
-                                      className={`relative group ${snapshot.isDragging ? 'opacity-50' : ''}`}
-                                      tabIndex={0}
-                                    >
-                                      {/* Element toolbar: open editor, duplicate, delete, drag handle */}
-                                      <div className="absolute top-0 right-0 flex space-x-1 p-1 opacity-0 group-hover:opacity-100 z-10 bg-white border rounded-md shadow-sm">
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-8 w-8"
-                                          onClick={() => setActiveElementId(element.id)}
-                                          title="Edit"
-                                        >
-                                          <Type className="h-4 w-4" />
-                                        </Button>
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-8 w-8"
-                                          onClick={() => duplicateElement(element.id)}
-                                          title="Duplicate"
-                                        >
-                                          <Copy className="h-4 w-4" />
-                                        </Button>
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-8 w-8"
-                                          onClick={() => deleteElement(element.id)}
-                                          title="Delete"
-                                        >
-                                          <Trash className="h-4 w-4" />
-                                        </Button>
-                                        <span
-                                          {...provided.dragHandleProps}
-                                          className="h-8 w-8 flex items-center justify-center cursor-grab"
-                                          title="Drag"
-                                        >
-                                          <Layout className="h-4 w-4 text-muted-foreground" />
-                                        </span>
-                                      </div>
-                                      <div
-                                        dangerouslySetInnerHTML={{ __html: element.content }}
-                                        className="py-2"
-                                      />
-                                    </div>
-                                  )}
-                                </Draggable>
-                              ))
-                            )}
-                            {provided.placeholder}
-                          </div>
-                        )}
-                      </Droppable>
-                    </DragDropContext>
-                  ) : (
-                    // Render full preview
-                    <iframe
-                      title="Template Preview"
-                      srcDoc={renderTemplateHtml()}
-                      style={{
-                        width: '100%',
-                        height: '600px',
-                        border: 'none',
-                        background: 'white'
-                      }}
+      ) : error ? (
+        <div className="bg-red-50 border border-red-200 text-red-800 rounded-md p-4">
+          <p className="font-medium">Error loading templates</p>
+          <p className="text-sm">{error}</p>
+          <Button className="mt-2" variant="outline" onClick={() => window.location.reload()}>
+            Try Again
+          </Button>
+        </div>
+      ) : filtered.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filtered.map(template => (
+            <Card key={template.id} className="overflow-hidden group shadow-sm border">
+              <CardHeader className="pb-3 flex flex-row justify-between items-center">
+                <div>
+                  <CardTitle>{template.name}</CardTitle>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    <Badge variant="outline" className={`text-xs capitalize ${categoryBadgeMap[template.category] || "bg-gray-100"}`}>
+                      {template.category}
+                    </Badge>
+                    <Badge variant="outline" className={`text-xs capitalize ${statusBadgeMap[template.status] || "bg-gray-100"}`}>
+                      {template.status}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <span className="text-xs text-muted-foreground ml-2">by {template.author}</span>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-24 bg-gray-50 rounded flex items-center justify-center text-gray-400 text-sm">
+                  {template.previewImage ? (
+                    <img
+                      src={template.previewImage}
+                      alt={template.name}
+                      className="h-full w-full object-cover"
                     />
+                  ) : (
+                    <span>Template Preview</span>
                   )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+                <p className="text-xs text-muted-foreground mt-3 mb-2">
+                  Last updated: {new Date(template.lastUpdated).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                </p>
+                <p className="text-xs mb-2 line-clamp-2">{template.description}</p>
+              </CardContent>
+              <CardFooter className="flex justify-between border-t p-3 bg-gray-50">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDuplicate(template.id)}
+                  disabled={isDuplicating === template.id}
+                >
+                  {isDuplicating === template.id ? (
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  ) : (
+                    <Copy className="h-4 w-4 mr-1" />
+                  )}
+                  Duplicate
+                </Button>
+                <div className="flex space-x-1">
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href={`/templates/editor/${template.id}`}>
+                      <Edit className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently delete the template and remove it from our servers.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDelete(template.id)}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          {isDeleting === template.id ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Deleting...
+                            </>
+                          ) : (
+                            "Delete"
+                          )}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </CardFooter>
+            </Card>
+          ))}
         </div>
-      </div>
+      ) : (
+        <div className="text-center py-16 border rounded-lg">
+          <div className="mx-auto max-w-md">
+            <h2 className="text-xl font-semibold mb-2">No templates found</h2>
+            <p className="text-muted-foreground mb-6">
+              {search ? (
+                <>
+                  No templates match your search criteria. Please try a different search or clear the search field.
+                </>
+              ) : (
+                <>
+                  You don't have any templates yet. Create your first template to get started.
+                </>
+              )}
+            </p>
+            {search ? (
+              <Button variant="outline" onClick={() => setSearch("")}>
+                Clear Search
+              </Button>
+            ) : (
+              <Button asChild>
+                <Link href="/templates/editor/new">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Create Template
+                </Link>
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

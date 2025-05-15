@@ -23,6 +23,7 @@ model User {
   createdContent          ContentPiece[]
   organizationMemberships OrganizationMember[]
   projects                Project[]
+  templates               Template[]           // Added relation to templates
 }
 
 model Organization {
@@ -42,6 +43,7 @@ model Organization {
   projects       Project[]
   socialAccounts SocialAccount[]
   subscription   Subscription?
+  templates      Template[]           // Added relation to templates
 }
 
 model OrganizationMember {
@@ -276,6 +278,29 @@ model Activity {
   user       User     @relation(fields: [userId], references: [id])
 }
 
+// New Template model
+model Template {
+  id             String           @id @default(cuid())
+  name           String
+  content        String?          @db.Text
+  description    String?          @db.Text
+  category       String           // Email, Social Media, Form, Blog, Notification
+  status         TemplateStatus   @default(DRAFT)
+  lastUpdated    DateTime         @updatedAt
+  createdAt      DateTime         @default(now())
+  previewImage   String?
+  organizationId String
+  authorId       String
+  
+  // Relations
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  author         User             @relation(fields: [authorId], references: [id])
+  
+  @@index([organizationId])
+  @@index([authorId])
+  @@map("templates")
+}
+
 enum Role {
   OWNER
   ADMIN
@@ -378,5 +403,11 @@ enum ContentItemStatus {
   SCHEDULED
   PUBLISHED
   FAILED
+  ARCHIVED
+}
+
+enum TemplateStatus {
+  DRAFT
+  PUBLISHED
   ARCHIVED
 }
