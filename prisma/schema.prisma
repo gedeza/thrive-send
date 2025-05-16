@@ -35,7 +35,7 @@ model Organization {
   primaryColor   String?              @default("#000000")
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
-  campaigns      Campaign[]
+  campaigns      Campaign[]           // Relation to campaigns
   clients        Client[]
   contentItems   ContentItem[]
   contentPieces  ContentPiece[]
@@ -70,7 +70,7 @@ model Client {
   updatedAt      DateTime        @updatedAt
   organizationId String
   analytics      Analytics[]
-  campaigns      Campaign[]
+  campaigns      Campaign[]      // Relation to campaigns
   organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   projects       Project[]
   socialAccounts SocialAccount[]
@@ -88,7 +88,7 @@ model Project {
   clientId       String?
   organizationId String
   managerId      String?
-  campaigns      Campaign[]
+  campaigns      Campaign[]     // Relation to campaigns
   contentItems   ContentItem[]
   contentPieces  ContentPiece[]
   client         Client?        @relation(fields: [clientId], references: [id])
@@ -220,12 +220,18 @@ model Campaign {
   goals          String?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
+  
+  // Required relationship
   organizationId String
-  clientId       String?
-  projectId      String?
-  client         Client?        @relation(fields: [clientId], references: [id])
   organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  project        Project?       @relation(fields: [projectId], references: [id])
+  
+  // Optional relationships
+  clientId       String?
+  client         Client?        @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  projectId      String?
+  project        Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  
+  // Related entities
   contentPieces  ContentPiece[]
   analytics      Analytics[]
   

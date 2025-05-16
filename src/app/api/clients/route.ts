@@ -1,13 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import mockClients from "./mock";
+import { db } from "@/lib/db";
 
 // GET: List all clients
 export async function GET(request: NextRequest) {
   try {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    const clients = await db.client.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        type: true,
+        status: true,
+        createdAt: true
+      }
+    });
     
-    return NextResponse.json(mockClients);
+    return NextResponse.json(clients);
   } catch (error) {
     console.error("Error fetching clients:", error);
     return NextResponse.json(
@@ -30,18 +38,17 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // Simulate client creation with mock data
-    console.log("[API] Mock mode: Simulating client creation");
+    // Create client in database
+    const newClient = await db.client.create({
+      data: {
+        name: data.name,
+        email: data.email,
+        type: data.type,
+        status: "active"
+      }
+    });
     
-    // Return a mock success response
-    return NextResponse.json(
-      { 
-        ...data, 
-        id: `mock-${Date.now()}`,
-        createdAt: new Date().toISOString()
-      }, 
-      { status: 201 }
-    );
+    return NextResponse.json(newClient, { status: 201 });
   } catch (error) {
     console.error('[API] Error creating client:', error);
     return NextResponse.json({ error: "Failed to create client" }, { status: 500 });

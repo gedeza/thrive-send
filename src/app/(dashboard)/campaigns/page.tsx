@@ -51,7 +51,7 @@ export default function CampaignsPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Helper function to map database status to UI status
+  // Helper function to map database status to UI status (with defensive fallback)
   function mapDatabaseStatusToUI(status: string): CampaignStatus {
     const statusMap: Record<string, CampaignStatus> = {
       'draft': 'Draft',
@@ -61,7 +61,13 @@ export default function CampaignsPage() {
       'archived': 'Archived'
     };
     
-    return statusMap[status] || 'Draft';
+    if (status in statusMap) {
+      return statusMap[status];
+    } else {
+      // Defensive: log unknown status for developer debugging
+      console.warn(`Unknown campaign status received from database: "${status}". Defaulting to 'Draft'.`);
+      return 'Draft'; // fallback to Draft
+    }
   }
 
   // Helper function to validate channel
@@ -166,7 +172,7 @@ export default function CampaignsPage() {
           <p className="text-muted-foreground">Create and manage your marketing campaigns</p>
         </div>
         <Button 
-          asChild 
+      asChild 
           className="flex items-center gap-1"
           data-testid="create-campaign"
         >
@@ -255,7 +261,7 @@ export default function CampaignsPage() {
                     {campaign.clientName && (
                       <span className="text-xs text-muted-foreground">Client: {campaign.clientName}</span>
                     )}
-                  </div>
+              </div>
                   {/* Channel */}
                   <div className="col-span-2 flex items-center gap-2">
                     {channelIcons[campaign.channel] || <Mail className="h-4 w-4 inline-block" />}
