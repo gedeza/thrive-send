@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Copy, Edit, Trash } from 'lucide-react';
 import Link from 'next/link';
-import { templates, type Template } from "./templates.mock-data";
+import { templates, type Template } from "@/app/(dashboard)/templates/templates.mock-data";
 import { Input } from "@/components/ui/input";
 
 const statusBadgeMap: Record<Template["status"], string> = {
@@ -14,12 +14,10 @@ const statusBadgeMap: Record<Template["status"], string> = {
   archived: "bg-gray-100 text-gray-600"
 };
 
-const categoryBadgeMap: Record<Template["category"], string> = {
-  Email: "bg-blue-100 text-blue-800",
-  "Social Media": "bg-indigo-100 text-indigo-800",
-  Form: "bg-green-100 text-green-800",
-  Notification: "bg-pink-100 text-pink-800",
-  Blog: "bg-orange-100 text-orange-800"
+const typeBadgeMap: Record<Template["type"], string> = {
+  email: "bg-blue-100 text-blue-800",
+  social: "bg-indigo-100 text-indigo-800",
+  blog: "bg-orange-100 text-orange-800"
 };
 
 export default function TemplatesPage() {
@@ -27,11 +25,11 @@ export default function TemplatesPage() {
 
   const filtered = useMemo(() => {
     if (!search.trim()) return templates;
-    return templates.filter(template =>
+    return templates.filter((template: Template) =>
       template.name.toLowerCase().includes(search.toLowerCase()) ||
-      template.author.toLowerCase().includes(search.toLowerCase()) ||
-      (template.description?.toLowerCase().includes(search.toLowerCase())) ||
-      template.category.toLowerCase().includes(search.toLowerCase())
+      template.createdBy.toLowerCase().includes(search.toLowerCase()) ||
+      template.description.toLowerCase().includes(search.toLowerCase()) ||
+      template.type.toLowerCase().includes(search.toLowerCase())
     );
   }, [search]);
 
@@ -49,7 +47,7 @@ export default function TemplatesPage() {
             type="search"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search by name, category, author..."
+            placeholder="Search by name, type, author..."
             className="max-w-xs"
             aria-label="Search templates"
           />
@@ -63,20 +61,20 @@ export default function TemplatesPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filtered.length > 0 ? filtered.map(template => (
+        {filtered.length > 0 ? filtered.map((template: Template) => (
           <Card key={template.id} className="overflow-hidden group shadow-sm border">
             <CardHeader className="pb-3 flex flex-row justify-between items-center">
               <div>
                 <CardTitle>{template.name}</CardTitle>
-                <span className={`text-xs rounded-full px-2 py-1 capitalize ml-2 ${categoryBadgeMap[template.category]}`}>
-                  {template.category}
+                <span className={`text-xs rounded-full px-2 py-1 capitalize ml-2 ${typeBadgeMap[template.type]}`}>
+                  {template.type}
                 </span>
                 <span className={`ml-2 text-xs rounded-full px-2 py-1 capitalize ${statusBadgeMap[template.status]}`}>
                   {template.status}
                 </span>
               </div>
               <div>
-                <span className="text-xs text-muted-foreground ml-2">by {template.author}</span>
+                <span className="text-xs text-muted-foreground ml-2">by {template.createdBy}</span>
               </div>
             </CardHeader>
             <CardContent>
@@ -84,7 +82,7 @@ export default function TemplatesPage() {
                 Template Preview
               </div>
               <p className="text-xs text-muted-foreground mt-3 mb-2">
-                Last updated: {new Date(template.lastUpdated).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                Last updated: {new Date(template.updatedAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
               </p>
               <p className="text-xs mb-2">{template.description}</p>
             </CardContent>

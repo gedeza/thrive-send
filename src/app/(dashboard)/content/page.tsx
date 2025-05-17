@@ -1,123 +1,228 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { contentItems, type ContentItem } from "./content.mock-data";
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-const statusBadgeMap: Record<ContentItem["status"], string> = {
-  published: "bg-green-100 text-green-800",
-  draft: "bg-yellow-100 text-yellow-900",
-  archived: "bg-gray-100 text-gray-600"
-};
-
-export default function ContentPage() {
-  const [search, setSearch] = useState("");
+export default function ContentLibraryPage() {
+  const [searchQuery, setSearchQuery] = useState("");
   
-  const filtered = useMemo(() => {
-    if (!search.trim()) return contentItems;
-    return contentItems.filter(item =>
-      item.title.toLowerCase().includes(search.toLowerCase()) ||
-      item.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase())) ||
-      item.author.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [search]);
+  // Sample content library data - replace with real data fetching
+  const contentLibrary = {
+    templates: [
+      { id: '1', name: 'Welcome Email', category: 'Email', lastUsed: 'June 15, 2023' },
+      { id: '2', name: 'Product Announcement', category: 'Email', lastUsed: 'May 20, 2023' },
+      { id: '3', name: 'Newsletter Template', category: 'Email', lastUsed: 'April 10, 2023' },
+    ],
+    media: [
+      { id: '1', name: 'Company Logo', type: 'Image', size: '245KB', uploaded: 'June 2, 2023' },
+      { id: '2', name: 'Product Demo Video', type: 'Video', size: '12.5MB', uploaded: 'May 18, 2023' },
+      { id: '3', name: 'Team Photo', type: 'Image', size: '1.2MB', uploaded: 'April 25, 2023' },
+    ],
+    snippets: [
+      { id: '1', name: 'Product Benefits', category: 'Copy', created: 'June 10, 2023' },
+      { id: '2', name: 'Call to Action', category: 'Copy', created: 'May 15, 2023' },
+      { id: '3', name: 'Testimonial Block', category: 'Copy', created: 'April 20, 2023' },
+    ]
+  };
+  
+  // Filter content based on search query
+  const filteredContent = useMemo(() => {
+    if (!searchQuery.trim()) return contentLibrary;
+    
+    const query = searchQuery.toLowerCase();
+    return {
+      templates: contentLibrary.templates.filter(item => 
+        item.name.toLowerCase().includes(query) || 
+        item.category.toLowerCase().includes(query)
+      ),
+      media: contentLibrary.media.filter(item => 
+        item.name.toLowerCase().includes(query) || 
+        item.type.toLowerCase().includes(query)
+      ),
+      snippets: contentLibrary.snippets.filter(item => 
+        item.name.toLowerCase().includes(query) || 
+        item.category.toLowerCase().includes(query)
+      )
+    };
+  }, [searchQuery, contentLibrary]);
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div className="p-6" data-testid="content-library-page">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold">Content</h1>
+          <h1 className="text-2xl font-bold">Content Library</h1>
           <p className="text-muted-foreground">
-            Manage all your inbound & outbound creative content
+            Access and manage your reusable content assets
           </p>
         </div>
-        <div className="flex gap-3">
-          <Input
-            type="search"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search by title, tag, or author..."
-            className="max-w-xs"
-            aria-label="Search content"
-          />
-          <Button
-            asChild
-            variant="primary"
-            data-testid="create-content"
-            className="px-4 py-2"
-          >
-            <Link href="/content/new">
-              <span className="mr-2 text-lg font-bold">+</span>
-              Create Content
-            </Link>
-          </Button>
-        </div>
+        <Button
+          asChild
+          className="mt-4 sm:mt-0"
+          data-testid="add-to-library"
+        >
+          <Link href="/content/new?library=true">
+            Add to Library
+          </Link>
+        </Button>
+      </div>
+
+      <div className="mb-6 max-w-sm">
+        <Input
+          type="search"
+          placeholder="Search content library..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          data-testid="search-input"
+        />
       </div>
       
-      {filtered.length > 0 ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filtered.map(item => (
-            <Card key={item.id} className="overflow-hidden group shadow-sm border">
-              <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                <CardTitle className="text-lg">{item.title}</CardTitle>
-                <Badge className={`capitalize ${statusBadgeMap[item.status]}`}>{item.status}</Badge>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 mb-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Type:</span>
-                    <span className="font-medium">{item.type}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Modified:</span>
-                    <span>{new Date(item.lastModified).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Author:</span>
-                    <span>{item.author}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs text-muted-foreground">Tags:</span>
-                    <div className="flex flex-wrap gap-1">
-                      {item.tags.map((tag) => (
-                        <Badge
-                          key={tag}
-                          className="text-xs border border-gray-300 capitalize text-muted-foreground bg-white"
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
+      <Tabs defaultValue="templates" className="w-full">
+        <TabsList className="w-full max-w-md mb-6 grid grid-cols-3">
+          <TabsTrigger value="templates">Templates</TabsTrigger>
+          <TabsTrigger value="media">Media</TabsTrigger>
+          <TabsTrigger value="snippets">Snippets</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="templates" data-testid="tabpanel-templates">
+          {filteredContent.templates.length > 0 ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {filteredContent.templates.map(template => (
+                <Card key={template.id} data-testid={`template-${template.id}`}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">{template.name}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Category:</span>
+                      <span className="text-sm font-medium">{template.category}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Last Used:</span>
+                      <span className="text-sm">{template.lastUsed}</span>
                     </div>
                   </div>
-                </div>
-                <div className="mt-4 flex justify-end space-x-2 text-sm">
-                  <Link 
-                    href={`/content/edit/${item.id}`}
-                    className="text-blue-600 hover:underline"
-                  >
-                    Edit
+                  <div className="mt-4">
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href={`/content-library/templates/${template.id}`}>
+                        Use Template
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card className="text-center p-6" data-testid="empty-templates">
+              <CardContent className="pt-6">
+                <p className="mb-4">No templates found</p>
+                <Button asChild>
+                  <Link href="/content/new?library=true">
+                    Add New Template
                   </Link>
-                  <Link 
-                    href={`/content/view/${item.id}`}
-                    className="text-blue-600 hover:underline"
-                  >
-                    View
-                  </Link>
-                </div>
+                </Button>
               </CardContent>
             </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center p-10 border rounded-lg text-muted-foreground">
-          <p className="mb-4">No content items found</p>
-          <p className="text-sm">Create your first content item to get started</p>
-        </div>
-      )}
+          )}
+        </TabsContent>
+        
+        <TabsContent value="media" data-testid="tabpanel-media">
+          {filteredContent.media.length > 0 ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {filteredContent.media.map(item => (
+                <Card key={item.id} data-testid={`media-${item.id}`}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">{item.name}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Type:</span>
+                      <span className="text-sm font-medium">{item.type}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Size:</span>
+                      <span className="text-sm">{item.size}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Uploaded:</span>
+                      <span className="text-sm">{item.uploaded}</span>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href={`/content-library/media/${item.id}`}>
+                        Preview
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card className="text-center p-6" data-testid="empty-media">
+              <CardContent className="pt-6">
+                <p className="mb-4">No media found</p>
+                <Button asChild>
+                  <Link href="/content/new?library=true">
+                    Add New Media
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="snippets" data-testid="tabpanel-snippets">
+          {filteredContent.snippets.length > 0 ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {filteredContent.snippets.map(snippet => (
+                <Card key={snippet.id} data-testid={`snippet-${snippet.id}`}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">{snippet.name}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Category:</span>
+                      <span className="text-sm font-medium">{snippet.category}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Created:</span>
+                      <span className="text-sm">{snippet.created}</span>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href={`/content-library/snippets/${snippet.id}`}>
+                        Use Snippet
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card className="text-center p-6" data-testid="empty-snippets">
+              <CardContent className="pt-6">
+                <p className="mb-4">No snippets found</p>
+                <Button asChild>
+                  <Link href="/content/new?library=true">
+                    Add New Snippet
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

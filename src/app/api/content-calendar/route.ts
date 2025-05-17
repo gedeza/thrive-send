@@ -30,73 +30,85 @@ function handleApiError(error: Error) {
 // GET /api/content-calendar - fetch all content items (with auth)
 export async function GET(req: NextRequest) {
   try {
-    const { userId } = getAuth(req);
-    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    
-    // Query content items for this user
-    const items = await prisma.contentItem.findMany({
-      where: { authorId: userId },
-      orderBy: { scheduledFor: 'desc' },
+    const { userId, orgId } = getAuth(req);
+    if (!userId || !orgId) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    const events = await prisma.contentPiece.findMany({
+      where: {
+        authorId: userId,
+        organizationId: orgId,
+      },
+      orderBy: {
+        scheduledFor: "asc",
+      },
     });
-    
-    return NextResponse.json(items);
+
+    return NextResponse.json(events);
   } catch (error) {
-    return handleApiError(error as Error);
+    console.error("Error fetching content calendar events:", error);
+    return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
 
 // POST /api/content-calendar - create a new content item (with auth)
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = getAuth(req);
-    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    
-    const body = await req.json();
-    
-    // Validate required fields
-    if (!body.title) {
-      return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+    const { userId, orgId } = getAuth(req);
+    if (!userId || !orgId) {
+      return new NextResponse("Unauthorized", { status: 401 });
     }
-    
-    // Create content item in database
-    const created = await prisma.contentItem.create({
+
+    const body = await req.json();
+    const { title, description, date, time, type, status, campaignId } = body;
+
+    const scheduledFor = new Date(`${date}T${time || "00:00"}`);
+
+    const event = await prisma.contentPiece.create({
       data: {
-        title: body.title,
-        body: body.body ?? '',
-        status: body.status ?? 'SCHEDULED',
-        scheduledFor: body.scheduledFor ? new Date(body.scheduledFor) : undefined,
-        projectId: body.projectId,
+        title,
+        content: description,
+        scheduledFor,
+        contentType: type,
+        status,
+        campaignId,
         authorId: userId,
-        organizationId: body.organizationId,
+        organizationId: orgId,
+        mediaUrls: [],
       },
     });
-    
-    return NextResponse.json(created, { status: 201 });
+
+    return NextResponse.json(event);
   } catch (error) {
-    return handleApiError(error as Error);
+    console.error("Error creating content calendar event:", error);
+    return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
 
 // PUT /api/content-calendar/:id - update content item (with auth)
 export async function PUT(req: NextRequest) {
   try {
-    const { userId } = getAuth(req);
-    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { userId, orgId } = getAuth(req);
+    if (!userId || !orgId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     
     const body = await req.json();
     if (!body.id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
     
     // Update content item in database
-    const updated = await prisma.contentItem.update({
+    const updated = await prisma.contentPiece.update({
       where: { 
         id: body.id,
-        authorId: userId // Ensure user can only update their own content
+        authorId: userId, // Ensure user can only update their own content
+        organizationId: orgId, // Ensure content belongs to the organization
       },
       data: {
         title: body.title,
-        body: body.body,
+        content: body.description,
         status: body.status,
         scheduledFor: body.scheduledFor ? new Date(body.scheduledFor) : undefined,
+        contentType: body.type,
+        campaignId: body.campaignId,
       },
     });
     

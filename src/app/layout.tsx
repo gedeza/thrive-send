@@ -2,6 +2,10 @@ import '../../styles/global-fonts.css';
 import "./globals.css";
 import React from 'react';
 import { ClerkProvider } from '@clerk/nextjs';
+import { Inter } from "next/font/google";
+import { Toaster } from "@/components/ui/toaster";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
   title: 'ThriveSend',
@@ -22,8 +26,9 @@ export default function RootLayout({
             rel="stylesheet"
           />
         </head>
-        <body>
+        <body className={inter.className}>
           {children}
+          <Toaster />
         </body>
       </html>
     </ClerkProvider>

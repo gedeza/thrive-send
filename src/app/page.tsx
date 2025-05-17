@@ -1,6 +1,5 @@
-import { redirect } from 'next/navigation';
+import LandingPage from './landing/page';
 
 export default function Home() {
-  // Redirect root path to the landing page
-  redirect('/landing');
+  return <LandingPage />;
 }

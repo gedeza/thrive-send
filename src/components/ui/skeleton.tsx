@@ -1,19 +1,12 @@
 import { cn } from "@/lib/utils";
 
-interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {}
-
 /**
- * Skeleton component for loading states
- * 
  * Used to show a placeholder while content is loading
  */
-export function Skeleton({ className, ...props }: SkeletonProps) {
+export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn(
-        "animate-pulse rounded-md bg-primary/10",
-        className
-      )}
+      className={cn('animate-pulse rounded-md bg-muted', className)}
       {...props}
     />
   );

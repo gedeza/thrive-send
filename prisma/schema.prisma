@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  // No custom output path - this ensures it generates in the default location
 }
 
 datasource db {
@@ -12,9 +11,9 @@ datasource db {
 model User {
   id                      String               @id @default(cuid())
   clerkId                 String               @unique
-  email                   String               @unique
-  firstName               String?
-  lastName                String?
+  email                   String               @unique @db.VarChar(255)
+  firstName               String?              @db.VarChar(100)
+  lastName                String?              @db.VarChar(100)
   imageUrl                String?
   createdAt               DateTime             @default(now())
   updatedAt               DateTime             @updatedAt
@@ -23,19 +22,24 @@ model User {
   createdContent          ContentPiece[]
   organizationMemberships OrganizationMember[]
   projects                Project[]
-  templates               Template[]           // Added relation to templates
+  Template                Template[]
+  emailVerified           DateTime?
+  image                   String?
+  name                    String?
+  accounts                Account[]
+  sessions                Session[]
 }
 
 model Organization {
   id             String               @id @default(cuid())
-  name           String
-  slug           String               @unique
+  name           String               @db.VarChar(100)
+  slug           String               @unique @db.VarChar(100)
   logoUrl        String?
   website        String?
   primaryColor   String?              @default("#000000")
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
-  campaigns      Campaign[]           // Relation to campaigns
+  campaigns      Campaign[]
   clients        Client[]
   contentItems   ContentItem[]
   contentPieces  ContentPiece[]
@@ -43,18 +47,18 @@ model Organization {
   projects       Project[]
   socialAccounts SocialAccount[]
   subscription   Subscription?
-  templates      Template[]           // Added relation to templates
+  Template       Template[]
 }
 
 model OrganizationMember {
   id             String       @id @default(cuid())
-  role           Role         @default(MEMBER)
+  role           String       @default("MEMBER")
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   userId         String
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([userId, organizationId])
 }
@@ -62,18 +66,19 @@ model OrganizationMember {
 model Client {
   id             String          @id @default(cuid())
   name           String
-  type           ClientType
-  industry       String?
-  logoUrl        String?
-  website        String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  email          String
+  phone          String?
+  address        String?
   organizationId String
-  analytics      Analytics[]
-  campaigns      Campaign[]      // Relation to campaigns
   organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  analytics      Analytics[]
+  campaigns      Campaign[]
   projects       Project[]
   socialAccounts SocialAccount[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([organizationId])
 }
 
 model Project {
@@ -82,23 +87,23 @@ model Project {
   description    String?
   startDate      DateTime?
   endDate        DateTime?
-  status         ProjectStatus  @default(PLANNED)
+  status         String         @default("PLANNED")
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   clientId       String?
   organizationId String
   managerId      String?
-  campaigns      Campaign[]     // Relation to campaigns
+  campaigns      Campaign[]
   contentItems   ContentItem[]
   contentPieces  ContentPiece[]
-  client         Client?        @relation(fields: [clientId], references: [id])
-  manager        User?          @relation(fields: [managerId], references: [id])
-  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client         Client?        @relation(fields: [clientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  manager        User?          @relation(fields: [managerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model SocialAccount {
   id             String       @id @default(cuid())
-  platform       Platform
+  platform       String
   handle         String
   accountId      String?
   accessToken    String?
@@ -108,38 +113,43 @@ model SocialAccount {
   updatedAt      DateTime     @updatedAt
   clientId       String?
   organizationId String
-  client         Client?      @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client         Client?      @relation(fields: [clientId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   socialPosts    SocialPost[]
+
+  @@unique([platform, handle, organizationId])
 }
 
 model ContentPiece {
-  id             String        @id @default(cuid())
+  id             String       @id @default(cuid())
   title          String
   content        String
-  contentType    ContentType   @default(SOCIAL_POST)
+  contentType    String       @default("SOCIAL_POST")
   mediaUrls      String[]
-  status         ContentStatus @default(DRAFT)
+  status         String       @default("DRAFT")
   scheduledFor   DateTime?
   publishedAt    DateTime?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
   authorId       String
   organizationId String
   projectId      String?
   campaignId     String?
-  author         User          @relation(fields: [authorId], references: [id])
-  campaign       Campaign?     @relation(fields: [campaignId], references: [id])
-  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  project        Project?      @relation(fields: [projectId], references: [id])
+  author         User         @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  campaign       Campaign?    @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  project        Project?     @relation(fields: [projectId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   engagements    Engagement[]
   socialPosts    SocialPost[]
+
+  @@index([organizationId, status])
+  @@index([authorId, createdAt])
 }
 
 model SocialPost {
   id              String        @id @default(cuid())
   externalPostId  String?
-  status          PostStatus    @default(SCHEDULED)
+  status          String        @default("SCHEDULED")
   publishedAt     DateTime?
   scheduledAt     DateTime?
   metrics         Json?
@@ -147,130 +157,77 @@ model SocialPost {
   updatedAt       DateTime      @updatedAt
   contentPieceId  String
   socialAccountId String
-  contentPiece    ContentPiece  @relation(fields: [contentPieceId], references: [id], onDelete: Cascade)
-  socialAccount   SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+  contentPiece    ContentPiece  @relation(fields: [contentPieceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  socialAccount   SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model Engagement {
-  id             String         @id @default(cuid())
-  type           EngagementType
+  id             String        @id @default(cuid())
+  type           String
   text           String
   externalId     String?
-  sentiment      Sentiment?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  sentiment      String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
   contentPieceId String?
-  contentPiece   ContentPiece?  @relation(fields: [contentPieceId], references: [id])
+  contentPiece   ContentPiece? @relation(fields: [contentPieceId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model Analytics {
-  id                String    @id @default(cuid())
-  date              DateTime
-  
-  // Basic metrics
-  impressions       Int       @default(0)
-  engagements       Int       @default(0)
-  clicks            Int       @default(0)
-  shares            Int       @default(0)
-  newFollowers      Int       @default(0)
-  
-  // Expanded metrics
-  likes             Int       @default(0)
-  comments          Int       @default(0)
-  conversions       Int       @default(0)
-  revenue           Float?    @default(0)
-  
-  // Audience demographics
-  audienceAge       Json?     // Store age brackets as JSON
-  audienceGender    Json?     // Store gender distribution as JSON
-  audienceLocation  Json?     // Store geographical data as JSON
-  
-  // Platform data
-  platform          String?   // e.g., "facebook", "instagram", "twitter"
-  contentType       String?   // e.g., "post", "story", "ad"
-  
-  // Timestamps
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  
-  // Relations
-  clientId          String
-  client            Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  campaignId        String?
-  campaign          Campaign? @relation(fields: [campaignId], references: [id])
-  
-  @@index([date])
-  @@index([clientId])
-  @@index([campaignId])
-}
+  id            String    @id @default(cuid())
+  timestamp     DateTime  @default(now())
+  views         Int       @default(0)
+  engagements   Int       @default(0)
+  conversions   Int       @default(0)
+  revenue       Float     @default(0)
+  likes         Int       @default(0)
+  comments      Int       @default(0)
+  shares        Int       @default(0)
+  follows       Int       @default(0)
+  new_followers Int       @default(0)
+  campaignId    String?
+  clientId      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-model Campaign {
-  id             String         @id @default(cuid())
-  name           String
-  description    String?        @db.Text
-  status         CampaignStatus @default(DRAFT)
-  channel        String         @default("Email") // Email, SMS, Social, Push
-  audience       String?
-  startDate      DateTime?
-  endDate        DateTime?
-  sentDate       DateTime?
-  openRate       String?
-  clickRate      String?
-  budget         Float?
-  goals          String?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  
-  // Required relationship
-  organizationId String
-  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  // Optional relationships
-  clientId       String?
-  client         Client?        @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  projectId      String?
-  project        Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  
-  // Related entities
-  contentPieces  ContentPiece[]
-  analytics      Analytics[]
-  
-  @@index([organizationId])
+  campaign      Campaign? @relation(fields: [campaignId], references: [id])
+  client        Client?   @relation(fields: [clientId], references: [id])
+
+  @@index([timestamp])
+  @@index([campaignId])
   @@index([clientId])
-  @@index([projectId])
-  @@map("campaigns")
 }
 
 model Subscription {
-  id                   String             @id @default(cuid())
-  plan                 SubscriptionPlan
-  status               SubscriptionStatus
+  id                   String       @id @default(cuid())
+  plan                 String
+  status               String
   startDate            DateTime
   endDate              DateTime?
   stripeCustomerId     String?
   stripeSubscriptionId String?
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
-  organizationId       String             @unique
-  organization         Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  organizationId       String       @unique
+  organization         Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model ContentItem {
-  id             String            @id @default(cuid())
+  id             String       @id @default(cuid())
   title          String
   body           String
-  status         ContentItemStatus @default(DRAFT)
+  status         String       @default("DRAFT")
   scheduledFor   DateTime?
   publishedAt    DateTime?
   previewData    Json?
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
   authorId       String
   organizationId String
   projectId      String?
-  author         User              @relation(fields: [authorId], references: [id])
-  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  project        Project?          @relation(fields: [projectId], references: [id])
+  author         User         @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  project        Project?     @relation(fields: [projectId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model Activity {
@@ -281,139 +238,100 @@ model Activity {
   metadata   Json?
   createdAt  DateTime @default(now())
   userId     String
-  user       User     @relation(fields: [userId], references: [id])
+  user       User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
-// New Template model
-model Template {
-  id             String           @id @default(cuid())
+model Campaign {
+  id             String         @id @default(cuid())
   name           String
-  content        String?          @db.Text
-  description    String?          @db.Text
-  category       String           // Email, Social Media, Form, Blog, Notification
-  status         TemplateStatus   @default(DRAFT)
-  lastUpdated    DateTime         @updatedAt
-  createdAt      DateTime         @default(now())
+  description    String?
+  status         String         @default("draft")
+  startDate      DateTime?
+  endDate        DateTime?
+  budget         Float?
+  clientId       String?
+  projectId      String?
+  organizationId String
+  analytics      Analytics[]
+  contentPieces  ContentPiece[]
+  client         Client?        @relation(fields: [clientId], references: [id], onUpdate: NoAction)
+  project        Project?       @relation(fields: [projectId], references: [id], onUpdate: NoAction)
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([clientId])
+  @@index([projectId])
+  @@index([organizationId])
+}
+
+model Template {
+  id             String       @id
+  name           String
+  content        String?
+  description    String?
+  category       String
+  status         String       @default("DRAFT")
+  lastUpdated    DateTime
+  createdAt      DateTime     @default(now())
   previewImage   String?
   organizationId String
   authorId       String
-  
-  // Relations
-  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  author         User             @relation(fields: [authorId], references: [id])
-  
-  @@index([organizationId])
+  User           User         @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
   @@index([authorId])
-  @@map("templates")
+  @@index([organizationId])
 }
 
-enum Role {
-  OWNER
-  ADMIN
-  MANAGER
-  MEMBER
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
 }
 
-enum CampaignStatus {
-  DRAFT
-  SCHEDULED
-  SENT
-  ACTIVE
-  PAUSED
-  COMPLETED
-  CANCELLED
-  ARCHIVED
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-enum ClientType {
-  MUNICIPALITY
-  BUSINESS
-  STARTUP
-  INDIVIDUAL
-  NONPROFIT
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
 
-enum Platform {
-  FACEBOOK
-  TWITTER
-  INSTAGRAM
-  LINKEDIN
-  YOUTUBE
-  TIKTOK
-  PINTEREST
-}
+model Content {
+  id            String    @id @default(cuid())
+  title         String
+  body          String?
+  scheduledFor  DateTime?
+  type          String    @default("email")
+  status        String    @default("scheduled")
+  projectId     String?
+  userId        String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-enum ContentType {
-  SOCIAL_POST
-  NEWSLETTER
-  ARTICLE
-  IMAGE
-  VIDEO
-}
-
-enum ContentStatus {
-  DRAFT
-  REVIEW
-  APPROVED
-  SCHEDULED
-  PUBLISHED
-  FAILED
-  ARCHIVED
-}
-
-enum ProjectStatus {
-  PLANNED
-  ACTIVE
-  COMPLETED
-  ARCHIVED
-}
-
-enum PostStatus {
-  DRAFT
-  SCHEDULED
-  PUBLISHED
-  FAILED
-}
-
-enum EngagementType {
-  COMMENT
-  MESSAGE
-  MENTION
-  REPLY
-}
-
-enum Sentiment {
-  POSITIVE
-  NEUTRAL
-  NEGATIVE
-}
-
-enum SubscriptionPlan {
-  FREE
-  BASIC
-  PROFESSIONAL
-  ENTERPRISE
-}
-
-enum SubscriptionStatus {
-  ACTIVE
-  PAST_DUE
-  CANCELED
-  TRIAL
-}
-
-enum ContentItemStatus {
-  DRAFT
-  REVIEW
-  APPROVED
-  SCHEDULED
-  PUBLISHED
-  FAILED
-  ARCHIVED
-}
-
-enum TemplateStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
+  @@index([userId])
+  @@index([scheduledFor])
+  @@index([projectId])
 }

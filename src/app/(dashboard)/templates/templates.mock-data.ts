@@ -1,50 +1,63 @@
-export type TemplateCategory = "Email" | "Social Media" | "Form" | "Blog" | "Notification";
-export type TemplateStatus = "draft" | "published" | "archived";
-export interface Template {
+export type Template = {
   id: string;
   name: string;
-  category: TemplateCategory;
-  lastUpdated: string; // ISO date
-  status: TemplateStatus;
-  author: string;
-  description?: string;
-}
+  description: string;
+  type: 'email' | 'social' | 'blog';
+  status: 'draft' | 'published' | 'archived';
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+};
 
 export const templates: Template[] = [
   {
     id: '1',
     name: 'Welcome Email',
-    category: 'Email',
-    lastUpdated: '2023-10-15',
+    description: 'A warm welcome email for new subscribers',
+    type: 'email',
     status: 'published',
-    author: 'Alice Johnson',
-    description: 'Friendly welcome for new subscribers.'
+    createdAt: '2024-03-15T10:00:00Z',
+    updatedAt: '2024-03-15T10:00:00Z',
+    createdBy: 'John Doe'
   },
   {
     id: '2',
-    name: 'Weekly Newsletter',
-    category: 'Email',
-    lastUpdated: '2023-11-02',
+    name: 'Product Launch',
+    description: 'Announcement template for new product launches',
+    type: 'social',
     status: 'draft',
-    author: 'Dana West',
-    description: 'Template for sending weekly updates.'
+    createdAt: '2024-03-14T15:30:00Z',
+    updatedAt: '2024-03-14T15:30:00Z',
+    createdBy: 'Jane Smith'
   },
   {
     id: '3',
-    name: 'Product Announcement',
-    category: 'Social Media',
-    lastUpdated: '2023-11-10',
+    name: 'Weekly Newsletter',
+    description: 'Template for weekly company updates',
+    type: 'email',
     status: 'published',
-    author: 'Chris Moore',
-    description: 'Share new product launches on all socials.'
+    createdAt: '2024-03-13T09:15:00Z',
+    updatedAt: '2024-03-13T09:15:00Z',
+    createdBy: 'Mike Johnson'
   },
   {
     id: '4',
-    name: 'Customer Survey',
-    category: 'Form',
-    lastUpdated: '2023-10-28',
+    name: 'Blog Post Template',
+    description: 'Standard template for blog posts',
+    type: 'blog',
+    status: 'published',
+    createdAt: '2024-03-12T14:20:00Z',
+    updatedAt: '2024-03-12T14:20:00Z',
+    createdBy: 'Sarah Wilson'
+  },
+  {
+    id: '5',
+    name: 'Holiday Promotion',
+    description: 'Special offers for holiday season',
+    type: 'social',
     status: 'archived',
-    author: 'Sarah Lee',
-    description: 'Quick survey to gather feedback from users.'
+    createdAt: '2024-03-11T11:45:00Z',
+    updatedAt: '2024-03-11T11:45:00Z',
+    createdBy: 'David Brown'
   }
-];
+]; 

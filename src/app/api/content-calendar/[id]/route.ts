@@ -36,12 +36,24 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
 // DELETE /api/content-calendar/[id]
 export async function DELETE(req: NextRequest, { params }: Params) {
-  const { userId } = getAuth(req);
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  try {
+    const { userId, orgId } = getAuth(req);
+    if (!userId || !orgId) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
 
-  const deleted = await prisma.contentItem.deleteMany({
-    where: { id: params.id, authorId: userId },
-  });
-  if (deleted.count === 0) return NextResponse.json({ error: 'Delete failed or forbidden' }, { status: 403 });
-  return NextResponse.json({ ok: true });
+    // Delete the content piece
+    await prisma.contentPiece.delete({
+      where: {
+        id: params.id,
+        authorId: userId,
+        organizationId: orgId,
+      },
+    });
+
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    console.error("Error deleting content calendar event:", error);
+    return new NextResponse("Internal Server Error", { status: 500 });
+  }
 }

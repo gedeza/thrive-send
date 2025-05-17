@@ -2,89 +2,196 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { useAuth, useOrganization } from "@clerk/nextjs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TemplateCategory, TemplateStatus, Template } from "../templates.mock-data";
-
-const defaultCategories: TemplateCategory[] = ["Email", "Social Media", "Form", "Blog", "Notification"];
-const defaultStatuses: TemplateStatus[] = ["draft", "published", "archived"];
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "@/components/ui/use-toast";
 
 export default function NewTemplatePage() {
   const router = useRouter();
-  const [form, setForm] = useState<Omit<Template, "id" | "lastUpdated">>({
+  const { isLoaded: isAuthLoaded, userId } = useAuth();
+  const { isLoaded: isOrgLoaded, organization } = useOrganization();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const [formData, setFormData] = useState({
     name: "",
-    category: "Email",
-    status: "draft",
-    author: "",
     description: "",
+    category: "email",
+    status: "DRAFT",
+    content: "",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setForm(f => ({
-      ...f,
-      [e.target.name]: e.target.value,
-    }));
+  if (!isAuthLoaded || !isOrgLoaded) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (!userId) {
+    router.push("/sign-in");
+    return null;
+  }
+
+  if (!organization) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="mb-4">Please select an organization to create a template</p>
+          <Button onClick={() => router.push("/dashboard")}>
+            Go to Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      console.log("Submitting form data:", formData); // Debug log
+      const response = await fetch("/api/templates", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create template");
+      }
+
+      toast({
+        title: "Success",
+        description: "Template created successfully",
+      });
+
+      router.push("/templates");
+    } catch (error) {
+      console.error("Error creating template:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create template",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Create a new mock template object, generate random id
-    const id = Math.floor(Math.random() * 1000000).toString();
-    // Here, normally we'd persist data; we'll just mock
-    // Optionally, you can persist to localStorage for demo
-    if (typeof window !== "undefined") {
-      const existing = JSON.parse(localStorage.getItem("templates") || "[]");
-      const newTemplate = {
-        ...form,
-        id,
-        lastUpdated: new Date().toISOString(),
-      };
-      localStorage.setItem("templates", JSON.stringify([...existing, newTemplate]));
-    }
-    router.push(`/templates/editor/${id}`);
+  const handleCategoryChange = (value: string) => {
+    console.log("Category changed to:", value); // Debug log
+    setFormData(prev => ({ ...prev, category: value }));
+  };
+
+  const handleStatusChange = (value: string) => {
+    console.log("Status changed to:", value); // Debug log
+    setFormData(prev => ({ ...prev, status: value }));
   };
 
   return (
-    <div className="max-w-2xl mx-auto py-10">
+    <div className="container mx-auto py-8">
       <Card>
         <CardHeader>
           <CardTitle>Create New Template</CardTitle>
         </CardHeader>
         <CardContent>
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label className="block text-sm font-medium mb-1">Template Name</label>
-              <Input name="name" value={form.name} onChange={handleChange} required />
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label htmlFor="name" className="text-sm font-medium">
+                Template Name
+              </label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Enter template name"
+                required
+              />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Category</label>
-              <select name="category" value={form.category} onChange={handleChange} className="input w-full">
-                {defaultCategories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
+
+            <div className="space-y-2">
+              <label htmlFor="description" className="text-sm font-medium">
+                Description
+              </label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Enter template description"
+                rows={4}
+              />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Status</label>
-              <select name="status" value={form.status} onChange={handleChange} className="input w-full">
-                {defaultStatuses.map(st => (
-                  <option key={st} value={st}>{st}</option>
-                ))}
-              </select>
+
+            <div className="space-y-2">
+              <label htmlFor="category" className="text-sm font-medium">
+                Category
+              </label>
+              <Select
+                value={formData.category}
+                onValueChange={handleCategoryChange}
+              >
+                <SelectTrigger id="category">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="email">Email</SelectItem>
+                  <SelectItem value="social">Social Media</SelectItem>
+                  <SelectItem value="blog">Blog Post</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Author</label>
-              <Input name="author" value={form.author} onChange={handleChange} required />
+
+            <div className="space-y-2">
+              <label htmlFor="status" className="text-sm font-medium">
+                Status
+              </label>
+              <Select
+                value={formData.status}
+                onValueChange={handleStatusChange}
+              >
+                <SelectTrigger id="status">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="DRAFT">Draft</SelectItem>
+                  <SelectItem value="PUBLISHED">Published</SelectItem>
+                  <SelectItem value="ARCHIVED">Archived</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Description</label>
-              <Textarea name="description" value={form.description} onChange={handleChange} />
+
+            <div className="space-y-2">
+              <label htmlFor="content" className="text-sm font-medium">
+                Content
+              </label>
+              <Textarea
+                id="content"
+                value={formData.content}
+                onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                placeholder="Enter template content"
+                rows={8}
+              />
             </div>
-            <div className="flex justify-end">
-              <Button type="submit">
-                Create Template
+
+            <div className="flex justify-end space-x-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push("/templates")}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Creating..." : "Create Template"}
               </Button>
             </div>
           </form>
