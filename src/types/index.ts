@@ -1,0 +1,1 @@
+export type AnalyticsTimeframe = 'day' | 'week' | 'month' | 'year'; 

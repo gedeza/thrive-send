@@ -1,8 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getAuth } from "@clerk/nextjs/server";
-import { CampaignsQuerySchema } from "./validation";
+import { auth } from "@clerk/nextjs/server";
+import { CampaignsQuerySchema, CampaignCreateSchema } from "./validation";
 import { handleApiError } from "./errorHandler";
+import { Prisma, CampaignStatus } from "@prisma/client";
+import { 
+  type CampaignResponse,
+  type CampaignCreateInput
+} from "@/types/campaign";
+
+// Define the campaign with relations type
+type CampaignWithRelations = Prisma.CampaignGetPayload<{
+  include: {
+    organization: { select: { id: true; name: true } };
+    client: { select: { id: true; name: true } };
+    project: { select: { id: true; name: true } };
+  };
+}>;
 
 /**
  * GET: List filtered campaigns
@@ -11,17 +25,18 @@ import { handleApiError } from "./errorHandler";
 export async function GET(req: NextRequest) {
   try {
     // Authenticate
-    const { userId } = getAuth(req);
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Parse query params
     const url = new URL(req.url);
+    const status = url.searchParams.get("status");
     const query = {
       organizationId: url.searchParams.get("organizationId") || undefined,
       userId: userId,
-      status: url.searchParams.get("status") || undefined,
+      status: status ? CampaignCreateSchema.shape.status.parse(status) : undefined,
       clientId: url.searchParams.get("clientId") || undefined,
       projectId: url.searchParams.get("projectId") || undefined,
     };
@@ -58,17 +73,17 @@ export async function GET(req: NextRequest) {
           client: { select: { id: true, name: true } },
           project: { select: { id: true, name: true } },
         },
-      });
+      }) as CampaignWithRelations[];
       
       // Format campaign data for frontend consumption
-      const formattedCampaigns = campaigns.map(campaign => ({
+      const formattedCampaigns: CampaignResponse[] = campaigns.map(campaign => ({
         id: campaign.id,
         name: campaign.name,
         status: campaign.status,
-        channel: campaign.channel || "Email",
-        audience: campaign.audience || "All Subscribers",
-        sentDate: campaign.sentDate ? campaign.sentDate.toISOString() : null,
-        openRate: campaign.openRate || null,
+        channel: "Email",
+        audience: "All Subscribers",
+        sentDate: null,
+        openRate: null,
         createdAt: campaign.createdAt.toISOString(),
         clientName: campaign.client?.name || null,
         clientId: campaign.clientId,
@@ -99,17 +114,17 @@ export async function GET(req: NextRequest) {
           client: { select: { id: true, name: true } },
           project: { select: { id: true, name: true } },
         },
-      });
+      }) as CampaignWithRelations[];
       
       // Format campaign data for frontend consumption
-      const formattedCampaigns = campaigns.map(campaign => ({
+      const formattedCampaigns: CampaignResponse[] = campaigns.map(campaign => ({
         id: campaign.id,
         name: campaign.name,
         status: campaign.status,
-        channel: campaign.channel || "Email",
-        audience: campaign.audience || "All Subscribers",
-        sentDate: campaign.sentDate ? campaign.sentDate.toISOString() : null,
-        openRate: campaign.openRate || null,
+        channel: "Email",
+        audience: "All Subscribers",
+        sentDate: null,
+        openRate: null,
         createdAt: campaign.createdAt.toISOString(),
         clientName: campaign.client?.name || null,
         clientId: campaign.clientId,
@@ -132,24 +147,17 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     // Authenticate
-    const { userId } = getAuth(req);
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Parse input data
+    // Parse and validate input data
     const data = await req.json();
-    
-    // Validate required fields
-    if (!data.name) {
-      return NextResponse.json(
-        { error: "Campaign name is required" },
-        { status: 400 }
-      );
-    }
+    const validatedData = CampaignCreateSchema.parse(data);
     
     // If no organizationId provided, get user's primary organization
-    if (!data.organizationId) {
+    if (!validatedData.organizationId) {
       const membership = await db.organizationMember.findFirst({
         where: { user: { clerkId: userId } },
         select: { organizationId: true },
@@ -159,53 +167,49 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "No organization found" }, { status: 400 });
       }
       
-      data.organizationId = membership.organizationId;
+      validatedData.organizationId = membership.organizationId;
     }
     
-    // Prepare data for database
-    const createData = {
-      name: data.name,
-      description: data.description || null,
-      status: data.status || "Draft",
-      channel: data.channel || "Email",
-      audience: data.audience || "All Subscribers",
-      organizationId: data.organizationId,
-      clientId: data.clientId || null,
-      projectId: data.projectId || null,
-    };
-    
-    // Add dates if provided
-    if (data.startDate) {
-      createData.startDate = new Date(data.startDate);
-      
-      // If end date is provided, validate it's after start date
-      if (data.endDate) {
-        const endDate = new Date(data.endDate);
-        if (createData.startDate > endDate) {
-          return NextResponse.json(
-            { error: "End date cannot be before start date" },
-            { status: 400 }
-          );
-        }
-        createData.endDate = endDate;
-      }
-    }
-    
-    // Add optional fields if provided
-    if (data.budget) createData.budget = data.budget;
-    if (data.goals) createData.goals = data.goals;
-
     // Create campaign in database
     const campaign = await db.campaign.create({
-      data: createData,
+      data: {
+        name: validatedData.name,
+        description: validatedData.description || null,
+        status: validatedData.status,
+        organizationId: validatedData.organizationId,
+        clientId: validatedData.clientId || null,
+        projectId: validatedData.projectId || null,
+        startDate: validatedData.startDate ? new Date(validatedData.startDate) : null,
+        endDate: validatedData.endDate ? new Date(validatedData.endDate) : null,
+        budget: validatedData.budget || null,
+        goals: validatedData.goals || null
+      },
       include: {
-        client: { select: { name: true } },
-        organization: { select: { name: true } },
-        project: { select: { name: true } },
+        organization: { select: { id: true, name: true } },
+        client: { select: { id: true, name: true } },
+        project: { select: { id: true, name: true } },
       }
-    });
+    }) as CampaignWithRelations;
 
-    return NextResponse.json(campaign, { status: 201 });
+    // Format response for frontend
+    const formattedCampaign: CampaignResponse = {
+      id: campaign.id,
+      name: campaign.name,
+      status: campaign.status,
+      channel: "Email",
+      audience: "All Subscribers",
+      sentDate: null,
+      openRate: null,
+      createdAt: campaign.createdAt.toISOString(),
+      clientName: campaign.client?.name || null,
+      clientId: campaign.clientId,
+      organizationId: campaign.organizationId,
+      organizationName: campaign.organization?.name || null,
+      projectId: campaign.projectId,
+      projectName: campaign.project?.name || null
+    };
+
+    return NextResponse.json(formattedCampaign, { status: 201 });
   } catch (error) {
     return handleApiError(error);
   }

@@ -14,7 +14,8 @@ export function handleApiError(error: unknown): NextResponse {
     return NextResponse.json(
       { 
         error: "Database operation failed", 
-        details: (error as any).message || "Unknown database error"
+        details: (error as any).message || "Unknown database error",
+        code: (error as any).code
       }, 
       { status: 500 }
     );
@@ -36,9 +37,12 @@ export function handleApiError(error: unknown): NextResponse {
     );
   }
   
-  // Default error response
+  // Default error response with more details
   return NextResponse.json(
-    { error: "Something went wrong" }, 
+    { 
+      error: "Something went wrong",
+      details: error instanceof Error ? error.message : String(error)
+    }, 
     { status: 500 }
   );
 }

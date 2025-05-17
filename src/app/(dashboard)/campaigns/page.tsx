@@ -17,11 +17,15 @@ interface Campaign {
   status: CampaignStatus;
   sentDate: string | null;
   openRate: string | null;
-  channel: CampaignChannel;
-  audience: string;
+  channel?: CampaignChannel;
+  audience?: string;
   createdAt: string;
   clientName?: string | null;
   clientId?: string | null;
+  organizationId?: string;
+  organizationName?: string | null;
+  projectId?: string | null;
+  projectName?: string | null;
 }
 
 // Badge color map
@@ -44,6 +48,18 @@ function prettyDate(d: string | null) {
   if (!d) return "-";
   const dt = new Date(d);
   return dt.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+}
+
+// Helper function to map status to badge variant
+function getStatusVariant(status: CampaignStatus): "primary" | "secondary" | "tertiary" | "muted" | "success" | "error" {
+  const statusMap: Record<CampaignStatus, "primary" | "secondary" | "tertiary" | "muted" | "success" | "error"> = {
+    'Draft': 'muted',
+    'Scheduled': 'secondary',
+    'Sent': 'success',
+    'Paused': 'tertiary',
+    'Archived': 'muted'
+  };
+  return statusMap[status];
 }
 
 export default function CampaignsPage() {
@@ -142,12 +158,15 @@ export default function CampaignsPage() {
         status: mapDatabaseStatusToUI(campaign.status),
         sentDate: campaign.sentDate || null,
         openRate: campaign.openRate || null,
-        // Ensure channel is a valid CampaignChannel
-        channel: validateChannel(campaign.channel),
+        channel: validateChannel(campaign.channel || 'Email'),
         audience: campaign.audience || 'All Users',
         createdAt: campaign.createdAt,
         clientName: campaign.client?.name || campaign.clientName || null,
-        clientId: campaign.clientId || null
+        clientId: campaign.clientId || null,
+        organizationId: campaign.organizationId,
+        organizationName: campaign.organization?.name || null,
+        projectId: campaign.projectId,
+        projectName: campaign.project?.name || null
       }));
       
       setCampaigns(transformedData);
@@ -264,19 +283,19 @@ export default function CampaignsPage() {
               </div>
                   {/* Channel */}
                   <div className="col-span-2 flex items-center gap-2">
-                    {channelIcons[campaign.channel] || <Mail className="h-4 w-4 inline-block" />}
-                    {campaign.channel}
+                    {channelIcons[campaign.channel || 'Email'] || <Mail className="h-4 w-4" />}
+                    {campaign.channel || 'Email'}
                   </div>
                   {/* Audience */}
-                  <div className="col-span-2">{campaign.audience}</div>
+                  <div className="col-span-2">{campaign.audience || 'All Users'}</div>
                   {/* Status */}
                   <div className="col-span-2">
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadgeMap[campaign.status as CampaignStatus] || "bg-gray-100 text-gray-600"}`}>
+                    <Badge variant={getStatusVariant(campaign.status)}>
                       {campaign.status}
-                    </span>
-                    {campaign.status === "Paused" && (
-                      <Archive className="ml-1 h-3 w-3 text-gray-500 inline-block" title="Paused/Archived" />
-                    )}
+                      {campaign.status === 'Paused' || campaign.status === 'Archived' ? (
+                        <Archive className="ml-1 h-3 w-3 text-gray-500 inline-block" />
+                      ) : null}
+                    </Badge>
                   </div>
                   {/* Sent Date */}
                   <div className="col-span-2">{prettyDate(campaign.sentDate)}</div>

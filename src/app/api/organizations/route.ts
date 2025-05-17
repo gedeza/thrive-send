@@ -1,27 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuth } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
-  const { userId } = getAuth(req);
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Get organizations where the user is a member
+    const memberships = await db.organizationMember.findMany({
+      where: { user: { clerkId: userId } },
+      select: { organizationId: true },
+    });
+
+    if (memberships.length === 0) {
+      return NextResponse.json([]);
+    }
+
     const organizations = await db.organization.findMany({
+      where: {
+        id: { in: memberships.map(m => m.organizationId) }
+      },
       select: {
         id: true,
         name: true,
-        type: true,
-        industry: true,
-        createdAt: true,
-        campaigns: true
+        slug: true,
+        logoUrl: true,
+        website: true,
+        primaryColor: true,
+        createdAt: true
       },
       orderBy: {
         name: 'asc'
       }
     });
+
+    // Log the response for debugging
+    console.log('Organizations API Response:', organizations);
     
-    return NextResponse.json(organizations);
+    // Ensure we return an array
+    return NextResponse.json(Array.isArray(organizations) ? organizations : []);
   } catch (error) {
     console.error("Error fetching organizations:", error);
     return NextResponse.json(
@@ -32,26 +52,36 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { userId } = getAuth(req);
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   try {
-    const body = await req.json();
-    const { name, type, industry } = body;
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    if (!name) {
+    const body = await req.json();
+    const { name, slug, website, logoUrl, primaryColor } = body;
+
+    if (!name || !slug) {
       return NextResponse.json(
-        { error: "Name is required" },
+        { error: "Name and slug are required" },
         { status: 400 }
       );
     }
 
+    // Create organization and add user as member
     const organization = await db.organization.create({
       data: {
         name,
-        type,
-        industry,
-        userId
+        slug,
+        website,
+        logoUrl,
+        primaryColor,
+        members: {
+          create: {
+            userId,
+            role: "ADMIN"
+          }
+        }
       }
     });
 
@@ -66,26 +96,31 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  const { userId } = getAuth(req);
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   try {
-    const body = await req.json();
-    const { id, name, type, industry } = body;
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    if (!id || !name) {
+    const body = await req.json();
+    const { id, name, slug, website, logoUrl, primaryColor } = body;
+
+    if (!id || !name || !slug) {
       return NextResponse.json(
-        { error: "ID and name are required" },
+        { error: "ID, name, and slug are required" },
         { status: 400 }
       );
     }
 
-    // Check if organization exists and belongs to user
-    const existingOrg = await db.organization.findUnique({
-      where: { id, userId }
+    // Check if user is a member of the organization
+    const membership = await db.organizationMember.findFirst({
+      where: {
+        organizationId: id,
+        user: { clerkId: userId }
+      }
     });
 
-    if (!existingOrg) {
+    if (!membership) {
       return NextResponse.json(
         { error: "Organization not found or access denied" },
         { status: 404 }
@@ -96,8 +131,10 @@ export async function PUT(req: NextRequest) {
       where: { id },
       data: {
         name,
-        type,
-        industry
+        slug,
+        website,
+        logoUrl,
+        primaryColor
       }
     });
 
@@ -112,10 +149,12 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const { userId } = getAuth(req);
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 
@@ -126,12 +165,15 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    // Check if organization exists and belongs to user
-    const existingOrg = await db.organization.findUnique({
-      where: { id, userId }
+    // Check if user is a member of the organization
+    const membership = await db.organizationMember.findFirst({
+      where: {
+        organizationId: id,
+        user: { clerkId: userId }
+      }
     });
 
-    if (!existingOrg) {
+    if (!membership) {
       return NextResponse.json(
         { error: "Organization not found or access denied" },
         { status: 404 }

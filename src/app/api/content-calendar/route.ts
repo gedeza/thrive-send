@@ -45,7 +45,19 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    return NextResponse.json(events);
+    // Format the response to match what the frontend expects
+    const formattedEvents = events.map(event => ({
+      id: event.id,
+      title: event.title,
+      description: event.content || "",
+      date: event.scheduledFor ? new Date(event.scheduledFor).toISOString().split("T")[0] : "",
+      time: event.scheduledFor ? new Date(event.scheduledFor).toISOString().split("T")[1]?.slice(0, 5) : "",
+      type: event.contentType || "email",
+      status: (event.status || "scheduled").toLowerCase(),
+      campaignId: event.campaignId || undefined,
+    }));
+
+    return NextResponse.json(formattedEvents);
   } catch (error) {
     console.error("Error fetching content calendar events:", error);
     return new NextResponse("Internal Server Error", { status: 500 });
@@ -79,7 +91,19 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json(event);
+    // Format the response to match what the frontend expects
+    const formattedEvent = {
+      id: event.id,
+      title: event.title,
+      description: event.content || "",
+      date: event.scheduledFor ? new Date(event.scheduledFor).toISOString().split("T")[0] : "",
+      time: event.scheduledFor ? new Date(event.scheduledFor).toISOString().split("T")[1]?.slice(0, 5) : "",
+      type: event.contentType || "email",
+      status: (event.status || "scheduled").toLowerCase(),
+      campaignId: event.campaignId || undefined,
+    };
+
+    return NextResponse.json(formattedEvent);
   } catch (error) {
     console.error("Error creating content calendar event:", error);
     return new NextResponse("Internal Server Error", { status: 500 });
@@ -112,7 +136,19 @@ export async function PUT(req: NextRequest) {
       },
     });
     
-    return NextResponse.json(updated);
+    // Format the response to match what the frontend expects
+    const formattedEvent = {
+      id: updated.id,
+      title: updated.title,
+      description: updated.content || "",
+      date: updated.scheduledFor ? new Date(updated.scheduledFor).toISOString().split("T")[0] : "",
+      time: updated.scheduledFor ? new Date(updated.scheduledFor).toISOString().split("T")[1]?.slice(0, 5) : "",
+      type: updated.contentType || "email",
+      status: (updated.status || "scheduled").toLowerCase(),
+      campaignId: updated.campaignId || undefined,
+    };
+
+    return NextResponse.json(formattedEvent);
   } catch (error) {
     return handleApiError(error as Error);
   }

@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -90,16 +88,55 @@ const CreateCampaign: React.FC = () => {
       setLoading(true);
       try {
         // -- These endpoints must return arrays of {id, name}
-        const [orgs, clis, pros] = await Promise.all([
-          fetch('/api/organizations').then(r => r.json()),
-          fetch('/api/clients').then(r => r.json()),
-          fetch('/api/projects').then(r => r.json()),
+        const [orgsResponse, clisResponse, prosResponse] = await Promise.all([
+          fetch('/api/organizations').then(async r => {
+            if (!r.ok) {
+              throw new Error(`Organizations API error: ${r.status}`);
+            }
+            return r.json();
+          }),
+          fetch('/api/clients').then(async r => {
+            if (!r.ok) {
+              throw new Error(`Clients API error: ${r.status}`);
+            }
+            return r.json();
+          }),
+          fetch('/api/projects').then(async r => {
+            if (!r.ok) {
+              throw new Error(`Projects API error: ${r.status}`);
+            }
+            return r.json();
+          }),
         ]);
+
+        console.log('API Responses:', {
+          organizations: orgsResponse,
+          clients: clisResponse,
+          projects: prosResponse
+        });
+
+        // Ensure we have arrays and handle potential error responses
+        const orgs = Array.isArray(orgsResponse) ? orgsResponse : [];
+        const clis = Array.isArray(clisResponse) ? clisResponse : [];
+        const pros = Array.isArray(prosResponse) ? prosResponse : [];
+
+        console.log('Processed Arrays:', {
+          organizations: orgs,
+          clients: clis,
+          projects: pros
+        });
+
         setOrganizations(orgs);
         setClients(clis);
         setProjects(pros);
+
+        if (!Array.isArray(orgsResponse) || !Array.isArray(clisResponse) || !Array.isArray(prosResponse)) {
+          console.error('API responses were not arrays:', { orgsResponse, clisResponse, prosResponse });
+          setSubmitError("Failed to load organization/client/project options. Please try again.");
+        }
       } catch (err) {
-        setSubmitError("Failed to load organization/client/project options.");
+        console.error('Error fetching dropdown options:', err);
+        setSubmitError("Failed to load organization/client/project options. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -261,7 +298,7 @@ const CreateCampaign: React.FC = () => {
                   onChange={handleChange}
                   label="Organization"
                 >
-                  {organizations.map(org =>
+                  {Array.isArray(organizations) && organizations.map(org =>
                     <MenuItem value={org.id} key={org.id}>{org.name}</MenuItem>
                   )}
                 </Select>
@@ -279,7 +316,7 @@ const CreateCampaign: React.FC = () => {
                   label="Client (optional)"
                 >
                   <MenuItem value="">None</MenuItem>
-                  {clients.map(cli =>
+                  {Array.isArray(clients) && clients.map(cli =>
                     <MenuItem value={cli.id} key={cli.id}>{cli.name}</MenuItem>
                   )}
                 </Select>
@@ -296,7 +333,7 @@ const CreateCampaign: React.FC = () => {
                   label="Project (optional)"
                 >
                   <MenuItem value="">None</MenuItem>
-                  {projects.map(proj =>
+                  {Array.isArray(projects) && projects.map(proj =>
                     <MenuItem value={proj.id} key={proj.id}>{proj.name}</MenuItem>
                   )}
                 </Select>

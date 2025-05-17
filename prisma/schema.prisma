@@ -174,28 +174,21 @@ model Engagement {
 }
 
 model Analytics {
-  id            String    @id @default(cuid())
-  timestamp     DateTime  @default(now())
-  views         Int       @default(0)
-  engagements   Int       @default(0)
-  conversions   Int       @default(0)
-  revenue       Float     @default(0)
-  likes         Int       @default(0)
-  comments      Int       @default(0)
-  shares        Int       @default(0)
-  follows       Int       @default(0)
-  new_followers Int       @default(0)
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  timestamp     DateTime @default(now())
   campaignId    String?
-  clientId      String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
+  views         Int      @default(0)
+  engagements   Int      @default(0)
+  conversions   Int      @default(0)
+  revenue       Float    @default(0)
+  likes         Int      @default(0)
+  comments      Int      @default(0)
+  shares        Int      @default(0)
+  follows       Int      @default(0)
+  new_followers Int      @default(0)
   campaign      Campaign? @relation(fields: [campaignId], references: [id])
-  client        Client?   @relation(fields: [clientId], references: [id])
-
-  @@index([timestamp])
-  @@index([campaignId])
-  @@index([clientId])
 }
 
 model Subscription {
@@ -241,11 +234,19 @@ model Activity {
   user       User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
+enum CampaignStatus {
+  draft
+  active
+  completed
+  paused
+  cancelled
+}
+
 model Campaign {
   id             String         @id @default(cuid())
   name           String
   description    String?
-  status         String         @default("draft")
+  status         CampaignStatus @default(draft)
   startDate      DateTime?
   endDate        DateTime?
   budget         Float?
