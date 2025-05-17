@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, useOrganizationList } from '@clerk/nextjs';
 
@@ -8,21 +8,9 @@ export default function CreateOrganizationPage() {
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = useState<any>(null);
   const { isLoaded, userId } = useAuth();
   const { createOrganization, setActive, isLoaded: isOrgListLoaded } = useOrganizationList();
   const router = useRouter();
-
-  useEffect(() => {
-    // Debug information
-    setDebugInfo({
-      isLoaded,
-      userId,
-      isOrgListLoaded,
-      hasCreateOrg: !!createOrganization,
-      hasSetActive: !!setActive,
-    });
-  }, [isLoaded, userId, isOrgListLoaded, createOrganization, setActive]);
 
   if (!isLoaded) {
     return (
@@ -47,12 +35,9 @@ export default function CreateOrganizationPage() {
         throw new Error('Organization creation is not available');
       }
 
-      console.log('Attempting to create organization:', { name: name.trim() });
       const org = await createOrganization({ name: name.trim() });
-      console.log('Organization created:', org);
 
       if (org && setActive) {
-        console.log('Setting active organization:', org);
         await setActive({ organization: org });
         router.push('/(dashboard)');
       } else {
@@ -126,16 +111,6 @@ export default function CreateOrganizationPage() {
             </button>
           </div>
         </form>
-
-        {/* Debug Information */}
-        {process.env.NODE_ENV === 'development' && debugInfo && (
-          <div className="mt-8 p-4 bg-gray-100 rounded-md text-xs">
-            <h3 className="font-bold mb-2">Debug Information:</h3>
-            <pre className="whitespace-pre-wrap">
-              {JSON.stringify(debugInfo, null, 2)}
-            </pre>
-          </div>
-        )}
       </div>
     </div>
   );

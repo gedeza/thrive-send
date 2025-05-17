@@ -2,21 +2,22 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth, useOrganization } from '@clerk/nextjs';
+import { useAuth, useOrganization, useUser } from '@clerk/nextjs';
+import { DashboardOverview } from '@/components/dashboard/DashboardOverview';
+import { DashboardNav } from '@/components/dashboard/DashboardNav';
+import { MainLayout } from '@/components/layout/main-layout';
 
 export default function DashboardPage() {
   const { isLoaded, userId } = useAuth();
   const { isLoaded: isOrgLoaded, organization } = useOrganization();
+  const { user } = useUser();
   const router = useRouter();
 
   useEffect(() => {
     if (isLoaded && !userId) {
       router.push('/sign-in');
-    } else if (isLoaded && isOrgLoaded && userId) {
-      // Redirect to the main dashboard content
-      router.push('/(dashboard)');
     }
-  }, [isLoaded, isOrgLoaded, userId, router]);
+  }, [isLoaded, userId, router]);
 
   if (!isLoaded || !isOrgLoaded) {
     return (
@@ -47,11 +48,14 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold mb-4">Redirecting to Dashboard...</h1>
-        <p className="text-muted-foreground">Please wait while we redirect you to your dashboard.</p>
+    <MainLayout>
+      <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className="flex items-center justify-between space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+        </div>
+        <DashboardNav />
+        <DashboardOverview />
       </div>
-    </div>
+    </MainLayout>
   );
 } 

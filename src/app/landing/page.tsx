@@ -2,6 +2,8 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 import { 
   Users, 
@@ -19,6 +21,19 @@ import {
 } from 'lucide-react';
 
 export default function LandingPage() {
+  const router = useRouter();
+  const { isLoaded, userId } = useAuth();
+
+  const handleProtectedRoute = (path: string) => {
+    if (!isLoaded) return; // Wait for auth to load
+    
+    if (userId) {
+      router.push(path);
+    } else {
+      router.push('/sign-in');
+    }
+  };
+
   return (
     <div className="landing-page">
         <header className="bg-surface border-b border-border sticky top-0 z-50 py-4">
@@ -39,12 +54,19 @@ export default function LandingPage() {
               </nav>
               
               <div className="flex gap-4">
-                <Link href="/dashboard">
-                  <Button variant="outline" className="rounded-lg transition-colors">Dashboard</Button>
-                </Link>
-                <Link href="/calendar">
-                  <Button className="rounded-lg shadow-sm transition-colors">Calendar</Button>
-                </Link>
+                <Button 
+                  variant="outline" 
+                  className="rounded-lg transition-colors"
+                  onClick={() => handleProtectedRoute('/dashboard')}
+                >
+                  Dashboard
+                </Button>
+                <Button 
+                  className="rounded-lg shadow-sm transition-colors"
+                  onClick={() => handleProtectedRoute('/calendar')}
+                >
+                  Calendar
+                </Button>
               </div>
             </div>
           </div>
@@ -63,16 +85,21 @@ export default function LandingPage() {
                 Our all-in-one platform helps enterprises, businesses, and content creators drive engagement, build stronger communities, and monetize their expertise across global markets.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
-                <Link href="/calendar">
-                  <Button size="lg" className="min-w-[200px] rounded-lg shadow-sm transition-colors">
-                    Start 14-Day Free Trial
-                  </Button>
-                </Link>
-                <Link href="/dashboard">
-                  <Button size="lg" variant="outline" className="min-w-[200px] rounded-lg transition-colors">
-                    Schedule a Demo
-                  </Button>
-                </Link>
+                <Button 
+                  size="lg" 
+                  className="min-w-[200px] rounded-lg shadow-sm transition-colors"
+                  onClick={() => handleProtectedRoute('/calendar')}
+                >
+                  Start 14-Day Free Trial
+                </Button>
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="min-w-[200px] rounded-lg transition-colors"
+                  onClick={() => handleProtectedRoute('/dashboard')}
+                >
+                  Schedule a Demo
+                </Button>
                 <div className="flex items-center text-sm text-muted-foreground">
                   <Check className="w-4 h-4 mr-2 text-success" />
                   No credit card required
@@ -337,11 +364,14 @@ export default function LandingPage() {
             <p className="text-lg opacity-90 max-w-3xl mx-auto mb-10">
               Join thousands of enterprises, businesses, and content creators who are enhancing their social media services and monetizing their expertise with ThriveSend.
             </p>
-            <Link href="/calendar">
-              <Button size="lg" variant="accent" className="text-on-accent text-lg px-8 py-6 h-auto rounded-lg shadow-md">
-                Start Your 14-Day Free Trial
-              </Button>
-            </Link>
+            <Button 
+              size="lg" 
+              variant="secondary"
+              className="text-on-accent text-lg px-8 py-6 h-auto rounded-lg shadow-md"
+              onClick={() => handleProtectedRoute('/calendar')}
+            >
+              Start Your 14-Day Free Trial
+            </Button>
           </div>
         </section>
         
@@ -368,8 +398,8 @@ export default function LandingPage() {
                 <div className="flex flex-col gap-3">
                   <FooterLink href="#features" label="Features" />
                   <FooterLink href="#pricing" label="Pricing" />
-                  <FooterLink href="/dashboard" label="Case Studies" />
-                  <FooterLink href="/dashboard" label="Documentation" />
+                  <FooterLink href="#" onClick={() => handleProtectedRoute('/dashboard')} label="Case Studies" />
+                  <FooterLink href="#" onClick={() => handleProtectedRoute('/dashboard')} label="Documentation" />
                 </div>
               </div>
               
@@ -377,19 +407,19 @@ export default function LandingPage() {
                 <h3 className="text-lg font-semibold mb-6">Company</h3>
                 <div className="flex flex-col gap-3">
                   <FooterLink href="#about" label="About Us" />
-                  <FooterLink href="/dashboard" label="Careers" />
-                  <FooterLink href="/dashboard" label="Blog" />
-                  <FooterLink href="/dashboard" label="Press Kit" />
+                  <FooterLink href="#" onClick={() => handleProtectedRoute('/dashboard')} label="Careers" />
+                  <FooterLink href="#" onClick={() => handleProtectedRoute('/dashboard')} label="Blog" />
+                  <FooterLink href="#" onClick={() => handleProtectedRoute('/dashboard')} label="Press Kit" />
                 </div>
               </div>
               
               <div>
                 <h3 className="text-lg font-semibold mb-6">Legal</h3>
                 <div className="flex flex-col gap-3">
-                  <FooterLink href="/dashboard" label="Terms of Service" />
-                  <FooterLink href="/dashboard" label="Privacy Policy" />
-                  <FooterLink href="/dashboard" label="Cookie Policy" />
-                  <FooterLink href="/dashboard" label="GDPR Compliance" />
+                  <FooterLink href="#" onClick={() => handleProtectedRoute('/dashboard')} label="Terms of Service" />
+                  <FooterLink href="#" onClick={() => handleProtectedRoute('/dashboard')} label="Privacy Policy" />
+                  <FooterLink href="#" onClick={() => handleProtectedRoute('/dashboard')} label="Cookie Policy" />
+                  <FooterLink href="#" onClick={() => handleProtectedRoute('/dashboard')} label="GDPR Compliance" />
                 </div>
               </div>
             </div>
@@ -532,7 +562,19 @@ function SocialLink({ icon, name }: { icon: React.ReactNode, name: string }) {
   );
 }
 
-function FooterLink({ href, label }: { href: string, label: string }) {
+function FooterLink({ href, onClick, label }: { href?: string, onClick?: () => void, label: string }) {
+  if (onClick) {
+    return (
+      <button 
+        onClick={onClick}
+        className="text-muted-foreground hover:text-foreground hover:translate-x-1 transition-all flex items-center gap-2 text-left"
+      >
+        <span className="text-xs">›</span>
+        {label}
+      </button>
+    );
+  }
+  
   return (
     <a 
       href={href} 
