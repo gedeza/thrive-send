@@ -1,6 +1,6 @@
 "use client"
 
-import { Activity, BarChart, Calendar, FileText, Users } from "lucide-react";
+import { Activity, BarChart, Calendar, FileText, Users, Plus, Download, Filter, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/solid';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 
 interface AnalyticsData {
   metrics: {
@@ -100,21 +101,70 @@ export default function DashboardHomePage() {
 
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator>
+            <ChevronRight className="h-4 w-4" />
+          </BreadcrumbSeparator>
+          <BreadcrumbItem>
+            <BreadcrumbPage>Overview</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
+      {/* Header with Quick Actions */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+          <p className="text-muted-foreground">
+            Welcome back! Here's an overview of your account.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm">
+            <Download className="mr-2 h-4 w-4" />
+            Export
+          </Button>
+          <Button variant="outline" size="sm">
+            <Filter className="mr-2 h-4 w-4" />
+            Filter
+          </Button>
+          <Button size="sm">
+            <Plus className="mr-2 h-4 w-4" />
+            New Campaign
+          </Button>
+        </div>
       </div>
+
+      {/* Improved Tab Organization */}
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-4 lg:w-[400px]">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
         </TabsList>
+
         <TabsContent value="overview" className="space-y-4">
+          {/* Date Range Selector */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm">Today</Button>
+              <Button variant="outline" size="sm">Last 7 days</Button>
+              <Button variant="outline" size="sm">Last 30 days</Button>
+              <Button variant="outline" size="sm">Custom Range</Button>
+            </div>
+          </div>
+
+          {/* Metrics Grid */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {isLoading ? (
               Array(4).fill(0).map((_, i) => (
-                <Card key={i}>
+                <Card key={i} className="hover:shadow-lg transition-shadow">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
                       <Skeleton className="h-4 w-[100px]" />
@@ -140,7 +190,7 @@ export default function DashboardHomePage() {
               </div>
             ) : (
               analyticsData?.metrics.map((metric, index) => (
-                <Card key={index}>
+                <Card key={index} className="hover:shadow-lg transition-shadow">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
                       {metric.title}
@@ -168,24 +218,24 @@ export default function DashboardHomePage() {
               ))
             )}
           </div>
+
+          {/* Charts and Activity Feed */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="col-span-4">
+            <Card className="col-span-4 hover:shadow-lg transition-shadow">
               <CardHeader>
                 <CardTitle>Overview</CardTitle>
               </CardHeader>
               <CardContent className="pl-2">
-                {/* Add your chart component here */}
                 <div className="h-[350px] flex items-center justify-center text-muted-foreground">
                   Chart placeholder
                 </div>
               </CardContent>
             </Card>
-            <Card className="col-span-3">
+            <Card className="col-span-3 hover:shadow-lg transition-shadow">
               <CardHeader>
                 <CardTitle>Recent Activity</CardTitle>
               </CardHeader>
               <CardContent>
-                {/* Add your activity feed component here */}
                 <div className="h-[350px] flex items-center justify-center text-muted-foreground">
                   Activity feed placeholder
                 </div>
