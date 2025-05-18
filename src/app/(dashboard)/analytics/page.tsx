@@ -20,6 +20,7 @@ import {
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
+import { DateRange } from 'react-day-picker';
 
 // Shared metric card component for summary/grid
 function MetricCard({ title, value, icon: Icon, comparison, percentChange }: AnalyticsMetric & { icon: any }) {
@@ -80,9 +81,13 @@ export default function AnalyticsPage() {
   const [audienceData, setAudienceData] = useState(null);
   const [engagementData, setEngagementData] = useState(null);
   const [performanceData, setPerformanceData] = useState(null);
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-    from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-    to: new Date()
+  const [dateRange, setDateRange] = useState<DateRange>(() => {
+    const today = new Date();
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    return {
+      from: firstDayOfMonth,
+      to: today
+    };
   });
   const [timeframe, setTimeframe] = useState('month');
   const [loading, setLoading] = useState(true);
@@ -108,27 +113,34 @@ export default function AnalyticsPage() {
   const fetchAnalyticsData = async () => {
     setLoading(true);
     try {
+      if (!dateRange.from || !dateRange.to) {
+        throw new Error('Please select a valid date range');
+      }
+
+      const startDate = dateRange.from;
+      const endDate = dateRange.to;
+
       // Fetch metrics and chart data in parallel
       const [metricsData, audienceGrowthData, engagementBreakdownData, performanceTrendData] = await Promise.all([
         fetchAnalyticsMetrics({ 
-          startDate: dateRange.from, 
-          endDate: dateRange.to,
+          startDate, 
+          endDate,
           timeframe: timeframe as any,
           campaignId
         }),
         fetchAudienceGrowthData({ 
-          startDate: dateRange.from, 
-          endDate: dateRange.to,
+          startDate, 
+          endDate,
           campaignId
         }),
         fetchEngagementBreakdownData({ 
-          startDate: dateRange.from, 
-          endDate: dateRange.to,
+          startDate, 
+          endDate,
           campaignId
         }),
         fetchPerformanceTrendData({ 
-          startDate: dateRange.from, 
-          endDate: dateRange.to,
+          startDate, 
+          endDate,
           campaignId
         })
       ]);
@@ -141,7 +153,7 @@ export default function AnalyticsPage() {
       console.error('Failed to fetch analytics data:', error);
       toast({
         title: "Error loading data",
-        description: "There was a problem loading analytics data. Please try again.",
+        description: error instanceof Error ? error.message : "There was a problem loading analytics data. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -181,6 +193,7 @@ export default function AnalyticsPage() {
           date={dateRange} 
           setDate={setDateRange} 
           className="w-full md:w-auto"
+          disabled={{ after: new Date() }}
         />
         
         <Select value={timeframe} onValueChange={setTimeframe}>

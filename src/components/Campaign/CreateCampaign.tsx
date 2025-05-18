@@ -87,52 +87,47 @@ const CreateCampaign: React.FC = () => {
     (async function fetchDropdowns() {
       setLoading(true);
       try {
-        // -- These endpoints must return arrays of {id, name}
-        const [orgsResponse, clisResponse, prosResponse] = await Promise.all([
-          fetch('/api/organizations').then(async r => {
-            if (!r.ok) {
-              throw new Error(`Organizations API error: ${r.status}`);
-            }
-            return r.json();
-          }),
-          fetch('/api/clients').then(async r => {
-            if (!r.ok) {
-              throw new Error(`Clients API error: ${r.status}`);
-            }
-            return r.json();
-          }),
-          fetch('/api/projects').then(async r => {
-            if (!r.ok) {
-              throw new Error(`Projects API error: ${r.status}`);
-            }
-            return r.json();
-          }),
-        ]);
-
-        console.log('API Responses:', {
-          organizations: orgsResponse,
-          clients: clisResponse,
-          projects: prosResponse
+        // First fetch organizations
+        const orgsResponse = await fetch('/api/organizations').then(async r => {
+          if (!r.ok) {
+            throw new Error(`Organizations API error: ${r.status}`);
+          }
+          return r.json();
         });
 
-        // Ensure we have arrays and handle potential error responses
         const orgs = Array.isArray(orgsResponse) ? orgsResponse : [];
-        const clis = Array.isArray(clisResponse) ? clisResponse : [];
-        const pros = Array.isArray(prosResponse) ? prosResponse : [];
-
-        console.log('Processed Arrays:', {
-          organizations: orgs,
-          clients: clis,
-          projects: pros
-        });
-
         setOrganizations(orgs);
-        setClients(clis);
-        setProjects(pros);
 
-        if (!Array.isArray(orgsResponse) || !Array.isArray(clisResponse) || !Array.isArray(prosResponse)) {
-          console.error('API responses were not arrays:', { orgsResponse, clisResponse, prosResponse });
-          setSubmitError("Failed to load organization/client/project options. Please try again.");
+        // If we have organizations, use the first one's ID to fetch clients and projects
+        if (orgs.length > 0) {
+          const organizationId = orgs[0].id;
+          setFormData(prev => ({ ...prev, organizationId }));
+
+          const [clisResponse, prosResponse] = await Promise.all([
+            fetch(`/api/clients?organizationId=${organizationId}`).then(async r => {
+              if (!r.ok) {
+                throw new Error(`Clients API error: ${r.status}`);
+              }
+              return r.json();
+            }),
+            fetch(`/api/projects?organizationId=${organizationId}`).then(async r => {
+              if (!r.ok) {
+                throw new Error(`Projects API error: ${r.status}`);
+              }
+              return r.json();
+            }),
+          ]);
+
+          const clis = Array.isArray(clisResponse) ? clisResponse : [];
+          const pros = Array.isArray(prosResponse) ? prosResponse : [];
+
+          setClients(clis);
+          setProjects(pros);
+
+          if (!Array.isArray(clisResponse) || !Array.isArray(prosResponse)) {
+            console.error('API responses were not arrays:', { clisResponse, prosResponse });
+            setSubmitError("Failed to load client/project options. Please try again.");
+          }
         }
       } catch (err) {
         console.error('Error fetching dropdown options:', err);
@@ -207,155 +202,211 @@ const CreateCampaign: React.FC = () => {
     <form onSubmit={handleSubmit} autoComplete="off">
       <StyledPaper>
         <Typography variant="h5" fontWeight={600} gutterBottom>
-          Create Campaign
+          Create New Campaign
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          Fill out the details below to create a new marketing campaign. Required fields are marked with an asterisk (*).
         </Typography>
         <Divider sx={{ my: 3 }}/>
 
-        {submitSuccess && <Alert severity="success" sx={{ mb: 2 }}>Campaign created!</Alert>}
+        {submitSuccess && <Alert severity="success" sx={{ mb: 2 }}>Campaign created successfully!</Alert>}
         {submitError && <Alert severity="error" sx={{ mb: 2 }}>{submitError}</Alert>}
         {loading && <Box sx={{ display: "flex", justifyContent: "center", pb: 3 }}><CircularProgress size={24}/></Box>}
 
-        {/* Campaign Details */}
+        {/* Basic Information */}
         <FormSection>
-          <SectionTitle variant="h6">Campaign Details</SectionTitle>
+          <SectionTitle variant="h6">Basic Information</SectionTitle>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Start with the essential details about your campaign.
+          </Typography>
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <TextField
-                fullWidth required label="Name" name="name"
+                fullWidth required label="Campaign Name" name="name"
                 value={formData.name}
                 onChange={handleChange}
-                error={!!errors.name} helperText={errors.name}
+                error={!!errors.name} helperText={errors.name || "Enter a descriptive name for your campaign"}
+                placeholder="e.g., Summer Product Launch 2024"
               />
             </Grid>
             <Grid item xs={12} md={6}>
               <FormControl fullWidth required error={!!errors.status}>
-                <InputLabel id="status-label">Status</InputLabel>
+                <InputLabel id="status-label">Campaign Status</InputLabel>
                 <Select
                   labelId="status-label"
                   name="status"
                   value={formData.status}
                   onChange={handleChange}
-                  label="Status"
+                  label="Campaign Status"
                 >
                   {CAMPAIGN_STATUSES.map(opt => <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>)}
                 </Select>
-                {errors.status && <FormHelperText>{errors.status}</FormHelperText>}
+                <FormHelperText>
+                  {errors.status || "Set the current state of your campaign"}
+                </FormHelperText>
               </FormControl>
             </Grid>
             <Grid item xs={12}>
               <TextField
-                fullWidth multiline rows={3} label="Description"
+                fullWidth multiline rows={3} label="Campaign Description"
                 name="description" value={formData.description}
                 onChange={handleChange}
+                placeholder="Describe what this campaign aims to achieve and its key focus areas"
+                helperText="Provide a clear overview of your campaign's purpose and scope"
               />
             </Grid>
           </Grid>
         </FormSection>
 
-        {/* Timing & Budget */}
+        {/* Campaign Timeline */}
         <FormSection>
-          <SectionTitle variant="h6">Timing and Financial</SectionTitle>
+          <SectionTitle variant="h6">Campaign Timeline</SectionTitle>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Set when your campaign will start and end.
+          </Typography>
           <Grid container spacing={3}>
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={6}>
               <LocalizationProvider dateAdapter={AdapterDateFns}>
                 <DatePicker
-                  label="Start Date" value={formData.startDate}
+                  label="Campaign Start Date" value={formData.startDate}
                   onChange={date => handleDateChange("startDate", date)}
-                  slotProps={{ textField: { fullWidth: true, error: !!errors.startDate, helperText: errors.startDate } }}
+                  slotProps={{ 
+                    textField: { 
+                      fullWidth: true, 
+                      error: !!errors.startDate, 
+                      helperText: errors.startDate || "When should the campaign begin?" 
+                    } 
+                  }}
                 />
               </LocalizationProvider>
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={6}>
               <LocalizationProvider dateAdapter={AdapterDateFns}>
                 <DatePicker
-                  label="End Date" value={formData.endDate}
+                  label="Campaign End Date" value={formData.endDate}
                   onChange={date => handleDateChange("endDate", date)}
-                  slotProps={{ textField: { fullWidth: true, error: !!errors.endDate, helperText: errors.endDate } }}
+                  slotProps={{ 
+                    textField: { 
+                      fullWidth: true, 
+                      error: !!errors.endDate, 
+                      helperText: errors.endDate || "When should the campaign conclude?" 
+                    } 
+                  }}
                 />
               </LocalizationProvider>
             </Grid>
-            <Grid item xs={12} md={4}>
+          </Grid>
+        </FormSection>
+
+        {/* Campaign Budget */}
+        <FormSection>
+          <SectionTitle variant="h6">Campaign Budget</SectionTitle>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Set your campaign's budget (optional).
+          </Typography>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
               <TextField
-                fullWidth label="Budget ($)" name="budget" type="number"
+                fullWidth label="Total Budget ($)" name="budget" type="number"
                 value={formData.budget} onChange={handleChange}
-                error={!!errors.budget} helperText={errors.budget}
+                error={!!errors.budget} 
+                helperText={errors.budget || "Enter the total budget allocated for this campaign"}
+                placeholder="e.g., 5000"
               />
             </Grid>
           </Grid>
         </FormSection>
 
-        {/* Associations */}
+        {/* Campaign Connections */}
         <FormSection>
-          <SectionTitle variant="h6">Associations</SectionTitle>
+          <SectionTitle variant="h6">Campaign Connections</SectionTitle>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Link this campaign to your organization and optionally to a specific client or project.
+          </Typography>
           <Grid container spacing={3}>
             <Grid item xs={12} md={4}>
               <FormControl fullWidth required error={!!errors.organizationId}>
-                <InputLabel id="org-label">Organization</InputLabel>
+                <InputLabel id="org-label">Your Organization</InputLabel>
                 <Select
                   labelId="org-label"
                   name="organizationId"
                   value={formData.organizationId}
                   onChange={handleChange}
-                  label="Organization"
+                  label="Your Organization"
                 >
                   {Array.isArray(organizations) && organizations.map(org =>
                     <MenuItem value={org.id} key={org.id}>{org.name}</MenuItem>
                   )}
                 </Select>
-                {errors.organizationId && <FormHelperText>{errors.organizationId}</FormHelperText>}
+                <FormHelperText>
+                  {errors.organizationId || "Select the organization this campaign belongs to"}
+                </FormHelperText>
               </FormControl>
             </Grid>
             <Grid item xs={12} md={4}>
               <FormControl fullWidth>
-                <InputLabel id="client-label">Client (optional)</InputLabel>
+                <InputLabel id="client-label">Related Client</InputLabel>
                 <Select
                   labelId="client-label"
                   name="clientId"
                   value={formData.clientId}
                   onChange={handleChange}
-                  label="Client (optional)"
+                  label="Related Client"
                 >
-                  <MenuItem value="">None</MenuItem>
+                  <MenuItem value="">No Client Selected</MenuItem>
                   {Array.isArray(clients) && clients.map(cli =>
                     <MenuItem value={cli.id} key={cli.id}>{cli.name}</MenuItem>
                   )}
                 </Select>
+                <FormHelperText>
+                  Optional: Select if this campaign is for a specific client
+                </FormHelperText>
               </FormControl>
             </Grid>
             <Grid item xs={12} md={4}>
               <FormControl fullWidth>
-                <InputLabel id="project-label">Project (optional)</InputLabel>
+                <InputLabel id="project-label">Related Project</InputLabel>
                 <Select
                   labelId="project-label"
                   name="projectId"
                   value={formData.projectId}
                   onChange={handleChange}
-                  label="Project (optional)"
+                  label="Related Project"
                 >
-                  <MenuItem value="">None</MenuItem>
+                  <MenuItem value="">No Project Selected</MenuItem>
                   {Array.isArray(projects) && projects.map(proj =>
                     <MenuItem value={proj.id} key={proj.id}>{proj.name}</MenuItem>
                   )}
                 </Select>
+                <FormHelperText>
+                  Optional: Select if this campaign is part of a larger project
+                </FormHelperText>
               </FormControl>
             </Grid>
           </Grid>
         </FormSection>
 
-        {/* Objectives */}
+        {/* Campaign Goals */}
         <FormSection>
-          <SectionTitle variant="h6">Goals & Objectives</SectionTitle>
+          <SectionTitle variant="h6">Campaign Goals & Success Metrics</SectionTitle>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Define what success looks like for this campaign.
+          </Typography>
           <TextField
             fullWidth multiline minRows={4} name="goals"
-            label="Goals / Objectives"
+            label="Campaign Goals & Success Metrics"
             value={formData.goals}
             onChange={handleChange}
-            placeholder="Describe the campaign's main objectives, KPIs etc."
+            placeholder="List your campaign's main objectives, target metrics, and KPIs. For example:
+• Increase brand awareness by 25%
+• Generate 1000 new leads
+• Achieve 5% conversion rate"
+            helperText="Be specific about what you want to achieve and how you'll measure success"
           />
         </FormSection>
         
         {/* Submit */}
-        <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+        <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 4 }}>
           <Button
             type="submit"
             variant="contained"
@@ -364,7 +415,7 @@ const CreateCampaign: React.FC = () => {
             disabled={isSubmitting || loading}
             startIcon={isSubmitting ? <CircularProgress color="inherit" size={20}/> : undefined}
           >
-            {isSubmitting ? "Creating..." : "Create Campaign"}
+            {isSubmitting ? "Creating Campaign..." : "Create Campaign"}
           </Button>
         </Box>
       </StyledPaper>

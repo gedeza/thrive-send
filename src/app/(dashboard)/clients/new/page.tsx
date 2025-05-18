@@ -25,20 +25,28 @@ export default function AddClientPage() {
       <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
         <div className="p-6">
           <form className="space-y-6">
+            {/* Basic Information */}
             <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold">Basic Information</h3>
+                <p className="text-sm text-muted-foreground">
+                  Start with the essential details about your client.
+                </p>
+              </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <label 
                     htmlFor="name"
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
-                    Client Name
+                    Client Name *
                   </label>
                   <input
                     id="name"
                     type="text"
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    placeholder="Enter client name"
+                    placeholder="Enter client's business or organization name"
+                    required
                   />
                 </div>
                 
@@ -47,11 +55,12 @@ export default function AddClientPage() {
                     htmlFor="type"
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
-                    Client Type
+                    Client Type *
                   </label>
                   <select
                     id="type"
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    required
                   >
                     <option value="">Select client type...</option>
                     <option value="MUNICIPALITY">Municipality</option>
@@ -62,8 +71,74 @@ export default function AddClientPage() {
                   </select>
                 </div>
               </div>
+            </div>
 
+            {/* Contact Information */}
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold">Contact Information</h3>
+                <p className="text-sm text-muted-foreground">
+                  Add your client's contact details for easy communication.
+                </p>
+              </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label 
+                    htmlFor="email"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Email Address *
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    placeholder="client@example.com"
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label 
+                    htmlFor="phone"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Phone Number
+                  </label>
+                  <input
+                    id="phone"
+                    type="tel"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    placeholder="+1 (555) 000-0000"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Information */}
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold">Additional Information</h3>
+                <p className="text-sm text-muted-foreground">
+                  Add optional details to better understand your client.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label 
+                    htmlFor="website"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Website
+                  </label>
+                  <input
+                    id="website"
+                    type="url"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    placeholder="https://www.example.com"
+                  />
+                </div>
+                
                 <div className="space-y-2">
                   <label 
                     htmlFor="industry"
@@ -78,39 +153,20 @@ export default function AddClientPage() {
                     placeholder="e.g., Technology, Healthcare, Education"
                   />
                 </div>
-                
-                <div className="space-y-2">
-                  <label 
-                    htmlFor="website"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Website
-                  </label>
-                  <input
-                    id="website"
-                    type="url"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    placeholder="https://example.com"
-                  />
-                </div>
               </div>
               
               <div className="space-y-2">
                 <label 
-                  htmlFor="logoUrl"
+                  htmlFor="address"
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
-                  Logo URL
+                  Address
                 </label>
-                <input
-                  id="logoUrl"
-                  type="url"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  placeholder="https://example.com/logo.png"
+                <textarea
+                  id="address"
+                  className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  placeholder="Enter client's business address"
                 />
-                <p className="text-xs text-muted-foreground">
-                  Provide a URL to the client's logo (we'll add file upload later)
-                </p>
               </div>
             </div>
             

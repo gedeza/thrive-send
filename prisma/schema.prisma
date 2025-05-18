@@ -28,6 +28,7 @@ model User {
   projects                Project[]
   sessions                Session[]
   Template                Template[]
+  content                 Content[]
 }
 
 model Organization {
@@ -318,18 +319,17 @@ model VerificationToken {
 model Content {
   id           String    @id @default(cuid())
   title        String
-  body         String?
-  scheduledFor DateTime?
-  type         String    @default("email")
-  status       String    @default("scheduled")
-  projectId    String?
-  userId       String
+  contentType  String
+  content      String    @db.Text
+  tags         String[]
+  preheaderText String?
+  publishDate  DateTime?
+  status       String
+  mediaUrls    String[]
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
-
-  @@index([userId])
-  @@index([scheduledFor])
-  @@index([projectId])
+  userId       String
+  user         User      @relation(fields: [userId], references: [id])
 }
 
 enum CampaignStatus {

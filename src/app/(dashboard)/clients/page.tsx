@@ -77,7 +77,8 @@ export default function ClientsPage() {
     setError(null);
     
     try {
-      const res = await fetch("/api/clients");
+      const organizationId = 'org_123'; // Hardcoded for testing; replace with actual org ID later
+      const res = await fetch(`/api/clients?organizationId=${organizationId}`);
       
       if (!res.ok) {
         const errorText = await res.text();

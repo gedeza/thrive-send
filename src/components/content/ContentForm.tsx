@@ -1,129 +1,100 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  Paper,
-  Grid,
-  Divider,
-  IconButton,
-  InputAdornment,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Chip,
-  Stack,
-  Alert,
-  AlertTitle,
-  CircularProgress,
-  LinearProgress,
-} from '@mui/material';
-import { styled } from '@mui/material/styles';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
-import ImageIcon from '@mui/icons-material/Image';
-import { uploadMedia, saveContent } from '../../lib/api';
-import RichTextEditor from './RichTextEditor';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@clerk/nextjs';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { CalendarIcon, ImageIcon, Loader2, Plus, X } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
+import { RichTextEditor } from '@/components/rich-text-editor';
+import { uploadMedia, saveContent } from '@/lib/api';
 
-const StyledPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  [theme.breakpoints.up('md')]: {
-    padding: theme.spacing(4),
-  },
-  boxShadow: theme.shadows[2],
-  borderRadius: theme.shape.borderRadius * 2,
-}));
-const FormSection = styled(Box)(({ theme }) => ({
-  marginBottom: theme.spacing(4),
-}));
-const SectionTitle = styled(Typography)(({ theme }) => ({
-  fontWeight: 600,
-  marginBottom: theme.spacing(2),
-}));
-const MediaPreviewItem = styled(Box)(({ theme }) => ({
-  border: `1px solid ${theme.palette.divider}`,
-  borderRadius: theme.shape.borderRadius,
-  padding: theme.spacing(1),
-  display: 'flex',
-  alignItems: 'center',
-  marginBottom: theme.spacing(1),
-}));
-const UploadButton = styled(Button)(({ theme }) => ({
-  marginBottom: theme.spacing(2),
-  '& .MuiButton-startIcon': {
-    marginRight: theme.spacing(1),
-  },
-}));
-
+// Content types
 const contentTypes = [
-  { value: 'html', label: 'HTML' },
-  { value: 'text', label: 'Plain Text' },
-  { value: 'markdown', label: 'Markdown' },
-  { value: 'amp', label: 'AMP' },
-];
+  { value: 'article', label: 'Article' },
+  { value: 'blog', label: 'Blog Post' },
+  { value: 'social', label: 'Social Media Post' },
+  { value: 'email', label: 'Email Campaign' },
+] as const;
 
-// For uploaded media file info
-interface UploadedFile {
-  url: string;
-  name: string;
-  size: number;
-}
+type ContentType = typeof contentTypes[number]['value'];
 
 interface ContentFormData {
   title: string;
-  contentType: string;
-  tags: string[];
+  contentType: ContentType;
   content: string;
+  tags: string[];
+  mediaFiles: Array<File | { url: string; name: string; size: number }>;
   preheaderText: string;
-  mediaFiles: UploadedFile[];
+  publishDate?: Date;
+  status: 'draft' | 'published';
 }
+
 interface FormErrors {
   title?: string;
   content?: string;
   preheaderText?: string;
 }
+
 const initialFormData: ContentFormData = {
   title: '',
-  contentType: 'html',
-  tags: [],
+  contentType: 'article',
   content: '',
-  preheaderText: '',
+  tags: [],
   mediaFiles: [],
+  preheaderText: '',
+  status: 'draft'
 };
 
-const ContentForm: React.FC = () => {
-  const [formData, setFormData] = useState<ContentFormData>(initialFormData);
+interface ContentFormProps {
+  initialData?: any;
+  mode?: 'create' | 'edit';
+}
+
+export default function ContentForm({ initialData, mode = 'create' }: ContentFormProps) {
+  const router = useRouter();
+  const { userId } = useAuth();
+  const [formData, setFormData] = useState<ContentFormData>(initialData || initialFormData);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [submitError, setSubmitError] = useState('');
   const [newTag, setNewTag] = useState('');
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [editorTab, setEditorTab] = useState<'editor' | 'preview'>('editor');
 
-  // For all text/select fields (title, preheader, etc)
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
+  // Handle form field changes
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    if (name) {
-      setFormData(prev => ({ ...prev, [name]: value }));
-      if (errors[name as keyof FormErrors]) {
-        setErrors(prev => ({ ...prev, [name]: undefined }));
-      }
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name as keyof FormErrors]) {
+      setErrors(prev => ({ ...prev, [name]: undefined }));
     }
   };
 
-  // TipTap content update
-  const handleContentChange = (html: string) => {
-    setFormData(prev => ({ ...prev, content: html }));
-    if (errors.content) setErrors(prev => ({ ...prev, content: undefined }));
+  // Handle content type change
+  const handleContentTypeChange = (value: ContentType) => {
+    setFormData(prev => ({ ...prev, contentType: value }));
   };
 
-  // Tags
+  // Handle content change from rich text editor
+  const handleContentChange = (html: string) => {
+    setFormData(prev => ({ ...prev, content: html }));
+    if (errors.content) {
+      setErrors(prev => ({ ...prev, content: undefined }));
+    }
+  };
+
+  // Handle tag management
   const handleTagAdd = () => {
     if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
       setFormData(prev => ({
@@ -133,6 +104,7 @@ const ContentForm: React.FC = () => {
       setNewTag('');
     }
   };
+
   const handleTagDelete = (tagToDelete: string) => {
     setFormData(prev => ({
       ...prev,
@@ -140,14 +112,14 @@ const ContentForm: React.FC = () => {
     }));
   };
 
-  // File upload for MEDIA section (NOT editor-inserted images)
+  // Handle file uploads
   const handleFileUploadClick = () => {
     fileInputRef.current?.click();
   };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setUploadProgress(0);
-      // Fake progress
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
           if (prev === null || prev >= 100) {
@@ -170,14 +142,23 @@ const ContentForm: React.FC = () => {
           ...prev,
           mediaFiles: [...prev.mediaFiles, ...uploaded]
         }));
+        toast({
+          title: 'Success',
+          description: 'Media files uploaded successfully',
+        });
       } catch (err) {
-        setSubmitError('Media upload failed.');
+        toast({
+          title: 'Error',
+          description: 'Failed to upload media files',
+          variant: 'destructive',
+        });
       } finally {
         e.target.value = '';
         setTimeout(() => setUploadProgress(null), 400);
       }
     }
   };
+
   const handleFileDelete = (index: number) => {
     setFormData(prev => ({
       ...prev,
@@ -185,268 +166,329 @@ const ContentForm: React.FC = () => {
     }));
   };
 
-  // Validation
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-    if (!formData.title.trim()) newErrors.title = 'Content title is required';
-    if (!formData.content.trim()) newErrors.content = 'Content cannot be empty';
-    if (formData.preheaderText.length > 100) newErrors.preheaderText = 'Preheader text must be less than 100 characters';
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitSuccess(false);
-    setSubmitError('');
-    if (!validateForm()) return;
-    setIsSubmitting(true);
-    try {
-      await saveContent(formData);
-      setSubmitSuccess(true);
-      setFormData(initialFormData); // Optionally reset form
-    } catch (error) {
-      setSubmitError('An error occurred while saving content');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
+  // Format file size
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return bytes + ' bytes';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
+  // Validate form
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+    if (!formData.title.trim()) {
+      newErrors.title = 'Content title is required';
+    }
+    if (!formData.content.trim()) {
+      newErrors.content = 'Content cannot be empty';
+    }
+    if (formData.preheaderText.length > 100) {
+      newErrors.preheaderText = 'Preheader text must be less than 100 characters';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent, status: 'draft' | 'published' = 'published') => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('title', formData.title);
+      formDataToSend.append('contentType', formData.contentType);
+      formDataToSend.append('content', formData.content);
+      formDataToSend.append('tags', JSON.stringify(formData.tags));
+      formDataToSend.append('preheaderText', formData.preheaderText);
+      if (formData.publishDate) {
+        formDataToSend.append('publishDate', formData.publishDate.toISOString());
+      }
+      formDataToSend.append('status', status);
+      
+      // Handle media files
+      const mediaUrls = formData.mediaFiles.map(file => 
+        'url' in file ? file.url : URL.createObjectURL(file)
+      );
+      formDataToSend.append('mediaUrls', JSON.stringify(mediaUrls));
+
+      const url = mode === 'edit' ? `/api/content/${initialData.id}` : '/api/content';
+      const method = mode === 'edit' ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        body: formDataToSend,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to save content');
+      }
+
+      toast({
+        title: 'Success',
+        description: `Content ${mode === 'edit' ? 'updated' : status === 'draft' ? 'saved as draft' : 'published'} successfully`,
+      });
+      router.push('/content');
+    } catch (error) {
+      console.error('Error saving content:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to save content. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit}>
-      <StyledPaper>
-        <Typography variant="h5" component="h1" gutterBottom fontWeight={600}>
-          Create Content
-        </Typography>
-        <Typography variant="body1" color="text.secondary" paragraph>
-          Create and edit content for your marketing campaigns.
-        </Typography>
-        <Divider sx={{ my: 3 }} />
-        {submitSuccess && (
-          <Alert
-            severity="success"
-            sx={{ mb: 3 }}
-            onClose={() => setSubmitSuccess(false)}
-          >
-            <AlertTitle>Success</AlertTitle>
-            Content saved successfully!
-          </Alert>
-        )}
-        {submitError && (
-          <Alert
-            severity="error"
-            sx={{ mb: 3 }}
-            onClose={() => setSubmitError('')}
-          >
-            <AlertTitle>Error</AlertTitle>
-            {submitError}
-          </Alert>
-        )}
-        {/* Content Details */}
-        <FormSection>
-          <SectionTitle variant="h6">Content Details</SectionTitle>
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Content Title"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                error={!!errors.title}
-                helperText={errors.title}
-                placeholder="Summer Sale Announcement"
-                required
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel id="content-type-label">Content Type</InputLabel>
-                <Select
-                  labelId="content-type-label"
-                  id="contentType"
-                  name="contentType"
-                  value={formData.contentType}
-                  onChange={handleChange}
-                  label="Content Type"
-                >
-                  {contentTypes.map((type) => (
-                    <MenuItem key={type.value} value={type.value}>
-                      {type.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Preheader Text"
-                name="preheaderText"
-                value={formData.preheaderText}
-                onChange={handleChange}
-                placeholder="Brief preview text that recipients will see in their inbox"
-                error={!!errors.preheaderText}
-                helperText={errors.preheaderText || `${formData.preheaderText.length}/100 characters`}
-                inputProps={{ maxLength: 100 }}
-              />
-            </Grid>
-          </Grid>
-        </FormSection>
-        {/* Tags Section */}
-        <FormSection>
-          <SectionTitle variant="h6">Tags</SectionTitle>
-          <Box sx={{ mb: 2 }}>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={9}>
-                <TextField
-                  fullWidth
-                  label="Add Tags"
-                  value={newTag}
-                  onChange={(e) => setNewTag(e.target.value)}
-                  placeholder="Enter tag and click Add"
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleTagAdd();
-                    }
-                  }}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          onClick={handleTagAdd}
-                          edge="end"
-                          disabled={!newTag.trim()}
-                        >
-                          <AddIcon />
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-            </Grid>
-          </Box>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-            {formData.tags.map((tag, index) => (
-              <Chip
-                key={index}
-                label={tag}
-                onDelete={() => handleTagDelete(tag)}
-                color="primary"
-                variant="outlined"
-              />
-            ))}
-            {formData.tags.length === 0 && (
-              <Typography variant="body2" color="text.secondary">
-                No tags added yet
-              </Typography>
+    <form onSubmit={(e) => handleSubmit(e, 'published')} className="space-y-8">
+      {/* Content Details */}
+      <div className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="title">Content Title</Label>
+            <Input
+              id="title"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              placeholder="Enter content title"
+              className={cn(errors.title && "border-destructive")}
+            />
+            {errors.title && (
+              <p className="text-sm text-destructive">{errors.title}</p>
             )}
-          </Box>
-        </FormSection>
-        {/* Content Editor Section */}
-        <FormSection>
-          <SectionTitle variant="h6">Content</SectionTitle>
-          <Box
-            sx={{
-              border: errors.content ? '1px solid #d32f2f' : '1px solid rgba(0, 0, 0, 0.23)',
-              borderRadius: 1,
-              minHeight: 320,
-              p: 2,
-              mb: 1,
-              backgroundColor: 'white'
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="contentType">Content Type</Label>
+            <Select
+              key={formData.contentType}
+              value={formData.contentType}
+              onValueChange={(value: string) => handleContentTypeChange(value as ContentType)}
+            >
+              <SelectTrigger id="contentType">
+                <SelectValue placeholder="Select content type" />
+              </SelectTrigger>
+              <SelectContent>
+                {contentTypes.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="preheaderText">Preheader Text</Label>
+          <Textarea
+            id="preheaderText"
+            name="preheaderText"
+            value={formData.preheaderText}
+            onChange={handleChange}
+            placeholder="Brief preview text that recipients will see in their inbox"
+            className={cn(errors.preheaderText && "border-destructive")}
+          />
+          <p className="text-sm text-muted-foreground">
+            {formData.preheaderText.length}/100 characters
+          </p>
+          {errors.preheaderText && (
+            <p className="text-sm text-destructive">{errors.preheaderText}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Tags */}
+      <div className="space-y-4">
+        <Label>Tags</Label>
+        <div className="flex gap-2">
+          <Input
+            value={newTag}
+            onChange={(e) => setNewTag(e.target.value)}
+            placeholder="Add a tag"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleTagAdd();
+              }
             }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={handleTagAdd}
+            disabled={!newTag.trim()}
           >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {formData.tags.map((tag) => (
+            <div
+              key={tag}
+              className="flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-sm"
+            >
+              <span>{tag}</span>
+              <button
+                type="button"
+                onClick={() => handleTagDelete(tag)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Content Editor */}
+      <div className="space-y-4">
+        <Label>Content</Label>
+        <Tabs value={editorTab} onValueChange={(v) => setEditorTab(v as 'editor' | 'preview')}>
+          <TabsList>
+            <TabsTrigger value="editor">Editor</TabsTrigger>
+            <TabsTrigger value="preview">Preview</TabsTrigger>
+          </TabsList>
+          <TabsContent value="editor" className="border rounded-md p-4">
             <RichTextEditor
               value={formData.content}
               onChange={handleContentChange}
             />
-          </Box>
-          {errors.content && (
-            <Typography color="error" variant="caption">
-              {errors.content}
-            </Typography>
-          )}
-        </FormSection>
-        {/* Media Section */}
-        <FormSection>
-          <SectionTitle variant="h6">Media Assets</SectionTitle>
-          <input
-            type="file"
-            ref={fileInputRef}
-            style={{ display: 'none' }}
-            onChange={handleFileChange}
-            multiple
-          />
-          <UploadButton
-            variant="outlined"
-            startIcon={<CloudUploadIcon />}
-            onClick={handleFileUploadClick}
-          >
-            Upload Media
-          </UploadButton>
-          {uploadProgress !== null && (
-            <Box sx={{ width: '100%', mb: 2 }}>
-              <LinearProgress
-                variant="determinate"
-                value={uploadProgress}
-              />
-              <Typography variant="caption" color="text.secondary">
-                Uploading... {uploadProgress}%
-              </Typography>
-            </Box>
-          )}
-          <Stack spacing={1}>
-            {formData.mediaFiles.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
-                No media files uploaded yet
-              </Typography>
-            ) : (
-              formData.mediaFiles.map((file, index) => (
-                <MediaPreviewItem key={index}>
-                  <ImageIcon sx={{ mr: 1, color: 'text.secondary' }} />
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Typography variant="body2" noWrap>
-                      {file.name}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {formatFileSize(file.size)}
-                    </Typography>
-                  </Box>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleFileDelete(index)}
-                    aria-label="delete file"
-                  >
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
-                </MediaPreviewItem>
-              ))
+            {errors.content && (
+              <p className="text-sm text-destructive mt-2">{errors.content}</p>
             )}
-          </Stack>
-        </FormSection>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            size="large"
-            disabled={isSubmitting}
-            startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : undefined}
-          >
-            {isSubmitting ? 'Saving...' : 'Save Content'}
-          </Button>
-        </Box>
-      </StyledPaper>
+          </TabsContent>
+          <TabsContent value="preview" className="border rounded-md p-4">
+            <div
+              className="prose max-w-none"
+              dangerouslySetInnerHTML={{ __html: formData.content }}
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Media Upload */}
+      <div className="space-y-4">
+        <Label>Media Files</Label>
+        <input
+          type="file"
+          ref={fileInputRef}
+          className="hidden"
+          onChange={handleFileChange}
+          multiple
+          accept="image/*,video/*"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleFileUploadClick}
+          className="w-full"
+        >
+          <ImageIcon className="h-4 w-4 mr-2" />
+          Upload Media
+        </Button>
+        {uploadProgress !== null && (
+          <div className="w-full bg-secondary rounded-full h-2.5">
+            <div
+              className="bg-primary h-2.5 rounded-full transition-all duration-300"
+              style={{ width: `${uploadProgress}%` }}
+            />
+          </div>
+        )}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {formData.mediaFiles.map((file, index) => (
+            <Card key={index}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm font-medium truncate">{file.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatFileSize(file.size)}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleFileDelete(index)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Publish Date */}
+      <div className="space-y-4">
+        <Label>Publish Date</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full justify-start text-left font-normal",
+                !formData.publishDate && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {formData.publishDate ? (
+                format(formData.publishDate, "PPP")
+              ) : (
+                <span>Pick a date</span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={formData.publishDate}
+              onSelect={(date) => setFormData(prev => ({ ...prev, publishDate: date }))}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      {/* Form Actions */}
+      <div className="flex justify-end gap-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={(e) => handleSubmit(e, 'draft')}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            'Save as Draft'
+          )}
+        </Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {mode === 'edit' ? 'Updating...' : 'Publishing...'}
+            </>
+          ) : (
+            mode === 'edit' ? 'Update Content' : 'Publish Content'
+          )}
+        </Button>
+      </div>
     </form>
   );
-};
-
-export default ContentForm;
+}

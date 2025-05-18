@@ -4,6 +4,7 @@ import React from 'react';
 import { ClerkProvider } from '@clerk/nextjs';
 import { Inter } from "next/font/google";
 import { Toaster } from "@/components/ui/toaster";
+import { Providers } from '@/components/providers';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,7 +20,7 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="en">
+      <html lang="en" suppressHydrationWarning>
         <head>
           <link
             href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Roboto:wght@400;500;700&display=swap"
@@ -27,8 +28,10 @@ export default function RootLayout({
           />
         </head>
         <body className={inter.className}>
-          {children}
-          <Toaster />
+          <Providers>
+            {children}
+            <Toaster />
+          </Providers>
         </body>
       </html>
     </ClerkProvider>

@@ -1,70 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 // GET: List all clients for the user's organizations
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const session = await auth();
+    if (!session?.userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get user's organization memberships
-    const memberships = await db.organizationMember.findMany({
-      where: { user: { clerkId: userId } },
-      select: { organizationId: true },
-    });
+    const { searchParams } = new URL(request.url);
+    const organizationId = searchParams.get("organizationId");
 
-    if (memberships.length === 0) {
-      return NextResponse.json([]);
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: "organizationId is required" },
+        { status: 400 }
+      );
     }
 
-    // Get clients for user's organizations
-    const clients = await db.client.findMany({
+    const clients = await prisma.client.findMany({
       where: {
-        organizationId: { in: memberships.map(m => m.organizationId) }
+        organizationId,
       },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        address: true,
-        organizationId: true,
-        createdAt: true,
-        socialAccounts: {
-          select: {
-            id: true,
-            platform: true,
-            handle: true
-          }
-        },
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        socialAccounts: true,
         projects: {
           select: {
             id: true,
             name: true,
-            status: true
-          }
-        }
+            status: true,
+          },
+        },
       },
-      orderBy: {
-        name: 'asc'
-      }
     });
-    
-    // Transform the data to match the expected format
-    const transformedClients = clients.map(client => ({
-      ...client,
-      type: "BUSINESS", // Default type since it's not in the schema
-      status: "active", // Default status since it's not in the schema
-      industry: "General", // Default industry since it's not in the schema
-      website: null, // Default website since it's not in the schema
-      logoUrl: null // Default logoUrl since it's not in the schema
-    }));
-    
-    // Ensure we return an array
-    return NextResponse.json(Array.isArray(transformedClients) ? transformedClients : []);
+
+    return NextResponse.json(clients);
   } catch (error) {
     console.error("Error fetching clients:", error);
     return NextResponse.json(
@@ -75,52 +52,54 @@ export async function GET(request: NextRequest) {
 }
 
 // POST: Create a new client
-export async function POST(req: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const session = await auth();
+    if (!session?.userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const data = await req.json();
-    
-    // Validate required fields
-    if (!data.name || !data.email || !data.organizationId) {
+    const body = await request.json();
+    const { name, email, phone, address, organizationId } = body;
+
+    // Validate input
+    if (!name || !email || !organizationId) {
       return NextResponse.json(
-        { error: "Missing required fields: name, email, and organizationId are required" },
+        { error: "Name, email, and organizationId are required" },
         { status: 400 }
       );
     }
 
-    // Verify user has access to the organization
-    const membership = await db.organizationMember.findFirst({
-      where: {
-        organizationId: data.organizationId,
-        user: { clerkId: userId }
-      }
+    // Workaround: fetch all clients for org and check email in JS
+    const existingClients = await prisma.client.findMany({
+      where: { organizationId },
+      select: { email: true },
     });
-
-    if (!membership) {
+    const emailExists = existingClients.some(c => c.email === email);
+    if (emailExists) {
       return NextResponse.json(
-        { error: "Organization not found or access denied" },
-        { status: 404 }
+        { error: "Client with this email already exists in this organization" },
+        { status: 409 }
       );
     }
-    
-    // Create client in database
-    const newClient = await db.client.create({
+
+    // Create new client
+    const client = await prisma.client.create({
       data: {
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        address: data.address,
-        organizationId: data.organizationId
-      }
+        name,
+        email,
+        phone: phone || null,
+        address: address || null,
+        organization: { connect: { id: organizationId } },
+      },
     });
-    
-    return NextResponse.json(newClient, { status: 201 });
+
+    return NextResponse.json(client, { status: 201 });
   } catch (error) {
-    console.error('[API] Error creating client:', error);
-    return NextResponse.json({ error: "Failed to create client" }, { status: 500 });
+    console.error("Error creating client:", error);
+    return NextResponse.json(
+      { error: "Failed to create client" },
+      { status: 500 }
+    );
   }
 }
