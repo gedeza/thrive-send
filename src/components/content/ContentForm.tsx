@@ -265,22 +265,19 @@ export default function ContentForm({ initialData, mode = 'create' }: ContentFor
 
           <div className="space-y-2">
             <Label htmlFor="contentType">Content Type</Label>
-            <Select
-              key={formData.contentType}
+            <select
+              id="contentType"
+              name="contentType"
+              className="block w-full border rounded-md px-3 py-2 text-sm"
               value={formData.contentType}
-              onValueChange={(value: string) => handleContentTypeChange(value as ContentType)}
+              onChange={e => handleContentTypeChange(e.target.value as ContentType)}
             >
-              <SelectTrigger id="contentType">
-                <SelectValue placeholder="Select content type" />
-              </SelectTrigger>
-              <SelectContent>
-                {contentTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              {contentTypes.map(type => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 

@@ -87,7 +87,7 @@ export async function uploadMedia(file: File): Promise<{ url: string, filename: 
   const form = new FormData();
   form.append('file', file);
   
-  const res = await fetch('/api/media/upload', {
+  const res = await fetch('/api/upload', {
     method: 'POST',
     body: form,
   });
