@@ -1,6 +1,6 @@
 "use client"
 
-import { Activity, BarChart, Calendar, FileText, Users, Plus, Download, Filter, ChevronRight } from "lucide-react";
+import { BarChart, Calendar, FileText, Users, Plus, Download, Filter, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
@@ -10,6 +10,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/solid';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import { AnalyticsChart } from "@/components/dashboard/analytics-chart"
+import { ActivityFeed, type Activity as ActivityType } from "@/components/dashboard/activity-feed"
+import { DashboardOverview } from '@/components/dashboard/DashboardOverview';
 
 interface AnalyticsData {
   metrics: {
@@ -48,6 +51,55 @@ const defaultMetrics = [
     percentChange: 0,
   },
 ];
+
+// Sample data for the analytics chart
+const chartData = [
+  { date: "2024-01", value: 400 },
+  { date: "2024-02", value: 300 },
+  { date: "2024-03", value: 600 },
+  { date: "2024-04", value: 800 },
+  { date: "2024-05", value: 700 },
+  { date: "2024-06", value: 900 },
+]
+
+// Sample data for the activity feed
+const activities: ActivityType[] = [
+  {
+    id: "1",
+    type: "campaign",
+    title: "New Campaign Created",
+    description: "Spring Sale Campaign was created",
+    timestamp: "2024-06-01T10:00:00Z",
+    user: {
+      name: "John Doe",
+      image: "https://github.com/shadcn.png",
+    },
+  },
+  {
+    id: "2",
+    type: "email",
+    title: "Email Sent",
+    description: "Newsletter was sent to 1,000 subscribers",
+    timestamp: "2024-06-01T09:30:00Z",
+  },
+  {
+    id: "3",
+    type: "user",
+    title: "New User Joined",
+    description: "Sarah Smith joined the organization",
+    timestamp: "2024-06-01T09:00:00Z",
+    user: {
+      name: "Sarah Smith",
+    },
+  },
+  {
+    id: "4",
+    type: "system",
+    title: "System Update",
+    description: "System maintenance completed successfully",
+    timestamp: "2024-06-01T08:30:00Z",
+  },
+]
 
 export default function DashboardHomePage() {
   const router = useRouter();
@@ -100,150 +152,24 @@ export default function DashboardHomePage() {
   }, []);
 
   return (
-    <div className="flex-1 space-y-4 p-8 pt-6">
-      {/* Breadcrumb Navigation */}
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator>
-            <ChevronRight className="h-4 w-4" />
-          </BreadcrumbSeparator>
-          <BreadcrumbItem>
-            <BreadcrumbPage>Overview</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+    <div className="flex-1 space-y-8 p-8 pt-6 bg-neutral-background">
+      {/* Dashboard Overview Section */}
+      <DashboardOverview />
 
-      {/* Header with Quick Actions */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-          <p className="text-muted-foreground">
-            Welcome back! Here's an overview of your account.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
-          <Button variant="outline" size="sm">
-            <Filter className="mr-2 h-4 w-4" />
-            Filter
-          </Button>
-          <Button size="sm">
-            <Plus className="mr-2 h-4 w-4" />
-            New Campaign
-          </Button>
-        </div>
+      {/* Analytics Chart Section */}
+      <div className="mt-8">
+        <AnalyticsChart
+          data={chartData}
+          title="Monthly Engagement"
+          value="900"
+          description="Engagement over the last 6 months"
+        />
       </div>
 
-      {/* Improved Tab Organization */}
-      <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4 lg:w-[400px]">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-4">
-          {/* Date Range Selector */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm">Today</Button>
-              <Button variant="outline" size="sm">Last 7 days</Button>
-              <Button variant="outline" size="sm">Last 30 days</Button>
-              <Button variant="outline" size="sm">Custom Range</Button>
-            </div>
-          </div>
-
-          {/* Metrics Grid */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {isLoading ? (
-              Array(4).fill(0).map((_, i) => (
-                <Card key={i} className="hover:shadow-lg transition-shadow">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      <Skeleton className="h-4 w-[100px]" />
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      <Skeleton className="h-8 w-[80px]" />
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      <Skeleton className="h-4 w-[120px]" />
-                    </p>
-                  </CardContent>
-                </Card>
-              ))
-            ) : error ? (
-              <div className="col-span-4">
-                <Card className="bg-destructive/10">
-                  <CardContent className="pt-6">
-                    <p className="text-destructive">{error}</p>
-                  </CardContent>
-                </Card>
-              </div>
-            ) : (
-              analyticsData?.metrics.map((metric, index) => (
-                <Card key={index} className="hover:shadow-lg transition-shadow">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      {metric.title}
-                    </CardTitle>
-                    {metric.percentChange !== 0 && (
-                      <div className={`flex items-center ${metric.percentChange > 0 ? 'text-success' : 'text-destructive'}`}>
-                        {metric.percentChange > 0 ? (
-                          <ArrowUpIcon className="h-4 w-4" />
-                        ) : (
-                          <ArrowDownIcon className="h-4 w-4" />
-                        )}
-                        <span className="text-xs ml-1">
-                          {Math.abs(metric.percentChange).toFixed(1)}%
-                        </span>
-                      </div>
-                    )}
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{metric.value}</div>
-                    <p className="text-xs text-muted-foreground">
-                      {metric.comparison}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-
-          {/* Charts and Activity Feed */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="col-span-4 hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <CardTitle>Overview</CardTitle>
-              </CardHeader>
-              <CardContent className="pl-2">
-                <div className="h-[350px] flex items-center justify-center text-muted-foreground">
-                  Chart placeholder
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="col-span-3 hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[350px] flex items-center justify-center text-muted-foreground">
-                  Activity feed placeholder
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
+      {/* Activity Feed Section */}
+      <div className="mt-8">
+        <ActivityFeed activities={activities} />
+      </div>
     </div>
   );
 }

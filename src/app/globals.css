@@ -35,6 +35,19 @@
     --ring: 222.2 84% 4.9%;
  
     --radius: 0.5rem;
+
+    /* Chart & Data Visualization Colors */
+    --color-chart-blue: #3B82F6;
+    --color-chart-green: #10B981;
+    --color-chart-purple: #8B5CF6;
+    --color-chart-orange: #F97316;
+    --color-chart-teal: #14B8A6;
+    --color-chart-rose: #EC4899;
+
+    /* Activity & Status Colors */
+    --activity-success: #10B981;
+    --activity-warning: #F59E0B;
+    --activity-info: #3B82F6;
   }
  
   .dark {
@@ -65,6 +78,19 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
+
+    /* Chart & Data Visualization Colors (Dark Mode) */
+    --color-chart-blue: #60A5FA;
+    --color-chart-green: #34D399;
+    --color-chart-purple: #A78BFA;
+    --color-chart-orange: #FDBA74;
+    --color-chart-teal: #5EEAD4;
+    --color-chart-rose: #F472B6;
+
+    /* Activity & Status Colors (Dark Mode) */
+    --activity-success: #34D399;
+    --activity-warning: #FBBF24;
+    --activity-info: #60A5FA;
   }
 }
  

@@ -5,24 +5,24 @@ type AlertIntent = "info" | "success" | "warning" | "error";
 
 const intentColors = {
   info: {
-    border: "#3b82f6",
-    background: "#eff6ff",
-    color: "#1e40af"
+    border: "var(--primary-500)",
+    background: "var(--primary-50)",
+    color: "var(--primary-700)"
   },
   success: {
-    border: "#22c55e",
-    background: "#f0fdf4",
-    color: "#166534"
+    border: "var(--secondary-500)",
+    background: "var(--secondary-50)",
+    color: "var(--secondary-700)"
   },
   warning: {
-    border: "#f59e0b",
-    background: "#fefce8",
-    color: "#78350f"
+    border: "var(--accent-500)",
+    background: "var(--accent-50)",
+    color: "var(--accent-700)"
   },
   error: {
-    border: "#ef4444",
-    background: "#fef2f2",
-    color: "#991b1b"
+    border: "var(--accent-500)",
+    background: "var(--accent-50)",
+    color: "var(--accent-700)"
   }
 };
 

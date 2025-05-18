@@ -20,17 +20,17 @@ export interface AnalyticsFilter {
 
 // Map metric keys to Tailwind color classes for numbers/text
 const metricValueColors: Record<string, string> = {
-  openRate:    "text-indigo-600",
-  clickRate:   "text-blue-600",
-  recipients:  "text-slate-900",
-  delivered:   "text-green-600",
-  opened:      "text-indigo-600",
-  clicks:      "text-blue-600",
-  clicked:     "text-blue-600",
-  unsubscribed:"text-red-600",
-  bounced:     "text-red-600"
+  openRate:    "text-primary-600",
+  clickRate:   "text-primary-500",
+  recipients:  "text-neutral-text",
+  delivered:   "text-secondary-600",
+  opened:      "text-primary-600",
+  clicks:      "text-primary-500",
+  clicked:     "text-primary-500",
+  unsubscribed:"text-accent-600",
+  bounced:     "text-accent-600"
 };
-const metricLabelColor = "text-gray-700";
+const metricLabelColor = "text-neutral-text-light";
 
 interface AnalyticsDashboardProps {
   metrics?: AnalyticMetric[];

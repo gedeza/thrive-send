@@ -211,3 +211,21 @@ Please refer to our [Contributing Guidelines](CONTRIBUTING.md) for details on ou
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Outstanding Issues / Tasks to Revisit
+
+1. **Calendar Tabs Not Visible**
+   - Investigate why the Month/Week/Day tabs are not rendering or visible in the calendar UI.
+   - Debug possible causes: CSS variable issues, Tailwind config, conditional rendering, or DOM/CSS conflicts.
+   - Confirm if the tabs are in the DOM but hidden, or not rendered at all.
+
+2. **Prisma/PostgreSQL Connection Errors**
+   - Fix the recurring `prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }`.
+   - Check if the database is running, credentials are correct, and there are no network/firewall issues.
+   - Ensure backend features depending on the database work reliably.
+
+3. **Calendar Feature Enhancements (Post-Tabs Fix)**
+   - Adjust the height of time slots in week/day views.
+   - Add more event details in week/day views.
+   - Improve event positioning logic.
+   - Add drag-and-drop functionality for events.

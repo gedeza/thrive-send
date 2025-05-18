@@ -33,7 +33,7 @@ This document defines the official color scheme for ThriveSend, ensuring a consi
 | 950   | #1a1841 | Extreme contrast situations               |
 \
 ### Secondary (Green)
-- **Main**: `#10B981` – Success states, badges, highlights.
+- **Main**: `#10B981` – Success states, badges, highlights, and system icons.
 - **Light**: `#34D399` – Lighter success states, backgrounds.
 
 | Shade | Hex     | Usage                          |
@@ -76,6 +76,144 @@ This document defines the official color scheme for ThriveSend, ensuring a consi
 - **Background Dark**: `#111827`
 - **Card**: `#FFFFFF`
 - **Border**: `#E5E7EB`
+
+### Data Visualization Colors
+
+#### Primary Chart Colors
+These colors are optimized for data visualization and maintain accessibility standards.
+
+| Color Name | Hex     | Usage                                    |
+|------------|---------|------------------------------------------|
+| Blue       | #3B82F6 | Primary data series, main metrics        |
+| Green      | #10B981 | Success metrics, growth indicators       |
+| Purple     | #8B5CF6 | Secondary data series, comparisons       |
+| Orange     | #F97316 | Warning metrics, attention indicators    |
+| Teal       | #14B8A6 | Tertiary data series, additional metrics |
+| Rose       | #EC4899 | Special metrics, highlights              |
+
+#### Chart Color Combinations
+
+1. **Default Combination** (for most charts):
+   ```js
+   const defaultColors = [
+     '#3B82F6', // Blue
+     '#10B981', // Green
+     '#8B5CF6', // Purple
+     '#F97316', // Orange
+     '#14B8A6', // Teal
+     '#EC4899'  // Rose
+   ];
+   ```
+
+2. **Sequential Combination** (for heatmaps, gradients):
+   ```js
+   const sequentialColors = [
+     '#EFF6FF', // Lightest
+     '#BFDBFE',
+     '#93C5FD',
+     '#60A5FA',
+     '#3B82F6', // Base
+     '#2563EB',
+     '#1D4ED8',
+     '#1E40AF'  // Darkest
+   ];
+   ```
+
+3. **Diverging Combination** (for comparisons):
+   ```js
+   const divergingColors = [
+     '#3B82F6', // Positive
+     '#60A5FA',
+     '#93C5FD',
+     '#EFF6FF', // Neutral
+     '#FEE2E2',
+     '#FCA5A5',
+     '#EF4444'  // Negative
+   ];
+   ```
+
+#### Chart Background Colors
+
+| Element          | Light Mode | Dark Mode  |
+|------------------|------------|------------|
+| Chart Background | #FFFFFF    | #1F2937   |
+| Grid Lines       | #E5E7EB    | #374151   |
+| Axis Lines       | #D1D5DB    | #4B5563   |
+| Axis Text        | #6B7280    | #9CA3AF   |
+
+#### Chart Guidelines
+
+1. **Color Usage Rules**:
+   - Use primary colors for main data series
+   - Use secondary colors for comparisons
+   - Maintain consistent color meaning across charts
+   - Use sequential colors for heatmaps and gradients
+   - Use diverging colors for positive/negative comparisons
+
+2. **Accessibility**:
+   - Ensure minimum contrast ratio of 4.5:1 for text
+   - Use patterns or textures in addition to colors
+   - Provide colorblind-friendly alternatives
+   - Include clear legends and labels
+
+3. **Chart Types**:
+   - **Line Charts**: Use primary colors with consistent line weights
+   - **Bar Charts**: Use solid colors with subtle gradients
+   - **Pie Charts**: Use distinct colors with clear labels
+   - **Heatmaps**: Use sequential color scales
+   - **Scatter Plots**: Use distinct colors for different groups
+
+4. **Interactive Elements**:
+   - Hover states: Lighten colors by 10%
+   - Selected states: Darken colors by 10%
+   - Disabled states: Reduce opacity to 50%
+
+#### Example Implementation
+
+```jsx
+// Chart color configuration
+const chartConfig = {
+  colors: {
+    primary: '#3B82F6',
+    secondary: '#10B981',
+    accent: '#8B5CF6',
+    warning: '#F97316',
+    success: '#14B8A6',
+    highlight: '#EC4899'
+  },
+  background: {
+    light: '#FFFFFF',
+    dark: '#1F2937'
+  },
+  grid: {
+    light: '#E5E7EB',
+    dark: '#374151'
+  }
+};
+
+// Usage in Chart.js
+const options = {
+  plugins: {
+    legend: {
+      labels: {
+        color: theme === 'dark' ? '#9CA3AF' : '#6B7280'
+      }
+    }
+  },
+  scales: {
+    x: {
+      grid: {
+        color: theme === 'dark' ? '#374151' : '#E5E7EB'
+      }
+    },
+    y: {
+      grid: {
+        color: theme === 'dark' ? '#374151' : '#E5E7EB'
+      }
+    }
+  }
+};
+```
 
 ### Gradient
 
@@ -172,66 +310,286 @@ ThriveSend supports dark mode using Tailwind dark mode utilities. Maintain seman
 \
 ### **Technical Implementation**
 
-- All tokens are defined in `tailwind.config.js` and mapped for use in class names like `bg-primary-500`, `text-primary-400`, etc.
-- For any white or black text, only use `.text-custom-white` or `.text-custom-black` (never Tailwind's `text-white` or `text-black` directly).
-- Custom classes are provided in `/styles/global-fonts.css`.
+- All tokens are defined in `tailwind.config.js` and mapped for use in class names like `
 
----
+### Icon Color System
 
-### **ShadCN UI Integration**
+#### Primary Icon Colors
 
-- When using external component libraries (e.g. ShadCN), **always override classes** to match our semantic tokens and text-class (`.text-custom-white`) conventions.
+| Icon Type | Light Mode | Dark Mode | Usage |
+|-----------|------------|-----------|--------|
+| Primary | `#4F46E5` | `#818CF8` | Main navigation, key actions |
+| Secondary | `#10B981` | `#34D399` | Success states, metrics |
+| Accent | `#F59E0B` | `#FBBF24` | Warnings, alerts |
+| Neutral | `#6B7280` | `#9CA3AF` | Secondary navigation, info |
+| Muted | `#9CA3AF` | `#6B7280` | Disabled, inactive |
+
+#### Icon Color Combinations
+
+1. **Navigation Icons**:
+   ```js
+   const navigationIcons = {
+     active: '#4F46E5',    // Primary
+     hover: '#818CF8',     // Primary Light
+     inactive: '#6B7280',  // Neutral
+     disabled: '#9CA3AF'   // Muted
+   };
+   ```
+
+2. **Status Icons**:
+   ```js
+   const statusIcons = {
+     success: '#10B981',   // Secondary
+     warning: '#F59E0B',   // Accent
+     error: '#EF4444',     // Error
+     info: '#3B82F6'       // Info
+   };
+   ```
+
+3. **Metric Icons**:
+   ```js
+   const metricIcons = {
+     positive: '#10B981',  // Secondary
+     negative: '#EF4444',  // Error
+     neutral: '#6B7280',   // Neutral
+     highlight: '#8B5CF6'  // Highlight
+   };
+   ```
+
+#### Icon Guidelines
+
+1. **Size and Weight**:
+   - Primary icons: 24px, regular weight
+   - Secondary icons: 20px, regular weight
+   - Small icons: 16px, light weight
+   - Micro icons: 14px, light weight
+
+2. **Usage Rules**:
+   - Use primary color for main navigation and key actions
+   - Use secondary color for success states and metrics
+   - Use accent color for warnings and alerts
+   - Use neutral color for secondary navigation
+   - Use muted color for disabled states
+
+3. **Interactive States**:
+   - Hover: Lighten by 10%
+   - Active: Darken by 10%
+   - Disabled: 50% opacity
+   - Selected: Use primary color
+
+4. **Accessibility**:
+   - Maintain minimum contrast ratio of 4.5:1
+   - Use consistent sizing for similar icon types
+   - Include tooltips for icon-only buttons
+   - Consider colorblind users in icon design
+
+#### Icon Implementation
 
 ```jsx
-<Button className="bg-primary-500 hover:bg-primary-600 text-custom-white">
-  Primary Action
-</Button>
-<Button variant="outline" className="border-primary-500 text-primary-500">
-  Secondary Action
-</Button>
+// Icon color configuration
+const iconConfig = {
+  colors: {
+    primary: {
+      light: '#4F46E5',
+      dark: '#818CF8'
+    },
+    secondary: {
+      light: '#10B981',
+      dark: '#34D399'
+    },
+    accent: {
+      light: '#F59E0B',
+      dark: '#FBBF24'
+    },
+    neutral: {
+      light: '#6B7280',
+      dark: '#9CA3AF'
+    }
+  },
+  sizes: {
+    primary: '24px',
+    secondary: '20px',
+    small: '16px',
+    micro: '14px'
+  }
+};
+
+// Usage in components
+const IconButton = ({ icon, type = 'primary', size = 'primary' }) => {
+  const color = iconConfig.colors[type][theme];
+  const iconSize = iconConfig.sizes[size];
+  
+  return (
+    <button className={`icon-button ${type}`}>
+      <Icon 
+        component={icon} 
+        style={{ 
+          color, 
+          fontSize: iconSize 
+        }} 
+      />
+    </button>
+  );
+};
 ```
-\
-### **Examples**
 
-#### **Component Examples**
+#### Icon Examples
 
+1. **Navigation Icons**:
 ```jsx
-// Primary Button
-<button className="bg-primary-500 hover:bg-primary-600 text-custom-white px-4 py-2 rounded-md">
-  Click Me
-</button>
+// Primary navigation
+<IconButton icon={Home} type="primary" />
 
-// Success Card
-<div className="bg-secondary-50 border border-secondary-200 p-4 rounded-md">
-  <p className="text-secondary-700">Success message</p>
-</div>
+// Secondary navigation
+<IconButton icon={Settings} type="neutral" />
 
-// Warning Badge
-<span className="bg-accent-500 text-custom-white px-2 py-1 rounded-full text-xs font-semibold">
-  New
-</span>
+// Disabled state
+<IconButton icon={User} type="muted" disabled />
 ```
 
-#### Gradient Example
-
+2. **Status Icons**:
 ```jsx
-// Primary to Purple Gradient
-<div className="bg-gradient-to-r from-primary-500 to-gradient-purple text-custom-white p-4 rounded-md">
-  Gradient Card
-</div>
+// Success state
+<IconButton icon={CheckCircle} type="secondary" />
+
+// Warning state
+<IconButton icon={AlertTriangle} type="accent" />
+
+// Error state
+<IconButton icon={XCircle} type="error" />
 ```
 
----
-\
-## **Migration Guide**
+3. **Metric Icons**:
+```jsx
+// Positive metric
+<IconButton icon={TrendingUp} type="secondary" />
 
-1. Update all button and text color utilities to semantic tokens and `.text-custom-white` as described.
-2. Test UI in both light and dark modes.
-3. Double check accessibility: ensure minimum contrast ratios.
-4. Remove all direct uses of Tailwind's `text-white` in favor of `.text-custom-white`.
-\
-## **Versioning**
+// Negative metric
+<IconButton icon={TrendingDown} type="error" />
 
-- **Current Version**: 2.1.0  
-- **Last Updated**: 2025-06  
-- **Changelog**: Emphasized `.text-custom-white` and clarified button/class usage everywhere per implementation.
+// Neutral metric
+<IconButton icon={Minus} type="neutral" />
+```
+
+#### Icon and Chart Integration
+
+When using icons with charts, follow these guidelines:
+
+1. **Chart Legend Icons**:
+   - Use the same color as the corresponding chart element
+   - Maintain consistent sizing with other icons
+   - Include clear labels
+
+2. **Chart Control Icons**:
+   - Use primary color for main controls
+   - Use neutral color for secondary controls
+   - Use accent color for warning/alert controls
+
+3. **Metric Icons with Charts**:
+   - Align icon colors with chart colors
+   - Use consistent sizing across all metrics
+   - Maintain clear visual hierarchy
+
+Example:
+```jsx
+const ChartWithIcons = () => {
+  return (
+    <div className="chart-container">
+      <div className="chart-header">
+        <IconButton icon={TrendingUp} type="secondary" />
+        <h3>Revenue Growth</h3>
+      </div>
+      <Chart 
+        data={data}
+        colors={chartConfig.colors}
+        legendIcons={true}
+      />
+      <div className="chart-controls">
+        <IconButton icon={Refresh} type="primary" />
+        <IconButton icon={Download} type="neutral" />
+        <IconButton icon={AlertTriangle} type="accent" />
+      </div>
+    </div>
+  );
+};
+```
+
+## Data Visualization & Utility Colors
+
+To support vibrant, modern dashboards and data-rich UIs, ThriveSend defines a set of semantic tokens for charts, metrics, activity/status, and impression badges. These tokens are to be used in all dashboard, analytics, and activity components.
+
+### Chart & Metric Colors
+| Token                | Light Mode   | Dark Mode    | Usage                                 |
+|----------------------|--------------|--------------|---------------------------------------|
+| chart-blue           | #3B82F6      | #60A5FA      | Primary chart series, main metrics    |
+| chart-green          | #10B981      | #34D399      | Success/growth metrics                |
+| chart-purple         | #8B5CF6      | #A78BFA      | Secondary series, comparisons         |
+| chart-orange         | #F97316      | #FDBA74      | Warning/attention metrics             |
+| chart-teal           | #14B8A6      | #5EEAD4      | Tertiary/auxiliary metrics            |
+| chart-rose           | #EC4899      | #F472B6      | Highlights, special metrics           |
+
+#### CSS Variable Mapping
+Define these in your global CSS:
+```css
+:root {
+  --color-chart-blue: #3B82F6;
+  --color-chart-green: #10B981;
+  --color-chart-purple: #8B5CF6;
+  --color-chart-orange: #F97316;
+  --color-chart-teal: #14B8A6;
+  --color-chart-rose: #EC4899;
+}
+[data-theme="dark"] {
+  --color-chart-blue: #60A5FA;
+  --color-chart-green: #34D399;
+  --color-chart-purple: #A78BFA;
+  --color-chart-orange: #FDBA74;
+  --color-chart-teal: #5EEAD4;
+  --color-chart-rose: #F472B6;
+}
+```
+
+### Activity & Status Colors
+| Token                | Light Mode   | Dark Mode    | Usage                                 |
+|----------------------|--------------|--------------|---------------------------------------|
+| activity-info        | #3B82F6      | #60A5FA      | Info/neutral activity                 |
+| activity-success     | #10B981      | #34D399      | Success/positive activity             |
+| activity-warning     | #F59E0B      | #FBBF24      | Warning/attention activity            |
+| activity-error       | #EF4444      | #F87171      | Error/negative activity               |
+
+#### Usage Example
+```jsx
+<span className="bg-activity-success text-activity-success-foreground">Sent</span>
+<span className="bg-activity-warning text-activity-warning-foreground">Draft</span>
+```
+
+### Impression/Badge Colors
+| Token                | Light Mode   | Dark Mode    | Usage                                 |
+|----------------------|--------------|--------------|---------------------------------------|
+| impression-positive  | #10B981      | #34D399      | Positive impression, uptrend          |
+| impression-negative  | #EF4444      | #F87171      | Negative impression, downtrend        |
+| impression-neutral   | #6B7280      | #9CA3AF      | Neutral/unchanged                     |
+
+### Guidelines
+- Always use these tokens for charts, metrics, activity, and impression colors.
+- For SVG/gradients, use CSS variables (e.g., `var(--color-chart-blue)`).
+- Never use raw hex codes or Tailwind default classes for these use cases.
+- Update your Tailwind config to map these tokens to utility classes if needed.
+
+#### Example: SVG Gradient
+```jsx
+<stop offset="0%" stopColor="var(--color-chart-blue)" />
+<stop offset="100%" stopColor="var(--color-chart-green)" />
+```
+
+#### Example: Chart.js
+```js
+const chartColors = [
+  'var(--color-chart-blue)',
+  'var(--color-chart-green)',
+  'var(--color-chart-purple)',
+  'var(--color-chart-orange)',
+  'var(--color-chart-teal)',
+  'var(--color-chart-rose)'
+];
+```

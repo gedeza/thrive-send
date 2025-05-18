@@ -17,17 +17,17 @@ model User {
   imageUrl                String?
   createdAt               DateTime             @default(now())
   updatedAt               DateTime             @updatedAt
+  emailVerified           DateTime?
+  image                   String?
+  name                    String?
+  accounts                Account[]
   activities              Activity[]
   contentItems            ContentItem[]
   createdContent          ContentPiece[]
   organizationMemberships OrganizationMember[]
   projects                Project[]
-  Template                Template[]
-  emailVerified           DateTime?
-  image                   String?
-  name                    String?
-  accounts                Account[]
   sessions                Session[]
+  Template                Template[]
 }
 
 model Organization {
@@ -66,17 +66,17 @@ model OrganizationMember {
 model Client {
   id             String          @id @default(cuid())
   name           String
-  email          String
-  phone          String?
-  address        String?
-  organizationId String
-  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  analytics      Analytics[]
-  campaigns      Campaign[]
-  projects       Project[]
-  socialAccounts SocialAccount[]
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
+  organizationId String
+  address        String?
+  email          String
+  phone          String?
+  analytics      Analytics[]
+  campaigns      Campaign[]
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  projects       Project[]
+  socialAccounts SocialAccount[]
 
   @@index([organizationId])
 }
@@ -135,6 +135,8 @@ model ContentPiece {
   organizationId String
   projectId      String?
   campaignId     String?
+  recurrence     Json?
+  color          String?
   author         User         @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   campaign       Campaign?    @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -174,21 +176,23 @@ model Engagement {
 }
 
 model Analytics {
-  id            String   @id @default(cuid())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  timestamp     DateTime @default(now())
+  id            String    @id @default(cuid())
+  engagements   Int       @default(0)
+  shares        Int       @default(0)
+  likes         Int       @default(0)
+  comments      Int       @default(0)
+  conversions   Int       @default(0)
+  revenue       Float     @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  clientId      String?
   campaignId    String?
-  views         Int      @default(0)
-  engagements   Int      @default(0)
-  conversions   Int      @default(0)
-  revenue       Float    @default(0)
-  likes         Int      @default(0)
-  comments      Int      @default(0)
-  shares        Int      @default(0)
-  follows       Int      @default(0)
-  new_followers Int      @default(0)
+  follows       Int       @default(0)
+  new_followers Int       @default(0)
+  timestamp     DateTime  @default(now())
+  views         Int       @default(0)
   campaign      Campaign? @relation(fields: [campaignId], references: [id])
+  client        Client?   @relation(fields: [clientId], references: [id])
 }
 
 model Subscription {
@@ -234,32 +238,24 @@ model Activity {
   user       User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
-enum CampaignStatus {
-  draft
-  active
-  completed
-  paused
-  cancelled
-}
-
 model Campaign {
   id             String         @id @default(cuid())
   name           String
   description    String?
-  status         CampaignStatus @default(draft)
   startDate      DateTime?
   endDate        DateTime?
   budget         Float?
-  clientId       String?
-  projectId      String?
-  organizationId String
-  analytics      Analytics[]
-  contentPieces  ContentPiece[]
-  client         Client?        @relation(fields: [clientId], references: [id], onUpdate: NoAction)
-  project        Project?       @relation(fields: [projectId], references: [id], onUpdate: NoAction)
-  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
+  organizationId String
+  clientId       String?
+  projectId      String?
+  status         CampaignStatus @default(draft)
+  analytics      Analytics[]
+  client         Client?        @relation(fields: [clientId], references: [id], onUpdate: NoAction)
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project        Project?       @relation(fields: [projectId], references: [id], onUpdate: NoAction)
+  contentPieces  ContentPiece[]
 
   @@index([clientId])
   @@index([projectId])
@@ -291,15 +287,14 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -321,18 +316,26 @@ model VerificationToken {
 }
 
 model Content {
-  id            String    @id @default(cuid())
-  title         String
-  body          String?
-  scheduledFor  DateTime?
-  type          String    @default("email")
-  status        String    @default("scheduled")
-  projectId     String?
-  userId        String
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           String    @id @default(cuid())
+  title        String
+  body         String?
+  scheduledFor DateTime?
+  type         String    @default("email")
+  status       String    @default("scheduled")
+  projectId    String?
+  userId       String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@index([userId])
   @@index([scheduledFor])
   @@index([projectId])
+}
+
+enum CampaignStatus {
+  draft
+  active
+  completed
+  paused
+  cancelled
 }

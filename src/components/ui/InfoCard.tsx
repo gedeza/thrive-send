@@ -9,16 +9,16 @@ interface InfoCardProps {
 
 // Simple mapping for accent colors; extend as needed
 const colorClasses: Record<string, string> = {
-  primary: "bg-gradient-to-r from-blue-500 to-blue-700 text-white",
-  secondary: "bg-gray-100 border border-gray-300 text-gray-800",
-  accent: "bg-yellow-100 border border-yellow-300 text-yellow-800",
-  info: "bg-blue-50 border border-blue-200 text-blue-800",
-  warning: "bg-orange-50 border border-orange-300 text-orange-900",
-  success: "bg-green-50 border border-green-300 text-green-800"
+  primary: "bg-primary-500 text-custom-white",
+  secondary: "bg-neutral-card border border-neutral-border text-neutral-text",
+  accent: "bg-accent-50 border border-accent-200 text-accent-700",
+  info: "bg-primary-50 border border-primary-200 text-primary-700",
+  warning: "bg-accent-50 border border-accent-200 text-accent-700",
+  success: "bg-secondary-50 border border-secondary-200 text-secondary-700"
 };
 
 const chipClasses =
-  "inline-block px-2 py-0.5 text-xs font-semibold rounded-full ml-2 bg-white/70 border";
+  "inline-block px-2 py-0.5 text-xs font-semibold rounded-full ml-2 bg-neutral-card/70 border border-neutral-border";
 
 const InfoCard: React.FC<InfoCardProps> = ({ title, description, chip, color = "primary" }) => (
   <div className={`p-4 rounded-md shadow hover:shadow-lg transition ${colorClasses[color]} relative`}>

@@ -14,9 +14,9 @@ export interface Project {
 
 // Badge color mapping for statuses
 const statusBadgeStyles: Record<string, string> = {
-  "In Progress": "bg-yellow-100 text-yellow-800",
-  "Planned": "bg-blue-100 text-blue-800",
-  "Completed": "bg-green-100 text-green-800",
+  "In Progress": "bg-accent-50 text-accent-700",
+  "Planned": "bg-primary-50 text-primary-700",
+  "Completed": "bg-secondary-50 text-secondary-700",
 };
 
 interface ProjectCardProps {

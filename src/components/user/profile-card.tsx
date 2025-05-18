@@ -6,32 +6,53 @@ import { User } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
-import { Alert, AlertDescription } from "../ui/alert";
+import { Alert } from "../ui/Alert";
+import type { ProfileFormData } from '@/lib/validations/profile';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 export interface ProfileCardProps {
   name: string;
   avatarUrl?: string;
   bio?: string;
   role?: string;
+  company?: string;
+  location?: string;
+  website?: string;
+  socialLinks?: {
+    twitter?: string;
+    linkedin?: string;
+    github?: string;
+  };
   className?: string;
   onFollow?: () => void;
-  onEdit?: (data: { name: string; bio?: string }) => void | Promise<void>;
+  onEdit: (data: ProfileFormData) => Promise<void>;
+  isUpdating?: boolean;
 }
 
 export function ProfileCard({
-  name: initialName,
+  name,
   avatarUrl,
-  bio: initialBio,
+  bio,
   role,
-  className,
-  onFollow,
-  onEdit
+  company,
+  location,
+  website,
+  socialLinks,
+  onEdit,
+  isUpdating = false,
+  className
 }: ProfileCardProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState(initialName);
-  const [bio, setBio] = useState(initialBio || '');
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState<ProfileFormData>({
+    name,
+    bio: bio || '',
+    role: role || '',
+    company: company || '',
+    location: location || '',
+    website: website || '',
+    socialLinks: socialLinks || {},
+  });
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -40,148 +61,187 @@ export function ProfileCard({
 
   const handleCancel = () => {
     setIsEditing(false);
-    setName(initialName);
-    setBio(initialBio || '');
     setError(null);
+    setFormData({
+      name,
+      bio: bio || '',
+      role: role || '',
+      company: company || '',
+      location: location || '',
+      website: website || '',
+      socialLinks: socialLinks || {},
+    });
   };
 
   const handleSave = async () => {
-    if (!onEdit) return;
-    
-    setLoading(true);
-    setError(null);
-    
     try {
-      const result = onEdit({ name, bio });
-      
-      // Handle both synchronous and Promise-based onEdit
-      if (result instanceof Promise) {
-        await result;
-      }
-      
+      await onEdit(formData);
       setIsEditing(false);
+      setError(null);
     } catch (err) {
-      console.error("Profile update error:", err);
-      setError("Failed to update profile");
-    } finally {
-      setLoading(false);
+      setError(err instanceof Error ? err.message : 'Failed to update profile');
     }
   };
+
+  const handleChange = (field: keyof ProfileFormData, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleSocialLinkChange = (platform: 'twitter' | 'linkedin' | 'github', value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      socialLinks: {
+        ...prev.socialLinks,
+        [platform]: value,
+      },
+    }));
+  };
+
   return (
-    <div 
-      data-testid="profile-card" 
-      className={cn("bg-card rounded-lg border border-border overflow-hidden", className)}
-    >
-      <div className="bg-primary/10 h-24 relative"></div>
-      
-      <div className="px-4 pb-4">
-        {error && (
-          <Alert variant="destructive" className="mt-2">
-            <AlertDescription data-testid="profile-card-error">{error}</AlertDescription>
-          </Alert>
-        )}
-        
-        <div className="flex flex-col items-center -mt-12">
-          <div className="h-24 w-24 rounded-full border-4 border-background overflow-hidden bg-background flex items-center justify-center">
-            {avatarUrl ? (
-              <img 
-                data-testid="profile-card-avatar"
-                src={avatarUrl} 
-                alt={`${initialName}'s avatar`} 
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <User className="h-12 w-12 text-muted-foreground" />
-            )}
-          </div>
-          
+    <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6">
+      <div className="flex items-center space-x-4 mb-6">
+        <Avatar className="h-16 w-16">
+          <AvatarImage src={avatarUrl} alt={name} />
+          <AvatarFallback>{name.charAt(0)}</AvatarFallback>
+        </Avatar>
+        <div className="flex-1">
           {isEditing ? (
-            <div className="w-full mt-4 space-y-3">
-              <Input
-                data-testid="profile-card-name-input"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Name"
-                className="text-center"
-              />
-              
-              <Textarea
-                data-testid="profile-card-bio-input"
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                placeholder="Bio"
-                className="resize-none text-center"
-                rows={3}
-              />
-              
-              <div className="flex gap-2 w-full">
-                <Button 
-                  data-testid="profile-card-save" 
-                  className="flex-1" 
-                  size="sm"
-                  onClick={handleSave}
-                  disabled={loading}
-                >
-                  {loading ? 'Saving...' : 'Save'}
-                </Button>
-                <Button 
-                  data-testid="profile-card-cancel" 
-                  className="flex-1" 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleCancel}
-                  disabled={loading}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
+            <Input
+              value={formData.name}
+              onChange={(e) => handleChange('name', e.target.value)}
+              placeholder="Your name"
+              className="mb-2"
+            />
           ) : (
-            <>
-              <h3 data-testid="profile-card-name" className="text-lg font-semibold mt-2">{name}</h3>
-              
-              {role && (
-                <p className="text-sm text-muted-foreground">{role}</p>
-              )}
-              
-              {bio && (
-                <p data-testid="profile-card-bio" className="text-sm text-center mt-2">{bio}</p>
-              )}
-              
-              <div className="flex gap-2 mt-4 w-full">
-                <Button className="flex-1" variant="outline" size="sm">
-                  Message
-                </Button>
-                {onFollow && (
-                  <Button 
-                    data-testid="profile-card-follow" 
-                    className="flex-1" 
-                    size="sm"
-                    onClick={onFollow}
-                  >
-                    Follow
-                  </Button>
-                )}
-                {!onFollow && !onEdit && (
-                  <Button className="flex-1" size="sm">
-                    Follow
-                  </Button>
-                )}
-                {onEdit && (
-                  <Button 
-                    data-testid="profile-card-edit" 
-                    className="flex-1" 
-                    size="sm"
-                    variant={onFollow ? "outline" : "default"}
-                    onClick={handleEdit}
-                  >
-                    Edit
-                  </Button>
-                )}
-              </div>
-            </>
+            <h2 className="text-xl font-semibold text-neutral-text">{name}</h2>
+          )}
+          {role && !isEditing && (
+            <p className="text-sm text-neutral-text-light">{role}</p>
           )}
         </div>
+      </div>
+
+      {error && (
+        <Alert intent="error" style={{ marginBottom: '1rem' }}>
+          <p>{error}</p>
+        </Alert>
+      )}
+
+      <div className="space-y-4">
+        {isEditing ? (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-neutral-text mb-1">
+                Bio
+              </label>
+              <Textarea
+                value={formData.bio}
+                onChange={(e) => handleChange('bio', e.target.value)}
+                placeholder="Tell us about yourself"
+                rows={3}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-text mb-1">
+                Role
+              </label>
+              <Input
+                value={formData.role}
+                onChange={(e) => handleChange('role', e.target.value)}
+                placeholder="Your role"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-text mb-1">
+                Company
+              </label>
+              <Input
+                value={formData.company}
+                onChange={(e) => handleChange('company', e.target.value)}
+                placeholder="Your company"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-text mb-1">
+                Location
+              </label>
+              <Input
+                value={formData.location}
+                onChange={(e) => handleChange('location', e.target.value)}
+                placeholder="Your location"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-text mb-1">
+                Website
+              </label>
+              <Input
+                value={formData.website}
+                onChange={(e) => handleChange('website', e.target.value)}
+                placeholder="Your website"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-text mb-1">
+                Social Links
+              </label>
+              <div className="space-y-2">
+                <Input
+                  value={formData.socialLinks?.twitter || ''}
+                  onChange={(e) => handleSocialLinkChange('twitter', e.target.value)}
+                  placeholder="Twitter username"
+                />
+                <Input
+                  value={formData.socialLinks?.linkedin || ''}
+                  onChange={(e) => handleSocialLinkChange('linkedin', e.target.value)}
+                  placeholder="LinkedIn profile URL"
+                />
+                <Input
+                  value={formData.socialLinks?.github || ''}
+                  onChange={(e) => handleSocialLinkChange('github', e.target.value)}
+                  placeholder="GitHub username"
+                />
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            {bio && (
+              <p className="text-neutral-text-light">{bio}</p>
+            )}
+          </>
+        )}
+      </div>
+
+      <div className="mt-6 flex justify-end space-x-2">
+        {isEditing ? (
+          <>
+            <Button
+              variant="outline"
+              onClick={handleCancel}
+              disabled={isUpdating}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={isUpdating}
+            >
+              {isUpdating ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </>
+        ) : (
+          <Button
+            variant="outline"
+            onClick={handleEdit}
+            disabled={isUpdating}
+          >
+            Edit Profile
+          </Button>
+        )}
       </div>
     </div>
   );

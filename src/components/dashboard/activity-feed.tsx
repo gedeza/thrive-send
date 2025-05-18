@@ -1,0 +1,163 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { formatDistanceToNow } from "date-fns"
+
+export interface Activity {
+  id: string
+  type: "campaign" | "email" | "user" | "system"
+  title: string
+  description: string
+  timestamp: string
+  user?: {
+    name: string
+    image?: string
+  }
+}
+
+interface ActivityFeedProps {
+  activities: Activity[]
+}
+
+export function ActivityFeed({ activities: initialActivities }: ActivityFeedProps) {
+  const [activities, setActivities] = useState<Activity[]>(initialActivities)
+  const [filter, setFilter] = useState<Activity["type"] | "all">("all")
+
+  // Simulate real-time updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActivities((prev) => {
+        const newActivity = {
+          id: Math.random().toString(),
+          type: ["campaign", "email", "user", "system"][Math.floor(Math.random() * 4)] as Activity["type"],
+          title: "New Activity",
+          description: "This is a simulated real-time update",
+          timestamp: new Date().toISOString(),
+        }
+        return [newActivity, ...prev].slice(0, 10)
+      })
+    }, 30000) // Add new activity every 30 seconds
+
+    return () => clearInterval(interval)
+  }, [])
+
+  const filteredActivities = filter === "all" 
+    ? activities 
+    : activities.filter((activity) => activity.type === filter)
+
+  const getActivityColor = (type: Activity["type"]) => {
+    switch (type) {
+      case "campaign":
+        return "bg-primary"
+      case "email":
+        return "bg-secondary"
+      case "user":
+        return "bg-accent"
+      case "system":
+        return "bg-muted"
+      default:
+        return "bg-muted"
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Activity Feed</CardTitle>
+        <CardDescription>
+          Real-time updates from your campaigns
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex space-x-2 mb-4">
+          <Badge
+            variant="outline"
+            className={`cursor-pointer ${
+              filter === "all" 
+                ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                : "hover:bg-muted"
+            }`}
+            onClick={() => setFilter("all")}
+          >
+            All
+          </Badge>
+          <Badge
+            variant="outline"
+            className={`cursor-pointer ${
+              filter === "campaign" 
+                ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                : "hover:bg-muted"
+            }`}
+            onClick={() => setFilter("campaign")}
+          >
+            Campaigns
+          </Badge>
+          <Badge
+            variant="outline"
+            className={`cursor-pointer ${
+              filter === "email" 
+                ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                : "hover:bg-muted"
+            }`}
+            onClick={() => setFilter("email")}
+          >
+            Emails
+          </Badge>
+          <Badge
+            variant="outline"
+            className={`cursor-pointer ${
+              filter === "user" 
+                ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                : "hover:bg-muted"
+            }`}
+            onClick={() => setFilter("user")}
+          >
+            Users
+          </Badge>
+        </div>
+        <ScrollArea className="h-[400px] pr-4">
+          <div className="space-y-4">
+            {filteredActivities.map((activity) => (
+              <div
+                key={activity.id}
+                className="flex items-start space-x-4 p-4 rounded-lg border hover:bg-muted/50"
+              >
+                <div className={`w-2 h-2 rounded-full mt-2 ${getActivityColor(activity.type)}`} />
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">
+                      {activity.title}
+                    </p>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {activity.description}
+                  </p>
+                  {activity.user && (
+                    <div className="flex items-center space-x-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={activity.user.image} alt={activity.user.name} />
+                        <AvatarFallback className="bg-primary text-primary-foreground">
+                          {activity.user.name.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-xs text-muted-foreground">
+                        {activity.user.name}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+      </CardContent>
+    </Card>
+  )
+} 
