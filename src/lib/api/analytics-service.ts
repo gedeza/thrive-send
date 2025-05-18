@@ -1,5 +1,6 @@
 import type { AnalyticsTimeframe } from '@/types';
 import { DateRange } from 'react-day-picker';
+import { AnalyticMetric, AnalyticsFilter } from '@/components/analytics/analytics-dashboard';
 
 export type AnalyticsParams = {
   startDate?: Date;
@@ -14,6 +15,183 @@ export type AnalyticsMetric = {
   comparison: string;
   percentChange: number;
 };
+
+export interface TimeSeriesData {
+  labels: string[];
+  datasets: {
+    label: string;
+    data: number[];
+    borderColor?: string;
+    backgroundColor?: string;
+  }[];
+}
+
+export interface ComparisonData {
+  current: number;
+  previous: number;
+  change: number;
+  isPositive: boolean;
+}
+
+export interface CampaignMetrics {
+  id: string;
+  name: string;
+  metrics: AnalyticMetric[];
+  timeSeriesData: TimeSeriesData;
+}
+
+export interface AudienceSegment {
+  id: string;
+  name: string;
+  size: number;
+  metrics: AnalyticMetric[];
+}
+
+export interface ABTestResult {
+  id: string;
+  name: string;
+  variantA: {
+    name: string;
+    metrics: AnalyticMetric[];
+  };
+  variantB: {
+    name: string;
+    metrics: AnalyticMetric[];
+  };
+  winner: 'A' | 'B' | 'none';
+  confidence: number;
+}
+
+export interface ConversionMetrics {
+  totalConversions: number;
+  conversionRate: number;
+  revenue: number;
+  averageOrderValue: number;
+  byCampaign: {
+    campaignId: string;
+    campaignName: string;
+    conversions: number;
+    revenue: number;
+  }[];
+}
+
+class AnalyticsService {
+  private baseUrl: string;
+
+  constructor() {
+    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
+  }
+
+  // Time Series Analysis
+  async getTimeSeriesData(
+    metric: string,
+    dateRange: DateRange,
+    interval: 'hour' | 'day' | 'week' | 'month' = 'day'
+  ): Promise<TimeSeriesData> {
+    const response = await fetch(
+      `${this.baseUrl}/analytics/time-series?metric=${metric}&start=${dateRange.start}&end=${dateRange.end}&interval=${interval}`
+    );
+    return response.json();
+  }
+
+  // Comparison Views
+  async getComparisonData(
+    metric: string,
+    dateRange: DateRange,
+    comparisonType: 'week' | 'month' | 'year' = 'week'
+  ): Promise<ComparisonData> {
+    const response = await fetch(
+      `${this.baseUrl}/analytics/comparison?metric=${metric}&start=${dateRange.start}&end=${dateRange.end}&type=${comparisonType}`
+    );
+    return response.json();
+  }
+
+  // Campaign Filtering
+  async getCampaignMetrics(
+    campaignId?: string,
+    dateRange?: DateRange
+  ): Promise<CampaignMetrics[]> {
+    const params = new URLSearchParams();
+    if (campaignId) params.append('campaignId', campaignId);
+    if (dateRange) {
+      params.append('start', dateRange.start);
+      params.append('end', dateRange.end);
+    }
+    
+    const response = await fetch(`${this.baseUrl}/analytics/campaigns?${params}`);
+    return response.json();
+  }
+
+  // Audience Segmentation
+  async getAudienceSegments(
+    dateRange: DateRange
+  ): Promise<AudienceSegment[]> {
+    const response = await fetch(
+      `${this.baseUrl}/analytics/audience-segments?start=${dateRange.start}&end=${dateRange.end}`
+    );
+    return response.json();
+  }
+
+  // A/B Testing
+  async getABTestResults(
+    testId?: string
+  ): Promise<ABTestResult[]> {
+    const params = new URLSearchParams();
+    if (testId) params.append('testId', testId);
+    
+    const response = await fetch(`${this.baseUrl}/analytics/ab-tests?${params}`);
+    return response.json();
+  }
+
+  // Conversion Tracking
+  async getConversionMetrics(
+    dateRange: DateRange
+  ): Promise<ConversionMetrics> {
+    const response = await fetch(
+      `${this.baseUrl}/analytics/conversions?start=${dateRange.start}&end=${dateRange.end}`
+    );
+    return response.json();
+  }
+
+  // Export Data
+  async exportData(
+    format: 'csv' | 'pdf',
+    dateRange: DateRange,
+    metrics: string[]
+  ): Promise<Blob> {
+    const response = await fetch(
+      `${this.baseUrl}/analytics/export?format=${format}&start=${dateRange.start}&end=${dateRange.end}&metrics=${metrics.join(',')}`,
+      {
+        headers: {
+          'Accept': format === 'csv' ? 'text/csv' : 'application/pdf'
+        }
+      }
+    );
+    return response.blob();
+  }
+
+  // Schedule Report
+  async scheduleReport(
+    schedule: {
+      frequency: 'daily' | 'weekly' | 'monthly';
+      time: string;
+      metrics: string[];
+      recipients: string[];
+      format: 'csv' | 'pdf';
+    }
+  ): Promise<{ id: string; status: 'scheduled' }> {
+    const response = await fetch(`${this.baseUrl}/analytics/schedule-report`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(schedule)
+    });
+    return response.json();
+  }
+}
+
+export const analyticsService = new AnalyticsService();
 
 /**
  * Fetches analytics metrics from the API

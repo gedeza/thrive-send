@@ -189,12 +189,13 @@ export default function AnalyticsPage() {
       
       {/* Filter controls */}
       <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <DatePickerWithRange 
-          date={dateRange} 
-          setDate={setDateRange} 
-          className="w-full md:w-auto"
-          disabled={{ after: new Date() }}
-        />
+        <div className="flex-1 md:flex-none">
+          <DatePickerWithRange 
+            date={dateRange} 
+            setDate={setDateRange} 
+            disabled={{ after: new Date() }}
+          />
+        </div>
         
         <Select value={timeframe} onValueChange={setTimeframe}>
           <SelectTrigger className="w-full md:w-[180px]">

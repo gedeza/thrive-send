@@ -329,15 +329,6 @@ export function RecentSubscribers({ subscribers }: { subscribers: { email: strin
           </Button>
         </div>
       </div>
-      <div className="mt-3 text-right">
-        <a 
-          href="/subscribers" 
-          className="text-[var(--color-chart-blue)] hover:text-[var(--color-chart-green)] text-sm transition-colors"
-          aria-label="Manage all subscribers"
-        >
-          Manage subscribers
-        </a>
-      </div>
     </div>
   )
 }
