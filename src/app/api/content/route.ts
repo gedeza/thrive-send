@@ -78,17 +78,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const formData = await request.formData();
-    const data = {
-      title: formData.get('title'),
-      contentType: formData.get('contentType'),
-      content: formData.get('content'),
-      tags: JSON.parse(formData.get('tags') as string),
-      preheaderText: formData.get('preheaderText'),
-      publishDate: formData.get('publishDate'),
-      status: formData.get('status'),
-      mediaUrls: JSON.parse(formData.get('mediaUrls') as string || '[]'),
-    };
+    let data;
+    const contentType = request.headers.get('content-type');
+    
+    if (contentType?.includes('multipart/form-data')) {
+      const formData = await request.formData();
+      data = {
+        title: formData.get('title'),
+        contentType: formData.get('contentType'),
+        content: formData.get('content'),
+        tags: JSON.parse(formData.get('tags') as string),
+        preheaderText: formData.get('preheaderText'),
+        publishDate: formData.get('publishDate'),
+        status: formData.get('status'),
+        mediaUrls: JSON.parse(formData.get('mediaUrls') as string || '[]'),
+      };
+    } else {
+      data = await request.json();
+    }
 
     const validatedData = contentSchema.parse(data);
 
@@ -103,6 +110,67 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(content);
   } catch (error) {
     console.error('Error in POST /api/content:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ message: 'Invalid content data', errors: error.errors }, { status: 400 });
+    }
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// PUT /api/content/[id]
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const { userId } = getAuth(request);
+    if (!userId) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check if content exists and belongs to user
+    const existingContent = await prisma.content.findFirst({
+      where: {
+        id: params.id,
+        userId,
+      },
+    });
+
+    if (!existingContent) {
+      return NextResponse.json({ message: 'Content not found' }, { status: 404 });
+    }
+
+    let data;
+    const contentType = request.headers.get('content-type');
+    
+    if (contentType?.includes('multipart/form-data')) {
+      const formData = await request.formData();
+      data = {
+        title: formData.get('title'),
+        contentType: formData.get('contentType'),
+        content: formData.get('content'),
+        tags: JSON.parse(formData.get('tags') as string),
+        preheaderText: formData.get('preheaderText'),
+        publishDate: formData.get('publishDate'),
+        status: formData.get('status'),
+        mediaUrls: JSON.parse(formData.get('mediaUrls') as string || '[]'),
+      };
+    } else {
+      data = await request.json();
+    }
+
+    const validatedData = contentSchema.parse(data);
+
+    const content = await prisma.content.update({
+      where: {
+        id: params.id,
+      },
+      data: {
+        ...validatedData,
+        publishDate: validatedData.publishDate ? new Date(validatedData.publishDate) : null,
+      },
+    });
+
+    return NextResponse.json(content);
+  } catch (error) {
+    console.error('Error in PUT /api/content:', error);
     if (error instanceof z.ZodError) {
       return NextResponse.json({ message: 'Invalid content data', errors: error.errors }, { status: 400 });
     }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
-import { writeFile } from 'fs/promises';
+import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { NextRequest } from 'next/server';
@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
     // Create uploads directory if it doesn't exist
     const uploadsDir = join(process.cwd(), 'public', 'uploads');
     try {
+      await mkdir(uploadsDir, { recursive: true });
       await writeFile(join(uploadsDir, fileName), Buffer.from(await file.arrayBuffer()));
     } catch (error) {
       console.error('Error saving file:', error);

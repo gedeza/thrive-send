@@ -17,7 +17,7 @@ import { format } from 'date-fns';
 import { CalendarIcon, ImageIcon, Loader2, Plus, X } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { RichTextEditor } from '@/components/rich-text-editor';
-import { uploadMedia, saveContent } from '@/lib/api';
+import { saveContent, updateContent } from '@/lib/api/content-service';
 
 // Content types
 const contentTypes = [
@@ -132,24 +132,18 @@ export default function ContentForm({ initialData, mode = 'create' }: ContentFor
 
       const filesArray = Array.from(e.target.files);
       try {
-        const uploaded = await Promise.all(
-          filesArray.map(async (file) => {
-            const res = await uploadMedia(file);
-            return { url: res.url, name: file.name, size: file.size };
-          })
-        );
         setFormData(prev => ({
           ...prev,
-          mediaFiles: [...prev.mediaFiles, ...uploaded]
+          mediaFiles: [...prev.mediaFiles, ...filesArray]
         }));
         toast({
           title: 'Success',
-          description: 'Media files uploaded successfully',
+          description: 'Media files added successfully',
         });
       } catch (err) {
         toast({
           title: 'Error',
-          description: 'Failed to upload media files',
+          description: 'Failed to add media files',
           variant: 'destructive',
         });
       } finally {
@@ -196,34 +190,15 @@ export default function ContentForm({ initialData, mode = 'create' }: ContentFor
 
     setIsSubmitting(true);
     try {
-      const formDataToSend = new FormData();
-      formDataToSend.append('title', formData.title);
-      formDataToSend.append('contentType', formData.contentType);
-      formDataToSend.append('content', formData.content);
-      formDataToSend.append('tags', JSON.stringify(formData.tags));
-      formDataToSend.append('preheaderText', formData.preheaderText);
-      if (formData.publishDate) {
-        formDataToSend.append('publishDate', formData.publishDate.toISOString());
-      }
-      formDataToSend.append('status', status);
-      
-      // Handle media files
-      const mediaUrls = formData.mediaFiles.map(file => 
-        'url' in file ? file.url : URL.createObjectURL(file)
-      );
-      formDataToSend.append('mediaUrls', JSON.stringify(mediaUrls));
+      const data = {
+        ...formData,
+        status,
+      };
 
-      const url = mode === 'edit' ? `/api/content/${initialData.id}` : '/api/content';
-      const method = mode === 'edit' ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        body: formDataToSend,
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to save content');
+      if (mode === 'edit' && initialData?.id) {
+        await updateContent(initialData.id, data);
+      } else {
+        await saveContent(data);
       }
 
       toast({
@@ -291,56 +266,12 @@ export default function ContentForm({ initialData, mode = 'create' }: ContentFor
             placeholder="Brief preview text that recipients will see in their inbox"
             className={cn(errors.preheaderText && "border-destructive")}
           />
-          <p className="text-sm text-muted-foreground">
-            {formData.preheaderText.length}/100 characters
-          </p>
           {errors.preheaderText && (
             <p className="text-sm text-destructive">{errors.preheaderText}</p>
           )}
-        </div>
-      </div>
-
-      {/* Tags */}
-      <div className="space-y-4">
-        <Label>Tags</Label>
-        <div className="flex gap-2">
-          <Input
-            value={newTag}
-            onChange={(e) => setNewTag(e.target.value)}
-            placeholder="Add a tag"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleTagAdd();
-              }
-            }}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={handleTagAdd}
-            disabled={!newTag.trim()}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {formData.tags.map((tag) => (
-            <div
-              key={tag}
-              className="flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-sm"
-            >
-              <span>{tag}</span>
-              <button
-                type="button"
-                onClick={() => handleTagDelete(tag)}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
+          <p className="text-sm text-muted-foreground">
+            {formData.preheaderText.length}/100 characters
+          </p>
         </div>
       </div>
 
@@ -376,8 +307,8 @@ export default function ContentForm({ initialData, mode = 'create' }: ContentFor
         <input
           type="file"
           ref={fileInputRef}
-          className="hidden"
           onChange={handleFileChange}
+          className="hidden"
           multiple
           accept="image/*,video/*"
         />
@@ -387,42 +318,82 @@ export default function ContentForm({ initialData, mode = 'create' }: ContentFor
           onClick={handleFileUploadClick}
           className="w-full"
         >
-          <ImageIcon className="h-4 w-4 mr-2" />
+          <ImageIcon className="mr-2 h-4 w-4" />
           Upload Media
         </Button>
+
         {uploadProgress !== null && (
-          <div className="w-full bg-secondary rounded-full h-2.5">
+          <div className="w-full bg-gray-200 rounded-full h-2.5">
             <div
-              className="bg-primary h-2.5 rounded-full transition-all duration-300"
+              className="bg-primary h-2.5 rounded-full"
               style={{ width: `${uploadProgress}%` }}
             />
           </div>
         )}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+
+        <div className="space-y-2">
           {formData.mediaFiles.map((file, index) => (
-            <Card key={index}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium truncate">{file.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatFileSize(file.size)}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleFileDelete(index)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <div
+              key={index}
+              className="flex items-center justify-between p-2 border rounded-md"
+            >
+              <div className="flex items-center space-x-2">
+                <ImageIcon className="h-4 w-4 text-gray-500" />
+                <span className="text-sm truncate">
+                  {'name' in file ? file.name : file.name}
+                </span>
+                <span className="text-xs text-gray-500">
+                  {formatFileSize('size' in file ? file.size : file.size)}
+                </span>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => handleFileDelete(index)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Tags */}
+      <div className="space-y-4">
+        <Label>Tags</Label>
+        <div className="flex space-x-2">
+          <Input
+            value={newTag}
+            onChange={(e) => setNewTag(e.target.value)}
+            placeholder="Add a tag"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleTagAdd();
+              }
+            }}
+          />
+          <Button type="button" onClick={handleTagAdd}>
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {formData.tags.map((tag) => (
+            <div
+              key={tag}
+              className="flex items-center space-x-1 bg-gray-100 px-2 py-1 rounded-md"
+            >
+              <span className="text-sm">{tag}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => handleTagDelete(tag)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           ))}
         </div>
       </div>

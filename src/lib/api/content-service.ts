@@ -14,8 +14,16 @@ export interface ContentData {
   updatedAt?: string;
 }
 
-export interface ContentFormData extends Omit<ContentData, 'mediaUrls'> {
+export interface ContentFormData {
+  id?: string;
+  title: string;
+  contentType: string;
+  content: string;
+  tags: string[];
   mediaFiles: File[];
+  preheaderText: string;
+  publishDate?: string;
+  status: 'draft' | 'published';
 }
 
 export async function saveContent(data: ContentFormData): Promise<void> {
