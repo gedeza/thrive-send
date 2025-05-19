@@ -10,13 +10,17 @@ type ContentType = typeof contentTypes[number];
 
 const contentSchema = z.object({
   title: z.string().min(1, 'Title is required'),
-  contentType: z.enum(contentTypes),
+  contentType: z.enum(['article', 'blog', 'social', 'email'], {
+    errorMap: () => ({ message: 'Please select a valid content type' })
+  }),
   content: z.string().min(1, 'Content is required'),
-  tags: z.array(z.string()),
-  preheaderText: z.string().max(100, 'Preheader text must be less than 100 characters'),
+  tags: z.array(z.string()).default([]),
+  preheaderText: z.string().max(100, 'Preheader text must be less than 100 characters').optional(),
   publishDate: z.string().optional(),
-  status: z.enum(['draft', 'published']),
-  mediaUrls: z.array(z.string().url()).optional(),
+  status: z.enum(['draft', 'published'], {
+    errorMap: () => ({ message: 'Status must be either draft or published' })
+  }),
+  mediaUrls: z.array(z.string().url()).optional().default([]),
 });
 
 const querySchema = z.object({
@@ -87,8 +91,8 @@ export async function POST(request: NextRequest) {
         title: formData.get('title'),
         contentType: formData.get('contentType'),
         content: formData.get('content'),
-        tags: JSON.parse(formData.get('tags') as string),
-        preheaderText: formData.get('preheaderText'),
+        tags: JSON.parse(formData.get('tags') as string || '[]'),
+        preheaderText: formData.get('preheaderText') || '',
         publishDate: formData.get('publishDate'),
         status: formData.get('status'),
         mediaUrls: JSON.parse(formData.get('mediaUrls') as string || '[]'),
@@ -97,23 +101,37 @@ export async function POST(request: NextRequest) {
       data = await request.json();
     }
 
-    const validatedData = contentSchema.parse(data);
+    try {
+      const validatedData = contentSchema.parse(data);
+      
+      const content = await prisma.content.create({
+        data: {
+          ...validatedData,
+          userId,
+          publishDate: validatedData.publishDate ? new Date(validatedData.publishDate) : null,
+        },
+      });
 
-    const content = await prisma.content.create({
-      data: {
-        ...validatedData,
-        userId,
-        publishDate: validatedData.publishDate ? new Date(validatedData.publishDate) : null,
-      },
-    });
-
-    return NextResponse.json(content);
+      return NextResponse.json(content);
+    } catch (validationError) {
+      if (validationError instanceof z.ZodError) {
+        const errors = validationError.errors.map(err => ({
+          field: err.path.join('.'),
+          message: err.message
+        }));
+        return NextResponse.json({ 
+          message: 'Invalid content data', 
+          errors 
+        }, { status: 400 });
+      }
+      throw validationError;
+    }
   } catch (error) {
     console.error('Error in POST /api/content:', error);
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ message: 'Invalid content data', errors: error.errors }, { status: 400 });
-    }
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ 
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
 

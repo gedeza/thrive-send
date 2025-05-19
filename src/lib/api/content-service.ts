@@ -20,7 +20,7 @@ export interface ContentFormData {
   contentType: string;
   content: string;
   tags: string[];
-  mediaFiles: File[];
+  mediaFiles: Array<File | { url?: string; name: string; size: number }>;
   preheaderText: string;
   publishDate?: string;
   status: 'draft' | 'published';
@@ -42,22 +42,30 @@ export async function saveContent(data: ContentFormData): Promise<void> {
 
     // Upload media files first
     const mediaUrls = await Promise.all(
-      data.mediaFiles.map(async (file) => {
-        const mediaFormData = new FormData();
-        mediaFormData.append('file', file);
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: mediaFormData,
-        });
-        if (!response.ok) {
-          throw new Error('Failed to upload media file');
-        }
-        const { url } = await response.json();
-        return url;
-      })
+      data.mediaFiles
+        .filter((file): file is File => file instanceof File)
+        .map(async (file) => {
+          const mediaFormData = new FormData();
+          mediaFormData.append('file', file);
+          const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: mediaFormData,
+          });
+          if (!response.ok) {
+            throw new Error('Failed to upload media file');
+          }
+          const { url } = await response.json();
+          return url;
+        })
     );
 
-    formData.append('mediaUrls', JSON.stringify(mediaUrls));
+    // Add existing media URLs
+    const existingUrls = data.mediaFiles
+      .filter((file): file is { url?: string; name: string; size: number } => !(file instanceof File))
+      .map(file => file.url)
+      .filter((url): url is string => !!url);
+
+    formData.append('mediaUrls', JSON.stringify([...mediaUrls, ...existingUrls]));
 
     const response = await fetch('/api/content', {
       method: 'POST',
@@ -104,22 +112,30 @@ export async function updateContent(id: string, data: ContentFormData): Promise<
 
     // Upload new media files
     const mediaUrls = await Promise.all(
-      data.mediaFiles.map(async (file) => {
-        const mediaFormData = new FormData();
-        mediaFormData.append('file', file);
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: mediaFormData,
-        });
-        if (!response.ok) {
-          throw new Error('Failed to upload media file');
-        }
-        const { url } = await response.json();
-        return url;
-      })
+      data.mediaFiles
+        .filter((file): file is File => file instanceof File)
+        .map(async (file) => {
+          const mediaFormData = new FormData();
+          mediaFormData.append('file', file);
+          const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: mediaFormData,
+          });
+          if (!response.ok) {
+            throw new Error('Failed to upload media file');
+          }
+          const { url } = await response.json();
+          return url;
+        })
     );
 
-    formData.append('mediaUrls', JSON.stringify(mediaUrls));
+    // Add existing media URLs
+    const existingUrls = data.mediaFiles
+      .filter((file): file is { url?: string; name: string; size: number } => !(file instanceof File))
+      .map(file => file.url)
+      .filter((url): url is string => !!url);
+
+    formData.append('mediaUrls', JSON.stringify([...mediaUrls, ...existingUrls]));
 
     const response = await fetch(`/api/content/${id}`, {
       method: 'PUT',

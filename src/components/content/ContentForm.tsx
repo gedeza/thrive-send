@@ -29,14 +29,20 @@ const contentTypes = [
 
 type ContentType = typeof contentTypes[number]['value'];
 
+interface MediaFile {
+  url?: string;
+  name: string;
+  size: number;
+}
+
 interface ContentFormData {
   title: string;
   contentType: ContentType;
   content: string;
   tags: string[];
-  mediaFiles: Array<File | { url: string; name: string; size: number }>;
+  mediaFiles: Array<File | MediaFile>;
   preheaderText: string;
-  publishDate?: Date;
+  publishDate?: string;
   status: 'draft' | 'published';
 }
 
@@ -190,15 +196,23 @@ export default function ContentForm({ initialData, mode = 'create' }: ContentFor
 
     setIsSubmitting(true);
     try {
+      // Prepare the data according to the API's expected structure
       const data = {
-        ...formData,
+        title: formData.title,
+        contentType: formData.contentType,
+        content: formData.content,
+        tags: formData.tags,
+        preheaderText: formData.preheaderText || '',
         status,
+        publishDate: formData.publishDate ? new Date(formData.publishDate).toISOString() : undefined,
+        mediaFiles: formData.mediaFiles
       };
 
+      let response;
       if (mode === 'edit' && initialData?.id) {
-        await updateContent(initialData.id, data);
+        response = await updateContent(initialData.id, data);
       } else {
-        await saveContent(data);
+        response = await saveContent(data);
       }
 
       toast({
@@ -208,11 +222,26 @@ export default function ContentForm({ initialData, mode = 'create' }: ContentFor
       router.push('/content');
     } catch (error) {
       console.error('Error saving content:', error);
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to save content. Please try again.',
-        variant: 'destructive',
-      });
+      
+      // Handle validation errors
+      if (error instanceof Error && 'errors' in error) {
+        const validationErrors = (error as any).errors;
+        if (Array.isArray(validationErrors)) {
+          validationErrors.forEach((err: { field: string; message: string }) => {
+            toast({
+              title: 'Validation Error',
+              description: `${err.field}: ${err.message}`,
+              variant: 'destructive',
+            });
+          });
+        }
+      } else {
+        toast({
+          title: 'Error',
+          description: error instanceof Error ? error.message : 'Failed to save content. Please try again.',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -340,10 +369,10 @@ export default function ContentForm({ initialData, mode = 'create' }: ContentFor
               <div className="flex items-center space-x-2">
                 <ImageIcon className="h-4 w-4 text-gray-500" />
                 <span className="text-sm truncate">
-                  {'name' in file ? file.name : file.name}
+                  {file instanceof File ? file.name : file.name}
                 </span>
                 <span className="text-xs text-gray-500">
-                  {formatFileSize('size' in file ? file.size : file.size)}
+                  {formatFileSize(file instanceof File ? file.size : file.size)}
                 </span>
               </div>
               <Button
@@ -412,7 +441,7 @@ export default function ContentForm({ initialData, mode = 'create' }: ContentFor
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
               {formData.publishDate ? (
-                format(formData.publishDate, "PPP")
+                format(new Date(formData.publishDate), "PPP")
               ) : (
                 <span>Pick a date</span>
               )}
@@ -421,8 +450,8 @@ export default function ContentForm({ initialData, mode = 'create' }: ContentFor
           <PopoverContent className="w-auto p-0">
             <Calendar
               mode="single"
-              selected={formData.publishDate}
-              onSelect={(date) => setFormData(prev => ({ ...prev, publishDate: date }))}
+              selected={formData.publishDate ? new Date(formData.publishDate) : undefined}
+              onSelect={(date) => setFormData(prev => ({ ...prev, publishDate: date?.toISOString() }))}
               initialFocus
             />
           </PopoverContent>

@@ -1,0 +1,15 @@
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": PostgreSQL database "neondb", schema "public" at "ep-damp-band-a4gkavja-pooler.us-east-1.aws.neon.tech"
+
+- Introspecting based on datasource defined in prisma/schema.prisma
+✔ Introspected 20 models and wrote them into prisma/schema.prisma in 11.32s
+      
+*** WARNING ***
+
+These constraints are not supported by Prisma Client, because Prisma currently does not fully support check constraints. Read more: https://pris.ly/d/check-constraints
+  - Model: "Analytics", constraint: "Analytics_engagements_check"
+  - Model: "Analytics", constraint: "Analytics_shares_check"
+
+Run prisma generate to generate Prisma Client.
+

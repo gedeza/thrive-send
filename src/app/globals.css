@@ -111,3 +111,128 @@
 html, body {
   scroll-behavior: smooth;
 }
+
+/* Mobile Optimizations */
+@media (max-width: 640px) {
+  html {
+    font-size: 14px; /* Slightly smaller base font size for mobile */
+  }
+  
+  /* Improve touch targets */
+  button, 
+  a, 
+  input[type="button"], 
+  input[type="submit"] {
+    min-height: 44px; /* Apple's recommended minimum touch target size */
+    min-width: 44px;
+  }
+  
+  /* Improve form elements */
+  input, 
+  select, 
+  textarea {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+}
+
+/* Responsive Typography */
+@media (max-width: 768px) {
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.75rem; }
+  h3 { font-size: 1.5rem; }
+  h4 { font-size: 1.25rem; }
+  h5 { font-size: 1.125rem; }
+  h6 { font-size: 1rem; }
+}
+
+/* Prevent horizontal scroll */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  position: relative;
+}
+
+/* Improve scrolling on iOS */
+.overflow-auto,
+.overflow-y-auto,
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Better tap highlight color for mobile */
+@media (hover: none) {
+  a, button {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Improve form focus states for touch devices */
+@media (hover: none) {
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--primary);
+  }
+}
+
+/* Responsive container padding */
+.container {
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+
+/* Improve mobile navigation */
+@media (max-width: 768px) {
+  .nav-menu {
+    gap: 1rem;
+  }
+  
+  .nav-item {
+    padding: 0.5rem;
+  }
+}
+
+/* Responsive grid layouts */
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Improve mobile card layouts */
+@media (max-width: 640px) {
+  .card {
+    margin: 0.5rem;
+    padding: 1rem;
+  }
+}
+
+/* Responsive spacing */
+@media (max-width: 640px) {
+  .space-y-4 > * + * {
+    margin-top: 1rem;
+  }
+  
+  .space-x-4 > * + * {
+    margin-left: 1rem;
+  }
+}
+
+/* Improve mobile button groups */
+@media (max-width: 640px) {
+  .button-group {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .button-group > * {
+    width: 100%;
+  }
+}

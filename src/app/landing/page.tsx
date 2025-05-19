@@ -468,6 +468,113 @@ export default function LandingPage() {
           .bg-grid-pattern {
             background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234F46E5' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
           }
+
+          /* Mobile Responsive Styles */
+          @media (max-width: 768px) {
+            .hero-content {
+              padding: 2rem 1rem;
+            }
+
+            .hero-title {
+              font-size: 2.5rem;
+              line-height: 1.2;
+              margin-bottom: 1rem;
+            }
+
+            .hero-subtitle {
+              font-size: 1.125rem;
+              line-height: 1.5;
+              margin-bottom: 2rem;
+            }
+
+            .hero-cta {
+              flex-direction: column;
+              gap: 1rem;
+              width: 100%;
+            }
+
+            .hero-cta > * {
+              width: 100%;
+            }
+
+            .features-grid {
+              grid-template-columns: 1fr;
+              gap: 1.5rem;
+              padding: 1rem;
+            }
+
+            .feature-card {
+              padding: 1.5rem;
+            }
+
+            .testimonials-grid {
+              grid-template-columns: 1fr;
+              gap: 1.5rem;
+              padding: 1rem;
+            }
+
+            .testimonial-card {
+              padding: 1.5rem;
+            }
+
+            .cta-section {
+              padding: 3rem 1rem;
+            }
+
+            .cta-title {
+              font-size: 2rem;
+              margin-bottom: 1rem;
+            }
+
+            .cta-subtitle {
+              font-size: 1.125rem;
+              margin-bottom: 2rem;
+            }
+
+            .footer-content {
+              grid-template-columns: 1fr;
+              gap: 2rem;
+              padding: 2rem 1rem;
+            }
+
+            .footer-links {
+              margin-top: 1rem;
+            }
+          }
+
+          /* Tablet Responsive Styles */
+          @media (min-width: 769px) and (max-width: 1024px) {
+            .hero-content {
+              padding: 3rem 2rem;
+            }
+
+            .features-grid {
+              grid-template-columns: repeat(2, 1fr);
+              gap: 2rem;
+              padding: 2rem;
+            }
+
+            .testimonials-grid {
+              grid-template-columns: repeat(2, 1fr);
+              gap: 2rem;
+              padding: 2rem;
+            }
+          }
+
+          /* Touch Device Optimizations */
+          @media (hover: none) {
+            .nav-item::after {
+              display: none;
+            }
+
+            .feature-card:hover {
+              transform: none;
+            }
+
+            .testimonial-card:hover {
+              transform: none;
+            }
+          }
         `}</style>
       </div>
   );

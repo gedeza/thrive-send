@@ -22,13 +22,14 @@ model User {
   name                    String?
   accounts                Account[]
   activities              Activity[]
+  calendarEvents          CalendarEvent[]
+  content                 Content[]
   contentItems            ContentItem[]
   createdContent          ContentPiece[]
   organizationMemberships OrganizationMember[]
   projects                Project[]
   sessions                Session[]
   Template                Template[]
-  content                 Content[]
 }
 
 model Organization {
@@ -40,6 +41,7 @@ model Organization {
   primaryColor   String?              @default("#000000")
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
+  calendarEvents CalendarEvent[]
   campaigns      Campaign[]
   clients        Client[]
   contentItems   ContentItem[]
@@ -136,8 +138,8 @@ model ContentPiece {
   organizationId String
   projectId      String?
   campaignId     String?
-  recurrence     Json?
   color          String?
+  recurrence     Json?
   author         User         @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   campaign       Campaign?    @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -317,19 +319,39 @@ model VerificationToken {
 }
 
 model Content {
-  id           String    @id @default(cuid())
-  title        String
-  contentType  String
-  content      String    @db.Text
-  tags         String[]
+  id            String    @id @default(cuid())
+  title         String
+  status        String
+  userId        String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  content       String
+  contentType   String
+  mediaUrls     String[]
   preheaderText String?
-  publishDate  DateTime?
-  status       String
-  mediaUrls    String[]
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  userId       String
-  user         User      @relation(fields: [userId], references: [id])
+  publishDate   DateTime?
+  tags          String[]
+  user          User      @relation(fields: [userId], references: [id])
+}
+
+model CalendarEvent {
+  id             String       @id @default(cuid())
+  title          String
+  description    String?
+  date           String
+  time           String?
+  type           String
+  status         String
+  contentType    String?
+  userId         String
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([organizationId])
 }
 
 enum CampaignStatus {
