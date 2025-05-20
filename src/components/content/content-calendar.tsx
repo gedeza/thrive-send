@@ -2,7 +2,9 @@
 
 import * as React from "react";
 import { useState, useEffect, useCallback } from "react";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Search, Filter, LayoutGrid, LayoutList } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Search, Filter, LayoutGrid, LayoutList, Clock, Facebook, Twitter, Instagram, Linkedin, Upload, X } from "lucide-react";
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useSensor, useSensors, PointerSensor, closestCenter } from "@dnd-kit/core";
+import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -29,17 +31,40 @@ import {
 } from "@/components/ui/tabs";
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, parseISO, startOfWeek, endOfWeek, addDays, addHours, setHours, setMinutes } from "date-fns";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
-// Types for our calendar system
+// Enhanced content type definitions
+export type SocialPlatform = "FACEBOOK" | "TWITTER" | "INSTAGRAM" | "LINKEDIN";
+
+export interface SocialMediaContent {
+  platforms: SocialPlatform[];
+  mediaUrls: string[];
+  crossPost: boolean;
+  platformSpecificContent: {
+    [key in SocialPlatform]?: {
+      text?: string;
+      mediaUrls?: string[];
+      scheduledTime?: string;
+    };
+  };
+}
+
 export interface CalendarEvent {
   id: string;
   title: string;
   description?: string;
-  date: string; // ISO date string
+  date: string;
   time?: string;
   type: "email" | "social" | "blog" | "other";
   status: "draft" | "scheduled" | "sent" | "failed";
   campaignId?: string;
+  socialMediaContent?: SocialMediaContent;
 }
 
 export interface ContentCalendarProps {
@@ -74,12 +99,292 @@ const eventTypeColorMap = {
   }
 };
 
+// Platform-specific color mapping
+const platformColorMap = {
+  FACEBOOK: {
+    bg: "bg-[#1877F2]/10",
+    text: "text-[#1877F2]",
+    icon: <Facebook className="h-4 w-4" />
+  },
+  TWITTER: {
+    bg: "bg-[#1DA1F2]/10",
+    text: "text-[#1DA1F2]",
+    icon: <Twitter className="h-4 w-4" />
+  },
+  INSTAGRAM: {
+    bg: "bg-[#E4405F]/10",
+    text: "text-[#E4405F]",
+    icon: <Instagram className="h-4 w-4" />
+  },
+  LINKEDIN: {
+    bg: "bg-[#0A66C2]/10",
+    text: "text-[#0A66C2]",
+    icon: <Linkedin className="h-4 w-4" />
+  }
+};
+
+// Platform-specific content limits
+const platformContentLimits = {
+  FACEBOOK: {
+    maxTextLength: 63206,
+    maxMediaCount: 10,
+    supportedMediaTypes: ["image", "video", "link"]
+  },
+  TWITTER: {
+    maxTextLength: 280,
+    maxMediaCount: 4,
+    supportedMediaTypes: ["image", "video", "gif"]
+  },
+  INSTAGRAM: {
+    maxTextLength: 2200,
+    maxMediaCount: 10,
+    supportedMediaTypes: ["image", "video", "carousel"]
+  },
+  LINKEDIN: {
+    maxTextLength: 3000,
+    maxMediaCount: 9,
+    supportedMediaTypes: ["image", "video", "document"]
+  }
+};
+
 // Add this near the top of the file, after imports
 const tabs = [
   { value: "month", label: "Month" },
   { value: "week", label: "Week" },
   { value: "day", label: "Day" },
 ] as const;
+
+// Add this interface for drag data
+interface DragData {
+  event: CalendarEvent;
+  sourceDate: string;
+}
+
+// Update the newEvent state type
+interface NewEventState {
+  title: string;
+  description: string;
+  start: Date;
+  end: Date;
+  type: ContentType;
+  socialMediaContent: {
+    platforms: SocialPlatform[];
+    crossPost: boolean;
+    mediaUrls: string[];
+    platformSpecificContent: {
+      [key in SocialPlatform]?: {
+        text?: string;
+        mediaUrls?: string[];
+        scheduledTime?: string;
+      };
+    };
+  };
+}
+
+// Add this component for media upload
+function MediaUploader({ 
+  platform, 
+  maxCount, 
+  supportedTypes,
+  onUpload,
+  onRemove,
+  currentMedia
+}: { 
+  platform: SocialPlatform;
+  maxCount: number;
+  supportedTypes: string[];
+  onUpload: (files: File[]) => void;
+  onRemove: (index: number) => void;
+  currentMedia: string[];
+}) {
+  const { toast } = useToast();
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length + currentMedia.length > maxCount) {
+      toast({
+        title: "Too many files",
+        description: `Maximum ${maxCount} files allowed for ${platform}`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    onUpload(files);
+  };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length + currentMedia.length > maxCount) {
+      toast({
+        title: "Too many files",
+        description: `Maximum ${maxCount} files allowed for ${platform}`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    onUpload(files);
+  };
+
+  return (
+    <div className="space-y-2">
+      <div
+        className={cn(
+          "border-2 border-dashed rounded-lg p-4 text-center",
+          isDragging ? "border-primary bg-primary/5" : "border-muted",
+          "transition-colors duration-200"
+        )}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={handleDrop}
+      >
+        <input
+          type="file"
+          multiple
+          accept={supportedTypes.map(type => `.${type}`).join(",")}
+          onChange={handleFileInput}
+          className="hidden"
+          id={`media-upload-${platform}`}
+        />
+        <label
+          htmlFor={`media-upload-${platform}`}
+          className="cursor-pointer flex flex-col items-center gap-2"
+        >
+          <Upload className="h-8 w-8 text-muted-foreground" />
+          <div className="text-sm text-muted-foreground">
+            Drag and drop or click to upload media
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Supported types: {supportedTypes.join(", ")}
+          </div>
+        </label>
+      </div>
+
+      {currentMedia.length > 0 && (
+        <div className="grid grid-cols-2 gap-2">
+          {currentMedia.map((url, index) => (
+            <div key={index} className="relative group">
+              <img
+                src={url}
+                alt={`Media ${index + 1}`}
+                className="w-full h-24 object-cover rounded-md"
+              />
+              <button
+                onClick={() => onRemove(index)}
+                className="absolute top-1 right-1 p-1 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Add ContentType definition
+export type ContentType = "email" | "social" | "blog" | "other";
+
+// Add Day component interface
+interface DayProps {
+  day: Date;
+  events: CalendarEvent[];
+  onEventClick: (event: CalendarEvent) => void;
+  onClick: () => void;
+}
+
+// Add Day component
+function Day({ day, events, onEventClick, onClick }: DayProps) {
+  const isToday = isSameDay(day, new Date());
+  const isCurrentMonth = isSameMonth(day, new Date());
+  const dayStr = format(day, "yyyy-MM-dd");
+
+  return (
+    <div
+      className={cn(
+        "p-1 min-h-[100px] border border-muted rounded-sm transition-colors duration-200",
+        isToday && "bg-[var(--color-chart-blue)]/5 border-[var(--color-chart-blue)]/30",
+        !isCurrentMonth && "opacity-50",
+        "hover:bg-muted/50 cursor-pointer"
+      )}
+      onClick={onClick}
+      data-date={dayStr}
+    >
+      <div className="p-1 flex items-center justify-between">
+        <span className={cn(
+          "inline-flex items-center justify-center h-6 w-6 rounded-full text-sm transition-colors duration-200",
+          isToday 
+            ? "bg-[var(--color-chart-blue)] text-white font-medium" 
+            : "text-muted-foreground hover:bg-muted"
+        )}>
+          {format(day, "d")}
+        </span>
+        {events.length > 0 && (
+          <span className="text-xs text-muted-foreground">
+            {events.length} {events.length === 1 ? 'event' : 'events'}
+          </span>
+        )}
+      </div>
+      <div className="space-y-1 mt-1 max-h-[80px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+        {events.map((event) => (
+          <div
+            key={event.id}
+            className={cn(
+              "text-xs p-1.5 px-2 rounded-md truncate cursor-pointer flex items-center gap-1.5 transition-colors duration-200",
+              event.type === "social" && event.socialMediaContent?.platforms.length === 1
+                ? platformColorMap[event.socialMediaContent.platforms[0]].bg
+                : eventTypeColorMap[event.type]?.bg || "bg-gray-100 dark:bg-gray-700/30",
+              event.type === "social" && event.socialMediaContent?.platforms.length === 1
+                ? platformColorMap[event.socialMediaContent.platforms[0]].text
+                : eventTypeColorMap[event.type]?.text || "text-foreground",
+              "hover:opacity-80"
+            )}
+            title={`${event.title}${event.time ? ` - ${event.time}` : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEventClick(event);
+            }}
+          >
+            {event.time && (
+              <span className="text-[10px] font-medium opacity-70">
+                {event.time.substring(0, 5)}
+              </span>
+            )}
+            {event.type === "social" && event.socialMediaContent?.platforms.length === 1 && (
+              platformColorMap[event.socialMediaContent.platforms[0]].icon
+            )}
+            <span className="truncate">{event.title}</span>
+            {event.type === "social" && event.socialMediaContent?.platforms.length > 1 && (
+              <div className="flex gap-1 mt-1">
+                {event.socialMediaContent.platforms.map(platform => (
+                  <span
+                    key={platform}
+                    className={cn(
+                      "px-2 py-0.5 rounded-full text-xs",
+                      platformColorMap[platform].bg,
+                      platformColorMap[platform].text
+                    )}
+                  >
+                    {platform}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function ContentCalendar({
   events: initialEvents = [],
@@ -100,19 +405,22 @@ export function ContentCalendar({
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newEvent, setNewEvent] = useState<{
-    title: string;
-    description: string;
-    date: string;
-    time: string;
-    type: "email" | "social" | "blog" | "other";
-  }>({
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+  const [newEvent, setNewEvent] = useState<NewEventState>({
     title: "",
     description: "",
-    date: new Date().toISOString().split("T")[0],
-    time: "12:00",
-    type: "email"
+    start: new Date(),
+    end: new Date(),
+    type: "email",
+    socialMediaContent: {
+      platforms: [],
+      crossPost: false,
+      mediaUrls: [],
+      platformSpecificContent: {}
+    }
   });
+  const [activeDragEvent, setActiveDragEvent] = useState<CalendarEvent | null>(null);
+  const [dragSourceDate, setDragSourceDate] = useState<string | null>(null);
 
   // Calculate days to display based on current month
   const daysInMonth = React.useMemo(() => {
@@ -148,6 +456,26 @@ export function ContentCalendar({
     loadEvents();
   }, [fetchEvents]);
 
+  // Reset form when dialog opens/closes
+  useEffect(() => {
+    if (!isDialogOpen) {
+      setEditingEvent(null);
+      setNewEvent({
+        title: "",
+        description: "",
+        start: new Date(),
+        end: new Date(),
+        type: "email",
+        socialMediaContent: {
+          platforms: [],
+          crossPost: false,
+          mediaUrls: [],
+          platformSpecificContent: {}
+        }
+      });
+    }
+  }, [isDialogOpen]);
+
   // Handle creating a new event
   const handleCreateEvent = async () => {
     if (!onEventCreate) return;
@@ -156,8 +484,8 @@ export function ContentCalendar({
       const eventData = {
         title: newEvent.title,
         description: newEvent.description,
-        date: newEvent.date,
-        time: newEvent.time,
+        date: format(newEvent.start, "yyyy-MM-dd"),
+        time: format(newEvent.start, "HH:mm"),
         type: newEvent.type,
         status: "draft" as const,
         contentType: newEvent.type.toUpperCase()
@@ -171,9 +499,15 @@ export function ContentCalendar({
       setNewEvent({
         title: "",
         description: "",
-        date: new Date().toISOString().split("T")[0],
-        time: "12:00",
-        type: "email"
+        start: new Date(),
+        end: new Date(),
+        type: "email",
+        socialMediaContent: {
+          platforms: [],
+          crossPost: false,
+          mediaUrls: [],
+          platformSpecificContent: {}
+        }
       });
       
       toast({
@@ -330,6 +664,156 @@ export function ContentCalendar({
     );
   };
 
+  // Handle editing an event
+  const handleEditEvent = (event: CalendarEvent) => {
+    setEditingEvent(event);
+    setNewEvent({
+      title: event.title,
+      description: event.description || "",
+      start: new Date(event.date),
+      end: event.time ? new Date(event.date + "T" + event.time) : new Date(event.date),
+      type: event.type,
+      socialMediaContent: event.socialMediaContent || {
+        platforms: [],
+        crossPost: false,
+        mediaUrls: [],
+        platformSpecificContent: {}
+      }
+    });
+    setIsDialogOpen(true);
+  };
+
+  // Handle updating an event
+  const handleUpdateEvent = async () => {
+    if (!onEventUpdate || !editingEvent) return;
+    
+    try {
+      const updatedEvent = await onEventUpdate({
+        ...editingEvent,
+        title: newEvent.title,
+        description: newEvent.description,
+        date: format(newEvent.start, "yyyy-MM-dd"),
+        time: format(newEvent.start, "HH:mm"),
+        type: newEvent.type,
+        socialMediaContent: newEvent.socialMediaContent
+      });
+      
+      setEvents(prev => prev.map(event => 
+        event.id === updatedEvent.id ? updatedEvent : event
+      ));
+      
+      setIsDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "Event updated successfully",
+      });
+    } catch (error) {
+      console.error("Failed to update event:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update event",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle deleting an event
+  const handleDeleteEvent = async (eventId: string) => {
+    if (!onEventDelete) return;
+    
+    try {
+      await onEventDelete(eventId);
+      setEvents(prev => prev.filter(event => event.id !== eventId));
+      setIsDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "Event deleted successfully",
+      });
+    } catch (error) {
+      console.error("Failed to delete event:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete event",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Configure drag sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
+
+  // Handle drag start
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const dragData = active.data.current as DragData;
+    setActiveDragEvent(dragData.event);
+    setDragSourceDate(dragData.sourceDate);
+  };
+
+  // Handle drag end
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (!over || !activeDragEvent || !onEventUpdate) {
+      setActiveDragEvent(null);
+      setDragSourceDate(null);
+      return;
+    }
+
+    const targetDate = over.id as string;
+    
+    try {
+      const updatedEvent = await onEventUpdate({
+        ...activeDragEvent,
+        date: targetDate
+      });
+      
+      setEvents(prev => prev.map(event => 
+        event.id === updatedEvent.id ? updatedEvent : event
+      ));
+      
+      toast({
+        title: "Success",
+        description: "Event rescheduled successfully",
+      });
+    } catch (error) {
+      console.error("Failed to reschedule event:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to reschedule event",
+        variant: "destructive",
+      });
+    } finally {
+      setActiveDragEvent(null);
+      setDragSourceDate(null);
+    }
+  };
+
+  // Update the platform selection handler
+  const handlePlatformSelection = (platform: SocialPlatform) => {
+    const currentPlatforms = newEvent.socialMediaContent.platforms;
+    const updatedPlatforms = currentPlatforms.includes(platform)
+      ? currentPlatforms.filter(p => p !== platform)
+      : [...currentPlatforms, platform];
+    
+    setNewEvent(prev => ({
+      ...prev,
+      socialMediaContent: {
+        ...prev.socialMediaContent,
+        platforms: updatedPlatforms,
+        crossPost: updatedPlatforms.length > 1,
+        mediaUrls: prev.socialMediaContent.mediaUrls,
+        platformSpecificContent: prev.socialMediaContent.platformSpecificContent
+      }
+    }));
+  };
+
   // Render loading state
   if (loading) {
     return (
@@ -363,13 +847,13 @@ export function ContentCalendar({
         </Button>
       </div>
 
-      {/* Add Event Dialog */}
+      {/* Add/Edit Event Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Add New Event</DialogTitle>
+            <DialogTitle>{editingEvent ? "Edit Content" : "Schedule New Content"}</DialogTitle>
             <DialogDescription>
-              Create a new calendar event for your content.
+              {editingEvent ? "Update your scheduled content." : "Create and schedule your content for the selected date."}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -378,33 +862,71 @@ export function ContentCalendar({
               <Input
                 value={newEvent.title}
                 onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                placeholder="Event title"
+                placeholder="Enter content title"
+                className="w-full"
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Time</label>
-              <Input
-                type="time"
-                value={newEvent.time}
-                onChange={(e) => setNewEvent({ ...newEvent, time: e.target.value })}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Date</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !newEvent.start && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {newEvent.start ? format(newEvent.start, "PPP") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={newEvent.start}
+                      onSelect={(date) => date && setNewEvent({ ...newEvent, start: date })}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Time</label>
+                <div className="relative">
+                  <Input
+                    type="time"
+                    value={format(newEvent.start, "HH:mm")}
+                    onChange={(e) => {
+                      const [hours, minutes] = e.target.value.split(":").map(Number);
+                      setNewEvent({
+                        ...newEvent,
+                        start: new Date(newEvent.start.toISOString().split("T")[0] + "T" + e.target.value)
+                      });
+                    }}
+                    className="w-full"
+                  />
+                  <Clock className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                </div>
+              </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Type</label>
+              <label className="text-sm font-medium">Content Type</label>
               <Select
                 value={newEvent.type}
                 onValueChange={(value) => 
                   setNewEvent({ ...newEvent, type: value as "email" | "social" | "blog" | "other" })
                 }
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select content type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="email">Email</SelectItem>
-                  <SelectItem value="social">Social</SelectItem>
-                  <SelectItem value="blog">Blog</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="email">Email Campaign</SelectItem>
+                  <SelectItem value="social">Social Media Post</SelectItem>
+                  <SelectItem value="blog">Blog Article</SelectItem>
+                  <SelectItem value="other">Other Content</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -413,17 +935,161 @@ export function ContentCalendar({
               <Input
                 value={newEvent.description}
                 onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                placeholder="Event description"
+                placeholder="Add a description for your content"
+                className="w-full"
               />
             </div>
+            {newEvent.type === "social" && (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Social Media Platforms</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {Object.entries(platformColorMap).map(([platform, { bg, text, icon }]) => (
+                      <Button
+                        key={platform}
+                        variant="outline"
+                        className={cn(
+                          "justify-start",
+                          newEvent.socialMediaContent.platforms.includes(platform as SocialPlatform)
+                            ? `${bg} ${text} border-current`
+                            : ""
+                        )}
+                        onClick={() => handlePlatformSelection(platform as SocialPlatform)}
+                      >
+                        {icon}
+                        <span className="ml-2">{platform}</span>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {newEvent.socialMediaContent.platforms.length > 0 && (
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Content</label>
+                      <div className="space-y-4">
+                        {newEvent.socialMediaContent.platforms.map(platform => (
+                          <div key={platform} className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              {platformColorMap[platform].icon}
+                              <span className="text-sm font-medium">{platform}</span>
+                            </div>
+                            <Input
+                              placeholder={`Enter content for ${platform} (max ${platformContentLimits[platform].maxTextLength} characters)`}
+                              maxLength={platformContentLimits[platform].maxTextLength}
+                              value={newEvent.socialMediaContent.platformSpecificContent?.[platform]?.text || ""}
+                              onChange={(e) => {
+                                setNewEvent(prev => ({
+                                  ...prev,
+                                  socialMediaContent: {
+                                    ...prev.socialMediaContent,
+                                    platformSpecificContent: {
+                                      ...prev.socialMediaContent.platformSpecificContent,
+                                      [platform]: {
+                                        ...prev.socialMediaContent.platformSpecificContent?.[platform],
+                                        text: e.target.value
+                                      }
+                                    }
+                                  }
+                                }));
+                              }}
+                            />
+                            <MediaUploader
+                              platform={platform}
+                              maxCount={platformContentLimits[platform].maxMediaCount}
+                              supportedTypes={platformContentLimits[platform].supportedMediaTypes}
+                              currentMedia={newEvent.socialMediaContent.platformSpecificContent?.[platform]?.mediaUrls || []}
+                              onUpload={(files) => {
+                                // Here you would typically upload the files to your storage service
+                                // and get back URLs. For now, we'll use local URLs
+                                const newUrls = files.map(file => URL.createObjectURL(file));
+                                setNewEvent(prev => ({
+                                  ...prev,
+                                  socialMediaContent: {
+                                    ...prev.socialMediaContent,
+                                    platformSpecificContent: {
+                                      ...prev.socialMediaContent.platformSpecificContent,
+                                      [platform]: {
+                                        ...prev.socialMediaContent.platformSpecificContent?.[platform],
+                                        mediaUrls: [
+                                          ...(prev.socialMediaContent.platformSpecificContent?.[platform]?.mediaUrls || []),
+                                          ...newUrls
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }));
+                              }}
+                              onRemove={(index) => {
+                                setNewEvent(prev => ({
+                                  ...prev,
+                                  socialMediaContent: {
+                                    ...prev.socialMediaContent,
+                                    platformSpecificContent: {
+                                      ...prev.socialMediaContent.platformSpecificContent,
+                                      [platform]: {
+                                        ...prev.socialMediaContent.platformSpecificContent?.[platform],
+                                        mediaUrls: prev.socialMediaContent.platformSpecificContent?.[platform]?.mediaUrls?.filter((_, i) => i !== index) || []
+                                      }
+                                    }
+                                  }
+                                }));
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Cross-post Settings</label>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="crossPost"
+                          checked={newEvent.socialMediaContent.crossPost}
+                          onChange={(e) => {
+                            setNewEvent(prev => ({
+                              ...prev,
+                              socialMediaContent: {
+                                ...prev.socialMediaContent,
+                                crossPost: e.target.checked
+                              }
+                            }));
+                          }}
+                          className="rounded border-gray-300"
+                        />
+                        <label htmlFor="crossPost" className="text-sm">
+                          Enable cross-posting (same content across all selected platforms)
+                        </label>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreateEvent}>
-              Create Event
-            </Button>
+          <DialogFooter className="flex justify-between">
+            {editingEvent && (
+              <Button 
+                variant="destructive" 
+                onClick={() => handleDeleteEvent(editingEvent.id)}
+                className="mr-auto"
+              >
+                Delete
+              </Button>
+            )}
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={editingEvent ? handleUpdateEvent : handleCreateEvent} 
+                className="bg-[var(--color-chart-blue)] hover:bg-[var(--color-chart-blue)]/90"
+              >
+                {editingEvent ? "Update Content" : "Schedule Content"}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -512,62 +1178,74 @@ export function ContentCalendar({
         </div>
       </div>
 
-      {/* Calendar Views */}
-      <div className="mt-4">
-        {calendarView === "month" && (
-          <div className="mt-6">
-            {/* Day headers */}
-            <div className="grid grid-cols-7 gap-1 mb-2">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                <div key={day} className="text-center font-medium py-1 text-muted-foreground">
-                  {day}
-                </div>
-              ))}
-            </div>
-            {/* Calendar grid */}
-            <div className="grid grid-cols-7 gap-1 auto-rows-fr" style={{ minHeight: "500px" }}>
-              {daysInMonth.map((day) => {
-                const dayEvents = getEventsForDay(day);
-                const isToday = isSameDay(day, new Date());
-                return (
-                  <div
-                    key={day.toISOString()}
-                    className={`p-1 min-h-[100px] border border-muted rounded-sm ${
-                      isToday ? "bg-[var(--color-chart-blue)]/5 border-[var(--color-chart-blue)]/30" : ""
-                    }`}
-                    onClick={() => onDateSelect?.(format(day, "yyyy-MM-dd"))}
-                  >
-                    <div className="p-1">
-                      <span className={`inline-flex items-center justify-center h-6 w-6 rounded-full text-sm ${
-                        isToday ? "bg-[var(--color-chart-blue)] text-white font-medium" : "text-muted-foreground"
-                      }`}>
-                        {format(day, "d")}
-                      </span>
-                    </div>
-                    <div className="space-y-1 mt-1 max-h-[80px] overflow-y-auto">
-                      {dayEvents.map((event) => (
-                        <div
-                          key={event.id}
-                          className={`text-xs p-1 px-2 rounded truncate cursor-pointer flex items-center gap-1 ${
-                            eventTypeColorMap[event.type]?.bg || "bg-gray-100 dark:bg-gray-700/30"
-                          } ${eventTypeColorMap[event.type]?.text || "text-foreground"}`}
-                          title={`${event.title}${event.time ? ` - ${event.time}` : ''}`}
-                        >
-                          {event.time && <span className="mr-1 opacity-70">{event.time.substring(0, 5)}</span>}
-                          {event.title}
-                        </div>
-                      ))}
-                    </div>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        {/* Calendar Views */}
+        <div className="mt-4">
+          {calendarView === "month" && (
+            <div className="mt-6">
+              {/* Day headers */}
+              <div className="grid grid-cols-7 gap-1 mb-2">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                  <div key={day} className="text-center font-medium py-1 text-muted-foreground">
+                    {day}
                   </div>
-                );
-              })}
+                ))}
+              </div>
+              {/* Calendar grid */}
+              <div className="grid grid-cols-7 gap-1 auto-rows-fr" style={{ minHeight: "500px" }}>
+                {daysInMonth.map((day) => {
+                  const dayEvents = getEventsForDay(day);
+                  const isToday = isSameDay(day, new Date());
+                  const isCurrentMonth = isSameMonth(day, currentDate);
+                  const dayStr = format(day, "yyyy-MM-dd");
+                  
+                  return (
+                    <Day
+                      key={day.toISOString()}
+                      day={day}
+                      events={dayEvents}
+                      onEventClick={handleEditEvent}
+                      onClick={() => {
+                        const formattedDate = format(day, "yyyy-MM-dd");
+                        setNewEvent(prev => ({ ...prev, start: day }));
+                        setIsDialogOpen(true);
+                      }}
+                    />
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {calendarView === "week" && renderWeekView()}
-        {calendarView === "day" && renderDayView()}
-      </div>
+          {calendarView === "week" && renderWeekView()}
+          {calendarView === "day" && renderDayView()}
+        </div>
+
+        <DragOverlay>
+          {activeDragEvent && (
+            <div
+              className={cn(
+                "text-xs p-1.5 px-2 rounded-md truncate flex items-center gap-1.5",
+                eventTypeColorMap[activeDragEvent.type]?.bg || "bg-gray-100 dark:bg-gray-700/30",
+                eventTypeColorMap[activeDragEvent.type]?.text || "text-foreground",
+                "shadow-lg"
+              )}
+            >
+              {activeDragEvent.time && (
+                <span className="text-[10px] font-medium opacity-70">
+                  {activeDragEvent.time.substring(0, 5)}
+                </span>
+              )}
+              <span className="truncate">{activeDragEvent.title}</span>
+            </div>
+          )}
+        </DragOverlay>
+      </DndContext>
     </div>
   );
 }
