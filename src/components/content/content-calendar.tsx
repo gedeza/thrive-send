@@ -702,7 +702,12 @@ export function ContentCalendar({
         date: format(newEvent.start, "yyyy-MM-dd"),
         time: format(newEvent.start, "HH:mm"),
         type: newEvent.type,
-        socialMediaContent: newEvent.socialMediaContent
+        socialMediaContent: newEvent.type === "social" ? {
+          platforms: newEvent.socialMediaContent.platforms,
+          crossPost: newEvent.socialMediaContent.crossPost,
+          mediaUrls: newEvent.socialMediaContent.mediaUrls,
+          platformSpecificContent: newEvent.socialMediaContent.platformSpecificContent
+        } : undefined
       });
       
       setEvents(prev => prev.map(event => 
