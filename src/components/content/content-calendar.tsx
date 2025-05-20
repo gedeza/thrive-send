@@ -489,7 +489,13 @@ export function ContentCalendar({
         time: format(newEvent.start, "HH:mm"),
         type: newEvent.type,
         status: "draft" as const,
-        contentType: newEvent.type.toUpperCase()
+        contentType: newEvent.type.toUpperCase(),
+        socialMediaContent: newEvent.type === "social" ? {
+          platforms: newEvent.socialMediaContent.platforms,
+          crossPost: newEvent.socialMediaContent.crossPost,
+          mediaUrls: newEvent.socialMediaContent.mediaUrls,
+          platformSpecificContent: newEvent.socialMediaContent.platformSpecificContent
+        } : undefined
       };
 
       const createdEvent = await onEventCreate(eventData);
@@ -674,11 +680,11 @@ export function ContentCalendar({
       start: new Date(event.date),
       end: event.time ? new Date(event.date + "T" + event.time) : new Date(event.date),
       type: event.type,
-      socialMediaContent: event.socialMediaContent || {
-        platforms: [],
-        crossPost: false,
-        mediaUrls: [],
-        platformSpecificContent: {}
+      socialMediaContent: {
+        platforms: event.socialMediaContent?.platforms || [],
+        crossPost: event.socialMediaContent?.crossPost || false,
+        mediaUrls: event.socialMediaContent?.mediaUrls || [],
+        platformSpecificContent: event.socialMediaContent?.platformSpecificContent || {}
       }
     });
     setIsDialogOpen(true);
