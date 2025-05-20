@@ -1,0 +1,147 @@
+import { format, isSameDay, isSameMonth } from "date-fns";
+import { Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { CalendarEvent, SocialPlatform } from "./content-calendar";
+
+interface DayProps {
+  day: Date;
+  events: CalendarEvent[];
+  onEventClick: (event: CalendarEvent) => void;
+  onClick: () => void;
+}
+
+// Platform-specific color mapping
+const platformColorMap = {
+  FACEBOOK: {
+    bg: "bg-[#1877F2]/10",
+    text: "text-[#1877F2]",
+    icon: <Facebook className="h-4 w-4" />
+  },
+  TWITTER: {
+    bg: "bg-[#1DA1F2]/10",
+    text: "text-[#1DA1F2]",
+    icon: <Twitter className="h-4 w-4" />
+  },
+  INSTAGRAM: {
+    bg: "bg-[#E4405F]/10",
+    text: "text-[#E4405F]",
+    icon: <Instagram className="h-4 w-4" />
+  },
+  LINKEDIN: {
+    bg: "bg-[#0A66C2]/10",
+    text: "text-[#0A66C2]",
+    icon: <Linkedin className="h-4 w-4" />
+  }
+};
+
+// Color mapping for event types
+const eventTypeColorMap = {
+  email: {
+    bg: "bg-[var(--color-chart-blue)]/10",
+    text: "text-[var(--color-chart-blue)]"
+  },
+  social: {
+    bg: "bg-[var(--color-chart-green)]/10",
+    text: "text-[var(--color-chart-green)]"
+  },
+  blog: {
+    bg: "bg-[var(--color-chart-purple)]/10",
+    text: "text-[var(--color-chart-purple)]"
+  },
+  other: {
+    bg: "bg-[var(--color-chart-orange)]/10",
+    text: "text-[var(--color-chart-orange)]"
+  }
+};
+
+export function Day({ day, events, onEventClick, onClick }: DayProps) {
+  const isToday = isSameDay(day, new Date());
+  const isCurrentMonth = isSameMonth(day, new Date());
+  const dayStr = format(day, "yyyy-MM-dd");
+
+  const renderEvent = (event: CalendarEvent) => {
+    const hasSocialContent = event.type === "social" && event.socialMediaContent;
+    const platformCount = hasSocialContent && event.socialMediaContent ? event.socialMediaContent.platforms.length : 0;
+    const isSinglePlatform = platformCount === 1;
+    const firstPlatform = isSinglePlatform && event.socialMediaContent ? event.socialMediaContent.platforms[0] : null;
+
+    return (
+      <div
+        key={event.id}
+        className={cn(
+          "text-xs p-1.5 px-2 rounded-md truncate cursor-pointer flex items-center gap-1.5 transition-colors duration-200",
+          hasSocialContent && isSinglePlatform && firstPlatform
+            ? platformColorMap[firstPlatform].bg
+            : eventTypeColorMap[event.type]?.bg || "bg-gray-100 dark:bg-gray-700/30",
+          hasSocialContent && isSinglePlatform && firstPlatform
+            ? platformColorMap[firstPlatform].text
+            : eventTypeColorMap[event.type]?.text || "text-foreground",
+          "hover:opacity-80"
+        )}
+        title={`${event.title}${event.time ? ` - ${event.time}` : ''}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          onEventClick(event);
+        }}
+      >
+        {event.time && (
+          <span className="text-[10px] font-medium opacity-70">
+            {event.time.substring(0, 5)}
+          </span>
+        )}
+        {hasSocialContent && isSinglePlatform && firstPlatform && (
+          platformColorMap[firstPlatform].icon
+        )}
+        <span className="truncate">{event.title}</span>
+        {hasSocialContent && event.socialMediaContent && platformCount > 1 && (
+          <div className="flex gap-1 mt-1">
+            {event.socialMediaContent.platforms.map(platform => (
+              <span
+                key={platform}
+                className={cn(
+                  "px-2 py-0.5 rounded-full text-xs",
+                  platformColorMap[platform].bg,
+                  platformColorMap[platform].text
+                )}
+              >
+                {platform}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div
+      className={cn(
+        "p-1 min-h-[100px] border border-muted rounded-sm transition-colors duration-200",
+        isToday && "bg-[var(--color-chart-blue)]/5 border-[var(--color-chart-blue)]/30",
+        !isCurrentMonth && "opacity-50",
+        "hover:bg-muted/50 cursor-pointer"
+      )}
+      onClick={onClick}
+      data-date={dayStr}
+    >
+      <div className="p-1 flex items-center justify-between">
+        <span className={cn(
+          "inline-flex items-center justify-center h-6 w-6 rounded-full text-sm transition-colors duration-200",
+          isToday 
+            ? "bg-[var(--color-chart-blue)] text-white font-medium" 
+            : "text-muted-foreground hover:bg-muted"
+        )}>
+          {format(day, "d")}
+        </span>
+        {events.length > 0 && (
+          <span className="text-xs text-muted-foreground">
+            {events.length} {events.length === 1 ? 'event' : 'events'}
+          </span>
+        )}
+      </div>
+      <div className="space-y-1 mt-1 max-h-[80px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+        {events.map(renderEvent)}
+      </div>
+    </div>
+  );
+} 

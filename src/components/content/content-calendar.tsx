@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { Day } from "./day";
 
 // Enhanced content type definitions
 export type SocialPlatform = "FACEBOOK" | "TWITTER" | "INSTAGRAM" | "LINKEDIN";
@@ -1200,10 +1201,6 @@ export function ContentCalendar({
               <div className="grid grid-cols-7 gap-1 auto-rows-fr" style={{ minHeight: "500px" }}>
                 {daysInMonth.map((day) => {
                   const dayEvents = getEventsForDay(day);
-                  const isToday = isSameDay(day, new Date());
-                  const isCurrentMonth = isSameMonth(day, currentDate);
-                  const dayStr = format(day, "yyyy-MM-dd");
-                  
                   return (
                     <Day
                       key={day.toISOString()}
@@ -1211,7 +1208,6 @@ export function ContentCalendar({
                       events={dayEvents}
                       onEventClick={handleEditEvent}
                       onClick={() => {
-                        const formattedDate = format(day, "yyyy-MM-dd");
                         setNewEvent(prev => ({ ...prev, start: day }));
                         setIsDialogOpen(true);
                       }}
