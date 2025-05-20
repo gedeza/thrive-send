@@ -2,6 +2,7 @@ import { format, isSameDay, isSameMonth } from "date-fns";
 import { Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CalendarEvent, SocialPlatform } from "./content-calendar";
+import { useDraggable } from "@dnd-kit/core";
 
 interface DayProps {
   day: Date;
@@ -54,64 +55,74 @@ const eventTypeColorMap = {
   }
 };
 
+function DraggableEvent({ event, onClick }: { event: CalendarEvent; onClick: () => void }) {
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+    id: event.id,
+    data: {
+      event,
+      sourceDate: event.date
+    }
+  });
+
+  const style = transform ? {
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+  } : undefined;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...listeners}
+      {...attributes}
+      className={cn(
+        "text-xs p-1.5 px-2 rounded-md truncate cursor-pointer flex items-center gap-1.5 transition-colors duration-200",
+        event.type === "social" && event.socialMediaContent?.platforms?.length === 1
+          ? platformColorMap[event.socialMediaContent.platforms[0]].bg
+          : eventTypeColorMap[event.type]?.bg || "bg-gray-100 dark:bg-gray-700/30",
+        event.type === "social" && event.socialMediaContent?.platforms?.length === 1
+          ? platformColorMap[event.socialMediaContent.platforms[0]].text
+          : eventTypeColorMap[event.type]?.text || "text-foreground",
+        "hover:opacity-80"
+      )}
+      title={`${event.title}${event.time ? ` - ${event.time}` : ''}`}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+    >
+      {event.time && (
+        <span className="text-[10px] font-medium opacity-70">
+          {event.time.substring(0, 5)}
+        </span>
+      )}
+      {event.type === "social" && event.socialMediaContent?.platforms?.length === 1 && (
+        platformColorMap[event.socialMediaContent.platforms[0]].icon
+      )}
+      <span className="truncate">{event.title}</span>
+      {event.type === "social" && event.socialMediaContent?.platforms?.length > 1 && (
+        <div className="flex gap-1 mt-1">
+          {event.socialMediaContent.platforms.map(platform => (
+            <span
+              key={platform}
+              className={cn(
+                "px-2 py-0.5 rounded-full text-xs",
+                platformColorMap[platform].bg,
+                platformColorMap[platform].text
+              )}
+            >
+              {platform}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function Day({ day, events, onEventClick, onClick }: DayProps) {
   const isToday = isSameDay(day, new Date());
   const isCurrentMonth = isSameMonth(day, new Date());
   const dayStr = format(day, "yyyy-MM-dd");
-
-  const renderEvent = (event: CalendarEvent) => {
-    const hasSocialContent = event.type === "social" && event.socialMediaContent;
-    const platformCount = hasSocialContent && event.socialMediaContent ? event.socialMediaContent.platforms.length : 0;
-    const isSinglePlatform = platformCount === 1;
-    const firstPlatform = isSinglePlatform && event.socialMediaContent ? event.socialMediaContent.platforms[0] : null;
-
-    return (
-      <div
-        key={event.id}
-        className={cn(
-          "text-xs p-1.5 px-2 rounded-md truncate cursor-pointer flex items-center gap-1.5 transition-colors duration-200",
-          hasSocialContent && isSinglePlatform && firstPlatform
-            ? platformColorMap[firstPlatform].bg
-            : eventTypeColorMap[event.type]?.bg || "bg-gray-100 dark:bg-gray-700/30",
-          hasSocialContent && isSinglePlatform && firstPlatform
-            ? platformColorMap[firstPlatform].text
-            : eventTypeColorMap[event.type]?.text || "text-foreground",
-          "hover:opacity-80"
-        )}
-        title={`${event.title}${event.time ? ` - ${event.time}` : ''}`}
-        onClick={(e) => {
-          e.stopPropagation();
-          onEventClick(event);
-        }}
-      >
-        {event.time && (
-          <span className="text-[10px] font-medium opacity-70">
-            {event.time.substring(0, 5)}
-          </span>
-        )}
-        {hasSocialContent && isSinglePlatform && firstPlatform && (
-          platformColorMap[firstPlatform].icon
-        )}
-        <span className="truncate">{event.title}</span>
-        {hasSocialContent && event.socialMediaContent && platformCount > 1 && (
-          <div className="flex gap-1 mt-1">
-            {event.socialMediaContent.platforms.map(platform => (
-              <span
-                key={platform}
-                className={cn(
-                  "px-2 py-0.5 rounded-full text-xs",
-                  platformColorMap[platform].bg,
-                  platformColorMap[platform].text
-                )}
-              >
-                {platform}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
 
   return (
     <div
@@ -140,7 +151,13 @@ export function Day({ day, events, onEventClick, onClick }: DayProps) {
         )}
       </div>
       <div className="space-y-1 mt-1 max-h-[80px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
-        {events.map(renderEvent)}
+        {events.map((event) => (
+          <DraggableEvent
+            key={event.id}
+            event={event}
+            onClick={() => onEventClick(event)}
+          />
+        ))}
       </div>
     </div>
   );

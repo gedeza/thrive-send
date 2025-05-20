@@ -39,6 +39,16 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { Day } from "./day";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Enhanced content type definitions
 export type SocialPlatform = "FACEBOOK" | "TWITTER" | "INSTAGRAM" | "LINKEDIN";
@@ -295,98 +305,6 @@ function MediaUploader({
 // Add ContentType definition
 export type ContentType = "email" | "social" | "blog" | "other";
 
-// Add Day component interface
-interface DayProps {
-  day: Date;
-  events: CalendarEvent[];
-  onEventClick: (event: CalendarEvent) => void;
-  onClick: () => void;
-}
-
-// Add Day component
-function Day({ day, events, onEventClick, onClick }: DayProps) {
-  const isToday = isSameDay(day, new Date());
-  const isCurrentMonth = isSameMonth(day, new Date());
-  const dayStr = format(day, "yyyy-MM-dd");
-
-  return (
-    <div
-      className={cn(
-        "p-1 min-h-[100px] border border-muted rounded-sm transition-colors duration-200",
-        isToday && "bg-[var(--color-chart-blue)]/5 border-[var(--color-chart-blue)]/30",
-        !isCurrentMonth && "opacity-50",
-        "hover:bg-muted/50 cursor-pointer"
-      )}
-      onClick={onClick}
-      data-date={dayStr}
-    >
-      <div className="p-1 flex items-center justify-between">
-        <span className={cn(
-          "inline-flex items-center justify-center h-6 w-6 rounded-full text-sm transition-colors duration-200",
-          isToday 
-            ? "bg-[var(--color-chart-blue)] text-white font-medium" 
-            : "text-muted-foreground hover:bg-muted"
-        )}>
-          {format(day, "d")}
-        </span>
-        {events.length > 0 && (
-          <span className="text-xs text-muted-foreground">
-            {events.length} {events.length === 1 ? 'event' : 'events'}
-          </span>
-        )}
-      </div>
-      <div className="space-y-1 mt-1 max-h-[80px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
-        {events.map((event) => (
-          <div
-            key={event.id}
-            className={cn(
-              "text-xs p-1.5 px-2 rounded-md truncate cursor-pointer flex items-center gap-1.5 transition-colors duration-200",
-              event.type === "social" && event.socialMediaContent?.platforms.length === 1
-                ? platformColorMap[event.socialMediaContent.platforms[0]].bg
-                : eventTypeColorMap[event.type]?.bg || "bg-gray-100 dark:bg-gray-700/30",
-              event.type === "social" && event.socialMediaContent?.platforms.length === 1
-                ? platformColorMap[event.socialMediaContent.platforms[0]].text
-                : eventTypeColorMap[event.type]?.text || "text-foreground",
-              "hover:opacity-80"
-            )}
-            title={`${event.title}${event.time ? ` - ${event.time}` : ''}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              onEventClick(event);
-            }}
-          >
-            {event.time && (
-              <span className="text-[10px] font-medium opacity-70">
-                {event.time.substring(0, 5)}
-              </span>
-            )}
-            {event.type === "social" && event.socialMediaContent?.platforms.length === 1 && (
-              platformColorMap[event.socialMediaContent.platforms[0]].icon
-            )}
-            <span className="truncate">{event.title}</span>
-            {event.type === "social" && event.socialMediaContent?.platforms.length > 1 && (
-              <div className="flex gap-1 mt-1">
-                {event.socialMediaContent.platforms.map(platform => (
-                  <span
-                    key={platform}
-                    className={cn(
-                      "px-2 py-0.5 rounded-full text-xs",
-                      platformColorMap[platform].bg,
-                      platformColorMap[platform].text
-                    )}
-                  >
-                    {platform}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export function ContentCalendar({
   events: initialEvents = [],
   onEventCreate,
@@ -422,6 +340,10 @@ export function ContentCalendar({
   });
   const [activeDragEvent, setActiveDragEvent] = useState<CalendarEvent | null>(null);
   const [dragSourceDate, setDragSourceDate] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [eventToDelete, setEventToDelete] = useState<CalendarEvent | null>(null);
+  const [showEventDetails, setShowEventDetails] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
   // Calculate days to display based on current month
   const daysInMonth = React.useMemo(() => {
@@ -531,19 +453,43 @@ export function ContentCalendar({
     }
   };
 
-  // Get events for a specific day
+  // Update the filteredEvents memo to properly handle search
+  const filteredEvents = React.useMemo(() => {
+    return events.filter(event => {
+      // Search in title and description
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = searchTerm === "" || 
+        event.title.toLowerCase().includes(searchLower) ||
+        (event.description?.toLowerCase().includes(searchLower) ?? false);
+      
+      // Filter by type
+      const matchesType = selectedType === "all" || event.type === selectedType;
+      
+      // Filter by status
+      const matchesStatus = selectedStatus === "all" || event.status === selectedStatus;
+      
+      return matchesSearch && matchesType && matchesStatus;
+    });
+  }, [events, searchTerm, selectedType, selectedStatus]);
+
+  // Update getEventsForDay to use filteredEvents
   const getEventsForDay = (day: Date) => {
     const dayStr = format(day, "yyyy-MM-dd");
-    return events.filter(event => typeof event.date === "string" && event.date.startsWith(dayStr));
+    return filteredEvents.filter(event => event.date.startsWith(dayStr));
   };
 
-  // Get events for a specific time range
+  // Update getEventsForTimeRange to use filteredEvents
   const getEventsForTimeRange = (start: Date, end: Date) => {
-    return events.filter(event => {
+    return filteredEvents.filter(event => {
       const eventDate = parseISO(event.date);
       const eventTime = event.time ? parseISO(`${event.date}T${event.time}`) : eventDate;
       return eventTime >= start && eventTime <= end;
     });
+  };
+
+  // Add a search handler to ensure immediate updates
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
   };
 
   // Render day view
@@ -574,9 +520,13 @@ export function ContentCalendar({
                   {hourEvents.map((event) => (
                     <div
                       key={event.id}
-                      className={`p-2 rounded text-sm mb-1 ${
-                        eventTypeColorMap[event.type]?.bg || "bg-gray-100 dark:bg-gray-700/30"
-                      } ${eventTypeColorMap[event.type]?.text || "text-foreground"}`}
+                      className={cn(
+                        "p-2 rounded text-sm mb-1 cursor-pointer",
+                        eventTypeColorMap[event.type]?.bg || "bg-gray-100 dark:bg-gray-700/30",
+                        eventTypeColorMap[event.type]?.text || "text-foreground",
+                        "hover:opacity-80"
+                      )}
+                      onClick={() => handleEventClick(event)}
                     >
                       <div className="font-medium">{event.title}</div>
                       {event.time && (
@@ -649,13 +599,17 @@ export function ContentCalendar({
                     return (
                       <div
                         key={event.id}
-                        className={`absolute left-1 right-1 p-2 rounded text-xs pointer-events-auto ${
-                          eventTypeColorMap[event.type]?.bg || "bg-gray-100 dark:bg-gray-700/30"
-                        } ${eventTypeColorMap[event.type]?.text || "text-foreground"}`}
+                        className={cn(
+                          "absolute left-1 right-1 p-2 rounded text-xs pointer-events-auto cursor-pointer",
+                          eventTypeColorMap[event.type]?.bg || "bg-gray-100 dark:bg-gray-700/30",
+                          eventTypeColorMap[event.type]?.text || "text-foreground",
+                          "hover:opacity-80"
+                        )}
                         style={{
                           top: `${topPosition}px`,
                           height: "50px"
                         }}
+                        onClick={() => handleEventClick(event)}
                       >
                         <div className="font-medium truncate">{event.title}</div>
                         <div className="text-muted-foreground">{eventTime}</div>
@@ -729,14 +683,27 @@ export function ContentCalendar({
     }
   };
 
-  // Handle deleting an event
-  const handleDeleteEvent = async (eventId: string) => {
-    if (!onEventDelete) return;
+  // Handle event click to show details
+  const handleEventClick = (event: CalendarEvent) => {
+    setSelectedEvent(event);
+    setShowEventDetails(true);
+  };
+
+  // Handle delete confirmation
+  const handleDeleteClick = (event: CalendarEvent) => {
+    setEventToDelete(event);
+    setShowDeleteConfirm(true);
+  };
+
+  // Handle confirmed deletion
+  const handleConfirmedDelete = async () => {
+    if (!eventToDelete || !onEventDelete) return;
     
     try {
-      await onEventDelete(eventId);
-      setEvents(prev => prev.filter(event => event.id !== eventId));
-      setIsDialogOpen(false);
+      await onEventDelete(eventToDelete.id);
+      setEvents(prev => prev.filter(event => event.id !== eventToDelete.id));
+      setShowDeleteConfirm(false);
+      setEventToDelete(null);
       toast({
         title: "Success",
         description: "Event deleted successfully",
@@ -760,15 +727,16 @@ export function ContentCalendar({
     })
   );
 
-  // Handle drag start
+  // Update the drag handlers
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     const dragData = active.data.current as DragData;
-    setActiveDragEvent(dragData.event);
-    setDragSourceDate(dragData.sourceDate);
+    if (dragData?.event) {
+      setActiveDragEvent(dragData.event);
+      setDragSourceDate(dragData.sourceDate);
+    }
   };
 
-  // Handle drag end
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     
@@ -778,16 +746,24 @@ export function ContentCalendar({
       return;
     }
 
-    const targetDate = over.id as string;
-    
     try {
-      const updatedEvent = await onEventUpdate({
-        ...activeDragEvent,
-        date: targetDate
-      });
+      // Get the target date from the day element's data-date attribute
+      const targetDate = over.id as string;
       
+      // Create a new event object with the updated date
+      const updatedEvent = {
+        ...activeDragEvent,
+        date: targetDate,
+        // Preserve the original time if it exists
+        time: activeDragEvent.time || undefined
+      };
+
+      // Call the update function
+      const result = await onEventUpdate(updatedEvent);
+      
+      // Update the local state with the result from the server
       setEvents(prev => prev.map(event => 
-        event.id === updatedEvent.id ? updatedEvent : event
+        event.id === result.id ? result : event
       ));
       
       toast({
@@ -1085,7 +1061,7 @@ export function ContentCalendar({
             {editingEvent && (
               <Button 
                 variant="destructive" 
-                onClick={() => handleDeleteEvent(editingEvent.id)}
+                onClick={() => handleDeleteClick(editingEvent)}
                 className="mr-auto"
               >
                 Delete
@@ -1106,6 +1082,110 @@ export function ContentCalendar({
         </DialogContent>
       </Dialog>
 
+      {/* Event Details Dialog */}
+      <Dialog open={showEventDetails} onOpenChange={setShowEventDetails}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Event Details</DialogTitle>
+            <DialogDescription>
+              View and manage your scheduled content.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedEvent && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Title</label>
+                <div className="text-sm">{selectedEvent.title}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Date</label>
+                  <div className="text-sm">{format(new Date(selectedEvent.date), "PPP")}</div>
+                </div>
+                {selectedEvent.time && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Time</label>
+                    <div className="text-sm">{selectedEvent.time}</div>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Content Type</label>
+                <div className="text-sm capitalize">{selectedEvent.type}</div>
+              </div>
+              {selectedEvent.description && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Description</label>
+                  <div className="text-sm">{selectedEvent.description}</div>
+                </div>
+              )}
+              {selectedEvent.type === "social" && selectedEvent.socialMediaContent && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Platforms</label>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedEvent.socialMediaContent.platforms.map(platform => (
+                      <span
+                        key={platform}
+                        className={cn(
+                          "px-2 py-1 rounded-full text-xs",
+                          platformColorMap[platform].bg,
+                          platformColorMap[platform].text
+                        )}
+                      >
+                        {platform}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter className="flex justify-between">
+            <Button
+              variant="destructive"
+              onClick={() => selectedEvent && handleDeleteClick(selectedEvent)}
+            >
+              Delete
+            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setShowEventDetails(false)}>
+                Close
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowEventDetails(false);
+                  handleEditEvent(selectedEvent!);
+                }}
+              >
+                Edit
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the event
+              "{eventToDelete?.title}".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmedDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Filters and Search */}
       <div className="flex flex-wrap gap-4 items-center justify-between mb-4">
         <div className="flex items-center space-x-2">
@@ -1114,7 +1194,7 @@ export function ContentCalendar({
               type="search"
               placeholder="Search events..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
               className="pl-8"
             />
             <span className="absolute left-2.5 top-2.5 text-muted-foreground">
@@ -1195,6 +1275,7 @@ export function ContentCalendar({
         collisionDetection={closestCenter}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
+        modifiers={[restrictToWindowEdges]}
       >
         {/* Calendar Views */}
         <div className="mt-4">
@@ -1212,17 +1293,23 @@ export function ContentCalendar({
               <div className="grid grid-cols-7 gap-1 auto-rows-fr" style={{ minHeight: "500px" }}>
                 {daysInMonth.map((day) => {
                   const dayEvents = getEventsForDay(day);
+                  const dayStr = format(day, "yyyy-MM-dd");
                   return (
-                    <Day
-                      key={day.toISOString()}
-                      day={day}
-                      events={dayEvents}
-                      onEventClick={handleEditEvent}
-                      onClick={() => {
-                        setNewEvent(prev => ({ ...prev, start: day }));
-                        setIsDialogOpen(true);
-                      }}
-                    />
+                    <div
+                      key={dayStr}
+                      id={dayStr}
+                      className="relative"
+                    >
+                      <Day
+                        day={day}
+                        events={dayEvents}
+                        onEventClick={handleEventClick}
+                        onClick={() => {
+                          setNewEvent(prev => ({ ...prev, start: day }));
+                          setIsDialogOpen(true);
+                        }}
+                      />
+                    </div>
                   );
                 })}
               </div>
