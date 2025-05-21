@@ -368,28 +368,50 @@ export function ContentCalendar({
 
   // Load events
   const loadEvents = async () => {
-    if (!fetchEvents) return;
+    if (!fetchEvents) {
+      console.log("No fetchEvents handler provided");
+      setLoading(false);
+      return;
+    }
     
+    console.log("Starting to load events...");
     setLoading(true);
     setError(null);
     
     try {
+      console.log("Calling fetchEvents...");
       const events = await fetchEvents();
+      console.log("Events fetched successfully:", events);
       setEvents(events);
     } catch (error) {
       console.error("Failed to load calendar data:", error);
-      setError("Failed to load calendar data");
-      toast({
-        title: "Error",
-        description: "Failed to load calendar data",
-        variant: "destructive",
-      });
+      
+      // Handle database connection errors
+      if (error instanceof Error && 
+          (error.message.includes('Database connection') || 
+           error.message.includes('Failed to fetch'))) {
+        setError("Database connection error. Please try again in a few moments.");
+        toast({
+          title: "Connection Error",
+          description: "Unable to connect to the database. Please try again in a few moments.",
+          variant: "destructive",
+        });
+      } else {
+        setError("Failed to load calendar data");
+        toast({
+          title: "Error",
+          description: "Failed to load calendar data",
+          variant: "destructive",
+        });
+      }
     } finally {
+      console.log("Setting loading to false");
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    console.log("Calendar component mounted, calling loadEvents");
     loadEvents();
   }, [fetchEvents]);
 
@@ -416,13 +438,25 @@ export function ContentCalendar({
   // Handle creating a new event
   const handleCreateEvent = async (eventData: Omit<CalendarEvent, 'id'>) => {
     try {
-      if (onEventCreate) {
-        const newEvent = await onEventCreate(eventData);
-        setEvents(prev => [...prev, newEvent]);
-        setIsCreateDialogOpen(false);
+      console.log("Creating event:", eventData);
+      if (!onEventCreate) {
+        throw new Error("onEventCreate handler is not provided");
       }
+      const newEvent = await onEventCreate(eventData);
+      console.log("Event created successfully:", newEvent);
+      setEvents(prev => [...prev, newEvent]);
+      setIsCreateDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "Event created successfully",
+      });
     } catch (error) {
       console.error('Failed to create event:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create event",
+        variant: "destructive",
+      });
       throw error;
     }
   };
@@ -607,22 +641,36 @@ export function ContentCalendar({
 
   // Handle updating an event
   const handleUpdateEvent = async (eventData: Omit<CalendarEvent, 'id'>) => {
-    if (!selectedEvent) return;
+    if (!selectedEvent) {
+      throw new Error("No event selected for update");
+    }
 
     try {
-      if (onEventUpdate) {
-        const updatedEvent = await onEventUpdate({
-          ...eventData,
-          id: selectedEvent.id
-        });
-        setEvents(prev => prev.map(event => 
-          event.id === updatedEvent.id ? updatedEvent : event
-        ));
-        setIsEditDialogOpen(false);
-        setSelectedEvent(null);
+      console.log("Updating event:", { ...eventData, id: selectedEvent.id });
+      if (!onEventUpdate) {
+        throw new Error("onEventUpdate handler is not provided");
       }
+      const updatedEvent = await onEventUpdate({
+        ...eventData,
+        id: selectedEvent.id
+      });
+      console.log("Event updated successfully:", updatedEvent);
+      setEvents(prev => prev.map(event => 
+        event.id === updatedEvent.id ? updatedEvent : event
+      ));
+      setIsEditDialogOpen(false);
+      setSelectedEvent(null);
+      toast({
+        title: "Success",
+        description: "Event updated successfully",
+      });
     } catch (error) {
       console.error('Failed to update event:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update event",
+        variant: "destructive",
+      });
       throw error;
     }
   };
@@ -631,6 +679,13 @@ export function ContentCalendar({
   const handleEventClick = (event: CalendarEvent) => {
     setSelectedEvent(event);
     setShowEventDetails(true);
+  };
+
+  // Handle edit button click from event details
+  const handleEditClick = (event: CalendarEvent) => {
+    setSelectedEvent(event);
+    setShowEventDetails(false);  // Close the details dialog
+    setIsEditDialogOpen(true);   // Open the edit dialog
   };
 
   // Handle delete confirmation
@@ -857,10 +912,7 @@ export function ContentCalendar({
           {selectedEvent && (
             <EventDetails
               event={selectedEvent}
-              onEdit={() => {
-                setShowEventDetails(false);
-                handleEditEvent(selectedEvent);
-              }}
+              onEdit={() => handleEditClick(selectedEvent)}
               onDelete={() => {
                 setShowEventDetails(false);
                 handleDeleteClick(selectedEvent);

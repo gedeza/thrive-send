@@ -26,6 +26,7 @@ interface EventFormProps {
   onContentChange?: (content: string, mediaUrls: string[]) => void;
   onSchedule?: (date: Date) => void;
   onSubmit?: (event: CalendarEvent) => void;
+  onCancel?: () => void;
 }
 
 const contentTypes = [
@@ -175,6 +176,38 @@ function MediaUploader({
   );
 }
 
+interface PlatformSpecificContent {
+  text: string;
+  mediaUrls: string[];
+  scheduledTime?: string;
+}
+
+interface FormSocialMediaContent {
+  platforms: SocialPlatform[];
+  mediaUrls: string[];
+  crossPost: boolean;
+  platformSpecificContent: {
+    [key in SocialPlatform]?: PlatformSpecificContent;
+  };
+}
+
+type AllowedContentType = 'social' | 'email' | 'blog' | 'other';
+type AllowedStatus = 'draft' | 'scheduled' | 'published';
+
+interface FormData {
+  id: string;
+  title: string;
+  description: string;
+  type: AllowedContentType;
+  status: AllowedStatus;
+  date: string;
+  time: string;
+  socialMediaContent: FormSocialMediaContent;
+  analytics?: {
+    lastUpdated: string;
+  };
+}
+
 interface FormErrors {
   title?: string;
   description?: string;
@@ -195,21 +228,55 @@ export function EventForm({
   onContentChange,
   onSchedule,
   onSubmit,
+  onCancel,
 }: EventFormProps) {
   const router = useRouter();
-  const [formData, setFormData] = useState<Partial<CalendarEvent>>(initialData || {
-    title: '',
-    description: '',
-    date: new Date().toISOString(),
-    time: format(new Date(), 'HH:mm'),
-    type: 'email',
-    status: 'draft',
-    socialMediaContent: {
-      platforms: [],
-      mediaUrls: [],
-      crossPost: false,
-      platformSpecificContent: {}
+  const [formData, setFormData] = useState<FormData>(() => {
+    if (initialData) {
+      const { socialMediaContent, ...rest } = initialData;
+      return {
+        id: rest.id || crypto.randomUUID(),
+        title: rest.title || '',
+        description: rest.description || '',
+        type: (rest.type as AllowedContentType) || 'social',
+        status: (rest.status as AllowedStatus) || 'draft',
+        date: rest.date || new Date().toISOString(),
+        time: rest.time || '',
+        socialMediaContent: socialMediaContent ? {
+          platforms: socialMediaContent.platforms,
+          mediaUrls: socialMediaContent.mediaUrls,
+          crossPost: socialMediaContent.crossPost,
+          platformSpecificContent: Object.entries(socialMediaContent.platformSpecificContent || {}).reduce((acc, [platform, content]) => ({
+            ...acc,
+            [platform]: {
+              text: content?.text || '',
+              mediaUrls: content?.mediaUrls || [],
+              scheduledTime: content?.scheduledTime
+            }
+          }), {}) as { [key in SocialPlatform]?: PlatformSpecificContent }
+        } : {
+          platforms: [],
+          mediaUrls: [],
+          crossPost: false,
+          platformSpecificContent: {}
+        }
+      };
     }
+    return {
+      id: crypto.randomUUID(),
+      title: '',
+      description: '',
+      type: 'social',
+      status: 'draft',
+      date: new Date().toISOString(),
+      time: '',
+      socialMediaContent: {
+        platforms: [],
+        mediaUrls: [],
+        crossPost: false,
+        platformSpecificContent: {}
+      }
+    };
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -240,7 +307,7 @@ export function EventForm({
     }));
   };
 
-  const handleContentTypeChange = (value: ContentType) => {
+  const handleContentTypeChange = (value: AllowedContentType) => {
     setFormData(prev => ({ ...prev, type: value }));
   };
 
@@ -251,61 +318,57 @@ export function EventForm({
         : [...prev, platform];
       
       setFormData(prev => {
-        const currentSocialContent = prev.socialMediaContent || {
-          platforms: [],
-          mediaUrls: [],
-          crossPost: false,
-          platformSpecificContent: {}
-        };
+        const currentSocialContent = prev.socialMediaContent;
+        const newPlatformSpecificContent = { ...currentSocialContent.platformSpecificContent };
+
+        if (newPlatforms.includes(platform)) {
+          newPlatformSpecificContent[platform] = {
+            text: '',
+            mediaUrls: [],
+            scheduledTime: prev.time
+          };
+        } else {
+          delete newPlatformSpecificContent[platform];
+        }
 
         return {
           ...prev,
           socialMediaContent: {
             ...currentSocialContent,
             platforms: newPlatforms,
-            platformSpecificContent: {
-              ...currentSocialContent.platformSpecificContent,
-              [platform]: currentSocialContent.platformSpecificContent[platform] || {
-                text: '',
-                mediaUrls: [],
-                scheduledTime: prev.time
-              }
-            }
+            platformSpecificContent: newPlatformSpecificContent
           }
         };
       });
 
+      onPlatformsChange?.(newPlatforms);
       return newPlatforms;
     });
-
-    onPlatformsChange?.(selectedPlatforms);
   };
 
   const handlePlatformContentChange = (platform: SocialPlatform, content: string) => {
     setFormData(prev => {
-      const currentSocialContent = prev.socialMediaContent || {
-        platforms: [],
-        mediaUrls: [],
-        crossPost: false,
-        platformSpecificContent: {}
+      let allowedType: AllowedContentType = 'social';
+      if (prev.type === 'social' || prev.type === 'email' || prev.type === 'blog') {
+        allowedType = prev.type;
+      }
+      const currentSocialContent = prev.socialMediaContent;
+      const newPlatformSpecificContent = { ...currentSocialContent.platformSpecificContent };
+      newPlatformSpecificContent[platform] = {
+        text: content,
+        mediaUrls: newPlatformSpecificContent[platform]?.mediaUrls || []
       };
-
       return {
         ...prev,
+        type: allowedType,
         socialMediaContent: {
           ...currentSocialContent,
-          platformSpecificContent: {
-            ...currentSocialContent.platformSpecificContent,
-            [platform]: {
-              ...currentSocialContent.platformSpecificContent[platform],
-              text: content
-            }
-          }
+          platformSpecificContent: newPlatformSpecificContent
         }
-      };
+      } satisfies FormData;
     });
-
-    onContentChange?.(content, formData.socialMediaContent?.mediaUrls || []);
+    const platformContent = formData.socialMediaContent.platformSpecificContent[platform];
+    onContentChange?.(content, platformContent?.mediaUrls || []);
   };
 
   const handleMediaUpload = async (platform: SocialPlatform, files: File[]) => {
@@ -314,38 +377,34 @@ export function EventForm({
       const newUrls = files.map(file => URL.createObjectURL(file));
       
       setFormData(prev => {
-        const currentSocialContent = prev.socialMediaContent || {
-          platforms: [],
-          mediaUrls: [],
-          crossPost: false,
-          platformSpecificContent: {}
-        };
-
+        const currentSocialContent = prev.socialMediaContent;
         const currentPlatformContent = currentSocialContent.platformSpecificContent[platform] || {
           text: '',
-          mediaUrls: [],
-          scheduledTime: prev.time
+          mediaUrls: []
+        };
+
+        const newPlatformSpecificContent = { ...currentSocialContent.platformSpecificContent };
+        newPlatformSpecificContent[platform] = {
+          ...currentPlatformContent,
+          mediaUrls: [
+            ...currentPlatformContent.mediaUrls,
+            ...newUrls
+          ]
         };
 
         return {
           ...prev,
           socialMediaContent: {
             ...currentSocialContent,
-            platformSpecificContent: {
-              ...currentSocialContent.platformSpecificContent,
-              [platform]: {
-                ...currentPlatformContent,
-                mediaUrls: [
-                  ...(currentPlatformContent.mediaUrls || []),
-                  ...newUrls
-                ]
-              }
-            }
+            platformSpecificContent: newPlatformSpecificContent
           }
         };
       });
 
-      onContentChange?.(formData.socialMediaContent?.platformSpecificContent[platform]?.text || '', newUrls);
+      onContentChange?.(
+        formData.socialMediaContent.platformSpecificContent[platform]?.text || '',
+        newUrls
+      );
     } catch (error) {
       toast({
         title: 'Error',
@@ -359,42 +418,39 @@ export function EventForm({
 
   const handleMediaRemove = (platform: SocialPlatform, index: number) => {
     setFormData(prev => {
-      const currentSocialContent = prev.socialMediaContent || {
-        platforms: [],
-        mediaUrls: [],
-        crossPost: false,
-        platformSpecificContent: {}
-      };
-
+      const currentSocialContent = prev.socialMediaContent;
       const currentPlatformContent = currentSocialContent.platformSpecificContent[platform] || {
         text: '',
-        mediaUrls: [],
-        scheduledTime: prev.time
+        mediaUrls: []
+      };
+
+      const newPlatformSpecificContent = { ...currentSocialContent.platformSpecificContent };
+      newPlatformSpecificContent[platform] = {
+        ...currentPlatformContent,
+        mediaUrls: currentPlatformContent.mediaUrls.filter((_: string, i: number) => i !== index)
       };
 
       return {
         ...prev,
         socialMediaContent: {
           ...currentSocialContent,
-          platformSpecificContent: {
-            ...currentSocialContent.platformSpecificContent,
-            [platform]: {
-              ...currentPlatformContent,
-              mediaUrls: (currentPlatformContent.mediaUrls || []).filter((_, i) => i !== index)
-            }
-          }
+          platformSpecificContent: newPlatformSpecificContent
         }
       };
     });
 
-    onContentChange?.(formData.socialMediaContent?.platformSpecificContent[platform]?.text || '', formData.socialMediaContent?.platformSpecificContent[platform]?.mediaUrls || []);
+    const platformContent = formData.socialMediaContent.platformSpecificContent[platform];
+    onContentChange?.(
+      platformContent?.text || '',
+      platformContent?.mediaUrls || []
+    );
   };
 
   const handleSchedule = (date: Date | undefined) => {
     if (date) {
       setFormData(prev => ({
         ...prev,
-        scheduledDate: date.toISOString(),
+        date: date.toISOString(),
       }));
       onSchedule?.(date);
     }
@@ -403,7 +459,7 @@ export function EventForm({
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
     
-    if (!formData.title.trim()) {
+    if (!formData.title?.trim()) {
       newErrors.title = 'Title is required';
     }
     
@@ -419,7 +475,7 @@ export function EventForm({
       const socialErrors: FormErrors['socialMediaContent'] = {};
       
       selectedPlatforms.forEach(platform => {
-        const content = formData.socialMediaContent?.platformSpecificContent[platform];
+        const content = formData.socialMediaContent.platformSpecificContent?.[platform];
         if (!content?.text?.trim()) {
           socialErrors[platform] = {
             text: `${platform} content is required`
@@ -446,21 +502,43 @@ export function EventForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
-    
+    console.log("Form submission started");
+    if (!validateForm()) {
+      console.log("Form validation failed");
+      return;
+    }
     setIsSubmitting(true);
     try {
-      onSubmit?.(formData as CalendarEvent);
+      console.log("Preparing event data:", formData);
+      const eventData: CalendarEvent = {
+        ...formData,
+        type: formData.type as CalendarEvent['type'],
+        status: (formData.status === 'published' ? 'scheduled' : formData.status) as CalendarEvent['status'],
+        socialMediaContent: formData.socialMediaContent ? {
+          platforms: formData.socialMediaContent.platforms,
+          mediaUrls: formData.socialMediaContent.mediaUrls,
+          crossPost: formData.socialMediaContent.crossPost,
+          platformSpecificContent: formData.socialMediaContent.platformSpecificContent
+        } : undefined
+      };
+      console.log("Calling onSubmit with event data:", eventData);
+      if (!onSubmit) {
+        throw new Error("onSubmit handler is not provided");
+      }
+      await onSubmit(eventData);
+      console.log("onSubmit completed successfully");
       toast({
         title: 'Success',
         description: `Event ${mode === 'create' ? 'created' : 'updated'} successfully`,
       });
     } catch (error) {
+      console.error("Error in handleSubmit:", error);
       toast({
         title: 'Error',
-        description: `Failed to ${mode === 'create' ? 'create' : 'update'} event`,
+        description: `Failed to ${mode === 'create' ? 'create' : 'update'} event: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: 'destructive',
       });
+      throw error; // Re-throw to let parent component handle it
     } finally {
       setIsSubmitting(false);
     }
@@ -468,145 +546,182 @@ export function EventForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {mode === 'platform-select' && (
-        <div className="space-y-4">
-          <div className="grid gap-4">
-            {socialPlatforms.map(platform => (
-              <div key={platform.value} className="flex items-center space-x-2">
-                <Checkbox
-                  id={platform.value}
-                  checked={selectedPlatforms.includes(platform.value as SocialPlatform)}
-                  onCheckedChange={() => handlePlatformToggle(platform.value as SocialPlatform)}
-                />
-                <Label htmlFor={platform.value} className="flex-1">
-                  {platform.label}
-                </Label>
-              </div>
-            ))}
-          </div>
-          {errors.socialMediaContent && (
-            <p className="text-sm text-destructive">{errors.socialMediaContent.text}</p>
-          )}
-        </div>
-      )}
+      {mode === 'create' || mode === 'edit' ? (
+        <>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                placeholder="Enter event title"
+                required
+              />
+              {errors.title && (
+                <p className="text-sm text-destructive">{errors.title}</p>
+              )}
+            </div>
 
-      {mode === 'content-edit' && (
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Content</Label>
-            <RichTextEditor
-              value={formData.socialMediaContent?.platformSpecificContent[selectedPlatforms[0]]?.text || ''}
-              onChange={(content) => handlePlatformContentChange(selectedPlatforms[0], content)}
-            />
-            {errors.socialMediaContent && (
-              <p className="text-sm text-destructive">{errors.socialMediaContent.text}</p>
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                placeholder="Enter event description"
+                rows={4}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !formData.date && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.date ? (
+                        format(new Date(formData.date), "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={formData.date ? new Date(formData.date) : undefined}
+                      onSelect={handleDateSelect}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                {errors.date && (
+                  <p className="text-sm text-destructive">{errors.date}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="time">Time</Label>
+                <Input
+                  id="time"
+                  name="time"
+                  type="time"
+                  value={formData.time}
+                  onChange={handleTimeChange}
+                  required
+                />
+                {errors.time && (
+                  <p className="text-sm text-destructive">{errors.time}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Content Type</Label>
+              <Select
+                value={formData.type}
+                onValueChange={handleContentTypeChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select content type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {contentTypes.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {formData.type === 'social' && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Social Media Platforms</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    {socialPlatforms.map((platform) => (
+                      <div key={platform.value} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={platform.value}
+                          checked={formData.socialMediaContent.platforms.includes(platform.value as SocialPlatform)}
+                          onCheckedChange={() => handlePlatformToggle(platform.value as SocialPlatform)}
+                        />
+                        <Label htmlFor={platform.value} className="flex-1">
+                          {platform.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {formData.socialMediaContent.platforms.map((platform) => (
+                  <div key={platform} className="space-y-2">
+                    <Label>{platform} Content</Label>
+                    <RichTextEditor
+                      value={formData.socialMediaContent.platformSpecificContent[platform]?.text || ''}
+                      onChange={(content) => handlePlatformContentChange(platform, content)}
+                    />
+                    <MediaUploader
+                      platform={platform}
+                      maxCount={platformContentLimits[platform].maxMediaCount}
+                      supportedTypes={platformContentLimits[platform].supportedMediaTypes}
+                      currentMedia={formData.socialMediaContent.platformSpecificContent[platform]?.mediaUrls || []}
+                      onUpload={(files) => handleMediaUpload(platform, files)}
+                      onRemove={(index) => handleMediaRemove(platform, index)}
+                    />
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label>Media</Label>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={(e) => {
-                if (e.target.files && e.target.files.length > 0) {
-                  handleMediaUpload(selectedPlatforms[0], Array.from(e.target.files));
-                }
-              }}
-              className="hidden"
-              multiple
-              accept="image/*,video/*"
-            />
+          <div className="flex justify-end gap-4">
             <Button
               type="button"
               variant="outline"
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full"
+              onClick={onCancel}
+              disabled={isSubmitting}
             >
-              <ImageIcon className="mr-2 h-4 w-4" />
-              Upload Media
+              Cancel
             </Button>
-
-            {selectedPlatforms.map(platform => (
-              <MediaUploader
-                key={platform}
-                platform={platform}
-                maxCount={platformContentLimits[platform].maxMediaCount}
-                supportedTypes={platformContentLimits[platform].supportedMediaTypes}
-                currentMedia={formData.socialMediaContent?.platformSpecificContent[platform]?.mediaUrls || []}
-                onUpload={(files) => handleMediaUpload(platform, files)}
-                onRemove={(index) => handleMediaRemove(platform, index)}
-              />
-            ))}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onSubmit?.({ ...formData, status: 'draft' } as CalendarEvent)}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save as Draft'
+              )}
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {mode === 'edit' ? 'Updating...' : 'Creating...'}
+                </>
+              ) : (
+                mode === 'edit' ? 'Update Event' : 'Create Event'
+              )}
+            </Button>
           </div>
-        </div>
-      )}
-
-      {mode === 'schedule' && (
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Schedule Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !formData.scheduledDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.scheduledDate ? (
-                    format(new Date(formData.scheduledDate), "PPP")
-                  ) : (
-                    <span>Pick a date</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={formData.scheduledDate ? new Date(formData.scheduledDate) : undefined}
-                  onSelect={handleSchedule}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            {errors.socialMediaContent && (
-              <p className="text-sm text-destructive">{errors.socialMediaContent.mediaUrls}</p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {mode === 'create' || mode === 'edit' ? (
-        <div className="flex justify-end gap-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onSubmit?.({ ...formData, status: 'draft' } as CalendarEvent)}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              'Save as Draft'
-            )}
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {mode === 'edit' ? 'Updating...' : 'Creating...'}
-              </>
-            ) : (
-              mode === 'edit' ? 'Update Event' : 'Create Event'
-            )}
-          </Button>
-        </div>
+        </>
       ) : null}
     </form>
   );
