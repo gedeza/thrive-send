@@ -7,22 +7,21 @@ export type EventStatus = 'draft' | 'scheduled' | 'sent' | 'failed';
 export interface PlatformSpecificContent {
   text: string;
   mediaUrls: string[];
-  scheduledTime: string;
+  scheduledTime?: string;
 }
 
 export interface SocialMediaContent {
   platforms: SocialPlatform[];
+  text: string;
   mediaUrls: string[];
-  crossPost: boolean;
-  platformSpecificContent: Record<SocialPlatform, PlatformSpecificContent>;
+  platformSpecificContent?: Record<SocialPlatform, PlatformSpecificContent>;
 }
 
 export interface CalendarEvent {
-  id: string;
+  id?: string;
   title: string;
   description?: string;
-  date: string;
-  time?: string;
+  scheduledDate?: string;
   type: ContentType;
   status: EventStatus;
   campaignId?: string;
