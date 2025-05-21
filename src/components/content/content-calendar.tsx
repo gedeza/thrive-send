@@ -49,6 +49,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { EventForm } from './EventForm';
+import { EventDetails } from './EventDetails';
 
 // Enhanced content type definitions
 export type SocialPlatform = "FACEBOOK" | "TWITTER" | "INSTAGRAM" | "LINKEDIN";
@@ -76,6 +78,9 @@ export interface CalendarEvent {
   status: "draft" | "scheduled" | "sent" | "failed";
   campaignId?: string;
   socialMediaContent?: SocialMediaContent;
+  analytics?: {
+    lastUpdated: string;
+  };
 }
 
 export interface ContentCalendarProps {
@@ -305,6 +310,15 @@ function MediaUploader({
 // Add ContentType definition
 export type ContentType = "email" | "social" | "blog" | "other";
 
+// Add this function near the top of the file, after imports
+async function fetchEventAnalytics(eventId: string): Promise<void> {
+  // This is a placeholder for the actual analytics fetching logic
+  // In a real application, this would make an API call to fetch analytics data
+  return new Promise((resolve) => {
+    setTimeout(resolve, 1000);
+  });
+}
+
 export function ContentCalendar({
   events: initialEvents = [],
   onEventCreate,
@@ -323,8 +337,9 @@ export function ContentCalendar({
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [newEvent, setNewEvent] = useState<NewEventState>({
     title: "",
     description: "",
@@ -343,7 +358,6 @@ export function ContentCalendar({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<CalendarEvent | null>(null);
   const [showEventDetails, setShowEventDetails] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
   // Calculate days to display based on current month
   const daysInMonth = React.useMemo(() => {
@@ -381,8 +395,8 @@ export function ContentCalendar({
 
   // Reset form when dialog opens/closes
   useEffect(() => {
-    if (!isDialogOpen) {
-      setEditingEvent(null);
+    if (!isCreateDialogOpen && !isEditDialogOpen) {
+      setSelectedEvent(null);
       setNewEvent({
         title: "",
         description: "",
@@ -397,59 +411,19 @@ export function ContentCalendar({
         }
       });
     }
-  }, [isDialogOpen]);
+  }, [isCreateDialogOpen, isEditDialogOpen]);
 
   // Handle creating a new event
-  const handleCreateEvent = async () => {
-    if (!onEventCreate) return;
-    
+  const handleCreateEvent = async (eventData: Omit<CalendarEvent, 'id'>) => {
     try {
-      const eventData = {
-        title: newEvent.title,
-        description: newEvent.description,
-        date: format(newEvent.start, "yyyy-MM-dd"),
-        time: format(newEvent.start, "HH:mm"),
-        type: newEvent.type,
-        status: "draft" as const,
-        contentType: newEvent.type.toUpperCase(),
-        socialMediaContent: newEvent.type === "social" ? {
-          platforms: newEvent.socialMediaContent.platforms,
-          crossPost: newEvent.socialMediaContent.crossPost,
-          mediaUrls: newEvent.socialMediaContent.mediaUrls,
-          platformSpecificContent: newEvent.socialMediaContent.platformSpecificContent
-        } : undefined
-      };
-
-      const createdEvent = await onEventCreate(eventData);
-      setEvents(prev => [...prev, createdEvent]);
-      setIsDialogOpen(false);
-      
-      // Reset form
-      setNewEvent({
-        title: "",
-        description: "",
-        start: new Date(),
-        end: new Date(),
-        type: "email",
-        socialMediaContent: {
-          platforms: [],
-          crossPost: false,
-          mediaUrls: [],
-          platformSpecificContent: {}
-        }
-      });
-      
-      toast({
-        title: "Success",
-        description: "Event created successfully",
-      });
+      if (onEventCreate) {
+        const newEvent = await onEventCreate(eventData);
+        setEvents(prev => [...prev, newEvent]);
+        setIsCreateDialogOpen(false);
+      }
     } catch (error) {
-      console.error("Failed to create event:", error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create event",
-        variant: "destructive",
-      });
+      console.error('Failed to create event:', error);
+      throw error;
     }
   };
 
@@ -627,59 +601,29 @@ export function ContentCalendar({
 
   // Handle editing an event
   const handleEditEvent = (event: CalendarEvent) => {
-    setEditingEvent(event);
-    setNewEvent({
-      title: event.title,
-      description: event.description || "",
-      start: new Date(event.date),
-      end: event.time ? new Date(event.date + "T" + event.time) : new Date(event.date),
-      type: event.type,
-      socialMediaContent: {
-        platforms: event.socialMediaContent?.platforms || [],
-        crossPost: event.socialMediaContent?.crossPost || false,
-        mediaUrls: event.socialMediaContent?.mediaUrls || [],
-        platformSpecificContent: event.socialMediaContent?.platformSpecificContent || {}
-      }
-    });
-    setIsDialogOpen(true);
+    setSelectedEvent(event);
+    setIsEditDialogOpen(true);
   };
 
   // Handle updating an event
-  const handleUpdateEvent = async () => {
-    if (!onEventUpdate || !editingEvent) return;
-    
+  const handleUpdateEvent = async (eventData: Omit<CalendarEvent, 'id'>) => {
+    if (!selectedEvent) return;
+
     try {
-      const updatedEvent = await onEventUpdate({
-        ...editingEvent,
-        title: newEvent.title,
-        description: newEvent.description,
-        date: format(newEvent.start, "yyyy-MM-dd"),
-        time: format(newEvent.start, "HH:mm"),
-        type: newEvent.type,
-        socialMediaContent: newEvent.type === "social" ? {
-          platforms: newEvent.socialMediaContent.platforms,
-          crossPost: newEvent.socialMediaContent.crossPost,
-          mediaUrls: newEvent.socialMediaContent.mediaUrls,
-          platformSpecificContent: newEvent.socialMediaContent.platformSpecificContent
-        } : undefined
-      });
-      
-      setEvents(prev => prev.map(event => 
-        event.id === updatedEvent.id ? updatedEvent : event
-      ));
-      
-      setIsDialogOpen(false);
-      toast({
-        title: "Success",
-        description: "Event updated successfully",
-      });
+      if (onEventUpdate) {
+        const updatedEvent = await onEventUpdate({
+          ...eventData,
+          id: selectedEvent.id
+        });
+        setEvents(prev => prev.map(event => 
+          event.id === updatedEvent.id ? updatedEvent : event
+        ));
+        setIsEditDialogOpen(false);
+        setSelectedEvent(null);
+      }
     } catch (error) {
-      console.error("Failed to update event:", error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update event",
-        variant: "destructive",
-      });
+      console.error('Failed to update event:', error);
+      throw error;
     }
   };
 
@@ -718,6 +662,31 @@ export function ContentCalendar({
     }
   };
 
+  // Add this function after handleEventClick
+  const handleRefreshAnalytics = async () => {
+    if (!selectedEvent) return;
+    
+    try {
+      await fetchEventAnalytics(selectedEvent.id);
+      // In a real application, you would update the event with new analytics data
+      // For now, we'll just simulate a refresh
+      setEvents(prev => prev.map(event => 
+        event.id === selectedEvent.id
+          ? {
+              ...event,
+              analytics: {
+                ...event.analytics,
+                lastUpdated: new Date().toISOString()
+              }
+            }
+          : event
+      ));
+    } catch (error) {
+      console.error('Failed to refresh analytics:', error);
+      throw error;
+    }
+  };
+
   // Configure drag sensors
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -747,9 +716,12 @@ export function ContentCalendar({
     }
 
     try {
-      // Get the target date from the day element's data-date attribute
-      const targetDate = over.id as string;
-      
+      // Get the target date from the drop target's data
+      const targetDate = over.data.current?.date as string;
+      if (!targetDate) {
+        throw new Error("Invalid drop target");
+      }
+
       // Create a new event object with the updated date
       const updatedEvent = {
         ...activeDragEvent,
@@ -830,261 +802,52 @@ export function ContentCalendar({
       {/* Calendar Header */}
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-2xl font-bold tracking-tight text-[var(--color-chart-blue)]">Content Calendar</h1>
-        <Button onClick={() => setIsDialogOpen(true)}>
+        <Button onClick={() => setIsCreateDialogOpen(true)}>
           <Plus className="h-4 w-4 mr-2" /> Add Event
         </Button>
       </div>
 
       {/* Add/Edit Event Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingEvent ? "Edit Content" : "Schedule New Content"}</DialogTitle>
+            <DialogTitle>Create New Event</DialogTitle>
             <DialogDescription>
-              {editingEvent ? "Update your scheduled content." : "Create and schedule your content for the selected date."}
+              Fill in the details for your new event.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Title</label>
-              <Input
-                value={newEvent.title}
-                onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                placeholder="Enter content title"
-                className="w-full"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Date</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !newEvent.start && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {newEvent.start ? format(newEvent.start, "PPP") : "Pick a date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={newEvent.start}
-                      onSelect={(date) => date && setNewEvent({ ...newEvent, start: date })}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Time</label>
-                <div className="relative">
-                  <Input
-                    type="time"
-                    value={format(newEvent.start, "HH:mm")}
-                    onChange={(e) => {
-                      const [hours, minutes] = e.target.value.split(":").map(Number);
-                      setNewEvent({
-                        ...newEvent,
-                        start: new Date(newEvent.start.toISOString().split("T")[0] + "T" + e.target.value)
-                      });
-                    }}
-                    className="w-full"
-                  />
-                  <Clock className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                </div>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Content Type</label>
-              <Select
-                value={newEvent.type}
-                onValueChange={(value) => 
-                  setNewEvent({ ...newEvent, type: value as "email" | "social" | "blog" | "other" })
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select content type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="email">Email Campaign</SelectItem>
-                  <SelectItem value="social">Social Media Post</SelectItem>
-                  <SelectItem value="blog">Blog Article</SelectItem>
-                  <SelectItem value="other">Other Content</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Description</label>
-              <Input
-                value={newEvent.description}
-                onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                placeholder="Add a description for your content"
-                className="w-full"
-              />
-            </div>
-            {newEvent.type === "social" && (
-              <>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Social Media Platforms</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {Object.entries(platformColorMap).map(([platform, { bg, text, icon }]) => (
-                      <Button
-                        key={platform}
-                        variant="outline"
-                        className={cn(
-                          "justify-start",
-                          newEvent.socialMediaContent.platforms.includes(platform as SocialPlatform)
-                            ? `${bg} ${text} border-current`
-                            : ""
-                        )}
-                        onClick={() => handlePlatformSelection(platform as SocialPlatform)}
-                      >
-                        {icon}
-                        <span className="ml-2">{platform}</span>
-                      </Button>
-                    ))}
-                  </div>
-                </div>
+          <EventForm
+            onSubmit={handleCreateEvent}
+            onCancel={() => setIsCreateDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
 
-                {newEvent.socialMediaContent.platforms.length > 0 && (
-                  <>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Content</label>
-                      <div className="space-y-4">
-                        {newEvent.socialMediaContent.platforms.map(platform => (
-                          <div key={platform} className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              {platformColorMap[platform].icon}
-                              <span className="text-sm font-medium">{platform}</span>
-                            </div>
-                            <Input
-                              placeholder={`Enter content for ${platform} (max ${platformContentLimits[platform].maxTextLength} characters)`}
-                              maxLength={platformContentLimits[platform].maxTextLength}
-                              value={newEvent.socialMediaContent.platformSpecificContent?.[platform]?.text || ""}
-                              onChange={(e) => {
-                                setNewEvent(prev => ({
-                                  ...prev,
-                                  socialMediaContent: {
-                                    ...prev.socialMediaContent,
-                                    platformSpecificContent: {
-                                      ...prev.socialMediaContent.platformSpecificContent,
-                                      [platform]: {
-                                        ...prev.socialMediaContent.platformSpecificContent?.[platform],
-                                        text: e.target.value
-                                      }
-                                    }
-                                  }
-                                }));
-                              }}
-                            />
-                            <MediaUploader
-                              platform={platform}
-                              maxCount={platformContentLimits[platform].maxMediaCount}
-                              supportedTypes={platformContentLimits[platform].supportedMediaTypes}
-                              currentMedia={newEvent.socialMediaContent.platformSpecificContent?.[platform]?.mediaUrls || []}
-                              onUpload={(files) => {
-                                // Here you would typically upload the files to your storage service
-                                // and get back URLs. For now, we'll use local URLs
-                                const newUrls = files.map(file => URL.createObjectURL(file));
-                                setNewEvent(prev => ({
-                                  ...prev,
-                                  socialMediaContent: {
-                                    ...prev.socialMediaContent,
-                                    platformSpecificContent: {
-                                      ...prev.socialMediaContent.platformSpecificContent,
-                                      [platform]: {
-                                        ...prev.socialMediaContent.platformSpecificContent?.[platform],
-                                        mediaUrls: [
-                                          ...(prev.socialMediaContent.platformSpecificContent?.[platform]?.mediaUrls || []),
-                                          ...newUrls
-                                        ]
-                                      }
-                                    }
-                                  }
-                                }));
-                              }}
-                              onRemove={(index) => {
-                                setNewEvent(prev => ({
-                                  ...prev,
-                                  socialMediaContent: {
-                                    ...prev.socialMediaContent,
-                                    platformSpecificContent: {
-                                      ...prev.socialMediaContent.platformSpecificContent,
-                                      [platform]: {
-                                        ...prev.socialMediaContent.platformSpecificContent?.[platform],
-                                        mediaUrls: prev.socialMediaContent.platformSpecificContent?.[platform]?.mediaUrls?.filter((_, i) => i !== index) || []
-                                      }
-                                    }
-                                  }
-                                }));
-                              }}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Cross-post Settings</label>
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id="crossPost"
-                          checked={newEvent.socialMediaContent.crossPost}
-                          onChange={(e) => {
-                            setNewEvent(prev => ({
-                              ...prev,
-                              socialMediaContent: {
-                                ...prev.socialMediaContent,
-                                crossPost: e.target.checked
-                              }
-                            }));
-                          }}
-                          className="rounded border-gray-300"
-                        />
-                        <label htmlFor="crossPost" className="text-sm">
-                          Enable cross-posting (same content across all selected platforms)
-                        </label>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </>
-            )}
-          </div>
-          <DialogFooter className="flex justify-between">
-            {editingEvent && (
-              <Button 
-                variant="destructive" 
-                onClick={() => handleDeleteClick(editingEvent)}
-                className="mr-auto"
-              >
-                Delete
-              </Button>
-            )}
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={editingEvent ? handleUpdateEvent : handleCreateEvent} 
-                className="bg-[var(--color-chart-blue)] hover:bg-[var(--color-chart-blue)]/90"
-              >
-                {editingEvent ? "Update Content" : "Schedule Content"}
-              </Button>
-            </div>
-          </DialogFooter>
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Event</DialogTitle>
+            <DialogDescription>
+              Update the event details.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedEvent && (
+            <EventForm
+              initialData={selectedEvent}
+              mode="edit"
+              onSubmit={handleUpdateEvent}
+              onCancel={() => {
+                setIsEditDialogOpen(false);
+                setSelectedEvent(null);
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
 
       {/* Event Details Dialog */}
       <Dialog open={showEventDetails} onOpenChange={setShowEventDetails}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Event Details</DialogTitle>
             <DialogDescription>
@@ -1092,75 +855,19 @@ export function ContentCalendar({
             </DialogDescription>
           </DialogHeader>
           {selectedEvent && (
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Title</label>
-                <div className="text-sm">{selectedEvent.title}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Date</label>
-                  <div className="text-sm">{format(new Date(selectedEvent.date), "PPP")}</div>
-                </div>
-                {selectedEvent.time && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Time</label>
-                    <div className="text-sm">{selectedEvent.time}</div>
-                  </div>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Content Type</label>
-                <div className="text-sm capitalize">{selectedEvent.type}</div>
-              </div>
-              {selectedEvent.description && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Description</label>
-                  <div className="text-sm">{selectedEvent.description}</div>
-                </div>
-              )}
-              {selectedEvent.type === "social" && selectedEvent.socialMediaContent && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Platforms</label>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedEvent.socialMediaContent.platforms.map(platform => (
-                      <span
-                        key={platform}
-                        className={cn(
-                          "px-2 py-1 rounded-full text-xs",
-                          platformColorMap[platform].bg,
-                          platformColorMap[platform].text
-                        )}
-                      >
-                        {platform}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            <EventDetails
+              event={selectedEvent}
+              onEdit={() => {
+                setShowEventDetails(false);
+                handleEditEvent(selectedEvent);
+              }}
+              onDelete={() => {
+                setShowEventDetails(false);
+                handleDeleteClick(selectedEvent);
+              }}
+              onRefreshAnalytics={handleRefreshAnalytics}
+            />
           )}
-          <DialogFooter className="flex justify-between">
-            <Button
-              variant="destructive"
-              onClick={() => selectedEvent && handleDeleteClick(selectedEvent)}
-            >
-              Delete
-            </Button>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowEventDetails(false)}>
-                Close
-              </Button>
-              <Button
-                onClick={() => {
-                  setShowEventDetails(false);
-                  handleEditEvent(selectedEvent!);
-                }}
-              >
-                Edit
-              </Button>
-            </div>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -1306,7 +1013,7 @@ export function ContentCalendar({
                         onEventClick={handleEventClick}
                         onClick={() => {
                           setNewEvent(prev => ({ ...prev, start: day }));
-                          setIsDialogOpen(true);
+                          setIsCreateDialogOpen(true);
                         }}
                       />
                     </div>
