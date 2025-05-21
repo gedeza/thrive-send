@@ -1,6 +1,6 @@
 import { CalendarEvent, SocialPlatform } from '@/components/content/content-calendar';
 import { format } from 'date-fns';
-import { Calendar, Clock, FileText, Image, Link, Share2, ThumbsUp, X } from 'lucide-react';
+import { Calendar, Clock, FileText, Image, Link, Share2, ThumbsUp, X, Mail } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,6 +51,20 @@ const platformMaxChars = {
   TWITTER: 280,
   INSTAGRAM: 2200,
   LINKEDIN: 3000
+};
+
+const contentTypeIcons: Record<string, React.ReactNode> = {
+  article: <FileText className="h-4 w-4" />,
+  blog: <FileText className="h-4 w-4" />,
+  social: <Share2 className="h-4 w-4" />,
+  email: <Mail className="h-4 w-4" />
+};
+
+const contentTypeColors = {
+  article: 'bg-purple-50 border-purple-200',
+  blog: 'bg-blue-50 border-blue-200',
+  social: 'bg-green-50 border-green-200',
+  email: 'bg-orange-50 border-orange-200'
 };
 
 const SocialMediaPreview = ({ platform, content }: { platform: SocialPlatform; content: any }) => {
@@ -268,7 +282,7 @@ export function EventDetails({ event, onEdit, onDelete, onRefreshAnalytics }: Ev
             </Card>
           )}
 
-          {event.type === "social" && event.socialMediaContent && (
+          {event.type === "social" && event.socialMediaContent ? (
             <Card>
               <CardHeader>
                 <CardTitle>Social Media Content</CardTitle>
@@ -323,6 +337,49 @@ export function EventDetails({ event, onEdit, onDelete, onRefreshAnalytics }: Ev
                       </div>
                     );
                   })}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground" aria-hidden="true">
+                    {contentTypeIcons[event.type] || <FileText className="h-4 w-4" />}
+                  </span>
+                  <CardTitle>{event.type.charAt(0).toUpperCase() + event.type.slice(1)} Content</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className={cn("rounded-lg border p-4", contentTypeColors[event.type] || 'bg-gray-50 border-gray-200')}>
+                  <div className="prose prose-sm max-w-none dark:prose-invert">
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeRaw]}
+                    >
+                      {event.content}
+                    </ReactMarkdown>
+                  </div>
+                  {event.mediaUrls && event.mediaUrls.length > 0 && (
+                    <div className={cn(
+                      "mt-4 grid gap-2",
+                      event.mediaUrls.length === 1 ? "grid-cols-1" :
+                      event.mediaUrls.length === 2 ? "grid-cols-2" :
+                      event.mediaUrls.length === 3 ? "grid-cols-3" :
+                      "grid-cols-2"
+                    )}>
+                      {event.mediaUrls.map((url: string, index: number) => (
+                        <div key={index} className="relative aspect-square group">
+                          <img
+                            src={url}
+                            alt={`Media ${index + 1}`}
+                            className="rounded-md object-cover w-full h-full"
+                            loading="lazy"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -383,9 +440,48 @@ export function EventDetails({ event, onEdit, onDelete, onRefreshAnalytics }: Ev
               })}
             </div>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              No preview available for this event type
-            </div>
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground" aria-hidden="true">
+                    {contentTypeIcons[event.type] || <FileText className="h-4 w-4" />}
+                  </span>
+                  <CardTitle>Content Preview</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className={cn("rounded-lg border p-4", contentTypeColors[event.type] || 'bg-gray-50 border-gray-200')}>
+                  <div className="prose prose-sm max-w-none dark:prose-invert">
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeRaw]}
+                    >
+                      {event.content}
+                    </ReactMarkdown>
+                  </div>
+                  {event.mediaUrls && event.mediaUrls.length > 0 && (
+                    <div className={cn(
+                      "mt-4 grid gap-2",
+                      event.mediaUrls.length === 1 ? "grid-cols-1" :
+                      event.mediaUrls.length === 2 ? "grid-cols-2" :
+                      event.mediaUrls.length === 3 ? "grid-cols-3" :
+                      "grid-cols-2"
+                    )}>
+                      {event.mediaUrls.map((url: string, index: number) => (
+                        <div key={index} className="relative aspect-square group">
+                          <img
+                            src={url}
+                            alt={`Media ${index + 1}`}
+                            className="rounded-md object-cover w-full h-full"
+                            loading="lazy"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
 
@@ -455,7 +551,7 @@ export function EventDetails({ event, onEdit, onDelete, onRefreshAnalytics }: Ev
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
-              No analytics data available
+              No analytics available for this event
             </div>
           )}
         </TabsContent>

@@ -21,26 +21,28 @@ import { Checkbox } from '@/components/ui/checkbox';
 
 interface EventFormProps {
   initialData?: Partial<CalendarEvent>;
-  mode?: 'create' | 'edit' | 'platform-select' | 'content-edit' | 'schedule';
+  mode?: 'create' | 'edit' | 'platform-select' | 'content-edit' | 'schedule' | 'type-select';
   onPlatformsChange?: (platforms: SocialPlatform[]) => void;
   onContentChange?: (content: string, mediaUrls: string[]) => void;
+  onTitleChange?: (title: string) => void;
   onSchedule?: (date: Date) => void;
   onSubmit?: (event: CalendarEvent) => void;
   onCancel?: () => void;
+  onContentTypeChange?: (type: string) => void;
 }
 
 const contentTypes = [
-  { value: 'email', label: 'Email Campaign' },
-  { value: 'social', label: 'Social Media Post' },
+  { value: 'article', label: 'Article' },
   { value: 'blog', label: 'Blog Post' },
-  { value: 'other', label: 'Other' },
+  { value: 'social', label: 'Social Media Post' },
+  { value: 'email', label: 'Email Campaign' },
 ] as const;
 
 const socialPlatforms = [
-  { value: 'FACEBOOK', label: 'Facebook', icon: Facebook },
-  { value: 'TWITTER', label: 'Twitter', icon: Twitter },
-  { value: 'INSTAGRAM', label: 'Instagram', icon: Instagram },
-  { value: 'LINKEDIN', label: 'LinkedIn', icon: Linkedin },
+  { value: 'FACEBOOK', label: 'Facebook', icon: Facebook, color: 'text-[#1877F2]' },
+  { value: 'TWITTER', label: 'Twitter', icon: Twitter, color: 'text-[#1DA1F2]' },
+  { value: 'INSTAGRAM', label: 'Instagram', icon: Instagram, color: 'text-[#E4405F]' },
+  { value: 'LINKEDIN', label: 'LinkedIn', icon: Linkedin, color: 'text-[#0A66C2]' },
 ] as const;
 
 const platformContentLimits = {
@@ -65,6 +67,46 @@ const platformContentLimits = {
     supportedMediaTypes: ['image', 'video', 'document']
   }
 };
+
+function MediaPreview({ url, onRemove }: { url: string; onRemove: () => void }) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  return (
+    <div className="relative group aspect-square w-full rounded-lg overflow-hidden bg-muted">
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      )}
+      {error ? (
+        <div className="absolute inset-0 flex items-center justify-center bg-destructive/10">
+          <X className="h-6 w-6 text-destructive" />
+        </div>
+      ) : (
+        <img
+          src={url}
+          alt="Media preview"
+          className={cn(
+            "w-full h-full object-cover transition-opacity duration-200",
+            isLoading ? "opacity-0" : "opacity-100"
+          )}
+          onLoad={() => setIsLoading(false)}
+          onError={() => {
+            setIsLoading(false);
+            setError(true);
+          }}
+        />
+      )}
+      <button
+        onClick={onRemove}
+        className="absolute top-2 right-2 p-1.5 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+      >
+        <X className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
 
 function MediaUploader({ 
   platform, 
@@ -116,10 +158,10 @@ function MediaUploader({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       <div
         className={cn(
-          "border-2 border-dashed rounded-lg p-4 text-center",
+          "border-2 border-dashed rounded-lg p-6 text-center",
           isDragging ? "border-primary bg-primary/5" : "border-muted",
           "transition-colors duration-200"
         )}
@@ -141,34 +183,33 @@ function MediaUploader({
         />
         <label
           htmlFor={`media-upload-${platform}`}
-          className="cursor-pointer flex flex-col items-center gap-2"
+          className="cursor-pointer flex flex-col items-center gap-3"
         >
-          <Upload className="h-8 w-8 text-muted-foreground" />
-          <div className="text-sm text-muted-foreground">
-            Drag and drop or click to upload media
+          <div className="p-3 rounded-full bg-primary/10">
+            <Upload className="h-6 w-6 text-primary" />
           </div>
-          <div className="text-xs text-muted-foreground">
-            Supported types: {supportedTypes.join(", ")}
+          <div className="space-y-1">
+            <p className="text-sm font-medium">
+              Drag and drop or click to upload media
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Supported types: {supportedTypes.join(", ")}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Maximum {maxCount} files
+            </p>
           </div>
         </label>
       </div>
 
       {currentMedia.length > 0 && (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {currentMedia.map((url, index) => (
-            <div key={index} className="relative group">
-              <img
-                src={url}
-                alt={`Media ${index + 1}`}
-                className="w-full h-24 object-cover rounded-md"
-              />
-              <button
-                onClick={() => onRemove(index)}
-                className="absolute top-1 right-1 p-1 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
+            <MediaPreview
+              key={index}
+              url={url}
+              onRemove={() => onRemove(index)}
+            />
           ))}
         </div>
       )}
@@ -192,19 +233,49 @@ interface FormSocialMediaContent {
 }
 
 type AllowedContentType = 'social' | 'email' | 'blog' | 'other';
-type AllowedStatus = 'draft' | 'scheduled' | 'published';
+type AllowedStatus = 'draft' | 'scheduled' | 'sent' | 'failed';
 
 interface FormData {
   id: string;
   title: string;
   description: string;
-  type: AllowedContentType;
-  status: AllowedStatus;
+  type: "email" | "social" | "blog" | "other";
+  status: "draft" | "scheduled" | "sent" | "failed";
   date: string;
   time: string;
-  socialMediaContent: FormSocialMediaContent;
+  content?: string;
+  mediaUrls?: string[];
+  socialMediaContent?: {
+    platforms: SocialPlatform[];
+    crossPost: boolean;
+    mediaUrls: string[];
+    platformSpecificContent: {
+      [key in SocialPlatform]?: {
+        text?: string;
+        mediaUrls?: string[];
+        scheduledTime?: string;
+      };
+    };
+  };
   analytics?: {
-    lastUpdated: string;
+    views?: number;
+    engagement?: {
+      likes?: number;
+      shares?: number;
+      comments?: number;
+    };
+    clicks?: number;
+    lastUpdated?: string;
+  };
+  preview?: {
+    thumbnail?: string;
+    platformPreviews?: {
+      [key in SocialPlatform]?: {
+        previewUrl?: string;
+        status?: 'pending' | 'approved' | 'rejected';
+        rejectionReason?: string;
+      };
+    };
   };
 }
 
@@ -226,9 +297,11 @@ export function EventForm({
   mode = 'create',
   onPlatformsChange,
   onContentChange,
+  onTitleChange,
   onSchedule,
   onSubmit,
   onCancel,
+  onContentTypeChange,
 }: EventFormProps) {
   const router = useRouter();
   const [formData, setFormData] = useState<FormData>(() => {
@@ -544,6 +617,158 @@ export function EventForm({
     }
   };
 
+  if (mode === 'type-select') {
+    return (
+      <div className="space-y-4">
+        <div className="grid gap-4">
+          {contentTypes.map((type) => (
+            <Card
+              key={type.value}
+              className={cn(
+                'p-4 cursor-pointer transition-colors hover:bg-accent',
+                initialData?.type === type.value && 'border-primary'
+              )}
+              onClick={() => onContentTypeChange?.(type.value)}
+            >
+              <h4 className="font-medium">{type.label}</h4>
+              <p className="text-sm text-muted-foreground">
+                {type.value === 'article' && 'Create a detailed article with rich formatting'}
+                {type.value === 'blog' && 'Write a blog post for your website'}
+                {type.value === 'social' && 'Create content for social media platforms'}
+                {type.value === 'email' && 'Design an email campaign'}
+              </p>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (mode === 'content-edit') {
+    return (
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="title">Title</Label>
+          <Input
+            id="title"
+            name="title"
+            value={formData.title}
+            onChange={(e) => {
+              setFormData(prev => ({ ...prev, title: e.target.value }));
+              onTitleChange?.(e.target.value);
+            }}
+            placeholder="Enter content title"
+            className="text-lg"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Content</Label>
+          <div className="border rounded-md">
+            <RichTextEditor
+              value={formData.content || formData.description}
+              onChange={(content) => {
+                setFormData(prev => ({
+                  ...prev,
+                  content: content,
+                  description: content
+                }));
+                onContentChange?.(content, formData.mediaUrls || []);
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Media</Label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {(formData.mediaUrls || []).map((url, index) => (
+              <MediaPreview
+                key={index}
+                url={url}
+                onRemove={() => {
+                  const newUrls = (formData.mediaUrls || []).filter((_, i) => i !== index);
+                  setFormData(prev => ({
+                    ...prev,
+                    mediaUrls: newUrls
+                  }));
+                  onContentChange?.(formData.content || formData.description, newUrls);
+                }}
+              />
+            ))}
+            <div className="relative aspect-square">
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                id="media-upload"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  if (files.length > 0) {
+                    const newUrls = files.map(file => URL.createObjectURL(file));
+                    const currentUrls = formData.mediaUrls || [];
+                    const updatedUrls = [...currentUrls, ...newUrls];
+                    
+                    setFormData(prev => ({
+                      ...prev,
+                      mediaUrls: updatedUrls
+                    }));
+                    onContentChange?.(formData.content || formData.description, updatedUrls);
+                  }
+                }}
+              />
+              <label
+                htmlFor="media-upload"
+                className="absolute inset-0 flex flex-col items-center justify-center border-2 border-dashed rounded-lg cursor-pointer hover:bg-accent transition-colors"
+              >
+                <div className="p-3 rounded-full bg-primary/10 mb-2">
+                  <ImageIcon className="h-6 w-6 text-primary" />
+                </div>
+                <span className="text-sm text-muted-foreground">Add media</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (mode === 'schedule') {
+    return (
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label>Publish Date</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  'w-full justify-start text-left font-normal',
+                  !formData.date && 'text-muted-foreground'
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {formData.date ? (
+                  format(new Date(formData.date), 'PPP')
+                ) : (
+                  <span>Pick a date</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={formData.date ? new Date(formData.date) : undefined}
+                onSelect={handleDateSelect}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {mode === 'create' || mode === 'edit' ? (
@@ -654,10 +879,11 @@ export function EventForm({
                       <div key={platform.value} className="flex items-center space-x-2">
                         <Checkbox
                           id={platform.value}
-                          checked={formData.socialMediaContent.platforms.includes(platform.value as SocialPlatform)}
+                          checked={formData.socialMediaContent?.platforms.includes(platform.value as SocialPlatform)}
                           onCheckedChange={() => handlePlatformToggle(platform.value as SocialPlatform)}
                         />
-                        <Label htmlFor={platform.value} className="flex-1">
+                        <Label htmlFor={platform.value} className="flex-1 flex items-center gap-2">
+                          <platform.icon className={cn("h-4 w-4", platform.color)} />
                           {platform.label}
                         </Label>
                       </div>

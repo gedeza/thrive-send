@@ -1,86 +1,130 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CalendarEvent, SocialPlatform } from '@/types';
+import { CalendarEvent, SocialPlatform, SocialMediaContent } from '@/components/content/content-calendar';
 import { EventForm } from './EventForm';
 import { EventDetails } from './EventDetails';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
+import { saveContent } from '@/lib/api/content-service';
+import { toast } from '@/components/ui/use-toast';
 
 interface ContentWizardProps {
-  onComplete?: (event: CalendarEvent) => void;
+  onComplete: (event: CalendarEvent) => void;
+  initialData?: Partial<CalendarEvent>;
 }
 
 const steps = [
-  { id: 'platform', label: 'Select Platforms' },
-  { id: 'content', label: 'Create Content' },
+  { id: 'type', label: 'Content Type' },
+  { id: 'details', label: 'Content Details' },
   { id: 'schedule', label: 'Schedule' },
   { id: 'preview', label: 'Preview' },
 ] as const;
 
 type Step = typeof steps[number]['id'];
 
-export function ContentWizard({ onComplete }: ContentWizardProps) {
+type ContentType = 'blog' | 'social' | 'email' | 'other';
+
+export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
   const router = useRouter();
-  const [currentStep, setCurrentStep] = useState<Step>('platform');
-  const [event, setEvent] = useState<Partial<CalendarEvent>>({
-    title: '',
-    type: 'social',
-    status: 'draft',
-    socialMediaContent: {
+  const [currentStep, setCurrentStep] = useState<'type' | 'details' | 'schedule' | 'preview'>('type');
+  const [event, setEvent] = useState<Partial<CalendarEvent>>(() => ({
+    id: initialData?.id || crypto.randomUUID(),
+    title: initialData?.title || '',
+    description: initialData?.description || '',
+    type: initialData?.type || 'blog',
+    status: initialData?.status || 'draft',
+    date: initialData?.date || new Date().toISOString(),
+    time: initialData?.time || '',
+    socialMediaContent: initialData?.socialMediaContent || {
       platforms: [],
-      text: '',
       mediaUrls: [],
-    },
-  });
+      crossPost: false,
+      platformSpecificContent: {}
+    }
+  }));
 
   const progress = ((steps.findIndex(step => step.id === currentStep) + 1) / steps.length) * 100;
 
-  const handlePlatformSelect = (platforms: SocialPlatform[]) => {
+  const handleContentTypeSelect = (type: string) => {
     setEvent(prev => ({
       ...prev,
-      socialMediaContent: {
-        ...prev.socialMediaContent,
-        platforms,
-      },
+      type: type as ContentType
     }));
+    setCurrentStep('details');
   };
 
   const handleContentUpdate = (content: string, mediaUrls: string[]) => {
+    setEvent(prev => {
+      const currentSocialContent = prev.socialMediaContent || {
+        platforms: [],
+        mediaUrls: [],
+        crossPost: false,
+        platformSpecificContent: {}
+      };
+
+      return {
+        ...prev,
+        description: content,
+        socialMediaContent: {
+          ...currentSocialContent,
+          mediaUrls
+        }
+      };
+    });
+  };
+
+  const handleTitleChange = (title: string) => {
     setEvent(prev => ({
       ...prev,
-      socialMediaContent: {
-        ...prev.socialMediaContent,
-        text: content,
-        mediaUrls,
-      },
+      title
     }));
   };
 
   const handleSchedule = (date: Date) => {
     setEvent(prev => ({
       ...prev,
-      scheduledDate: date.toISOString(),
+      date: date.toISOString(),
+      status: 'scheduled'
     }));
   };
 
-  const handleComplete = () => {
-    if (onComplete && event.socialMediaContent?.platforms.length) {
-      onComplete(event as CalendarEvent);
+  const handleComplete = async () => {
+    try {
+      const eventData: CalendarEvent = {
+        id: event.id!,
+        title: event.title!,
+        description: event.description!,
+        type: event.type!,
+        status: event.status!,
+        date: event.date!,
+        time: event.time!,
+        socialMediaContent: event.socialMediaContent!
+      };
+
+      await onComplete(eventData);
+    } catch (error) {
+      console.error('Error saving content:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save content. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 
   const canProceed = () => {
     switch (currentStep) {
-      case 'platform':
-        return event.socialMediaContent?.platforms.length > 0;
-      case 'content':
-        return Boolean(event.socialMediaContent?.text.trim());
+      case 'type':
+        return Boolean(event.type);
+      case 'details':
+        return Boolean(event.title?.trim() && event.description?.trim());
       case 'schedule':
-        return Boolean(event.scheduledDate);
+        return true; // Schedule is optional
       default:
         return true;
     }
@@ -103,103 +147,120 @@ export function ContentWizard({ onComplete }: ContentWizardProps) {
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardContent className="p-6">
-        <div className="space-y-6">
-          {/* Progress Bar */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm text-muted-foreground">
-              {steps.map((step, index) => (
-                <div
-                  key={step.id}
-                  className={cn(
-                    'flex items-center',
-                    index < steps.findIndex(s => s.id === currentStep) && 'text-primary'
-                  )}
-                >
-                  <span className="hidden md:inline">{step.label}</span>
-                  <span className="md:hidden">{index + 1}</span>
-                </div>
-              ))}
+    <div className="container max-w-3xl mx-auto py-6">
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Create New Content</CardTitle>
+          <CardDescription>
+            Follow the steps below to create and schedule your content.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-8">
+            {/* Progress Bar */}
+            <div className="space-y-4">
+              <div className="flex justify-between text-sm text-muted-foreground">
+                {steps.map((step, index) => (
+                  <div
+                    key={step.id}
+                    className={cn(
+                      'flex items-center gap-2',
+                      index < steps.findIndex(s => s.id === currentStep) && 'text-primary',
+                      index === steps.findIndex(s => s.id === currentStep) && 'font-medium'
+                    )}
+                  >
+                    <span className="hidden md:inline">{step.label}</span>
+                    <span className="md:hidden">{index + 1}</span>
+                  </div>
+                ))}
+              </div>
+              <Progress value={progress} className="h-2" />
             </div>
-            <Progress value={progress} className="h-2" />
-          </div>
 
-          {/* Step Content */}
-          <div className="min-h-[400px]">
-            {currentStep === 'platform' && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Select Social Media Platforms</h3>
-                <p className="text-sm text-muted-foreground">
-                  Choose the platforms where you want to publish your content.
-                </p>
-                <EventForm
-                  initialData={event}
-                  onPlatformsChange={handlePlatformSelect}
-                  mode="platform-select"
-                />
-              </div>
-            )}
-
-            {currentStep === 'content' && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Create Your Content</h3>
-                <p className="text-sm text-muted-foreground">
-                  Write your post and add any media you'd like to include.
-                </p>
-                <EventForm
-                  initialData={event}
-                  onContentChange={handleContentUpdate}
-                  mode="content-edit"
-                />
-              </div>
-            )}
-
-            {currentStep === 'schedule' && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Schedule Your Post</h3>
-                <p className="text-sm text-muted-foreground">
-                  Choose when you want your content to be published.
-                </p>
-                <EventForm
-                  initialData={event}
-                  onSchedule={handleSchedule}
-                  mode="schedule"
-                />
-              </div>
-            )}
-
-            {currentStep === 'preview' && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Preview Your Post</h3>
-                <p className="text-sm text-muted-foreground">
-                  Review how your content will appear on each platform.
-                </p>
-                <EventDetails event={event as CalendarEvent} />
-              </div>
-            )}
-          </div>
-
-          {/* Navigation Buttons */}
-          <div className="flex justify-between pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleBack}
-              disabled={currentStep === 'platform'}
+            {/* Step Content */}
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+              className="min-h-[400px]"
             >
-              Back
-            </Button>
-            <Button
-              type="button"
-              onClick={handleNext}
-              disabled={!canProceed()}
-            >
-              {currentStep === 'preview' ? 'Schedule Post' : 'Next'}
-            </Button>
+              {currentStep === 'type' && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Select Content Type</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Choose the type of content you want to create.
+                  </p>
+                  <EventForm
+                    initialData={event}
+                    onContentTypeChange={handleContentTypeSelect}
+                    mode="type-select"
+                  />
+                </div>
+              )}
+
+              {currentStep === 'details' && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Create Your Content</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Write your content and add any media you'd like to include.
+                  </p>
+                  <EventForm
+                    initialData={event}
+                    onContentChange={handleContentUpdate}
+                    onTitleChange={handleTitleChange}
+                    mode="content-edit"
+                  />
+                </div>
+              )}
+
+              {currentStep === 'schedule' && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Schedule Your Content</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Choose when you want your content to be published.
+                  </p>
+                  <EventForm
+                    initialData={event}
+                    onSchedule={handleSchedule}
+                    mode="schedule"
+                  />
+                </div>
+              )}
+
+              {currentStep === 'preview' && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Preview Your Content</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Review your content before publishing.
+                  </p>
+                  <EventDetails event={event as CalendarEvent} />
+                </div>
+              )}
+            </motion.div>
+
+            {/* Navigation Buttons */}
+            <div className="flex justify-between pt-6 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleBack}
+                disabled={currentStep === 'type'}
+              >
+                Back
+              </Button>
+              <Button
+                type="button"
+                onClick={handleNext}
+                disabled={!canProceed()}
+              >
+                {currentStep === 'preview' ? 'Create Content' : 'Next'}
+              </Button>
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 } 
