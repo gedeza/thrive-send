@@ -8,6 +8,14 @@ datasource db {
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
+enum UserRole {
+  CONTENT_CREATOR
+  REVIEWER
+  APPROVER
+  PUBLISHER
+  ADMIN
+}
+
 model User {
   id                      String               @id @default(cuid())
   clerkId                 String               @unique
@@ -20,6 +28,7 @@ model User {
   emailVerified           DateTime?
   image                   String?
   name                    String?
+  role                    UserRole             @default(CONTENT_CREATOR)
   accounts                Account[]
   activities              Activity[]
   calendarEvents          CalendarEvent[]
@@ -30,6 +39,11 @@ model User {
   projects                Project[]
   sessions                Session[]
   Template                Template[]
+  createdApprovals        ContentApproval[]    @relation("CreatedApprovals")
+  assignedApprovals       ContentApproval[]    @relation("AssignedApprovals")
+  approvalHistory         ApprovalHistory[]
+  comments                Comment[]
+  notifications           Notification[]
 }
 
 model Organization {
@@ -334,6 +348,7 @@ model Content {
   publishedAt DateTime?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+  approval    ContentApproval?
 
   @@index([authorId])
   @@index([type])
@@ -367,4 +382,97 @@ enum CampaignStatus {
   completed
   paused
   cancelled
+}
+
+enum ContentStatus {
+  DRAFT
+  PENDING_REVIEW
+  IN_REVIEW
+  CHANGES_REQUESTED
+  APPROVED
+  REJECTED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ApprovalStep {
+  CREATION
+  REVIEW
+  APPROVAL
+  PUBLICATION
+}
+
+model ContentApproval {
+  id          String      @id @default(cuid())
+  contentId   String      @unique // Reference to content
+  status      ContentStatus
+  currentStep ApprovalStep
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  createdBy   String      // User ID
+  assignedTo  String?     // Reviewer/Approver ID
+  comments    Comment[]
+  history     ApprovalHistory[]
+  content     Content     @relation(fields: [contentId], references: [id])
+  creator     User        @relation("CreatedApprovals", fields: [createdBy], references: [id])
+  assignee    User?       @relation("AssignedApprovals", fields: [assignedTo], references: [id])
+
+  @@index([createdBy])
+  @@index([assignedTo])
+}
+
+model ApprovalHistory {
+  id          String      @id @default(cuid())
+  approvalId  String      // Reference to ContentApproval
+  status      ContentStatus
+  step        ApprovalStep
+  comment     String?
+  createdAt   DateTime    @default(now())
+  createdBy   String      // User ID
+  approval    ContentApproval @relation(fields: [approvalId], references: [id])
+  user        User        @relation(fields: [createdBy], references: [id])
+
+  @@index([approvalId])
+  @@index([createdBy])
+}
+
+model Comment {
+  id          String      @id @default(cuid())
+  approvalId  String      // Reference to ContentApproval
+  content     String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  createdBy   String      // User ID
+  parentId    String?     // For threaded comments
+  approval    ContentApproval @relation(fields: [approvalId], references: [id])
+  user        User        @relation(fields: [createdBy], references: [id])
+  parent      Comment?    @relation("CommentReplies", fields: [parentId], references: [id])
+  replies     Comment[]   @relation("CommentReplies")
+
+  @@index([approvalId])
+  @@index([createdBy])
+  @@index([parentId])
+}
+
+enum NotificationType {
+  CONTENT_SUBMITTED
+  REVIEW_ASSIGNED
+  FEEDBACK_PROVIDED
+  STATUS_CHANGED
+  APPROVAL_REJECTED
+  CONTENT_PUBLISHED
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  type        NotificationType
+  message     String
+  read        Boolean         @default(false)
+  userId      String
+  createdAt   DateTime        @default(now())
+  user        User            @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([type])
+  @@index([read])
 }

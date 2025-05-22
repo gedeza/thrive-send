@@ -63,7 +63,8 @@ const statusColorMap = {
 }
 
 interface DashboardOverviewProps {
-  dateRange: '7d' | '30d' | '90d'
+  dateRange: '1d' | '7d' | '30d' | 'custom';
+  customRange?: { from: string; to: string } | null;
 }
 
 // --- InfoCard (reusable for metrics)
@@ -99,7 +100,7 @@ export function InfoCard({ title, value, icon, change, iconClass, numberClass }:
 }
 
 // --- Growth Chart Component
-function GrowthChart({ data, dateRange }: { data: number[], dateRange: '7d' | '30d' | '90d' }) {
+function GrowthChart({ data, dateRange }: { data: number[], dateRange: '1d' | '7d' | '30d' | 'custom' }) {
   const labels = Array.from({ length: data.length }, (_, i) => {
     const date = new Date()
     date.setDate(date.getDate() - (data.length - 1 - i))
@@ -355,7 +356,7 @@ export function TinyBarChart({ data }: { data: number[] }) {
 }
 
 // --- Main DashboardOverview
-export function DashboardOverview({ dateRange }: DashboardOverviewProps) {
+export function DashboardOverview({ dateRange, customRange }: DashboardOverviewProps) {
   // Demo data, integrate with backend/schema later
   const metrics = [
     { title: "Active Campaigns", value: 5, change: "+8%" },
@@ -365,12 +366,21 @@ export function DashboardOverview({ dateRange }: DashboardOverviewProps) {
   ];
 
   // Generate data based on date range
-  const getDataForRange = (range: '7d' | '30d' | '90d') => {
-    const length = range === '7d' ? 7 : range === '30d' ? 30 : 90;
-    return Array.from({ length }, () => Math.floor(Math.random() * 50) + 10);
+  const getDataForRange = (range: '1d' | '7d' | '30d' | 'custom', custom?: { from: string; to: string } | null) => {
+    if (range === '1d') return [Math.floor(Math.random() * 50) + 10];
+    if (range === '7d') return Array.from({ length: 7 }, () => Math.floor(Math.random() * 50) + 10);
+    if (range === '30d') return Array.from({ length: 30 }, () => Math.floor(Math.random() * 50) + 10);
+    if (range === 'custom' && custom && custom.from && custom.to) {
+      // Calculate days between from and to
+      const fromDate = new Date(custom.from);
+      const toDate = new Date(custom.to);
+      const days = Math.max(1, Math.floor((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+      return Array.from({ length: days }, () => Math.floor(Math.random() * 50) + 10);
+    }
+    return Array.from({ length: 7 }, () => Math.floor(Math.random() * 50) + 10); // default to 7d
   };
 
-  const growthData = getDataForRange(dateRange);
+  const growthData = getDataForRange(dateRange, customRange);
   const campaigns = [
     { name: "Spring Sale", status: "Sent", sentAt: "2024-06-01" },
     { name: "Newsletter May", status: "Draft", sentAt: "—" },

@@ -485,7 +485,7 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
         });
         
         if (!event.socialMediaContent?.platforms || event.socialMediaContent.platforms.length === 0) {
-          throw new Error("Please select at least one social media platform");
+        throw new Error("Please select at least one social media platform");
         }
       }
 

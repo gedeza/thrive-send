@@ -215,102 +215,102 @@ export function useAnalytics() {
 
   // Analytics Dashboard Data
   const fetchAnalyticsMetrics = async (params: AnalyticsParams) => {
-    try {
+  try {
       const headers = await getAuthHeaders();
-      const queryParams = new URLSearchParams();
-      if (params.startDate) queryParams.append('startDate', params.startDate.toISOString());
-      if (params.endDate) queryParams.append('endDate', params.endDate.toISOString());
-      if (params.timeframe) queryParams.append('timeframe', params.timeframe);
-      if (params.campaignId) queryParams.append('campaignId', params.campaignId);
+    const queryParams = new URLSearchParams();
+    if (params.startDate) queryParams.append('startDate', params.startDate.toISOString());
+    if (params.endDate) queryParams.append('endDate', params.endDate.toISOString());
+    if (params.timeframe) queryParams.append('timeframe', params.timeframe);
+    if (params.campaignId) queryParams.append('campaignId', params.campaignId);
 
       const response = await fetch(`/api/analytics?${queryParams.toString()}`, {
         headers,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch analytics data');
-      }
-      return response.json();
-    } catch (error) {
-      console.error('Error fetching analytics metrics:', error);
-      throw error;
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch analytics data');
     }
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching analytics metrics:', error);
+    throw error;
+  }
   };
 
   const fetchAudienceGrowthData = async (params: AnalyticsParams) => {
-    try {
+  try {
       const headers = await getAuthHeaders();
-      const queryParams = new URLSearchParams();
-      if (params.startDate) queryParams.append('startDate', params.startDate.toISOString());
-      if (params.endDate) queryParams.append('endDate', params.endDate.toISOString());
-      if (params.timeframe) queryParams.append('timeframe', params.timeframe);
-      if (params.campaignId) queryParams.append('campaignId', params.campaignId);
+    const queryParams = new URLSearchParams();
+    if (params.startDate) queryParams.append('startDate', params.startDate.toISOString());
+    if (params.endDate) queryParams.append('endDate', params.endDate.toISOString());
+    if (params.timeframe) queryParams.append('timeframe', params.timeframe);
+    if (params.campaignId) queryParams.append('campaignId', params.campaignId);
 
       const response = await fetch(`/api/analytics?${queryParams.toString()}`, {
         headers,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch audience growth data');
-      }
-      const data = await response.json();
-      return data.audienceGrowthData || audienceGrowthMockData;
-    } catch (error) {
-      console.error('Error fetching audience growth data:', error);
-      return audienceGrowthMockData;
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch audience growth data');
     }
+    const data = await response.json();
+    return data.audienceGrowthData || audienceGrowthMockData;
+  } catch (error) {
+    console.error('Error fetching audience growth data:', error);
+    return audienceGrowthMockData;
+  }
   };
 
   const fetchEngagementBreakdownData = async (params: AnalyticsParams) => {
-    try {
+  try {
       const headers = await getAuthHeaders();
-      const queryParams = new URLSearchParams();
-      if (params.startDate) queryParams.append('startDate', params.startDate.toISOString());
-      if (params.endDate) queryParams.append('endDate', params.endDate.toISOString());
-      if (params.timeframe) queryParams.append('timeframe', params.timeframe);
-      if (params.campaignId) queryParams.append('campaignId', params.campaignId);
+    const queryParams = new URLSearchParams();
+    if (params.startDate) queryParams.append('startDate', params.startDate.toISOString());
+    if (params.endDate) queryParams.append('endDate', params.endDate.toISOString());
+    if (params.timeframe) queryParams.append('timeframe', params.timeframe);
+    if (params.campaignId) queryParams.append('campaignId', params.campaignId);
 
       const response = await fetch(`/api/analytics?${queryParams.toString()}`, {
         headers,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch engagement breakdown data');
-      }
-      const data = await response.json();
-      return data.engagementPieData || engagementPieMockData;
-    } catch (error) {
-      console.error('Error fetching engagement breakdown data:', error);
-      return engagementPieMockData;
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch engagement breakdown data');
     }
+    const data = await response.json();
+    return data.engagementPieData || engagementPieMockData;
+  } catch (error) {
+    console.error('Error fetching engagement breakdown data:', error);
+    return engagementPieMockData;
+  }
   };
 
   const fetchPerformanceTrendData = async (params: AnalyticsParams) => {
-    try {
+  try {
       const headers = await getAuthHeaders();
-      const queryParams = new URLSearchParams();
-      if (params.startDate) queryParams.append('startDate', params.startDate.toISOString());
-      if (params.endDate) queryParams.append('endDate', params.endDate.toISOString());
-      if (params.timeframe) queryParams.append('timeframe', params.timeframe);
-      if (params.campaignId) queryParams.append('campaignId', params.campaignId);
+    const queryParams = new URLSearchParams();
+    if (params.startDate) queryParams.append('startDate', params.startDate.toISOString());
+    if (params.endDate) queryParams.append('endDate', params.endDate.toISOString());
+    if (params.timeframe) queryParams.append('timeframe', params.timeframe);
+    if (params.campaignId) queryParams.append('campaignId', params.campaignId);
 
       const response = await fetch(`/api/analytics?${queryParams.toString()}`, {
         headers,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch performance trend data');
-      }
-      const data = await response.json();
-      return data.performanceLineData || performanceLineMockData;
-    } catch (error) {
-      console.error('Error fetching performance trend data:', error);
-      return performanceLineMockData;
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch performance trend data');
     }
+    const data = await response.json();
+    return data.performanceLineData || performanceLineMockData;
+  } catch (error) {
+    console.error('Error fetching performance trend data:', error);
+    return performanceLineMockData;
+  }
   };
 
   return {

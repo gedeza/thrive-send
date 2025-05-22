@@ -108,7 +108,7 @@ function AnalyticsPageContent() {
     timeframe: timeframe as any,
     campaignId
   });
-
+  
   // Function to handle data export
   const handleExport = async () => {
     try {
@@ -116,11 +116,11 @@ function AnalyticsPageContent() {
         throw new Error('Please select a valid date range');
       }
 
-      toast({
-        title: "Export started",
-        description: `Exporting analytics data from ${format(dateRange.from, 'MMM d, yyyy')} to ${format(dateRange.to, 'MMM d, yyyy')}`,
-      });
-      
+    toast({
+      title: "Export started",
+      description: `Exporting analytics data from ${format(dateRange.from, 'MMM d, yyyy')} to ${format(dateRange.to, 'MMM d, yyyy')}`,
+    });
+    
       const blob = await analytics.exportData('csv', {
         start: dateRange.from.toISOString(),
         end: dateRange.to.toISOString()
@@ -149,7 +149,7 @@ function AnalyticsPageContent() {
       });
     }
   };
-
+  
   // Handle errors
   if (metricsError || audienceError || engagementError || performanceError) {
     toast({

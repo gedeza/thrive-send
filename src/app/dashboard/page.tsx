@@ -1,137 +1,226 @@
-"use client";
+"use client"
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth, useOrganization, useUser } from '@clerk/nextjs';
-import { DashboardOverview } from '@/components/dashboard/DashboardOverview';
-import { DashboardNav } from '@/components/dashboard/DashboardNav';
-import { MainLayout } from '@/components/layout/main-layout';
+import { BarChart, Calendar, FileText, Users, Plus, Download, Filter, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
-import { Calendar } from 'lucide-react';
+import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/solid';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import { AnalyticsChart } from "@/components/dashboard/analytics-chart"
+import { ActivityFeed, type Activity as ActivityType } from "@/components/dashboard/activity-feed"
+import { DashboardOverview } from '@/components/dashboard/DashboardOverview';
 
-export default function DashboardPage() {
-  const { isLoaded, userId } = useAuth();
-  const { isLoaded: isOrgLoaded, organization } = useOrganization();
-  const { user } = useUser();
+interface AnalyticsData {
+  metrics: {
+    title: string;
+    value: string;
+    comparison: string;
+    percentChange: number;
+  }[];
+  timestamp: string;
+}
+
+// Default metrics when analytics data is not available
+const defaultMetrics = [
+  {
+    title: "Total Views",
+    value: "0",
+    comparison: "No data available",
+    percentChange: 0,
+  },
+  {
+    title: "Engagement Rate",
+    value: "0%",
+    comparison: "No data available",
+    percentChange: 0,
+  },
+  {
+    title: "Conversion Rate",
+    value: "0%",
+    comparison: "No data available",
+    percentChange: 0,
+  },
+  {
+    title: "Revenue",
+    value: "$0",
+    comparison: "No data available",
+    percentChange: 0,
+  },
+];
+
+// Sample data for the analytics chart
+const chartData = [
+  { date: "2024-01", value: 400 },
+  { date: "2024-02", value: 300 },
+  { date: "2024-03", value: 600 },
+  { date: "2024-04", value: 800 },
+  { date: "2024-05", value: 700 },
+  { date: "2024-06", value: 900 },
+]
+
+// Sample data for the activity feed
+const activities: ActivityType[] = [
+  {
+    id: "1",
+    type: "campaign",
+    title: "New Campaign Created",
+    description: "Spring Sale Campaign was created",
+    timestamp: "2024-06-01T10:00:00Z",
+    user: {
+      name: "John Doe",
+      image: "https://github.com/shadcn.png",
+    },
+  },
+  {
+    id: "2",
+    type: "email",
+    title: "Email Sent",
+    description: "Newsletter was sent to 1,000 subscribers",
+    timestamp: "2024-06-01T09:30:00Z",
+  },
+  {
+    id: "3",
+    type: "user",
+    title: "New User Joined",
+    description: "Sarah Smith joined the organization",
+    timestamp: "2024-06-01T09:00:00Z",
+    user: {
+      name: "Sarah Smith",
+    },
+  },
+  {
+    id: "4",
+    type: "system",
+    title: "System Update",
+    description: "System maintenance completed successfully",
+    timestamp: "2024-06-01T08:30:00Z",
+  },
+]
+
+export default function DashboardHomePage() {
   const router = useRouter();
-  const [isDataLoading, setIsDataLoading] = useState(true);
-  const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d'>('7d');
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [dateRange, setDateRange] = useState<'1d' | '7d' | '30d' | 'custom'>('7d');
+  const [customRange, setCustomRange] = useState<{ from: string; to: string } | null>(null);
 
   useEffect(() => {
-    if (isLoaded && !userId) {
-      router.push('/sign-in');
+    let eventSource: EventSource | null = null;
+
+    try {
+      eventSource = new EventSource('/api/analytics/events');
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.error) {
+            setError(data.error);
+            setAnalyticsData({ metrics: defaultMetrics, timestamp: new Date().toISOString() });
+          } else {
+            setAnalyticsData(data);
+            setError(null);
+          }
+          setIsLoading(false);
+        } catch (error) {
+          console.error('Error parsing SSE data:', error);
+          setError('Failed to parse analytics data');
+          setAnalyticsData({ metrics: defaultMetrics, timestamp: new Date().toISOString() });
+          setIsLoading(false);
+        }
+      };
+
+      eventSource.onerror = (error) => {
+        console.error('SSE error:', error);
+        setError('Failed to connect to analytics stream');
+        setAnalyticsData({ metrics: defaultMetrics, timestamp: new Date().toISOString() });
+        setIsLoading(false);
+        eventSource?.close();
+      };
+    } catch (error) {
+      console.error('Error setting up SSE:', error);
+      setError('Failed to set up analytics stream');
+      setAnalyticsData({ metrics: defaultMetrics, timestamp: new Date().toISOString() });
+      setIsLoading(false);
     }
-  }, [isLoaded, userId, router]);
 
-  // Simulate data loading - replace with actual data fetching
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        // Add your data fetching logic here
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulated delay
-        setIsDataLoading(false);
-      } catch (error) {
-        console.error('Error loading dashboard data:', error);
-        setIsDataLoading(false);
-      }
+    return () => {
+      eventSource?.close();
     };
-
-    if (isLoaded && isOrgLoaded && organization) {
-      loadData();
-    }
-  }, [isLoaded, isOrgLoaded, organization, dateRange]);
-
-  if (!isLoaded || !isOrgLoaded) {
-    return (
-      <MainLayout>
-        <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4">Loading...</h1>
-            <p className="text-muted-foreground">Please wait while we verify your authentication.</p>
-          </div>
-        </div>
-      </MainLayout>
-    );
-  }
-
-  if (!organization) {
-    return (
-      <MainLayout>
-        <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4">Organization Required</h1>
-            <p className="text-muted-foreground mb-4">Please select an organization to access the dashboard.</p>
-            <button
-              onClick={() => router.push('/organization')}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-            >
-              Select Organization
-            </button>
-          </div>
-        </div>
-      </MainLayout>
-    );
-  }
+  }, []);
 
   return (
-    <MainLayout>
-      <div className="flex-1 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-          <div className="flex items-center gap-2">
-            <Button
-              variant={dateRange === '7d' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setDateRange('7d')}
-              aria-label="Last 7 days"
-            >
-              7D
-            </Button>
-            <Button
-              variant={dateRange === '30d' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setDateRange('30d')}
-              aria-label="Last 30 days"
-            >
-              30D
-            </Button>
-            <Button
-              variant={dateRange === '90d' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setDateRange('90d')}
-              aria-label="Last 90 days"
-            >
-              90D
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="ml-2"
-              aria-label="Custom date range"
-            >
-              <Calendar className="h-4 w-4 mr-2" />
-              Custom
-            </Button>
+    <div className="flex-1 space-y-8 p-8 pt-6 bg-neutral-background">
+      {/* Date Range Buttons */}
+      <div className="flex flex-wrap items-center gap-2 mb-6">
+        <Button
+          variant={dateRange === '1d' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setDateRange('1d')}
+        >
+          1D
+        </Button>
+        <Button
+          variant={dateRange === '7d' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setDateRange('7d')}
+        >
+          7D
+        </Button>
+        <Button
+          variant={dateRange === '30d' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setDateRange('30d')}
+        >
+          30D
+        </Button>
+        <Button
+          variant={dateRange === 'custom' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setDateRange('custom')}
+        >
+          CUSTOM
+        </Button>
+        {dateRange === 'custom' && (
+          <div className="flex items-center gap-2 ml-2">
+            <input
+              type="date"
+              value={customRange?.from || ''}
+              onChange={e => setCustomRange(r => ({ ...r, from: e.target.value }))}
+              className="border rounded px-2 py-1 text-sm"
+            />
+            <span>-</span>
+            <input
+              type="date"
+              value={customRange?.to || ''}
+              onChange={e => setCustomRange(r => ({ ...r, to: e.target.value }))}
+              className="border rounded px-2 py-1 text-sm"
+            />
           </div>
-        </div>
-        <DashboardNav />
-        {isDataLoading ? (
-          <div className="space-y-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-              {[...Array(4)].map((_, i) => (
-                <Skeleton key={i} className="h-[120px] rounded-xl" />
-              ))}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Skeleton className="h-[300px] rounded-xl" />
-              <Skeleton className="h-[300px] rounded-xl" />
-            </div>
-          </div>
-        ) : (
-          <DashboardOverview dateRange={dateRange} />
         )}
       </div>
-    </MainLayout>
+
+      {/* Dashboard Overview Section */}
+      <DashboardOverview dateRange={dateRange} customRange={customRange} />
+
+      {/* Analytics Chart Section */}
+      <div className="mt-8">
+        <AnalyticsChart
+          data={[]}
+          title="Monthly Engagement"
+          value="900"
+          description="Engagement over the last 6 months"
+        />
+      </div>
+
+      {/* Activity Feed Section */}
+      <div className="mt-8">
+        <ActivityFeed activities={[]} />
+      </div>
+    </div>
   );
 } 

@@ -1,9 +1,81 @@
 import { authMiddleware } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
 import { prisma } from "@/lib/prisma";
 
+// Create a new ratelimiter that allows 10 requests per 10 seconds
+const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(10, "10 s"),
+  analytics: true,
+});
+
+// Role-based access control middleware
+async function checkRoleAccess(request: NextRequest, userId: string) {
+  // Skip role check for public routes
+  if (request.nextUrl.pathname.startsWith('/api/public')) {
+    return true;
+  }
+
+  // Get user role from database
+  const user = await prisma.user.findUnique({
+    where: { clerkId: userId },
+    select: { role: true }
+  });
+
+  if (!user) return false;
+
+  // Define role-based access rules
+  const roleAccess = {
+    CONTENT_CREATOR: ['/api/content', '/api/comments'],
+    REVIEWER: ['/api/content', '/api/comments', '/api/review'],
+    APPROVER: ['/api/content', '/api/comments', '/api/review', '/api/approve'],
+    PUBLISHER: ['/api/content', '/api/comments', '/api/review', '/api/approve', '/api/publish'],
+    ADMIN: ['*'] // Admin has access to everything
+  };
+
+  const userRole = user.role;
+  const allowedPaths = roleAccess[userRole];
+
+  // Check if the current path is allowed for the user's role
+  return allowedPaths.includes('*') || 
+    allowedPaths.some(path => request.nextUrl.pathname.startsWith(path));
+}
+
 export default authMiddleware({
+  async beforeAuth(request) {
+    // Rate limiting
+    const ip = request.ip ?? "127.0.0.1";
+    const { success, limit, reset, remaining } = await ratelimit.limit(ip);
+
+    if (!success) {
+      return new NextResponse("Too Many Requests", {
+        status: 429,
+        headers: {
+          "X-RateLimit-Limit": limit.toString(),
+          "X-RateLimit-Remaining": remaining.toString(),
+          "X-RateLimit-Reset": reset.toString(),
+        },
+      });
+    }
+
+    return null;
+  },
+
   async afterAuth(auth, req) {
+    // Handle authentication
+    if (!auth.userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check role-based access
+    const hasAccess = await checkRoleAccess(req, auth.userId);
+    if (!hasAccess) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     console.log("Middleware: Starting afterAuth with auth:", {
       userId: auth.userId,
       sessionId: auth.sessionId,
@@ -63,7 +135,7 @@ export default authMiddleware({
       console.log("Middleware: No userId in auth object");
     }
 
-    return NextResponse.next();
+    return null;
   },
 });
 
