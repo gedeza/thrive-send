@@ -2,7 +2,7 @@ import { format, isSameDay, isSameMonth } from "date-fns";
 import { Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CalendarEvent, SocialPlatform } from "./content-calendar";
-import { useDraggable } from "@dnd-kit/core";
+import { useDraggable, useDroppable } from "@dnd-kit/core";
 
 interface DayProps {
   day: Date;
@@ -56,7 +56,7 @@ const eventTypeColorMap = {
 };
 
 function DraggableEvent({ event, onClick }: { event: CalendarEvent; onClick: () => void }) {
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: event.id,
     data: {
       event,
@@ -66,6 +66,7 @@ function DraggableEvent({ event, onClick }: { event: CalendarEvent; onClick: () 
 
   const style = transform ? {
     transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+    zIndex: isDragging ? 999 : 'auto'
   } : undefined;
 
   return (
@@ -75,14 +76,15 @@ function DraggableEvent({ event, onClick }: { event: CalendarEvent; onClick: () 
       {...listeners}
       {...attributes}
       className={cn(
-        "text-xs p-1.5 px-2 rounded-md truncate cursor-pointer flex items-center gap-1.5 transition-colors duration-200",
+        "text-xs p-1.5 px-2 rounded-md truncate cursor-move flex items-center gap-1.5 transition-colors duration-200",
         event.type === "social" && event.socialMediaContent?.platforms?.length === 1
           ? platformColorMap[event.socialMediaContent.platforms[0]].bg
           : eventTypeColorMap[event.type]?.bg || "bg-gray-100 dark:bg-gray-700/30",
         event.type === "social" && event.socialMediaContent?.platforms?.length === 1
           ? platformColorMap[event.socialMediaContent.platforms[0]].text
           : eventTypeColorMap[event.type]?.text || "text-foreground",
-        "hover:opacity-80"
+        "hover:opacity-80",
+        isDragging && "opacity-50"
       )}
       title={`${event.title}${event.time ? ` - ${event.time}` : ''}`}
       onClick={(e) => {
@@ -124,13 +126,22 @@ export function Day({ day, events, onEventClick, onClick }: DayProps) {
   const isCurrentMonth = isSameMonth(day, new Date());
   const dayStr = format(day, "yyyy-MM-dd");
 
+  const { setNodeRef, isOver } = useDroppable({
+    id: dayStr,
+    data: {
+      date: dayStr
+    }
+  });
+
   return (
     <div
+      ref={setNodeRef}
       className={cn(
         "p-1 min-h-[100px] border border-muted rounded-sm transition-colors duration-200",
         isToday && "bg-[var(--color-chart-blue)]/5 border-[var(--color-chart-blue)]/30",
         !isCurrentMonth && "opacity-50",
-        "hover:bg-muted/50 cursor-pointer"
+        "hover:bg-muted/50 cursor-pointer",
+        isOver && "bg-muted/80 border-primary"
       )}
       onClick={onClick}
       data-date={dayStr}

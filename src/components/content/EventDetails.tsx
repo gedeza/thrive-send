@@ -105,6 +105,10 @@ const SocialMediaPreview = ({ platform, content }: { platform: SocialPlatform; c
                 alt={`Media ${index + 1} for ${platform}`}
                 className="rounded-md object-cover w-full h-full"
                 loading="lazy"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = '/placeholder-image.png';
+                }}
               />
             </div>
           ))}
@@ -324,6 +328,10 @@ export function EventDetails({ event, onEdit, onDelete, onRefreshAnalytics }: Ev
                                   alt={`Media ${index + 1} for ${platform}`}
                                   className="rounded-md object-cover w-full h-full"
                                   loading="lazy"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.src = '/placeholder-image.png';
+                                  }}
                                 />
                               </div>
                             ))}
@@ -389,55 +397,70 @@ export function EventDetails({ event, onEdit, onDelete, onRefreshAnalytics }: Ev
         <TabsContent value="preview" className="space-y-4">
           {event.type === "social" && event.socialMediaContent ? (
             <div className="space-y-6">
-              {event.socialMediaContent.platforms.map((platform) => {
-                const content = event.socialMediaContent?.platformSpecificContent?.[platform];
-                const preview = event.preview?.platformPreviews?.[platform];
-                
-                return (
-                  <Card key={platform}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground" aria-hidden="true">
-                            {platformIcons[platform]}
-                          </span>
-                          <CardTitle>{platform} Preview</CardTitle>
-                        </div>
-                        {preview?.status && (
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              preview.status === 'approved' && "bg-green-100 text-green-800",
-                              preview.status === 'rejected' && "bg-red-100 text-red-800",
-                              preview.status === 'pending' && "bg-yellow-100 text-yellow-800"
-                            )}
-                          >
-                            {preview.status}
-                          </Badge>
-                        )}
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {content ? (
-                        <SocialMediaPreview platform={platform} content={content} />
-                      ) : (
-                        <div className="text-center py-8 text-muted-foreground">
-                          No content available for {platform}
-                        </div>
-                      )}
-                      {preview?.rejectionReason && (
-                        <Alert intent="error" style={{ marginTop: '1rem' }}>
-                          <AlertCircle className="h-4 w-4" />
-                          <div className="ml-2">
-                            <h4 className="font-medium">Rejection Reason</h4>
-                            <p className="text-sm text-muted-foreground">{preview.rejectionReason}</p>
+              {/* If no platforms are selected, show a message and a Back to Edit button */}
+              {event.socialMediaContent.platforms.length === 0 && (
+                <div className="space-y-4">
+                  <div className="font-semibold text-lg">Social Media Content</div>
+                  <div className="mb-2 text-destructive">
+                    No platforms selected. Please go back to the previous step and select at least one social media platform.
+                  </div>
+                  {onEdit && (
+                    <Button variant="outline" onClick={onEdit}>
+                      Back to Edit
+                    </Button>
+                  )}
+                </div>
+              )}
+              {/* Existing preview rendering for selected platforms */}
+              {event.socialMediaContent.platforms.length > 0 &&
+                event.socialMediaContent.platforms.map((platform) => {
+                  const content = event.socialMediaContent?.platformSpecificContent?.[platform];
+                  const preview = event.preview?.platformPreviews?.[platform];
+                  return (
+                    <Card key={platform}>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground" aria-hidden="true">
+                              {platformIcons[platform]}
+                            </span>
+                            <CardTitle>{platform} Preview</CardTitle>
                           </div>
-                        </Alert>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                          {preview?.status && (
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                preview.status === 'approved' && "bg-green-100 text-green-800",
+                                preview.status === 'rejected' && "bg-red-100 text-red-800",
+                                preview.status === 'pending' && "bg-yellow-100 text-yellow-800"
+                              )}
+                            >
+                              {preview.status}
+                            </Badge>
+                          )}
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {content ? (
+                          <SocialMediaPreview platform={platform} content={content} />
+                        ) : (
+                          <div className="text-center py-8 text-muted-foreground">
+                            No content available for {platform}
+                          </div>
+                        )}
+                        {preview?.rejectionReason && (
+                          <Alert intent="error" style={{ marginTop: '1rem' }}>
+                            <AlertCircle className="h-4 w-4" />
+                            <div className="ml-2">
+                              <h4 className="font-medium">Rejection Reason</h4>
+                              <p className="text-sm text-muted-foreground">{preview.rejectionReason}</p>
+                            </div>
+                          </Alert>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
             </div>
           ) : (
             <Card>

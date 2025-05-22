@@ -232,29 +232,25 @@ interface FormSocialMediaContent {
   };
 }
 
-type AllowedContentType = 'social' | 'email' | 'blog' | 'other';
+type AllowedContentType = 'article' | 'blog' | 'social' | 'email';
 type AllowedStatus = 'draft' | 'scheduled' | 'sent' | 'failed';
 
 interface FormData {
   id: string;
   title: string;
   description: string;
-  type: "email" | "social" | "blog" | "other";
-  status: "draft" | "scheduled" | "sent" | "failed";
+  type: AllowedContentType;
+  status: AllowedStatus;
   date: string;
-  time: string;
+  time?: string;
   content?: string;
   mediaUrls?: string[];
-  socialMediaContent?: {
+  socialMediaContent: {
     platforms: SocialPlatform[];
     crossPost: boolean;
     mediaUrls: string[];
     platformSpecificContent: {
-      [key in SocialPlatform]?: {
-        text?: string;
-        mediaUrls?: string[];
-        scheduledTime?: string;
-      };
+      [key in SocialPlatform]?: PlatformSpecificContent;
     };
   };
   analytics?: {
@@ -284,13 +280,138 @@ interface FormErrors {
   description?: string;
   date?: string;
   time?: string;
+  type?: string;
+  status?: string;
+  submit?: string;
   socialMediaContent?: {
-    [key in SocialPlatform]?: {
+    platforms?: {
+      text: string;
+    };
+    FACEBOOK?: {
+      text?: string;
+      mediaUrls?: string;
+    };
+    TWITTER?: {
+      text?: string;
+      mediaUrls?: string;
+    };
+    INSTAGRAM?: {
+      text?: string;
+      mediaUrls?: string;
+    };
+    LINKEDIN?: {
       text?: string;
       mediaUrls?: string;
     };
   };
 }
+
+// Add type guards
+const isSocialPlatform = (platform: string): platform is SocialPlatform => {
+  return ['FACEBOOK', 'TWITTER', 'INSTAGRAM', 'LINKEDIN'].includes(platform);
+};
+
+const isAllowedContentType = (type: string): type is AllowedContentType => {
+  return ['article', 'blog', 'social', 'email'].includes(type);
+};
+
+const isAllowedStatus = (status: string): status is AllowedStatus => {
+  return ['draft', 'scheduled', 'sent', 'failed'].includes(status);
+};
+
+// Add error types
+type FormError = {
+  code: string;
+  message: string;
+  field?: string;
+};
+
+type ValidationError = FormError & {
+  validationType: 'required' | 'format' | 'length' | 'count';
+};
+
+// Add validation functions
+const validateTitle = (title: string): ValidationError | null => {
+  if (!title.trim()) {
+    return {
+      code: 'TITLE_REQUIRED',
+      message: 'Title is required',
+      field: 'title',
+      validationType: 'required'
+    };
+  }
+  if (title.length > 100) {
+    return {
+      code: 'TITLE_TOO_LONG',
+      message: 'Title must be less than 100 characters',
+      field: 'title',
+      validationType: 'length'
+    };
+  }
+  return null;
+};
+
+const validateDate = (date: string): ValidationError | null => {
+  if (!date) {
+    return {
+      code: 'DATE_REQUIRED',
+      message: 'Date is required',
+      field: 'date',
+      validationType: 'required'
+    };
+  }
+  const dateObj = new Date(date);
+  if (isNaN(dateObj.getTime())) {
+    return {
+      code: 'INVALID_DATE',
+      message: 'Invalid date format',
+      field: 'date',
+      validationType: 'format'
+    };
+  }
+  return null;
+};
+
+const validateTime = (time: string | undefined): ValidationError | null => {
+  if (!time) {
+    return {
+      code: 'TIME_REQUIRED',
+      message: 'Time is required',
+      field: 'time',
+      validationType: 'required'
+    };
+  }
+  const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+  if (!timeRegex.test(time)) {
+    return {
+      code: 'INVALID_TIME',
+      message: 'Invalid time format (HH:MM)',
+      field: 'time',
+      validationType: 'format'
+    };
+  }
+  return null;
+};
+
+const validateSocialContent = (content: string, platform: SocialPlatform): ValidationError | null => {
+  if (!content.trim()) {
+    return {
+      code: 'CONTENT_REQUIRED',
+      message: `${platform} content is required`,
+      field: 'content',
+      validationType: 'required'
+    };
+  }
+  if (content.length > platformContentLimits[platform].maxTextLength) {
+    return {
+      code: 'CONTENT_TOO_LONG',
+      message: `${platform} content exceeds maximum length of ${platformContentLimits[platform].maxTextLength} characters`,
+      field: 'content',
+      validationType: 'length'
+    };
+  }
+  return null;
+};
 
 export function EventForm({
   initialData,
@@ -381,7 +502,18 @@ export function EventForm({
   };
 
   const handleContentTypeChange = (value: AllowedContentType) => {
-    setFormData(prev => ({ ...prev, type: value }));
+    setFormData(prev => ({ 
+      ...prev, 
+      type: value,
+      // Reset social media content when changing type
+      socialMediaContent: value === 'social' ? {
+        platforms: [],
+        mediaUrls: [],
+        crossPost: false,
+        platformSpecificContent: {}
+      } : prev.socialMediaContent
+    }));
+    onContentTypeChange?.(value);
   };
 
   const handlePlatformToggle = (platform: SocialPlatform) => {
@@ -390,6 +522,7 @@ export function EventForm({
         ? prev.filter(p => p !== platform)
         : [...prev, platform];
       
+      // Update formData immediately to ensure consistency
       setFormData(prev => {
         const currentSocialContent = prev.socialMediaContent;
         const newPlatformSpecificContent = { ...currentSocialContent.platformSpecificContent };
@@ -404,7 +537,7 @@ export function EventForm({
           delete newPlatformSpecificContent[platform];
         }
 
-        return {
+        const updatedFormData = {
           ...prev,
           socialMediaContent: {
             ...currentSocialContent,
@@ -412,6 +545,15 @@ export function EventForm({
             platformSpecificContent: newPlatformSpecificContent
           }
         };
+
+        // Debug log to track state changes
+        console.log('Platform selection updated:', {
+          platform,
+          newPlatforms,
+          formDataPlatforms: updatedFormData.socialMediaContent.platforms
+        });
+
+        return updatedFormData;
       });
 
       onPlatformsChange?.(newPlatforms);
@@ -421,25 +563,22 @@ export function EventForm({
 
   const handlePlatformContentChange = (platform: SocialPlatform, content: string) => {
     setFormData(prev => {
-      let allowedType: AllowedContentType = 'social';
-      if (prev.type === 'social' || prev.type === 'email' || prev.type === 'blog') {
-        allowedType = prev.type;
-      }
       const currentSocialContent = prev.socialMediaContent;
       const newPlatformSpecificContent = { ...currentSocialContent.platformSpecificContent };
       newPlatformSpecificContent[platform] = {
+        ...newPlatformSpecificContent[platform],
         text: content,
         mediaUrls: newPlatformSpecificContent[platform]?.mediaUrls || []
       };
       return {
         ...prev,
-        type: allowedType,
         socialMediaContent: {
           ...currentSocialContent,
           platformSpecificContent: newPlatformSpecificContent
         }
-      } satisfies FormData;
+      };
     });
+    
     const platformContent = formData.socialMediaContent.platformSpecificContent[platform];
     onContentChange?.(content, platformContent?.mediaUrls || []);
   };
@@ -460,7 +599,7 @@ export function EventForm({
         newPlatformSpecificContent[platform] = {
           ...currentPlatformContent,
           mediaUrls: [
-            ...currentPlatformContent.mediaUrls,
+            ...(currentPlatformContent.mediaUrls || []),
             ...newUrls
           ]
         };
@@ -474,9 +613,10 @@ export function EventForm({
         };
       });
 
+      const platformContent = formData.socialMediaContent.platformSpecificContent[platform];
       onContentChange?.(
-        formData.socialMediaContent.platformSpecificContent[platform]?.text || '',
-        newUrls
+        platformContent?.text || '',
+        platformContent?.mediaUrls || []
       );
     } catch (error) {
       toast({
@@ -531,36 +671,71 @@ export function EventForm({
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
+    const validationErrors: ValidationError[] = [];
     
-    if (!formData.title?.trim()) {
-      newErrors.title = 'Title is required';
+    // Validate title
+    const titleError = validateTitle(formData.title);
+    if (titleError) {
+      newErrors.title = titleError.message;
+      validationErrors.push(titleError);
     }
     
-    if (!formData.date) {
-      newErrors.date = 'Date is required';
+    // Validate date
+    const dateError = validateDate(formData.date);
+    if (dateError) {
+      newErrors.date = dateError.message;
+      validationErrors.push(dateError);
     }
     
-    if (!formData.time) {
-      newErrors.time = 'Time is required';
+    // Validate time
+    const timeError = validateTime(formData.time);
+    if (timeError) {
+      newErrors.time = timeError.message;
+      validationErrors.push(timeError);
     }
     
-    if (formData.type === 'social') {
+    // Validate social content only if we're in content-edit mode and type is social
+    if (mode === 'content-edit' && formData.type === 'social') {
       const socialErrors: FormErrors['socialMediaContent'] = {};
       
-      selectedPlatforms.forEach(platform => {
-        const content = formData.socialMediaContent.platformSpecificContent?.[platform];
-        if (!content?.text?.trim()) {
+      // Check if any platforms are selected
+      if (formData.socialMediaContent.platforms.length === 0) {
+        const platformError: ValidationError = {
+          code: 'NO_PLATFORMS_SELECTED',
+          message: 'Please select at least one social media platform',
+          field: 'platforms',
+          validationType: 'required'
+        };
+        socialErrors['platforms'] = {
+          text: platformError.message
+        };
+        validationErrors.push(platformError);
+      }
+      
+      formData.socialMediaContent.platforms.forEach(platform => {
+        const content = formData.socialMediaContent.platformSpecificContent[platform];
+        const contentError = validateSocialContent(content?.text || '', platform);
+        
+        if (contentError) {
           socialErrors[platform] = {
-            text: `${platform} content is required`
+            text: contentError.message
           };
+          validationErrors.push(contentError);
         }
         
         const mediaCount = content?.mediaUrls?.length || 0;
         if (mediaCount > platformContentLimits[platform].maxMediaCount) {
+          const mediaError: ValidationError = {
+            code: 'TOO_MANY_MEDIA',
+            message: `You can add up to ${platformContentLimits[platform].maxMediaCount} media files for ${platform}`,
+            field: 'mediaUrls',
+            validationType: 'count'
+          };
           socialErrors[platform] = {
             ...socialErrors[platform],
-            mediaUrls: `Maximum ${platformContentLimits[platform].maxMediaCount} media files allowed`
+            mediaUrls: mediaError.message
           };
+          validationErrors.push(mediaError);
         }
       });
       
@@ -570,48 +745,67 @@ export function EventForm({
     }
     
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return validationErrors.length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submission started");
-    if (!validateForm()) {
-      console.log("Form validation failed");
-      return;
-    }
-    setIsSubmitting(true);
+    
     try {
-      console.log("Preparing event data:", formData);
+      if (!validateForm()) {
+        return;
+      }
+      
+      setIsSubmitting(true);
+      
+      // Validate content type
+      if (!isAllowedContentType(formData.type)) {
+        setErrors(prev => ({
+          ...prev,
+          type: 'Please select a valid content type'
+        }));
+        return;
+      }
+      
+      // Validate status
+      if (!isAllowedStatus(formData.status)) {
+        setErrors(prev => ({
+          ...prev,
+          status: 'Please select a valid status'
+        }));
+        return;
+      }
+      
       const eventData: CalendarEvent = {
         ...formData,
-        type: formData.type as CalendarEvent['type'],
-        status: (formData.status === 'published' ? 'scheduled' : formData.status) as CalendarEvent['status'],
-        socialMediaContent: formData.socialMediaContent ? {
+        type: formData.type,
+        status: formData.status,
+        socialMediaContent: {
           platforms: formData.socialMediaContent.platforms,
           mediaUrls: formData.socialMediaContent.mediaUrls,
           crossPost: formData.socialMediaContent.crossPost,
           platformSpecificContent: formData.socialMediaContent.platformSpecificContent
-        } : undefined
+        },
+        analytics: {
+          lastUpdated: new Date().toISOString()
+        }
       };
-      console.log("Calling onSubmit with event data:", eventData);
+      
       if (!onSubmit) {
-        throw new Error("onSubmit handler is not provided");
+        setErrors(prev => ({
+          ...prev,
+          submit: 'Unable to submit form. Please try again.'
+        }));
+        return;
       }
+      
       await onSubmit(eventData);
-      console.log("onSubmit completed successfully");
-      toast({
-        title: 'Success',
-        description: `Event ${mode === 'create' ? 'created' : 'updated'} successfully`,
-      });
     } catch (error) {
       console.error("Error in handleSubmit:", error);
-      toast({
-        title: 'Error',
-        description: `Failed to ${mode === 'create' ? 'create' : 'update'} event: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: 'destructive',
-      });
-      throw error; // Re-throw to let parent component handle it
+      setErrors(prev => ({
+        ...prev,
+        submit: 'An error occurred while saving. Please try again.'
+      }));
     } finally {
       setIsSubmitting(false);
     }
@@ -660,7 +854,41 @@ export function EventForm({
             placeholder="Enter content title"
             className="text-lg"
           />
+          {errors.title && (
+            <p className="text-sm text-destructive mt-1">{errors.title}</p>
+          )}
         </div>
+
+        {formData.type === 'social' && (
+          <div className="space-y-4">
+            <Label>Select Platforms</Label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {socialPlatforms.map((platform) => {
+                const Icon = platform.icon;
+                return (
+                  <Card
+                    key={platform.value}
+                    className={cn(
+                      'p-4 cursor-pointer transition-colors hover:bg-accent',
+                      formData.socialMediaContent.platforms.includes(platform.value as SocialPlatform) && 'border-primary'
+                    )}
+                    onClick={() => handlePlatformToggle(platform.value as SocialPlatform)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Icon className={cn('h-5 w-5', platform.color)} />
+                      <span className="font-medium">{platform.label}</span>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+            {errors.socialMediaContent?.platforms && (
+              <p className="text-sm text-destructive mt-1">
+                {errors.socialMediaContent.platforms.text}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label>Content</Label>
@@ -889,6 +1117,11 @@ export function EventForm({
                       </div>
                     ))}
                   </div>
+                  {errors.socialMediaContent?.platforms && (
+                    <p className="text-sm text-destructive mt-1">
+                      {errors.socialMediaContent.platforms.text}
+                    </p>
+                  )}
                 </div>
 
                 {formData.socialMediaContent.platforms.map((platform) => (
@@ -898,6 +1131,11 @@ export function EventForm({
                       value={formData.socialMediaContent.platformSpecificContent[platform]?.text || ''}
                       onChange={(content) => handlePlatformContentChange(platform, content)}
                     />
+                    {errors.socialMediaContent?.[platform]?.text && (
+                      <p className="text-sm text-destructive mt-1">
+                        {errors.socialMediaContent[platform].text}
+                      </p>
+                    )}
                     <MediaUploader
                       platform={platform}
                       maxCount={platformContentLimits[platform].maxMediaCount}
@@ -906,6 +1144,11 @@ export function EventForm({
                       onUpload={(files) => handleMediaUpload(platform, files)}
                       onRemove={(index) => handleMediaRemove(platform, index)}
                     />
+                    {errors.socialMediaContent?.[platform]?.mediaUrls && (
+                      <p className="text-sm text-destructive mt-1">
+                        {errors.socialMediaContent[platform].mediaUrls}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>

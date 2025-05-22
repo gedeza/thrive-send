@@ -18,29 +18,35 @@ import { CalendarIcon, ImageIcon, Loader2, Plus, X } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { RichTextEditor } from '@/components/rich-text-editor';
 import { saveContent, updateContent } from '@/lib/api/content-service';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { contentFormSchema, type ContentFormValues } from '@/lib/validations/content';
+import { ContentType } from '@/lib/types/content';
+import { MediaUploader, type MediaFile } from '@/components/content/MediaUploader';
+import { TagInput } from '@/components/content/TagInput';
+import type { SubmitHandler } from 'react-hook-form';
 
 // Content types
-const contentTypes = [
-  { value: 'article', label: 'Article' },
-  { value: 'blog', label: 'Blog Post' },
-  { value: 'social', label: 'Social Media Post' },
-  { value: 'email', label: 'Email Campaign' },
-] as const;
-
-type ContentType = typeof contentTypes[number]['value'];
-
-interface MediaFile {
-  url?: string;
-  name: string;
-  size: number;
-}
+const contentTypes: ContentType[] = ['blog', 'email', 'social'];
+const tagSuggestions = [
+  'marketing',
+  'social',
+  'email',
+  'blog',
+  'newsletter',
+  'campaign',
+  'promotion',
+  'announcement',
+  'update',
+  'feature',
+];
 
 interface ContentFormData {
   title: string;
   contentType: ContentType;
   content: string;
   tags: string[];
-  mediaFiles: Array<File | MediaFile>;
+  mediaFiles: MediaFile[];
   preheaderText: string;
   publishDate?: string;
   status: 'draft' | 'published';
@@ -54,7 +60,7 @@ interface FormErrors {
 
 const initialFormData: ContentFormData = {
   title: '',
-  contentType: 'article',
+  contentType: 'blog',
   content: '',
   tags: [],
   mediaFiles: [],
@@ -63,60 +69,41 @@ const initialFormData: ContentFormData = {
 };
 
 interface ContentFormProps {
-  initialData?: any;
+  initialData?: Partial<ContentFormValues> & { id?: string };
   mode?: 'create' | 'edit';
 }
 
-export default function ContentForm({ initialData, mode = 'create' }: ContentFormProps) {
+export function ContentForm({ initialData, mode = 'create' }: ContentFormProps) {
   const router = useRouter();
   const { userId } = useAuth();
-  const [formData, setFormData] = useState<ContentFormData>(initialData || initialFormData);
-  const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newTag, setNewTag] = useState('');
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editorTab, setEditorTab] = useState<'editor' | 'preview'>('editor');
+  const [media, setMedia] = useState<MediaFile[]>([]);
 
-  // Handle form field changes
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name as keyof FormErrors]) {
-      setErrors(prev => ({ ...prev, [name]: undefined }));
-    }
-  };
-
-  // Handle content type change
-  const handleContentTypeChange = (value: ContentType) => {
-    setFormData(prev => ({ ...prev, contentType: value }));
-  };
-
-  // Handle content change from rich text editor
-  const handleContentChange = (html: string) => {
-    setFormData(prev => ({ ...prev, content: html }));
-    if (errors.content) {
-      setErrors(prev => ({ ...prev, content: undefined }));
-    }
-  };
-
-  // Handle tag management
-  const handleTagAdd = () => {
-    if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        tags: [...prev.tags, newTag.trim()]
-      }));
-      setNewTag('');
-    }
-  };
-
-  const handleTagDelete = (tagToDelete: string) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToDelete)
-    }));
-  };
+  const {
+    register,
+    handleSubmit,
+    formState: { errors: formErrors },
+    setValue,
+    watch,
+  } = useForm<ContentFormValues>({
+    resolver: zodResolver(contentFormSchema),
+    defaultValues: {
+      title: '',
+      type: 'blog',
+      status: 'draft',
+      content: '',
+      tags: [],
+      excerpt: '',
+      media: [],
+      scheduledAt: undefined,
+      slug: '',
+      ...initialData,
+    },
+  });
 
   // Handle file uploads
   const handleFileUploadClick = () => {
@@ -138,10 +125,9 @@ export default function ContentForm({ initialData, mode = 'create' }: ContentFor
 
       const filesArray = Array.from(e.target.files);
       try {
-        setFormData(prev => ({
-          ...prev,
-          mediaFiles: [...prev.mediaFiles, ...filesArray]
-        }));
+        const newMedia = [...watch('media') || [], ...filesArray];
+        setValue('media', newMedia);
+        setMedia(newMedia);
         toast({
           title: 'Success',
           description: 'Media files added successfully',
@@ -160,10 +146,9 @@ export default function ContentForm({ initialData, mode = 'create' }: ContentFor
   };
 
   const handleFileDelete = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      mediaFiles: prev.mediaFiles.filter((_, i) => i !== index)
-    }));
+    const newMedia = (watch('media') || []).filter((_: MediaFile, i: number) => i !== index);
+    setValue('media', newMedia);
+    setMedia(newMedia);
   };
 
   // Format file size
@@ -173,72 +158,32 @@ export default function ContentForm({ initialData, mode = 'create' }: ContentFor
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
-  // Validate form
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-    if (!formData.title.trim()) {
-      newErrors.title = 'Content title is required';
-    }
-    if (!formData.content.trim()) {
-      newErrors.content = 'Content cannot be empty';
-    }
-    if (formData.preheaderText.length > 100) {
-      newErrors.preheaderText = 'Preheader text must be less than 100 characters';
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
   // Handle form submission
-  const handleSubmit = async (e: React.FormEvent, status: 'draft' | 'published' = 'published') => {
-    e.preventDefault();
-    if (!validateForm()) return;
-
+  const onSubmit: SubmitHandler<ContentFormValues> = async (data) => {
     setIsSubmitting(true);
     try {
-      // Prepare the data according to the API's expected structure
-      const data = {
-        title: formData.title,
-        contentType: formData.contentType,
-        content: formData.content,
-        tags: formData.tags,
-        preheaderText: formData.preheaderText || '',
-        status,
-        publishDate: formData.publishDate ? new Date(formData.publishDate).toISOString() : undefined,
-        mediaFiles: formData.mediaFiles
+      const payload = {
+        ...data,
+        media: media,
       };
-
       let response;
-      if (mode === 'edit' && initialData?.id) {
-        response = await updateContent(initialData.id, data);
+      if (mode === 'edit' && initialData && typeof initialData.id === 'string') {
+        response = await updateContent(initialData.id, payload);
       } else {
-        response = await saveContent(data);
+        response = await saveContent(payload);
       }
-
       toast({
         title: 'Success',
-        description: `Content ${mode === 'edit' ? 'updated' : status === 'draft' ? 'saved as draft' : 'published'} successfully`,
+        description: `Content ${mode === 'edit' ? 'updated' : 'created'} successfully`,
       });
       router.push('/content');
     } catch (error) {
       console.error('Error saving content:', error);
-      
-      // Handle validation errors
-      if (error instanceof Error && 'errors' in error) {
-        const validationErrors = (error as any).errors;
-        if (Array.isArray(validationErrors)) {
-          validationErrors.forEach((err: { field: string; message: string }) => {
-            toast({
-              title: 'Validation Error',
-              description: `${err.field}: ${err.message}`,
-              variant: 'destructive',
-            });
-          });
-        }
-      } else {
+      // Only show destructive toast for system errors, not validation errors
+      if (error instanceof Error && !error.message.includes('validation')) {
         toast({
           title: 'Error',
-          description: error instanceof Error ? error.message : 'Failed to save content. Please try again.',
+          description: error.message,
           variant: 'destructive',
         });
       }
@@ -248,242 +193,145 @@ export default function ContentForm({ initialData, mode = 'create' }: ContentFor
   };
 
   return (
-    <form onSubmit={(e) => handleSubmit(e, 'published')} className="space-y-8">
-      {/* Content Details */}
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
       <div className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="title">Content Title</Label>
-            <Input
-              id="title"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              placeholder="Enter content title"
-              className={cn(errors.title && "border-destructive")}
-            />
-            {errors.title && (
-              <p className="text-sm text-destructive">{errors.title}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="contentType">Content Type</Label>
-            <select
-              id="contentType"
-              name="contentType"
-              className="block w-full border rounded-md px-3 py-2 text-sm"
-              value={formData.contentType}
-              onChange={e => handleContentTypeChange(e.target.value as ContentType)}
-            >
-              {contentTypes.map(type => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="preheaderText">Preheader Text</Label>
-          <Textarea
-            id="preheaderText"
-            name="preheaderText"
-            value={formData.preheaderText}
-            onChange={handleChange}
-            placeholder="Brief preview text that recipients will see in their inbox"
-            className={cn(errors.preheaderText && "border-destructive")}
-          />
-          {errors.preheaderText && (
-            <p className="text-sm text-destructive">{errors.preheaderText}</p>
-          )}
-          <p className="text-sm text-muted-foreground">
-            {formData.preheaderText.length}/100 characters
-          </p>
-        </div>
-      </div>
-
-      {/* Content Editor */}
-      <div className="space-y-4">
-        <Label>Content</Label>
-        <Tabs value={editorTab} onValueChange={(v) => setEditorTab(v as 'editor' | 'preview')}>
-          <TabsList>
-            <TabsTrigger value="editor">Editor</TabsTrigger>
-            <TabsTrigger value="preview">Preview</TabsTrigger>
-          </TabsList>
-          <TabsContent value="editor" className="border rounded-md p-4">
-            <RichTextEditor
-              value={formData.content}
-              onChange={handleContentChange}
-            />
-            {errors.content && (
-              <p className="text-sm text-destructive mt-2">{errors.content}</p>
-            )}
-          </TabsContent>
-          <TabsContent value="preview" className="border rounded-md p-4">
-            <div
-              className="prose max-w-none"
-              dangerouslySetInnerHTML={{ __html: formData.content }}
-            />
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      {/* Media Upload */}
-      <div className="space-y-4">
-        <Label>Media Files</Label>
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          className="hidden"
-          multiple
-          accept="image/*,video/*"
-        />
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleFileUploadClick}
-          className="w-full"
-        >
-          <ImageIcon className="mr-2 h-4 w-4" />
-          Upload Media
-        </Button>
-
-        {uploadProgress !== null && (
-          <div className="w-full bg-gray-200 rounded-full h-2.5">
-            <div
-              className="bg-primary h-2.5 rounded-full"
-              style={{ width: `${uploadProgress}%` }}
-            />
-          </div>
-        )}
-
-        <div className="space-y-2">
-          {formData.mediaFiles.map((file, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between p-2 border rounded-md"
-            >
-              <div className="flex items-center space-x-2">
-                <ImageIcon className="h-4 w-4 text-gray-500" />
-                <span className="text-sm truncate">
-                  {file instanceof File ? file.name : file.name}
-                </span>
-                <span className="text-xs text-gray-500">
-                  {formatFileSize(file instanceof File ? file.size : file.size)}
-                </span>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => handleFileDelete(index)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Tags */}
-      <div className="space-y-4">
-        <Label>Tags</Label>
-        <div className="flex space-x-2">
+        <div>
+          <label htmlFor="title" className="block text-sm font-medium mb-1">
+            Title
+          </label>
           <Input
-            value={newTag}
-            onChange={(e) => setNewTag(e.target.value)}
-            placeholder="Add a tag"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleTagAdd();
-              }
-            }}
+            id="title"
+            {...register('title')}
+            className={cn(formErrors.title && 'border-yellow-500')}
           />
-          <Button type="button" onClick={handleTagAdd}>
-            <Plus className="h-4 w-4" />
-          </Button>
+          {formErrors.title && (
+            <p className="mt-1 text-sm text-yellow-600">{formErrors.title.message}</p>
+          )}
         </div>
-        <div className="flex flex-wrap gap-2">
-          {formData.tags.map((tag) => (
-            <div
-              key={tag}
-              className="flex items-center space-x-1 bg-gray-100 px-2 py-1 rounded-md"
-            >
-              <span className="text-sm">{tag}</span>
+
+        <div>
+          <label htmlFor="type" className="block text-sm font-medium mb-1">
+            Content Type
+          </label>
+          <Select
+            onValueChange={(value: ContentType) => setValue('type', value)}
+            defaultValue={watch('type')}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select content type" />
+            </SelectTrigger>
+            <SelectContent>
+              {contentTypes.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {formErrors.type && (
+            <p className="mt-1 text-sm text-yellow-600">{formErrors.type.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="excerpt" className="block text-sm font-medium mb-1">
+            Excerpt
+          </label>
+          <Textarea
+            id="excerpt"
+            {...register('excerpt')}
+            className={cn(formErrors.excerpt && 'border-yellow-500')}
+          />
+          {formErrors.excerpt && (
+            <p className="mt-1 text-sm text-yellow-600">{formErrors.excerpt.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Tags</label>
+          <TagInput
+            tags={watch('tags')}
+            onChange={(tags) => setValue('tags', tags)}
+            suggestions={tagSuggestions}
+          />
+          {formErrors.tags && (
+            <p className="mt-1 text-sm text-yellow-600">{formErrors.tags.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Media</label>
+          <MediaUploader
+            onUpload={(newFiles) => {
+              setMedia(newFiles);
+              setValue('media', newFiles);
+            }}
+            onRemove={(fileId) => {
+              const newMedia = media.filter(f => f.id !== fileId);
+              setMedia(newMedia);
+              setValue('media', newMedia);
+            }}
+            maxFiles={5}
+            maxSize={5 * 1024 * 1024}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Content</label>
+          <RichTextEditor
+            value={watch('content')}
+            onChange={(value: string) => setValue('content', value)}
+          />
+          {formErrors.content && (
+            <p className="mt-1 text-sm text-yellow-600">{formErrors.content.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Schedule</label>
+          <Popover>
+            <PopoverTrigger asChild>
               <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => handleTagDelete(tag)}
+                variant="outline"
+                className={cn(
+                  'w-full justify-start text-left font-normal',
+                  !watch('scheduledAt') && 'text-muted-foreground'
+                )}
               >
-                <X className="h-4 w-4" />
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {watch('scheduledAt') ? (
+                  format(watch('scheduledAt')!, 'PPP')
+                ) : (
+                  <span>Pick a date</span>
+                )}
               </Button>
-            </div>
-          ))}
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={watch('scheduledAt') ? new Date(watch('scheduledAt') as string) : undefined}
+                onSelect={(date: Date | undefined) => setValue('scheduledAt', date ? date.toISOString() : undefined)}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
-      {/* Publish Date */}
-      <div className="space-y-4">
-        <Label>Publish Date</Label>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "w-full justify-start text-left font-normal",
-                !formData.publishDate && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {formData.publishDate ? (
-                format(new Date(formData.publishDate), "PPP")
-              ) : (
-                <span>Pick a date</span>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0">
-            <Calendar
-              mode="single"
-              selected={formData.publishDate ? new Date(formData.publishDate) : undefined}
-              onSelect={(date) => setFormData(prev => ({ ...prev, publishDate: date?.toISOString() }))}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
-
-      {/* Form Actions */}
-      <div className="flex justify-end gap-4">
+      <div className="flex justify-end space-x-4">
         <Button
           type="button"
           variant="outline"
-          onClick={(e) => handleSubmit(e, 'draft')}
-          disabled={isSubmitting}
+          onClick={() => {
+            setValue('content', '');
+            setMedia([]);
+          }}
         >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            'Save as Draft'
-          )}
+          Reset
         </Button>
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {mode === 'edit' ? 'Updating...' : 'Publishing...'}
-            </>
-          ) : (
-            mode === 'edit' ? 'Update Content' : 'Publish Content'
-          )}
+          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isSubmitting ? 'Creating...' : 'Create Content'}
         </Button>
       </div>
     </form>

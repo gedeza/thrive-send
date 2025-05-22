@@ -53,7 +53,7 @@ import { EventForm } from './EventForm';
 import { EventDetails } from './EventDetails';
 
 // Enhanced content type definitions
-export type SocialPlatform = "FACEBOOK" | "TWITTER" | "INSTAGRAM" | "LINKEDIN";
+export type SocialPlatform = 'FACEBOOK' | 'TWITTER' | 'INSTAGRAM' | 'LINKEDIN';
 
 export interface SocialMediaContent {
   platforms: SocialPlatform[];
@@ -61,8 +61,8 @@ export interface SocialMediaContent {
   crossPost: boolean;
   platformSpecificContent: {
     [key in SocialPlatform]?: {
-      text?: string;
-      mediaUrls?: string[];
+      text: string;
+      mediaUrls: string[];
       scheduledTime?: string;
     };
   };
@@ -71,15 +71,33 @@ export interface SocialMediaContent {
 export interface CalendarEvent {
   id: string;
   title: string;
-  description?: string;
+  description: string;
+  type: 'article' | 'blog' | 'social' | 'email';
+  status: 'draft' | 'scheduled' | 'sent' | 'failed';
   date: string;
   time?: string;
-  type: "email" | "social" | "blog" | "other";
-  status: "draft" | "scheduled" | "sent" | "failed";
-  campaignId?: string;
-  socialMediaContent?: SocialMediaContent;
+  scheduledDate?: string;
+  scheduledTime?: string;
+  socialMediaContent: SocialMediaContent;
   analytics?: {
-    lastUpdated: string;
+    views?: number;
+    engagement?: {
+      likes?: number;
+      shares?: number;
+      comments?: number;
+    };
+    clicks?: number;
+    lastUpdated?: string;
+  };
+  preview?: {
+    thumbnail?: string;
+    platformPreviews?: {
+      [key in SocialPlatform]?: {
+        previewUrl?: string;
+        status?: 'pending' | 'approved' | 'rejected';
+        rejectionReason?: string;
+      };
+    };
   };
 }
 
@@ -109,9 +127,9 @@ const eventTypeColorMap = {
     bg: "bg-[var(--color-chart-purple)]/10",
     text: "text-[var(--color-chart-purple)]"
   },
-  other: {
-    bg: "bg-[var(--color-chart-orange)]/10",
-    text: "text-[var(--color-chart-orange)]"
+  article: {
+    bg: "bg-[var(--color-chart-purple)]/10",
+    text: "text-[var(--color-chart-purple)]"
   }
 };
 
@@ -463,6 +481,8 @@ export function ContentCalendar({
 
   // Update the filteredEvents memo to properly handle search
   const filteredEvents = React.useMemo(() => {
+    if (!events) return [];
+    
     return events.filter(event => {
       // Search in title and description
       const searchLower = searchTerm.toLowerCase();

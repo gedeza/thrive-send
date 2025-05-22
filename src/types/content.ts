@@ -1,4 +1,4 @@
-export type SocialPlatform = 'facebook' | 'twitter' | 'instagram' | 'linkedin';
+export type SocialPlatform = 'FACEBOOK' | 'TWITTER' | 'INSTAGRAM' | 'LINKEDIN';
 
 export type ContentType = "email" | "social" | "blog" | "other";
 

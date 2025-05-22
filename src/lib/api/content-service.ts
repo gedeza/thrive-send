@@ -1,81 +1,65 @@
 import { toast } from '@/components/ui/use-toast';
+import { ContentFormValues } from '@/lib/validations/content';
+
+const API_URL = '/api/content';
 
 export interface ContentData {
-  id?: string;
+  id: string;
   title: string;
-  contentType: string;
+  slug: string;
+  type: 'article' | 'blog' | 'social' | 'email';
   content: string;
+  excerpt?: string;
   tags: string[];
-  mediaUrls: string[];
-  preheaderText: string;
-  publishDate?: string;
-  status: 'draft' | 'published';
-  createdAt?: string;
-  updatedAt?: string;
+  media?: any;
+  status: 'draft' | 'scheduled' | 'published' | 'archived';
+  authorId: string;
+  scheduledAt?: string;
+  publishedAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ContentFormData {
   id?: string;
   title: string;
-  contentType: string;
+  type: 'article' | 'blog' | 'social' | 'email';
   content: string;
   tags: string[];
-  mediaFiles: Array<File | { url?: string; name: string; size: number }>;
-  preheaderText: string;
-  publishDate?: string;
-  status: 'draft' | 'published';
+  media?: any;
+  excerpt?: string;
+  scheduledAt?: string;
+  status: 'draft' | 'scheduled' | 'sent' | 'failed';
 }
 
-export async function saveContent(data: ContentFormData): Promise<void> {
+export async function saveContent(data: ContentFormData): Promise<ContentData> {
   try {
-    const formData = new FormData();
-    formData.append('title', data.title);
-    formData.append('contentType', data.contentType);
-    formData.append('content', data.content);
-    formData.append('tags', JSON.stringify(data.tags));
-    formData.append('preheaderText', data.preheaderText);
-    formData.append('status', data.status);
-    
-    if (data.publishDate) {
-      formData.append('publishDate', data.publishDate);
-    }
+    console.log('Saving content:', data);
 
-    // Upload media files first
-    const mediaUrls = await Promise.all(
-      data.mediaFiles
-        .filter((file): file is File => file instanceof File)
-        .map(async (file) => {
-          const mediaFormData = new FormData();
-          mediaFormData.append('file', file);
-          const response = await fetch('/api/upload', {
-            method: 'POST',
-            body: mediaFormData,
-          });
-          if (!response.ok) {
-            throw new Error('Failed to upload media file');
-          }
-          const { url } = await response.json();
-          return url;
-        })
-    );
-
-    // Add existing media URLs
-    const existingUrls = data.mediaFiles
-      .filter((file): file is { url?: string; name: string; size: number } => !(file instanceof File))
-      .map(file => file.url)
-      .filter((url): url is string => !!url);
-
-    formData.append('mediaUrls', JSON.stringify([...mediaUrls, ...existingUrls]));
+    const requestBody = {
+      ...data,
+      slug: data.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+    };
+    console.log('Request body:', requestBody);
 
     const response = await fetch('/api/content', {
       method: 'POST',
-      body: formData,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
       const error = await response.json();
+      console.error('API Error Response:', error);
       throw new Error(error.message || 'Failed to save content');
     }
+
+    const savedContent = await response.json();
+    console.log('Content saved successfully:', savedContent);
+    return savedContent;
   } catch (error) {
     console.error('Error saving content:', error);
     throw error;
@@ -84,68 +68,46 @@ export async function saveContent(data: ContentFormData): Promise<void> {
 
 export async function getContent(id: string): Promise<ContentData> {
   try {
-    const response = await fetch(`/api/content/${id}`);
+    console.log('Fetching content:', id);
+    const response = await fetch(`/api/content/${id}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || 'Failed to fetch content');
     }
-    return response.json();
+    const content = await response.json();
+    console.log('Content fetched:', content);
+    return content;
   } catch (error) {
     console.error('Error fetching content:', error);
     throw error;
   }
 }
 
-export async function updateContent(id: string, data: ContentFormData): Promise<void> {
+export async function updateContent(id: string, data: Partial<ContentFormValues>): Promise<ContentData> {
   try {
-    const formData = new FormData();
-    formData.append('title', data.title);
-    formData.append('contentType', data.contentType);
-    formData.append('content', data.content);
-    formData.append('tags', JSON.stringify(data.tags));
-    formData.append('preheaderText', data.preheaderText);
-    formData.append('status', data.status);
-    
-    if (data.publishDate) {
-      formData.append('publishDate', data.publishDate);
-    }
-
-    // Upload new media files
-    const mediaUrls = await Promise.all(
-      data.mediaFiles
-        .filter((file): file is File => file instanceof File)
-        .map(async (file) => {
-          const mediaFormData = new FormData();
-          mediaFormData.append('file', file);
-          const response = await fetch('/api/upload', {
-            method: 'POST',
-            body: mediaFormData,
-          });
-          if (!response.ok) {
-            throw new Error('Failed to upload media file');
-          }
-          const { url } = await response.json();
-          return url;
-        })
-    );
-
-    // Add existing media URLs
-    const existingUrls = data.mediaFiles
-      .filter((file): file is { url?: string; name: string; size: number } => !(file instanceof File))
-      .map(file => file.url)
-      .filter((url): url is string => !!url);
-
-    formData.append('mediaUrls', JSON.stringify([...mediaUrls, ...existingUrls]));
-
-    const response = await fetch(`/api/content/${id}`, {
-      method: 'PUT',
-      body: formData,
+    console.log('Updating content:', { id, data });
+    const response = await fetch(`${API_URL}/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(data),
     });
 
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || 'Failed to update content');
     }
+
+    const updatedContent = await response.json();
+    console.log('Content updated:', updatedContent);
+    return updatedContent;
   } catch (error) {
     console.error('Error updating content:', error);
     throw error;
@@ -154,14 +116,20 @@ export async function updateContent(id: string, data: ContentFormData): Promise<
 
 export async function deleteContent(id: string): Promise<void> {
   try {
-    const response = await fetch(`/api/content/${id}`, {
+    console.log('Deleting content:', id);
+    const response = await fetch(`${API_URL}/${id}`, {
       method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
     });
 
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || 'Failed to delete content');
     }
+    console.log('Content deleted successfully');
   } catch (error) {
     console.error('Error deleting content:', error);
     throw error;
@@ -169,31 +137,68 @@ export async function deleteContent(id: string): Promise<void> {
 }
 
 export async function listContent(params: {
-  status?: 'draft' | 'published';
-  contentType?: string;
   page?: number;
   limit?: number;
+  type?: string;
+  status?: string;
 }): Promise<{
   content: ContentData[];
   total: number;
-  page: number;
-  limit: number;
+  pages: number;
 }> {
   try {
-    const queryParams = new URLSearchParams();
-    if (params.status) queryParams.append('status', params.status);
-    if (params.contentType) queryParams.append('contentType', params.contentType);
-    if (params.page) queryParams.append('page', params.page.toString());
-    if (params.limit) queryParams.append('limit', params.limit.toString());
+    console.log('Listing content with params:', params);
+    const searchParams = new URLSearchParams();
+    if (params.page) searchParams.set('page', params.page.toString());
+    if (params.limit) searchParams.set('limit', params.limit.toString());
+    if (params.type) searchParams.set('type', params.type);
+    if (params.status) searchParams.set('status', params.status);
 
-    const response = await fetch(`/api/content?${queryParams.toString()}`);
+    const response = await fetch(`${API_URL}?${searchParams.toString()}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Failed to fetch content list');
+      console.error('API Error Response:', error);
+      throw new Error(error.message || 'Failed to fetch content');
     }
-    return response.json();
+
+    const data = await response.json();
+    console.log('Content list response:', data);
+    return data;
   } catch (error) {
     console.error('Error fetching content list:', error);
+    throw error;
+  }
+}
+
+export async function createContent(data: ContentFormValues): Promise<ContentData> {
+  try {
+    console.log('Creating content:', data);
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('API Error Response:', error);
+      throw new Error(error.message || 'Failed to create content');
+    }
+
+    const createdContent = await response.json();
+    console.log('Content created:', createdContent);
+    return createdContent;
+  } catch (error) {
+    console.error('Error creating content:', error);
     throw error;
   }
 } 

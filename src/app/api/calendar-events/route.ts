@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAuth } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { z } from "zod";
+import { Prisma } from '@prisma/client';
 
 // Types for session claims
 interface ClerkSessionClaims {
@@ -18,6 +19,7 @@ interface ClerkSessionClaims {
 
 // Validation schema for calendar events
 const calendarEventSchema = z.object({
+  id: z.string().optional(),
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
   date: z.string().min(1, "Date is required"),
@@ -25,36 +27,33 @@ const calendarEventSchema = z.object({
   type: z.enum(["email", "social", "blog", "other"]),
   status: z.enum(["draft", "scheduled", "sent", "failed"]),
   contentType: z.string().optional(),
+  socialMediaContent: z.object({
+    platforms: z.array(z.enum(["FACEBOOK", "TWITTER", "INSTAGRAM", "LINKEDIN"])),
+    crossPost: z.boolean(),
+    mediaUrls: z.array(z.string()),
+    platformSpecificContent: z.record(z.object({
+      text: z.string(),
+      mediaUrls: z.array(z.string()),
+      scheduledTime: z.string().optional()
+    }))
+  }).optional()
 });
 
 // Helper function to get or create user
-async function getOrCreateUser(clerkId: string, sessionClaims: ClerkSessionClaims | null) {
+async function getOrCreateUser(clerkId: string) {
   try {
     let user = await prisma.user.findUnique({
       where: { clerkId },
     });
 
     if (!user) {
-      // Use a placeholder email if none is provided
-      const email = sessionClaims?.email || `${clerkId}@placeholder.com`;
-      const name = sessionClaims?.firstName || sessionClaims?.lastName 
-        ? `${sessionClaims.firstName || ''} ${sessionClaims.lastName || ''}`.trim()
-        : 'New User';
-
-      console.log("Creating new user with data:", {
-        clerkId,
-        email,
-        name,
-      });
-
       user = await prisma.user.create({
         data: {
           clerkId,
-          email,
-          name,
+          email: `${clerkId}@placeholder.com`,
+          name: 'New User',
         },
       });
-      console.log("Created new user:", user);
     }
 
     return user;
@@ -67,116 +66,77 @@ async function getOrCreateUser(clerkId: string, sessionClaims: ClerkSessionClaim
 // GET: List all events for the user/org
 export async function GET(req: NextRequest) {
   try {
-    console.log("GET /api/calendar-events - Starting request");
-    const auth = getAuth(req);
-    console.log("Full auth object:", JSON.stringify(auth, null, 2));
-    const { userId: clerkId, orgId, sessionClaims } = auth;
-    console.log("Auth check - clerkId:", clerkId, "orgId:", orgId);
-
-    if (!clerkId || !orgId) {
-      console.log("Auth check failed - Missing clerkId or orgId");
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const session = await auth();
+    if (!session?.userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get or create the user
-    const user = await getOrCreateUser(clerkId, sessionClaims as ClerkSessionClaims);
-    console.log("User found/created:", JSON.stringify(user, null, 2));
-
-    // Create organization if it doesn't exist
-    let organization = await prisma.organization.findUnique({
-      where: { id: orgId },
-    });
-
-    if (!organization) {
-      const orgSlug = (sessionClaims as ClerkSessionClaims)?.o?.slg || `org-${orgId}`;
-      console.log("Creating new organization with ID:", orgId);
-      organization = await prisma.organization.create({
-        data: {
-          id: orgId,
-          name: (sessionClaims as ClerkSessionClaims)?.o?.name || 'New Organization',
-          slug: orgSlug,
-        },
-      });
-      console.log("Created new organization:", organization);
+    const user = await getOrCreateUser(session.userId);
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    console.log("Fetching events from database...");
-    const events = await prisma.calendarEvent.findMany({
-      where: { 
-        userId: user.id, 
-        organizationId: orgId 
+    const events = await (prisma as any).calendarEvent.findMany({
+      where: {
+        userId: user.id,
       },
-      orderBy: { date: 'asc' },
+      orderBy: {
+        date: 'asc',
+      },
     });
-    console.log("Found events:", JSON.stringify(events, null, 2));
 
     return NextResponse.json(events);
   } catch (error) {
-    console.error("Error in GET /api/calendar-events:", error);
-    const err = error as Error;
-    console.error("Error details:", {
-      message: err.message,
-      stack: err.stack,
-      name: err.name,
-    });
-    return NextResponse.json({ 
-      error: err.message, 
-      detail: String(err),
-      stack: err.stack,
-      name: err.name
-    }, { status: 500 });
+    console.error("[CALENDAR_EVENTS_GET] Error:", error);
+    return NextResponse.json({ error: "Failed to fetch events" }, { status: 500 });
   }
 }
 
 // POST: Create a new event
 export async function POST(req: NextRequest) {
   try {
-    console.log("POST /api/calendar-events - Starting request");
-    const auth = getAuth(req);
-    console.log("Full auth object:", JSON.stringify(auth, null, 2));
-    const { userId: clerkId, orgId } = auth;
-    console.log("Auth check - clerkId:", clerkId, "orgId:", orgId);
-
-    if (!clerkId || !orgId) {
-      console.log("Auth check failed - Missing clerkId or orgId");
-      return NextResponse.json({ error: 'Unauthorized', auth }, { status: 401 });
+    const session = await auth();
+    if (!session?.userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get the user from our database
-    console.log("Looking up user in database with clerkId:", clerkId);
-    const user = await prisma.user.findUnique({
-      where: { clerkId },
-    });
-
-    if (!user) {
-      console.log("User not found in database");
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    console.log("User found:", JSON.stringify(user, null, 2));
     const body = await req.json();
-    console.log("Request body:", JSON.stringify(body, null, 2));
+    console.log("Received request body:", JSON.stringify(body, null, 2));
 
     try {
       const validatedData = calendarEventSchema.parse(body);
       console.log("Validated data:", JSON.stringify(validatedData, null, 2));
 
-      // Add more detailed logging before database operation
-      console.log("Attempting to create calendar event with data:", JSON.stringify({
-        ...validatedData,
-        userId: user.id,
-        organizationId: orgId,
-      }, null, 2));
+      const user = await getOrCreateUser(session.userId);
+      if (!user) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      }
 
-      const event = await prisma.calendarEvent.create({
-        data: {
-          ...validatedData,
-          userId: user.id,
-          organizationId: orgId,
-        },
+      // Get the user's organization
+      const orgMember = await prisma.organizationMember.findFirst({
+        where: { userId: user.id },
       });
-      console.log("Created event:", JSON.stringify(event, null, 2));
 
+      if (!orgMember) {
+        return NextResponse.json({ error: "Organization not found" }, { status: 404 });
+      }
+
+      // Prepare the data for Prisma
+      const { socialMediaContent, ...rest } = validatedData;
+      const eventData = {
+        ...rest,
+        userId: user.id,
+        organizationId: orgMember.organizationId,
+        socialMediaContent: socialMediaContent as Prisma.JsonValue,
+      };
+
+      console.log("Event data for Prisma:", JSON.stringify(eventData, null, 2));
+
+      const event = await (prisma as any).calendarEvent.create({
+        data: eventData,
+      });
+
+      console.log("Created event:", JSON.stringify(event, null, 2));
       return NextResponse.json(event);
     } catch (validationError) {
       console.error("Validation error:", validationError);
@@ -191,17 +151,9 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("[CALENDAR_EVENTS_POST] Error:", error);
     const err = error as Error;
-    // Add more detailed error information
-    console.error("Error details:", {
-      message: err.message,
-      stack: err.stack,
-      name: err.name,
-    });
     return NextResponse.json({ 
       error: err.message, 
-      detail: String(err),
-      stack: err.stack,
-      name: err.name
+      detail: String(err)
     }, { status: 500 });
   }
 }
@@ -209,51 +161,53 @@ export async function POST(req: NextRequest) {
 // PUT: Update an event
 export async function PUT(req: NextRequest) {
   try {
-    console.log("PUT /api/calendar-events - Starting request");
-    const auth = getAuth(req);
-    console.log("Full auth object:", JSON.stringify(auth, null, 2));
-    const { userId: clerkId, orgId } = auth;
-    console.log("Auth check - clerkId:", clerkId, "orgId:", orgId);
-
-    if (!clerkId || !orgId) {
-      console.log("Auth check failed - Missing clerkId or orgId");
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const session = await auth();
+    if (!session?.userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get the user from our database
-    console.log("Looking up user in database with clerkId:", clerkId);
-    const user = await prisma.user.findUnique({
-      where: { clerkId },
-    });
-
-    if (!user) {
-      console.log("User not found in database");
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    console.log("User found:", JSON.stringify(user, null, 2));
     const body = await req.json();
-    console.log("Request body:", JSON.stringify(body, null, 2));
-
-    if (!body.id) {
-      console.log("Missing event ID in request body");
-      return NextResponse.json({ error: 'ID required' }, { status: 400 });
-    }
+    console.log("Update request body:", JSON.stringify(body, null, 2));
 
     try {
       const validatedData = calendarEventSchema.parse(body);
-      console.log("Validated data:", JSON.stringify(validatedData, null, 2));
+      console.log("Validated update data:", JSON.stringify(validatedData, null, 2));
 
-      const event = await prisma.calendarEvent.update({
-        where: { id: body.id },
-        data: {
-          ...validatedData,
+      const user = await getOrCreateUser(session.userId);
+      if (!user) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      }
+
+      // Check if event exists and belongs to user
+      const existingEvent = await (prisma as any).calendarEvent.findUnique({
+        where: {
+          id: body.id,
           userId: user.id,
-          organizationId: orgId,
         },
       });
-      console.log("Updated event:", JSON.stringify(event, null, 2));
 
+      if (!existingEvent) {
+        return NextResponse.json({ error: "Event not found" }, { status: 404 });
+      }
+
+      // Prepare the data for Prisma
+      const { socialMediaContent, ...rest } = validatedData;
+      const eventData = {
+        ...rest,
+        socialMediaContent: socialMediaContent as Prisma.JsonValue,
+      };
+
+      console.log("Event data for Prisma update:", JSON.stringify(eventData, null, 2));
+
+      const event = await (prisma as any).calendarEvent.update({
+        where: {
+          id: body.id,
+          userId: user.id,
+        },
+        data: eventData,
+      });
+
+      console.log("Updated event:", JSON.stringify(event, null, 2));
       return NextResponse.json(event);
     } catch (validationError) {
       console.error("Validation error:", validationError);
@@ -268,16 +222,9 @@ export async function PUT(req: NextRequest) {
   } catch (error) {
     console.error("[CALENDAR_EVENTS_PUT] Error:", error);
     const err = error as Error;
-    console.error("Error details:", {
-      message: err.message,
-      stack: err.stack,
-      name: err.name,
-    });
     return NextResponse.json({ 
       error: err.message, 
-      detail: String(err),
-      stack: err.stack,
-      name: err.name
+      detail: String(err)
     }, { status: 500 });
   }
 }
@@ -285,71 +232,45 @@ export async function PUT(req: NextRequest) {
 // DELETE: Delete an event by id (in body)
 export async function DELETE(req: NextRequest) {
   try {
-    console.log("DELETE /api/calendar-events - Starting request");
-    const auth = getAuth(req);
-    console.log("Full auth object:", JSON.stringify(auth, null, 2));
-    const { userId: clerkId, orgId } = auth;
-    console.log("Auth check - clerkId:", clerkId, "orgId:", orgId);
-
-    if (!clerkId || !orgId) {
-      console.log("Auth check failed - Missing clerkId or orgId");
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const session = await auth();
+    if (!session?.userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get the user from our database
-    console.log("Looking up user in database with clerkId:", clerkId);
-    const user = await prisma.user.findUnique({
-      where: { clerkId },
-    });
-
-    if (!user) {
-      console.log("User not found in database");
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    console.log("User found:", JSON.stringify(user, null, 2));
     const body = await req.json();
-    console.log("Request body:", JSON.stringify(body, null, 2));
+    const { id } = body;
 
-    if (!body.id) {
-      console.log("Missing event ID in request body");
-      return NextResponse.json({ error: 'ID required' }, { status: 400 });
+    const user = await getOrCreateUser(session.userId);
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Verify the event belongs to the user
-    const event = await prisma.calendarEvent.findUnique({
-      where: { id: body.id },
+    // Check if event exists and belongs to user
+    const existingEvent = await (prisma as any).calendarEvent.findUnique({
+      where: {
+        id,
+        userId: user.id,
+      },
     });
 
-    if (!event) {
-      console.log("Event not found");
-      return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+    if (!existingEvent) {
+      return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
-    if (event.userId !== user.id) {
-      console.log("Event does not belong to user");
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    await prisma.calendarEvent.delete({
-      where: { id: body.id },
+    await (prisma as any).calendarEvent.delete({
+      where: {
+        id,
+        userId: user.id,
+      },
     });
-    console.log("Event deleted successfully");
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[CALENDAR_EVENTS_DELETE] Error:", error);
     const err = error as Error;
-    console.error("Error details:", {
-      message: err.message,
-      stack: err.stack,
-      name: err.name,
-    });
     return NextResponse.json({ 
       error: err.message, 
-      detail: String(err),
-      stack: err.stack,
-      name: err.name
+      detail: String(err)
     }, { status: 500 });
   }
 } 

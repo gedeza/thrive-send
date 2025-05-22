@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
-import { getAuth } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
+import { contentFormSchema } from '@/lib/validations/content';
 import { z } from 'zod';
 import { NextRequest } from 'next/server';
+import { Prisma } from '@prisma/client';
 
 // Validation schemas
 const contentTypes = ['article', 'blog', 'social', 'email'] as const;
@@ -10,50 +12,69 @@ type ContentType = typeof contentTypes[number];
 
 const contentSchema = z.object({
   title: z.string().min(1, 'Title is required'),
-  contentType: z.enum(['article', 'blog', 'social', 'email'], {
+  type: z.enum(['article', 'blog', 'social', 'email'], {
     errorMap: () => ({ message: 'Please select a valid content type' })
   }),
   content: z.string().min(1, 'Content is required'),
   tags: z.array(z.string()).default([]),
-  preheaderText: z.string().max(100, 'Preheader text must be less than 100 characters').optional(),
-  publishDate: z.string().optional(),
-  status: z.enum(['draft', 'published'], {
-    errorMap: () => ({ message: 'Status must be either draft or published' })
+  excerpt: z.string().optional(),
+  media: z.any().optional(),
+  status: z.enum(['draft', 'scheduled', 'published', 'archived'], {
+    errorMap: () => ({ message: 'Status must be either draft, scheduled, published, or archived' })
   }),
-  mediaUrls: z.array(z.string().url()).optional().default([]),
+  scheduledAt: z.string().datetime().optional(),
+  slug: z.string().min(1, 'Slug is required'),
 });
 
 const querySchema = z.object({
-  status: z.enum(['draft', 'published']).optional(),
-  contentType: z.enum(['article', 'blog', 'social', 'email']).optional(),
-  page: z.coerce.number().min(1).default(1),
-  limit: z.coerce.number().min(1).max(100).default(10),
+  type: z.enum(['article', 'blog', 'social', 'email']).optional(),
+  status: z.enum(['draft', 'scheduled', 'published', 'archived']).optional(),
+  page: z.string().optional(),
+  limit: z.string().optional(),
 });
 
 // GET /api/content
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
   try {
-    const { userId } = getAuth(request);
+    const { userId } = await auth();
     if (!userId) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
     const query = Object.fromEntries(searchParams.entries());
     const validatedQuery = querySchema.parse(query);
 
-    const skip = (validatedQuery.page - 1) * validatedQuery.limit;
+    const page = parseInt(validatedQuery.page || '1');
+    const limit = parseInt(validatedQuery.limit || '10');
+    const skip = (page - 1) * limit;
+
     const where = {
-      userId,
+      authorId: userId,
+      ...(validatedQuery.type && { type: validatedQuery.type }),
       ...(validatedQuery.status && { status: validatedQuery.status }),
-      ...(validatedQuery.contentType && { contentType: validatedQuery.contentType }),
     };
 
     const [content, total] = await Promise.all([
       prisma.content.findMany({
         where,
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          type: true,
+          status: true,
+          content: true,
+          excerpt: true,
+          media: true,
+          tags: true,
+          scheduledAt: true,
+          publishedAt: true,
+          createdAt: true,
+          updatedAt: true,
+        },
         skip,
-        take: validatedQuery.limit,
+        take: limit,
         orderBy: { createdAt: 'desc' },
       }),
       prisma.content.count({ where }),
@@ -61,137 +82,151 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       content,
-      total,
-      page: validatedQuery.page,
-      limit: validatedQuery.limit,
+      pagination: {
+        total,
+        pages: Math.ceil(total / limit),
+        page,
+        limit,
+      },
     });
   } catch (error) {
-    console.error('Error in GET /api/content:', error);
+    console.error('Error fetching content:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ message: 'Invalid query parameters', errors: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid query parameters', details: error.errors }, { status: 400 });
     }
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
 // POST /api/content
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const { userId } = getAuth(request);
-    if (!userId) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    const { userId: clerkId } = await auth();
+    if (!clerkId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    let data;
-    const contentType = request.headers.get('content-type');
+    // Get the user from our database using their Clerk ID
+    const user = await prisma.user.findUnique({
+      where: { clerkId }
+    });
+
+    if (!user) {
+      console.error('User not found in database:', clerkId);
+      return NextResponse.json({ 
+        error: 'User not found', 
+        details: 'The authenticated user does not exist in our database'
+      }, { status: 404 });
+    }
+
+    const body = await request.json();
+    console.log('API received body:', body);
     
-    if (contentType?.includes('multipart/form-data')) {
-      const formData = await request.formData();
-      data = {
-        title: formData.get('title'),
-        contentType: formData.get('contentType'),
-        content: formData.get('content'),
-        tags: JSON.parse(formData.get('tags') as string || '[]'),
-        preheaderText: formData.get('preheaderText') || '',
-        publishDate: formData.get('publishDate'),
-        status: formData.get('status'),
-        mediaUrls: JSON.parse(formData.get('mediaUrls') as string || '[]'),
-      };
-    } else {
-      data = await request.json();
-    }
-
     try {
-      const validatedData = contentSchema.parse(data);
-      
-      const content = await prisma.content.create({
-        data: {
-          ...validatedData,
-          userId,
-          publishDate: validatedData.publishDate ? new Date(validatedData.publishDate) : null,
-        },
-      });
+      const validatedData = contentSchema.parse(body);
+      console.log('Validation successful:', validatedData);
 
-      return NextResponse.json(content);
+      try {
+        // Check if slug already exists
+        const existingContent = await prisma.content.findUnique({
+          where: { slug: validatedData.slug }
+        });
+
+        if (existingContent) {
+          // Append a timestamp to make the slug unique
+          validatedData.slug = `${validatedData.slug}-${Date.now()}`;
+        }
+
+        const content = await prisma.content.create({
+          data: {
+            title: validatedData.title,
+            slug: validatedData.slug,
+            type: validatedData.type,
+            status: validatedData.status,
+            content: validatedData.content,
+            excerpt: validatedData.excerpt,
+            media: validatedData.media ? JSON.stringify(validatedData.media) : null,
+            tags: validatedData.tags,
+            authorId: user.id, // Use the database user ID instead of Clerk ID
+            scheduledAt: validatedData.scheduledAt ? new Date(validatedData.scheduledAt) : null,
+          },
+        });
+        console.log('Content created successfully:', content);
+        return NextResponse.json(content);
+      } catch (prismaError) {
+        console.error('Prisma error details:', prismaError);
+        return NextResponse.json({ 
+          error: 'Database error', 
+          details: prismaError instanceof Error ? prismaError.message : 'Unknown database error',
+          code: prismaError instanceof Prisma.PrismaClientKnownRequestError ? prismaError.code : undefined
+        }, { status: 500 });
+      }
     } catch (validationError) {
+      console.error('Validation error details:', validationError);
       if (validationError instanceof z.ZodError) {
-        const errors = validationError.errors.map(err => ({
-          field: err.path.join('.'),
+        const errorDetails = validationError.errors.map(err => ({
+          path: err.path,
           message: err.message
         }));
+        console.error('Validation error details:', errorDetails);
         return NextResponse.json({ 
-          message: 'Invalid content data', 
-          errors 
+          error: 'Invalid content data', 
+          details: errorDetails,
+          receivedData: body 
         }, { status: 400 });
       }
       throw validationError;
     }
   } catch (error) {
-    console.error('Error in POST /api/content:', error);
+    console.error('Error creating content:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Invalid content data', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json({ 
-      message: 'Internal server error',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: 'Internal server error', 
+      details: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
     }, { status: 500 });
   }
 }
 
 // PUT /api/content/[id]
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: Request) {
   try {
-    const { userId } = getAuth(request);
+    const { userId } = await auth();
     if (!userId) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if content exists and belongs to user
+    const body = await request.json();
+    const { id, ...data } = body;
+    const validatedData = contentSchema.parse(data);
+
     const existingContent = await prisma.content.findFirst({
       where: {
-        id: params.id,
-        userId,
+        id,
+        authorId: userId,
       },
     });
 
     if (!existingContent) {
-      return NextResponse.json({ message: 'Content not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Content not found' }, { status: 404 });
     }
-
-    let data;
-    const contentType = request.headers.get('content-type');
-    
-    if (contentType?.includes('multipart/form-data')) {
-      const formData = await request.formData();
-      data = {
-        title: formData.get('title'),
-        contentType: formData.get('contentType'),
-        content: formData.get('content'),
-        tags: JSON.parse(formData.get('tags') as string),
-        preheaderText: formData.get('preheaderText'),
-        publishDate: formData.get('publishDate'),
-        status: formData.get('status'),
-        mediaUrls: JSON.parse(formData.get('mediaUrls') as string || '[]'),
-      };
-    } else {
-      data = await request.json();
-    }
-
-    const validatedData = contentSchema.parse(data);
 
     const content = await prisma.content.update({
-      where: {
-        id: params.id,
-      },
+      where: { id },
       data: {
         ...validatedData,
-        publishDate: validatedData.publishDate ? new Date(validatedData.publishDate) : null,
+        scheduledAt: validatedData.scheduledAt ? new Date(validatedData.scheduledAt) : null,
       },
     });
 
     return NextResponse.json(content);
   } catch (error) {
-    console.error('Error in PUT /api/content:', error);
+    console.error('Error updating content:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ message: 'Invalid content data', errors: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid content data', details: error.errors }, { status: 400 });
     }
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 } 

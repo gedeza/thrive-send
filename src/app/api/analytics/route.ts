@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAuth } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { z } from 'zod';
 
 // Validation schema for analytics query parameters
@@ -19,7 +19,7 @@ const analyticsQuerySchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = getAuth(request);
+    const { userId } = auth();
     if (!userId) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
@@ -87,6 +87,33 @@ export async function GET(request: NextRequest) {
           new_followers: 0,
           revenue: 0,
         },
+        audienceGrowthData: {
+          labels: [],
+          datasets: [{
+            label: "New Followers",
+            data: [],
+            backgroundColor: "#1976d2",
+          }]
+        },
+        engagementPieData: {
+          labels: ["Likes", "Comments", "Shares", "Follows"],
+          datasets: [{
+            label: "Engagement",
+            data: [0, 0, 0, 0],
+            backgroundColor: ["#1976d2", "#43a047", "#fbc02d", "#e53935"],
+          }]
+        },
+        performanceLineData: {
+          labels: [],
+          datasets: [{
+            label: "Engagement Trend",
+            data: [],
+            borderColor: "#1976d2",
+            backgroundColor: "rgba(25, 118, 210, 0.2)",
+            tension: 0.35,
+            fill: true,
+          }]
+        }
       });
     }
 
@@ -136,16 +163,23 @@ export async function GET(request: NextRequest) {
       return acc;
     }, {} as Record<string, any>);
 
+    const groupedDataValues = Object.values(groupedData);
+    const totalEngagements = analytics.reduce((sum, curr) => sum + (curr.engagements ?? 0), 0);
+    const totalLikes = analytics.reduce((sum, curr) => sum + (curr.likes ?? 0), 0);
+    const totalComments = analytics.reduce((sum, curr) => sum + (curr.comments ?? 0), 0);
+    const totalShares = analytics.reduce((sum, curr) => sum + (curr.shares ?? 0), 0);
+    const totalFollows = analytics.reduce((sum, curr) => sum + (curr.follows ?? 0), 0);
+
     return NextResponse.json({
-      data: Object.values(groupedData),
+      data: groupedDataValues,
       total: {
         views: analytics.reduce((sum, curr) => sum + (curr.views ?? 0), 0),
-        engagements: analytics.reduce((sum, curr) => sum + (curr.engagements ?? 0), 0),
-        shares: analytics.reduce((sum, curr) => sum + (curr.shares ?? 0), 0),
-        likes: analytics.reduce((sum, curr) => sum + (curr.likes ?? 0), 0),
-        comments: analytics.reduce((sum, curr) => sum + (curr.comments ?? 0), 0),
+        engagements: totalEngagements,
+        shares: totalShares,
+        likes: totalLikes,
+        comments: totalComments,
         conversions: analytics.reduce((sum, curr) => sum + (curr.conversions ?? 0), 0),
-        follows: analytics.reduce((sum, curr) => sum + (curr.follows ?? 0), 0),
+        follows: totalFollows,
         new_followers: analytics.reduce((sum, curr) => sum + (curr.new_followers ?? 0), 0),
         revenue: analytics.reduce((sum, curr) => sum + (curr.revenue ?? 0), 0),
       },
@@ -153,8 +187,27 @@ export async function GET(request: NextRequest) {
         labels: Object.keys(groupedData),
         datasets: [{
           label: "New Followers",
-          data: Object.values(groupedData).map(d => d.new_followers),
+          data: groupedDataValues.map(d => d.new_followers),
           backgroundColor: "#1976d2",
+        }]
+      },
+      engagementPieData: {
+        labels: ["Likes", "Comments", "Shares", "Follows"],
+        datasets: [{
+          label: "Engagement",
+          data: [totalLikes, totalComments, totalShares, totalFollows],
+          backgroundColor: ["#1976d2", "#43a047", "#fbc02d", "#e53935"],
+        }]
+      },
+      performanceLineData: {
+        labels: Object.keys(groupedData),
+        datasets: [{
+          label: "Engagement Trend",
+          data: groupedDataValues.map(d => d.engagements),
+          borderColor: "#1976d2",
+          backgroundColor: "rgba(25, 118, 210, 0.2)",
+          tension: 0.35,
+          fill: true,
         }]
       }
     });

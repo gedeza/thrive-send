@@ -16,16 +16,27 @@ export async function fetchCalendarEvents(): Promise<CalendarEvent[]> {
     console.log("Fetching calendar events...");
     const response = await fetch(`${API_URL}/calendar-events`, {
       credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
     console.log("Response status:", response.status);
     
     if (!response.ok) {
       const error = await response.json();
       console.error("Error response:", error);
+      
+      // Handle specific error cases
       if (response.status === 404 && error.error === 'User not found') {
-        // Return empty array if user not found (they'll be created on next request)
+        console.log("User not found, returning empty array");
         return [];
       }
+      
+      if (response.status === 500 && error.message?.includes('PostgreSQL')) {
+        console.error("Database connection error:", error);
+        throw new Error("Database connection error. Please try again in a few moments.");
+      }
+      
       throw new Error(error.message || "Failed to fetch calendar events");
     }
 
@@ -36,7 +47,16 @@ export async function fetchCalendarEvents(): Promise<CalendarEvent[]> {
     return Array.isArray(data) ? data : [];
   } catch (error) {
     console.error("Error fetching calendar events:", error);
-    throw error;
+    
+    // If it's a network error or database connection error, throw it
+    if (error instanceof TypeError || error instanceof Error) {
+      if (error.message.includes('Failed to fetch') || error.message.includes('Database connection')) {
+        throw error;
+      }
+    }
+    
+    // For other errors, return empty array to prevent infinite loading
+    return [];
   }
 }
 
@@ -45,6 +65,7 @@ export async function fetchCalendarEvents(): Promise<CalendarEvent[]> {
  */
 export async function createCalendarEvent(eventData: Omit<CalendarEvent, "id">): Promise<CalendarEvent> {
   try {
+    console.log("Creating calendar event:", eventData);
     const response = await fetch(`${API_URL}/calendar-events`, {
       method: "POST",
       headers: {
@@ -54,12 +75,14 @@ export async function createCalendarEvent(eventData: Omit<CalendarEvent, "id">):
       body: JSON.stringify(eventData),
     });
 
+    const data = await response.json();
+    console.log("Create response:", data);
+
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Failed to create calendar event");
+      throw new Error(data.error || data.message || "Failed to create calendar event");
     }
 
-    return response.json();
+    return data;
   } catch (error) {
     console.error("Error creating calendar event:", error);
     throw error;
@@ -71,6 +94,7 @@ export async function createCalendarEvent(eventData: Omit<CalendarEvent, "id">):
  */
 export async function updateCalendarEvent(event: CalendarEvent): Promise<CalendarEvent> {
   try {
+    console.log("Updating calendar event:", event);
     const response = await fetch(`${API_URL}/calendar-events`, {
       method: "PUT",
       headers: {
@@ -80,12 +104,14 @@ export async function updateCalendarEvent(event: CalendarEvent): Promise<Calenda
       body: JSON.stringify(event),
     });
 
+    const data = await response.json();
+    console.log("Update response:", data);
+
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Failed to update calendar event");
+      throw new Error(data.error || data.message || "Failed to update calendar event");
     }
 
-    return response.json();
+    return data;
   } catch (error) {
     console.error("Error updating calendar event:", error);
     throw error;
@@ -97,6 +123,7 @@ export async function updateCalendarEvent(event: CalendarEvent): Promise<Calenda
  */
 export async function deleteCalendarEvent(eventId: string): Promise<boolean> {
   try {
+    console.log("Deleting calendar event:", eventId);
     const response = await fetch(`${API_URL}/calendar-events`, {
       method: "DELETE",
       headers: {
@@ -106,9 +133,11 @@ export async function deleteCalendarEvent(eventId: string): Promise<boolean> {
       body: JSON.stringify({ id: eventId }),
     });
 
+    const data = await response.json();
+    console.log("Delete response:", data);
+
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Failed to delete calendar event");
+      throw new Error(data.error || data.message || "Failed to delete calendar event");
     }
 
     return true;
@@ -126,20 +155,29 @@ export async function rescheduleEvent(
   newDate: string, 
   newTime?: string
 ): Promise<CalendarEvent> {
-  const response = await fetch(`${API_URL}/calendar/events/${id}/reschedule`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: 'include',
-    body: JSON.stringify({ date: newDate, time: newTime }),
-  });
+  try {
+    console.log("Rescheduling event:", { id, newDate, newTime });
+    const response = await fetch(`${API_URL}/calendar/events/${id}/reschedule`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: 'include',
+      body: JSON.stringify({ date: newDate, time: newTime }),
+    });
 
-  if (!response.ok) {
-    throw new Error("Failed to reschedule event");
+    const data = await response.json();
+    console.log("Reschedule response:", data);
+
+    if (!response.ok) {
+      throw new Error(data.error || data.message || "Failed to reschedule event");
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error rescheduling event:", error);
+    throw error;
   }
-
-  return await response.json();
 }
 
 /**
@@ -153,20 +191,29 @@ export async function getEventAnalytics(
   byType: Record<string, number>;
   byStatus: Record<string, number>;
 }> {
-  const response = await fetch(
-    `${API_URL}/calendar/analytics?startDate=${startDate}&endDate=${endDate}`,
-    {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: 'include',
+  try {
+    console.log("Fetching analytics:", { startDate, endDate });
+    const response = await fetch(
+      `${API_URL}/calendar/analytics?startDate=${startDate}&endDate=${endDate}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: 'include',
+      }
+    );
+
+    const data = await response.json();
+    console.log("Analytics response:", data);
+
+    if (!response.ok) {
+      throw new Error(data.error || data.message || "Failed to get calendar analytics");
     }
-  );
 
-  if (!response.ok) {
-    throw new Error("Failed to get calendar analytics");
+    return data;
+  } catch (error) {
+    console.error("Error fetching analytics:", error);
+    throw error;
   }
-
-  return await response.json();
 }

@@ -1,77 +1,65 @@
-import { NextResponse } from 'next/server';
-import { getAuth } from '@clerk/nextjs/server';
-import { writeFile, mkdir } from 'fs/promises';
+import { NextRequest, NextResponse } from 'next/server';
+import { optimizeImage, generateThumbnail } from '@/lib/services/image-optimizer';
+import { writeFile } from 'fs/promises';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import { NextRequest } from 'next/server';
-
-// Allowed file types
-const ALLOWED_FILE_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-  'video/mp4',
-  'video/webm',
-];
-
-// Maximum file size (10MB)
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = getAuth(request);
-    if (!userId) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
     const formData = await request.formData();
     const file = formData.get('file') as File;
 
     if (!file) {
-      return NextResponse.json({ message: 'No file provided' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'No file provided' },
+        { status: 400 }
+      );
     }
 
     // Validate file type
-    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
       return NextResponse.json(
-        { message: 'Invalid file type. Only images and videos are allowed.' },
+        { error: 'Invalid file type' },
         { status: 400 }
       );
     }
 
-    // Validate file size
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { message: 'File too large. Maximum size is 10MB.' },
-        { status: 400 }
-      );
-    }
+    // Convert File to Buffer
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
 
     // Generate unique filename
-    const fileExtension = file.name.split('.').pop();
-    const fileName = `${uuidv4()}.${fileExtension}`;
+    const filename = `${uuidv4()}.webp`;
+    const uploadDir = join(process.cwd(), 'public', 'uploads');
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), 'public', 'uploads');
-    try {
-      await mkdir(uploadsDir, { recursive: true });
-      await writeFile(join(uploadsDir, fileName), Buffer.from(await file.arrayBuffer()));
-    } catch (error) {
-      console.error('Error saving file:', error);
-      return NextResponse.json(
-        { message: 'Error saving file' },
-        { status: 500 }
-      );
-    }
+    // Optimize image
+    const optimizedBuffer = await optimizeImage(buffer, {
+      maxWidth: 1920,
+      maxHeight: 1080,
+      quality: 80,
+      format: 'webp'
+    });
 
-    // Return the URL of the uploaded file
-    const fileUrl = `/uploads/${fileName}`;
-    return NextResponse.json({ url: fileUrl });
+    // Generate thumbnail
+    const thumbnailBuffer = await generateThumbnail(buffer);
+
+    // Save files
+    const filePath = join(uploadDir, filename);
+    const thumbnailPath = join(uploadDir, `thumb_${filename}`);
+
+    await writeFile(filePath, optimizedBuffer);
+    await writeFile(thumbnailPath, thumbnailBuffer);
+
+    return NextResponse.json({
+      url: `/uploads/${filename}`,
+      thumbnailUrl: `/uploads/thumb_${filename}`,
+      filename
+    });
   } catch (error) {
-    console.error('Error in POST /api/upload:', error);
+    console.error('Error uploading file:', error);
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { error: 'Failed to upload file' },
       { status: 500 }
     );
   }

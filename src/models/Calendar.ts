@@ -3,24 +3,12 @@ import { v4 as uuidv4 } from 'uuid';
 /**
  * Represents the status of a calendar item
  */
-export enum CalendarItemStatus {
-  DRAFT = 'draft',
-  SCHEDULED = 'scheduled',
-  PUBLISHED = 'published',
-  ARCHIVED = 'archived'
-}
+export type CalendarItemStatus = 'draft' | 'scheduled' | 'sent' | 'failed';
 
 /**
  * Represents the type of content
  */
-export enum ContentType {
-  BLOG_POST = 'blog_post',
-  SOCIAL_MEDIA = 'social_media',
-  EMAIL = 'email',
-  VIDEO = 'video',
-  PODCAST = 'podcast',
-  OTHER = 'other'
-}
+export type ContentType = 'blog' | 'social' | 'email' | 'other';
 
 /**
  * Interface for a calendar item
@@ -28,16 +16,16 @@ export enum ContentType {
 export interface CalendarItem {
   id: string;
   title: string;
-  description?: string;
-  contentType: ContentType;
+  description: string;
+  type: ContentType;
   status: CalendarItemStatus;
-  scheduledDate: Date;
-  publishedDate?: Date;
-  createdAt: Date;
-  updatedAt: Date;
-  authorId: string;
-  tags?: string[];
-  metadata?: Record<string, any>;
+  date: string;
+  time: string;
+  scheduledDate?: string;
+  scheduledTime?: string;
+  socialMediaContent?: SocialMediaContent;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /**
@@ -70,6 +58,22 @@ export interface UpdateCalendarItemInput {
 }
 
 /**
+ * Interface for social media content
+ */
+export interface SocialMediaContent {
+  platforms: string[];
+  mediaUrls: string[];
+  crossPost: boolean;
+  platformSpecificContent: {
+    [key: string]: {
+      text: string;
+      mediaUrls: string[];
+      scheduledTime?: string;
+    };
+  };
+}
+
+/**
  * Calendar class to manage content calendar items
  */
 export class Calendar {
@@ -84,14 +88,12 @@ export class Calendar {
       id: uuidv4(),
       title: input.title,
       description: input.description,
-      contentType: input.contentType,
-      status: input.status || CalendarItemStatus.DRAFT,
-      scheduledDate: input.scheduledDate,
-      createdAt: now,
-      updatedAt: now,
-      authorId: input.authorId,
-      tags: input.tags || [],
-      metadata: input.metadata || {}
+      type: input.contentType,
+      status: input.status || 'draft',
+      date: now.toISOString().split('T')[0],
+      time: now.toISOString().split('T')[1],
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString()
     };
 
     this.items.set(newItem.id, newItem);
@@ -115,7 +117,7 @@ export class Calendar {
     const updatedItem: CalendarItem = {
       ...item,
       ...input,
-      updatedAt: new Date()
+      updatedAt: new Date().toISOString()
     };
 
     this.items.set(id, updatedItem);
@@ -148,7 +150,8 @@ export class Calendar {
    */
   getItemsByDateRange(startDate: Date, endDate: Date): CalendarItem[] {
     return this.getAllItems().filter(item => {
-      return item.scheduledDate >= startDate && item.scheduledDate <= endDate;
+      const scheduledDate = item.scheduledDate ? new Date(item.scheduledDate) : null;
+      return scheduledDate && scheduledDate >= startDate && scheduledDate <= endDate;
     });
   }
 
@@ -163,7 +166,7 @@ export class Calendar {
    * Get items by content type
    */
   getItemsByContentType(contentType: ContentType): CalendarItem[] {
-    return this.getAllItems().filter(item => item.contentType === contentType);
+    return this.getAllItems().filter(item => item.type === contentType);
   }
 
   /**
@@ -175,9 +178,8 @@ export class Calendar {
 
     const updatedItem: CalendarItem = {
       ...item,
-      status: CalendarItemStatus.PUBLISHED,
-      publishedDate: new Date(),
-      updatedAt: new Date()
+      status: 'sent',
+      updatedAt: new Date().toISOString()
     };
 
     this.items.set(id, updatedItem);

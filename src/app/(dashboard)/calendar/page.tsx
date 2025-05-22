@@ -6,12 +6,13 @@ import { useRouter } from "next/navigation";
 import { ContentCalendar } from "@/components/content/content-calendar";
 import { createCalendarEvent, fetchCalendarEvents, updateCalendarEvent, deleteCalendarEvent } from "@/lib/api/calendar-service";
 import { useToast } from "@/components/ui/use-toast";
+import { CalendarEvent } from "@/components/content/content-calendar";
 
 export default function CustomCalendarPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleEventCreate = async (eventData: any) => {
+  const handleEventCreate = async (eventData: Omit<CalendarEvent, "id">) => {
     try {
       const response = await createCalendarEvent(eventData);
       toast({
@@ -30,7 +31,7 @@ export default function CustomCalendarPage() {
     }
   };
 
-  const handleEventUpdate = async (event: any) => {
+  const handleEventUpdate = async (event: CalendarEvent) => {
     try {
       const response = await updateCalendarEvent(event);
       toast({

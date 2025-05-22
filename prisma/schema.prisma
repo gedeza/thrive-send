@@ -319,36 +319,43 @@ model VerificationToken {
 }
 
 model Content {
-  id            String    @id @default(cuid())
-  title         String
-  status        String
-  userId        String
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  content       String
-  contentType   String
-  mediaUrls     String[]
-  preheaderText String?
-  publishDate   DateTime?
-  tags          String[]
-  user          User      @relation(fields: [userId], references: [id])
+  id          String      @id @default(cuid())
+  title       String
+  slug        String      @unique
+  type        String      // blog, email, social
+  status      String      // draft, scheduled, published, archived
+  content     String      @db.Text
+  excerpt     String?     @db.Text
+  media       Json?       // Array of media files
+  tags        String[]
+  authorId    String
+  author      User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  scheduledAt DateTime?
+  publishedAt DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([authorId])
+  @@index([type])
+  @@index([status])
 }
 
 model CalendarEvent {
-  id             String       @id @default(cuid())
-  title          String
-  description    String?
-  date           String
-  time           String?
-  type           String
-  status         String
-  contentType    String?
-  userId         String
-  organizationId String
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String       @id @default(cuid())
+  title             String
+  description       String?
+  date              String
+  time              String?
+  type              String
+  status            String
+  contentType       String?
+  socialMediaContent Json?
+  userId            String
+  organizationId    String
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([organizationId])

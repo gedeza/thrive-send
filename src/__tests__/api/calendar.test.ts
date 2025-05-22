@@ -12,96 +12,150 @@ app.use(express.json());
 app.use('/api/calendar', calendarRoutes);
 
 describe('Calendar API', () => {
-  let createdItemId: string;
-
-  // Test creating a calendar item
-  test('POST /api/calendar - should create a new calendar item', async () => {
-    const newItem = {
-      title: 'Test Content',
-      description: 'This is a test content item',
-      contentType: ContentType.BLOG_POST,
-      scheduledDate: new Date('2023-12-31').toISOString(),
-      authorId: 'user123'
-    };
-
-    const response = await request(app)
-      .post('/api/calendar')
-      .send(newItem)
-      .expect(201);
-
-    expect(response.body).toHaveProperty('id');
-    expect(response.body.title).toBe(newItem.title);
-    expect(response.body.status).toBe(CalendarItemStatus.DRAFT);
-    
-    createdItemId = response.body.id;
+  beforeEach(() => {
+    // Clear any test data before each test
+    jest.clearAllMocks();
   });
 
-  // Test getting all calendar items
-  test('GET /api/calendar - should return all calendar items', async () => {
-    const response = await request(app)
-      .get('/api/calendar')
-      .expect(200);
-
-    expect(Array.isArray(response.body)).toBe(true);
-    expect(response.body.length).toBeGreaterThan(0);
-  });
-
-  // Test getting a specific calendar item
-  test('GET /api/calendar/:id - should return a specific calendar item', async () => {
-    const response = await request(app)
-      .get(`/api/calendar/${createdItemId}`)
-      .expect(200);
-
-    expect(response.body.id).toBe(createdItemId);
-  });
-
-  // Test updating a calendar item
-  test('PUT /api/calendar/:id - should update a calendar item', async () => {
-    const updatedData = {
-      title: 'Updated Test Content',
-      description: 'This content has been updated'
-    };
-
-    const response = await request(app)
-      .put(`/api/calendar/${createdItemId}`)
-      .send(updatedData)
-      .expect(200);
-
-    expect(response.body.title).toBe(updatedData.title);
-    expect(response.body.description).toBe(updatedData.description);
-  });
-
-  // Test publishing a calendar item
-  test('POST /api/calendar/:id/publish - should publish a calendar item', async () => {
-    const response = await request(app)
-      .post(`/api/calendar/${createdItemId}/publish`)
-      .expect(200);
-
-    expect(response.body.status).toBe(CalendarItemStatus.PUBLISHED);
-    expect(response.body.publishedDate).toBeDefined();
-  });
-
-  // Test filtering calendar items by status
-  test('GET /api/calendar?status=published - should return published items', async () => {
-    const response = await request(app)
-      .get('/api/calendar?status=published')
-      .expect(200);
-
-    expect(Array.isArray(response.body)).toBe(true);
-    response.body.forEach((item: any) => {
-      expect(item.status).toBe(CalendarItemStatus.PUBLISHED);
+  describe('GET /api/calendar', () => {
+    it('should return empty array when no items exist', async () => {
+      const response = await request(app).get('/api/calendar');
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual([]);
     });
   });
 
-  // Test deleting a calendar item
-  test('DELETE /api/calendar/:id - should delete a calendar item', async () => {
-    await request(app)
-      .delete(`/api/calendar/${createdItemId}`)
-      .expect(204);
+  describe('POST /api/calendar', () => {
+    it('should create a new calendar item', async () => {
+      const newItem = {
+        title: 'Test Event',
+        description: 'Test Description',
+        type: 'blog' as ContentType,
+        status: 'draft' as CalendarItemStatus,
+        date: '2024-03-20',
+        time: '12:00',
+        socialMediaContent: {
+          platforms: [],
+          mediaUrls: [],
+          crossPost: false,
+          platformSpecificContent: {}
+        }
+      };
 
-    // Verify it's deleted
-    await request(app)
-      .get(`/api/calendar/${createdItemId}`)
-      .expect(404);
+      const response = await request(app)
+        .post('/api/calendar')
+        .send(newItem);
+
+      expect(response.status).toBe(201);
+      expect(response.body).toMatchObject({
+        ...newItem,
+        id: expect.any(String),
+        createdAt: expect.any(String),
+        updatedAt: expect.any(String)
+      });
+    });
+
+    it('should validate required fields', async () => {
+      const response = await request(app)
+        .post('/api/calendar')
+        .send({});
+
+      expect(response.status).toBe(400);
+    });
+  });
+
+  describe('PUT /api/calendar/:id', () => {
+    it('should update an existing calendar item', async () => {
+      // First create an item
+      const newItem = {
+        title: 'Test Event',
+        description: 'Test Description',
+        type: 'blog' as ContentType,
+        status: 'draft' as CalendarItemStatus,
+        date: '2024-03-20',
+        time: '12:00',
+        socialMediaContent: {
+          platforms: [],
+          mediaUrls: [],
+          crossPost: false,
+          platformSpecificContent: {}
+        }
+      };
+
+      const createResponse = await request(app)
+        .post('/api/calendar')
+        .send(newItem);
+
+      const itemId = createResponse.body.id;
+
+      // Then update it
+      const updateData = {
+        title: 'Updated Event',
+        status: 'scheduled' as CalendarItemStatus
+      };
+
+      const response = await request(app)
+        .put(`/api/calendar/${itemId}`)
+        .send(updateData);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toMatchObject({
+        ...newItem,
+        ...updateData,
+        id: itemId,
+        updatedAt: expect.any(String)
+      });
+    });
+
+    it('should return 404 for non-existent item', async () => {
+      const response = await request(app)
+        .put('/api/calendar/non-existent-id')
+        .send({ title: 'Updated Event' });
+
+      expect(response.status).toBe(404);
+    });
+  });
+
+  describe('DELETE /api/calendar/:id', () => {
+    it('should delete an existing calendar item', async () => {
+      // First create an item
+      const newItem = {
+        title: 'Test Event',
+        description: 'Test Description',
+        type: 'blog' as ContentType,
+        status: 'draft' as CalendarItemStatus,
+        date: '2024-03-20',
+        time: '12:00',
+        socialMediaContent: {
+          platforms: [],
+          mediaUrls: [],
+          crossPost: false,
+          platformSpecificContent: {}
+        }
+      };
+
+      const createResponse = await request(app)
+        .post('/api/calendar')
+        .send(newItem);
+
+      const itemId = createResponse.body.id;
+
+      // Then delete it
+      const response = await request(app)
+        .delete(`/api/calendar/${itemId}`);
+
+      expect(response.status).toBe(204);
+
+      // Verify it's deleted
+      const getResponse = await request(app).get('/api/calendar');
+      expect(getResponse.body).not.toContainEqual(expect.objectContaining({ id: itemId }));
+    });
+
+    it('should return 404 for non-existent item', async () => {
+      const response = await request(app)
+        .delete('/api/calendar/non-existent-id');
+
+      expect(response.status).toBe(404);
+    });
   });
 });

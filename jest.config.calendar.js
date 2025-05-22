@@ -1,7 +1,8 @@
 module.exports = {
   preset: 'ts-jest',
-  testEnvironment: 'node', // Use node environment for API tests
+  testEnvironment: 'node',
   testMatch: ['**/src/__tests__/api/calendar.test.ts'],
+  setupFilesAfterEnv: ['./jest.setup.api.js'],
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
       tsconfig: 'tsconfig.json',

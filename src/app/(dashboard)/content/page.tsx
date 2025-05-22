@@ -57,7 +57,7 @@ function ContentLibraryPage() {
       page: currentPage,
       limit: ITEMS_PER_PAGE,
       status: statusFilter === 'all' ? undefined : statusFilter,
-      contentType: contentTypeFilter === 'all' ? undefined : contentTypeFilter,
+      type: contentTypeFilter === 'all' ? undefined : contentTypeFilter,
     }),
   });
 

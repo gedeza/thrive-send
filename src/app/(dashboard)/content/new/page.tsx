@@ -1,15 +1,40 @@
+'use client';
+
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
-import ContentForm from '@/components/content/ContentForm';
-import { Card } from '@/components/ui/card';
+import { ContentWizard } from '@/components/content/ContentWizard';
+import { CalendarEvent } from '@/types';
+import { toast } from '@/components/ui/use-toast';
+import { useRouter } from 'next/navigation';
 
-export const metadata: Metadata = {
-  title: 'Create New Content | ThriveSend',
-  description: 'Create and schedule new content for your email marketing campaigns'
-};
+// Note: Metadata must be exported from a Server Component
+// We'll need to handle this differently since this is now a Client Component
+// export const metadata: Metadata = {
+//   title: 'Create New Content | ThriveSend',
+//   description: 'Create and schedule new content for your email marketing campaigns'
+// };
 
 export default function NewContentPage() {
+  const router = useRouter();
+
+  const handleComplete = async (event: CalendarEvent) => {
+    try {
+      // TODO: Implement API call to save the event
+      toast({
+        title: 'Success',
+        description: 'Content scheduled successfully',
+      });
+      router.push('/content');
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to schedule content',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <div className="p-6 space-y-8">
       {/* Breadcrumbs */}
@@ -33,10 +58,8 @@ export default function NewContentPage() {
         </p>
       </div>
 
-      {/* Content Creation Form */}
-      <Card className="p-6">
-        <ContentForm />
-      </Card>
+      {/* Content Creation Wizard */}
+      <ContentWizard onComplete={handleComplete} />
     </div>
   );
 }
