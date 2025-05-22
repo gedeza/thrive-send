@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { AnalyticsDashboard } from '../AnalyticsDashboard';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -64,7 +64,6 @@ describe('AnalyticsDashboard', () => {
       </QueryClientProvider>
     );
 
-    expect(screen.getByText('Analytics Dashboard')).toBeInTheDocument();
     expect(screen.getAllByTestId('skeleton')).toHaveLength(5); // 3 metric cards + 1 chart + 1 header
   });
 
@@ -85,7 +84,7 @@ describe('AnalyticsDashboard', () => {
     // Wait for data to load
     await waitFor(() => {
       expect(screen.getByText('1,800')).toBeInTheDocument(); // Total views
-      expect(screen.getByText('415')).toBeInTheDocument(); // Total engagement
+      expect(screen.getByText('315')).toBeInTheDocument(); // Total engagement (100+50+25+80+40+20)
       expect(screen.getByText('3,600')).toBeInTheDocument(); // Total reach
     });
 
@@ -107,7 +106,7 @@ describe('AnalyticsDashboard', () => {
     // Wait for error state
     await waitFor(() => {
       expect(screen.getByText('Analytics Dashboard')).toBeInTheDocument();
-      expect(screen.getByText('0')).toBeInTheDocument(); // Default values when error occurs
+      expect(screen.getAllByText('0')).toHaveLength(3); // All metrics should be 0
     });
   });
 
@@ -138,10 +137,10 @@ describe('AnalyticsDashboard', () => {
     });
 
     // Change time range
-    const timeRangeSelect = screen.getByRole('combobox');
-    timeRangeSelect.click();
+    const timeRangeSelect = screen.getByText('Select time range');
+    fireEvent.click(timeRangeSelect);
     const option = screen.getByText('Last 30 days');
-    option.click();
+    fireEvent.click(option);
 
     // Verify new API call
     await waitFor(() => {
@@ -179,10 +178,10 @@ describe('AnalyticsDashboard', () => {
     });
 
     // Change platform
-    const platformSelect = screen.getAllByRole('combobox')[1];
-    platformSelect.click();
+    const platformSelect = screen.getByText('Select platform');
+    fireEvent.click(platformSelect);
     const option = screen.getByText('Facebook');
-    option.click();
+    fireEvent.click(option);
 
     // Verify new API call
     await waitFor(() => {

@@ -13,7 +13,7 @@ import {
 } from 'recharts';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface AnalyticsData {
@@ -76,18 +76,18 @@ export function AnalyticsDashboard() {
     return (
       <div className="space-y-4">
         <div className="flex justify-between items-center">
-          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-8 w-48" data-testid="skeleton" />
           <div className="flex gap-2">
-            <Skeleton className="h-8 w-32" />
-            <Skeleton className="h-8 w-32" />
+            <Skeleton className="h-8 w-32" data-testid="skeleton" />
+            <Skeleton className="h-8 w-32" data-testid="skeleton" />
           </div>
         </div>
         <div className="grid grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-32" />
+            <Skeleton key={i} className="h-32" data-testid="skeleton" />
           ))}
         </div>
-        <Skeleton className="h-96" />
+        <Skeleton className="h-96" data-testid="skeleton" />
       </div>
     );
   }
@@ -103,21 +103,31 @@ export function AnalyticsDashboard() {
               setSelectedTimeRange(timeRanges.find((range) => range.value === value)!)
             }
           >
-            {timeRanges.map((range) => (
-              <option key={range.value} value={range.value}>
-                {range.label}
-              </option>
-            ))}
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select time range" />
+            </SelectTrigger>
+            <SelectContent>
+              {timeRanges.map((range) => (
+                <SelectItem key={range.value} value={range.value}>
+                  {range.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
           <Select
             value={selectedPlatform}
             onValueChange={setSelectedPlatform}
           >
-            <option value="all">All Platforms</option>
-            <option value="facebook">Facebook</option>
-            <option value="twitter">Twitter</option>
-            <option value="instagram">Instagram</option>
-            <option value="linkedin">LinkedIn</option>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select platform" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Platforms</SelectItem>
+              <SelectItem value="facebook">Facebook</SelectItem>
+              <SelectItem value="twitter">Twitter</SelectItem>
+              <SelectItem value="instagram">Instagram</SelectItem>
+              <SelectItem value="linkedin">LinkedIn</SelectItem>
+            </SelectContent>
           </Select>
         </div>
       </div>
@@ -139,7 +149,7 @@ export function AnalyticsDashboard() {
 
       <Card className="p-4">
         <h3 className="text-lg font-medium mb-4">Performance Over Time</h3>
-        <div className="h-96">
+        <div className="h-96" style={{ minWidth: '500px' }}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={analyticsData?.map((data) => ({
