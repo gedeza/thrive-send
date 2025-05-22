@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, PieChart, LineChart, FileDown, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,17 +10,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import BarChartWidget from "@/components/analytics/BarChartWidget";
 import PieChartWidget from "@/components/analytics/PieChartWidget";
 import LineChartWidget from "@/components/analytics/LineChartWidget";
-import { 
-  fetchAnalyticsMetrics, 
-  fetchAudienceGrowthData, 
-  fetchEngagementBreakdownData,
-  fetchPerformanceTrendData,
-  type AnalyticsMetric
-} from '@/lib/api/analytics-service';
+import { useAnalytics, type AnalyticsMetric } from '@/lib/api/analytics-service';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import { DateRange } from 'react-day-picker';
+import { useAnalyticsQueries } from '@/lib/hooks/useAnalyticsQueries';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// Create a client
+const queryClient = new QueryClient();
 
 // Shared metric card component for summary/grid
 function MetricCard({ title, value, icon: Icon, comparison, percentChange }: AnalyticsMetric & { icon: any }) {
@@ -76,11 +75,8 @@ function ChartSkeleton() {
   );
 }
 
-export default function AnalyticsPage() {
-  const [metrics, setMetrics] = useState<AnalyticsMetric[]>([]);
-  const [audienceData, setAudienceData] = useState(null);
-  const [engagementData, setEngagementData] = useState(null);
-  const [performanceData, setPerformanceData] = useState(null);
+function AnalyticsPageContent() {
+  const analytics = useAnalytics();
   const [dateRange, setDateRange] = useState<DateRange>(() => {
     const today = new Date();
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -90,81 +86,78 @@ export default function AnalyticsPage() {
     };
   });
   const [timeframe, setTimeframe] = useState('month');
-  const [loading, setLoading] = useState(true);
   const [campaignId, setCampaignId] = useState<string | undefined>(undefined);
-  
+
+  const {
+    metrics,
+    metricsLoading,
+    metricsError,
+    audienceData,
+    audienceLoading,
+    audienceError,
+    engagementData,
+    engagementLoading,
+    engagementError,
+    performanceData,
+    performanceLoading,
+    performanceError,
+    refetchAll
+  } = useAnalyticsQueries({
+    startDate: dateRange.from,
+    endDate: dateRange.to,
+    timeframe: timeframe as any,
+    campaignId
+  });
+
   // Function to handle data export
-  const handleExport = () => {
-    toast({
-      title: "Export started",
-      description: `Exporting analytics data from ${format(dateRange.from, 'MMM d, yyyy')} to ${format(dateRange.to, 'MMM d, yyyy')}`,
-    });
-    
-    // TODO: Implement actual export logic
-    setTimeout(() => {
-      toast({
-        title: "Export complete",
-        description: "Analytics data has been exported successfully.",
-      });
-    }, 2000);
-  };
-  
-  // Function to fetch all analytics data
-  const fetchAnalyticsData = async () => {
-    setLoading(true);
+  const handleExport = async () => {
     try {
       if (!dateRange.from || !dateRange.to) {
         throw new Error('Please select a valid date range');
       }
 
-      const startDate = dateRange.from;
-      const endDate = dateRange.to;
-
-      // Fetch metrics and chart data in parallel
-      const [metricsData, audienceGrowthData, engagementBreakdownData, performanceTrendData] = await Promise.all([
-        fetchAnalyticsMetrics({ 
-          startDate, 
-          endDate,
-          timeframe: timeframe as any,
-          campaignId
-        }),
-        fetchAudienceGrowthData({ 
-          startDate, 
-          endDate,
-          campaignId
-        }),
-        fetchEngagementBreakdownData({ 
-          startDate, 
-          endDate,
-          campaignId
-        }),
-        fetchPerformanceTrendData({ 
-          startDate, 
-          endDate,
-          campaignId
-        })
-      ]);
-      
-      setMetrics(metricsData);
-      setAudienceData(audienceGrowthData);
-      setEngagementData(engagementBreakdownData);
-      setPerformanceData(performanceTrendData);
-    } catch (error) {
-      console.error('Failed to fetch analytics data:', error);
       toast({
-        title: "Error loading data",
-        description: error instanceof Error ? error.message : "There was a problem loading analytics data. Please try again.",
+        title: "Export started",
+        description: `Exporting analytics data from ${format(dateRange.from, 'MMM d, yyyy')} to ${format(dateRange.to, 'MMM d, yyyy')}`,
+      });
+      
+      const blob = await analytics.exportData('csv', {
+        start: dateRange.from.toISOString(),
+        end: dateRange.to.toISOString()
+      }, ['views', 'engagements', 'shares', 'likes', 'comments', 'conversions', 'follows', 'new_followers', 'revenue']);
+      
+      // Create a download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `analytics-export-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Export complete",
+        description: "Analytics data has been exported successfully.",
+      });
+    } catch (error) {
+      console.error('Failed to export data:', error);
+      toast({
+        title: "Export failed",
+        description: error instanceof Error ? error.message : "There was a problem exporting the data. Please try again.",
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
     }
   };
-  
-  // Fetch data on initial load and when filters change
-  useEffect(() => {
-    fetchAnalyticsData();
-  }, [dateRange, timeframe, campaignId]);
+
+  // Handle errors
+  if (metricsError || audienceError || engagementError || performanceError) {
+    toast({
+      title: "Error loading data",
+      description: "There was a problem loading analytics data. Please try again.",
+      variant: "destructive"
+    });
+  }
   
   return (
     <div className="space-y-6 p-6">
@@ -176,7 +169,7 @@ export default function AnalyticsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={fetchAnalyticsData}>
+          <Button variant="outline" onClick={() => refetchAll()}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
@@ -209,14 +202,12 @@ export default function AnalyticsPage() {
           </SelectContent>
         </Select>
         
-        {/* Campaign selector would be populated from your campaigns data */}
         <Select value={campaignId || "all"} onValueChange={(val) => setCampaignId(val === "all" ? undefined : val)}>
           <SelectTrigger className="w-full md:w-[220px]">
             <SelectValue placeholder="All Campaigns" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Campaigns</SelectItem>
-            {/* These would be populated from database */}
             <SelectItem value="campaign-1">Summer Campaign</SelectItem>
             <SelectItem value="campaign-2">Fall Promotion</SelectItem>
             <SelectItem value="campaign-3">Holiday Special</SelectItem>
@@ -236,9 +227,9 @@ export default function AnalyticsPage() {
         <TabsContent value="overview">
           {/* Metric summary grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {loading ? (
+            {metricsLoading ? (
               Array(4).fill(0).map((_, i) => <MetricCardSkeleton key={i} />)
-            ) : (
+            ) : metrics && metrics.length > 0 ? (
               metrics.map((metric, index) => {
                 // Assign icons based on metric title
                 const icons = [BarChart, PieChart, LineChart, BarChart];
@@ -250,12 +241,16 @@ export default function AnalyticsPage() {
                   />
                 );
               })
+            ) : (
+              <div className="col-span-4 text-center py-8">
+                <p className="text-muted-foreground">No metrics data available</p>
+              </div>
             )}
           </div>
 
           {/* Charts grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {loading ? (
+            {metricsLoading || audienceLoading || engagementLoading || performanceLoading ? (
               Array(3).fill(0).map((_, i) => <ChartSkeleton key={i} />)
             ) : (
               <>
@@ -367,5 +362,14 @@ export default function AnalyticsPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+// Wrap the page with QueryClientProvider
+export default function AnalyticsPage() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AnalyticsPageContent />
+    </QueryClientProvider>
   );
 }

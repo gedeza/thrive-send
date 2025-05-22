@@ -1,6 +1,7 @@
 import type { AnalyticsTimeframe } from '@/types';
 import { DateRange } from 'react-day-picker';
 import { AnalyticMetric, AnalyticsFilter } from '@/components/analytics/analytics-dashboard';
+import { useAuth } from '@clerk/nextjs';
 
 export type AnalyticsDateRange = {
   start: string;
@@ -80,42 +81,53 @@ export interface ConversionMetrics {
   }[];
 }
 
-class AnalyticsService {
-  private baseUrl: string;
+export function useAnalytics() {
+  const { getToken } = useAuth();
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
 
-  constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
-  }
+  const getAuthHeaders = async () => {
+    const token = await getToken();
+    console.log('Auth token:', token ? 'Present' : 'Missing');
+    return {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    };
+  };
 
   // Time Series Analysis
-  async getTimeSeriesData(
+  const getTimeSeriesData = async (
     metric: string,
     dateRange: AnalyticsDateRange,
     interval: 'hour' | 'day' | 'week' | 'month' = 'day'
-  ): Promise<TimeSeriesData> {
+  ): Promise<TimeSeriesData> => {
+    const headers = await getAuthHeaders();
     const response = await fetch(
-      `${this.baseUrl}/analytics/time-series?metric=${metric}&start=${dateRange.start}&end=${dateRange.end}&interval=${interval}`
+      `${baseUrl}/analytics/time-series?metric=${metric}&start=${dateRange.start}&end=${dateRange.end}&interval=${interval}`,
+      { headers }
     );
     return response.json();
-  }
+  };
 
   // Comparison Views
-  async getComparisonData(
+  const getComparisonData = async (
     metric: string,
     dateRange: AnalyticsDateRange,
     comparisonType: 'week' | 'month' | 'year' = 'week'
-  ): Promise<ComparisonData> {
+  ): Promise<ComparisonData> => {
+    const headers = await getAuthHeaders();
     const response = await fetch(
-      `${this.baseUrl}/analytics/comparison?metric=${metric}&start=${dateRange.start}&end=${dateRange.end}&type=${comparisonType}`
+      `${baseUrl}/analytics/comparison?metric=${metric}&start=${dateRange.start}&end=${dateRange.end}&type=${comparisonType}`,
+      { headers }
     );
     return response.json();
-  }
+  };
 
   // Campaign Filtering
-  async getCampaignMetrics(
+  const getCampaignMetrics = async (
     campaignId?: string,
     dateRange?: AnalyticsDateRange
-  ): Promise<CampaignMetrics[]> {
+  ): Promise<CampaignMetrics[]> => {
+    const headers = await getAuthHeaders();
     const params = new URLSearchParams();
     if (campaignId) params.append('campaignId', campaignId);
     if (dateRange) {
@@ -123,60 +135,67 @@ class AnalyticsService {
       params.append('end', dateRange.end);
     }
     
-    const response = await fetch(`${this.baseUrl}/analytics/campaigns?${params}`);
+    const response = await fetch(`${baseUrl}/analytics/campaigns?${params}`, { headers });
     return response.json();
-  }
+  };
 
   // Audience Segmentation
-  async getAudienceSegments(
+  const getAudienceSegments = async (
     dateRange: AnalyticsDateRange
-  ): Promise<AudienceSegment[]> {
+  ): Promise<AudienceSegment[]> => {
+    const headers = await getAuthHeaders();
     const response = await fetch(
-      `${this.baseUrl}/analytics/audience-segments?start=${dateRange.start}&end=${dateRange.end}`
+      `${baseUrl}/analytics/audience-segments?start=${dateRange.start}&end=${dateRange.end}`,
+      { headers }
     );
     return response.json();
-  }
+  };
 
   // A/B Testing
-  async getABTestResults(
+  const getABTestResults = async (
     testId?: string
-  ): Promise<ABTestResult[]> {
+  ): Promise<ABTestResult[]> => {
+    const headers = await getAuthHeaders();
     const params = new URLSearchParams();
     if (testId) params.append('testId', testId);
     
-    const response = await fetch(`${this.baseUrl}/analytics/ab-tests?${params}`);
+    const response = await fetch(`${baseUrl}/analytics/ab-tests?${params}`, { headers });
     return response.json();
-  }
+  };
 
   // Conversion Tracking
-  async getConversionMetrics(
+  const getConversionMetrics = async (
     dateRange: AnalyticsDateRange
-  ): Promise<ConversionMetrics> {
+  ): Promise<ConversionMetrics> => {
+    const headers = await getAuthHeaders();
     const response = await fetch(
-      `${this.baseUrl}/analytics/conversions?start=${dateRange.start}&end=${dateRange.end}`
+      `${baseUrl}/analytics/conversions?start=${dateRange.start}&end=${dateRange.end}`,
+      { headers }
     );
     return response.json();
-  }
+  };
 
   // Export Data
-  async exportData(
+  const exportData = async (
     format: 'csv' | 'pdf',
     dateRange: AnalyticsDateRange,
     metrics: string[]
-  ): Promise<Blob> {
+  ): Promise<Blob> => {
+    const headers = await getAuthHeaders();
     const response = await fetch(
-      `${this.baseUrl}/analytics/export?format=${format}&start=${dateRange.start}&end=${dateRange.end}&metrics=${metrics.join(',')}`,
+      `${baseUrl}/analytics/export?format=${format}&start=${dateRange.start}&end=${dateRange.end}&metrics=${metrics.join(',')}`,
       {
         headers: {
+          ...headers,
           'Accept': format === 'csv' ? 'text/csv' : 'application/pdf'
         }
       }
     );
     return response.blob();
-  }
+  };
 
   // Schedule Report
-  async scheduleReport(
+  const scheduleReport = async (
     schedule: {
       frequency: 'daily' | 'weekly' | 'monthly';
       time: string;
@@ -184,113 +203,130 @@ class AnalyticsService {
       recipients: string[];
       format: 'csv' | 'pdf';
     }
-  ): Promise<{ id: string; status: 'scheduled' }> {
-    const response = await fetch(`${this.baseUrl}/analytics/schedule-report`, {
+  ): Promise<{ id: string; status: 'scheduled' }> => {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${baseUrl}/analytics/schedule-report`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers,
       body: JSON.stringify(schedule)
     });
     return response.json();
-  }
-}
+  };
 
-export const analyticsService = new AnalyticsService();
+  // Analytics Dashboard Data
+  const fetchAnalyticsMetrics = async (params: AnalyticsParams) => {
+    try {
+      const headers = await getAuthHeaders();
+      const queryParams = new URLSearchParams();
+      if (params.startDate) queryParams.append('startDate', params.startDate.toISOString());
+      if (params.endDate) queryParams.append('endDate', params.endDate.toISOString());
+      if (params.timeframe) queryParams.append('timeframe', params.timeframe);
+      if (params.campaignId) queryParams.append('campaignId', params.campaignId);
 
-/**
- * Fetches analytics metrics from the API
- */
-export async function fetchAnalyticsMetrics(params: AnalyticsParams) {
-  try {
-    const queryParams = new URLSearchParams();
-    if (params.startDate) queryParams.append('startDate', params.startDate.toISOString());
-    if (params.endDate) queryParams.append('endDate', params.endDate.toISOString());
-    if (params.timeframe) queryParams.append('timeframe', params.timeframe);
-    if (params.campaignId) queryParams.append('campaignId', params.campaignId);
+      const response = await fetch(`/api/analytics?${queryParams.toString()}`, {
+        headers,
+      });
 
-    const response = await fetch(`/api/analytics?${queryParams.toString()}`);
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch analytics data');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch analytics data');
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Error fetching analytics metrics:', error);
+      throw error;
     }
-    return response.json();
-  } catch (error) {
-    console.error('Error fetching analytics metrics:', error);
-    throw error;
-  }
-}
+  };
 
-/**
- * Fetches chart data for audience growth
- */
-export async function fetchAudienceGrowthData(params: AnalyticsParams) {
-  try {
-    const queryParams = new URLSearchParams();
-    if (params.startDate) queryParams.append('startDate', params.startDate.toISOString());
-    if (params.endDate) queryParams.append('endDate', params.endDate.toISOString());
-    if (params.timeframe) queryParams.append('timeframe', params.timeframe);
-    if (params.campaignId) queryParams.append('campaignId', params.campaignId);
+  const fetchAudienceGrowthData = async (params: AnalyticsParams) => {
+    try {
+      const headers = await getAuthHeaders();
+      const queryParams = new URLSearchParams();
+      if (params.startDate) queryParams.append('startDate', params.startDate.toISOString());
+      if (params.endDate) queryParams.append('endDate', params.endDate.toISOString());
+      if (params.timeframe) queryParams.append('timeframe', params.timeframe);
+      if (params.campaignId) queryParams.append('campaignId', params.campaignId);
 
-    const response = await fetch(`/api/analytics?${queryParams.toString()}`);
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch audience growth data');
+      const response = await fetch(`/api/analytics?${queryParams.toString()}`, {
+        headers,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch audience growth data');
+      }
+      const data = await response.json();
+      return data.audienceGrowthData || audienceGrowthMockData;
+    } catch (error) {
+      console.error('Error fetching audience growth data:', error);
+      return audienceGrowthMockData;
     }
-    const data = await response.json();
-    return data.audienceGrowthData || audienceGrowthMockData;
-  } catch (error) {
-    console.error('Error fetching audience growth data:', error);
-    return audienceGrowthMockData;
-  }
-}
+  };
 
-/**
- * Fetches chart data for engagement breakdown
- */
-export async function fetchEngagementBreakdownData(params: AnalyticsParams) {
-  try {
-    const queryParams = new URLSearchParams();
-    if (params.startDate) queryParams.append('startDate', params.startDate.toISOString());
-    if (params.endDate) queryParams.append('endDate', params.endDate.toISOString());
-    if (params.timeframe) queryParams.append('timeframe', params.timeframe);
-    if (params.campaignId) queryParams.append('campaignId', params.campaignId);
+  const fetchEngagementBreakdownData = async (params: AnalyticsParams) => {
+    try {
+      const headers = await getAuthHeaders();
+      const queryParams = new URLSearchParams();
+      if (params.startDate) queryParams.append('startDate', params.startDate.toISOString());
+      if (params.endDate) queryParams.append('endDate', params.endDate.toISOString());
+      if (params.timeframe) queryParams.append('timeframe', params.timeframe);
+      if (params.campaignId) queryParams.append('campaignId', params.campaignId);
 
-    const response = await fetch(`/api/analytics?${queryParams.toString()}`);
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch engagement breakdown data');
+      const response = await fetch(`/api/analytics?${queryParams.toString()}`, {
+        headers,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch engagement breakdown data');
+      }
+      const data = await response.json();
+      return data.engagementPieData || engagementPieMockData;
+    } catch (error) {
+      console.error('Error fetching engagement breakdown data:', error);
+      return engagementPieMockData;
     }
-    const data = await response.json();
-    return data.engagementPieData || engagementPieMockData;
-  } catch (error) {
-    console.error('Error fetching engagement breakdown data:', error);
-    return engagementPieMockData;
-  }
-}
+  };
 
-/**
- * Fetches chart data for performance trends
- */
-export async function fetchPerformanceTrendData(params: AnalyticsParams) {
-  try {
-    const queryParams = new URLSearchParams();
-    if (params.startDate) queryParams.append('startDate', params.startDate.toISOString());
-    if (params.endDate) queryParams.append('endDate', params.endDate.toISOString());
-    if (params.timeframe) queryParams.append('timeframe', params.timeframe);
-    if (params.campaignId) queryParams.append('campaignId', params.campaignId);
+  const fetchPerformanceTrendData = async (params: AnalyticsParams) => {
+    try {
+      const headers = await getAuthHeaders();
+      const queryParams = new URLSearchParams();
+      if (params.startDate) queryParams.append('startDate', params.startDate.toISOString());
+      if (params.endDate) queryParams.append('endDate', params.endDate.toISOString());
+      if (params.timeframe) queryParams.append('timeframe', params.timeframe);
+      if (params.campaignId) queryParams.append('campaignId', params.campaignId);
 
-    const response = await fetch(`/api/analytics?${queryParams.toString()}`);
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch performance trend data');
+      const response = await fetch(`/api/analytics?${queryParams.toString()}`, {
+        headers,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch performance trend data');
+      }
+      const data = await response.json();
+      return data.performanceLineData || performanceLineMockData;
+    } catch (error) {
+      console.error('Error fetching performance trend data:', error);
+      return performanceLineMockData;
     }
-    const data = await response.json();
-    return data.performanceLineData || performanceLineMockData;
-  } catch (error) {
-    console.error('Error fetching performance trend data:', error);
-    return performanceLineMockData;
-  }
+  };
+
+  return {
+    getTimeSeriesData,
+    getComparisonData,
+    getCampaignMetrics,
+    getAudienceSegments,
+    getABTestResults,
+    getConversionMetrics,
+    exportData,
+    scheduleReport,
+    fetchAnalyticsMetrics,
+    fetchAudienceGrowthData,
+    fetchEngagementBreakdownData,
+    fetchPerformanceTrendData,
+  };
 }
 
 // Mock data for fallback

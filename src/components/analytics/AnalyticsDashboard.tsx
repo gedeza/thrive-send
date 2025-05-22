@@ -149,8 +149,8 @@ export function AnalyticsDashboard() {
 
       <Card className="p-4">
         <h3 className="text-lg font-medium mb-4">Performance Over Time</h3>
-        <div className="h-96" style={{ minWidth: '500px' }}>
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="h-96 w-full" style={{ minWidth: '500px' }}>
+          <ResponsiveContainer width="100%" height="100%" aspect={2}>
             <LineChart
               data={analyticsData?.map((data) => ({
                 date: format(new Date(data.metrics.timestamp), 'MMM d'),

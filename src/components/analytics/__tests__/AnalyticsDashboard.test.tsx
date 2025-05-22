@@ -6,6 +6,15 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // Mock fetch
 global.fetch = jest.fn();
 
+// Mock ResizeObserver
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+global.ResizeObserver = ResizeObserverMock;
+
 const mockAnalyticsData = [
   {
     contentId: '1',
@@ -64,7 +73,7 @@ describe('AnalyticsDashboard', () => {
       </QueryClientProvider>
     );
 
-    expect(screen.getAllByTestId('skeleton')).toHaveLength(5); // 3 metric cards + 1 chart + 1 header
+    expect(screen.getAllByTestId('skeleton')).toHaveLength(7); // 3 metric cards + 1 chart + 1 header + 2 select skeletons
   });
 
   it('renders analytics data correctly', async () => {
@@ -137,8 +146,8 @@ describe('AnalyticsDashboard', () => {
     });
 
     // Change time range
-    const timeRangeSelect = screen.getByText('Select time range');
-    fireEvent.click(timeRangeSelect);
+    const selects = screen.getAllByRole('combobox');
+    fireEvent.click(selects[0]);
     const option = screen.getByText('Last 30 days');
     fireEvent.click(option);
 
@@ -178,8 +187,8 @@ describe('AnalyticsDashboard', () => {
     });
 
     // Change platform
-    const platformSelect = screen.getByText('Select platform');
-    fireEvent.click(platformSelect);
+    const selects = screen.getAllByRole('combobox');
+    fireEvent.click(selects[1]);
     const option = screen.getByText('Facebook');
     fireEvent.click(option);
 

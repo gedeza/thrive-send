@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { auth } from '@clerk/nextjs/server';
+import { getAuth } from '@clerk/nextjs/server';
 import { z } from 'zod';
 
 // Validation schema for analytics query parameters
@@ -13,13 +13,13 @@ const analyticsQuerySchema = z.object({
     const parsed = new Date(date);
     return !isNaN(parsed.getTime());
   }, "Invalid end date"),
-  timeframe: z.enum(['day', 'week', 'month', 'year']).nullable().transform(val => val || 'day'),
-  campaignId: z.string().nullable().optional(),
+  timeframe: z.enum(['day', 'week', 'month', 'year']).optional().default('day'),
+  campaignId: z.string().optional(),
 });
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = auth();
+    const { userId } = await getAuth(request);
     if (!userId) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
