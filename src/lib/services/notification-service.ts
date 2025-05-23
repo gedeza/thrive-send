@@ -1,12 +1,5 @@
 import { prisma } from '@/lib/prisma';
-
-export type NotificationType = 
-  | 'CONTENT_SUBMITTED'
-  | 'REVIEW_ASSIGNED'
-  | 'FEEDBACK_PROVIDED'
-  | 'STATUS_CHANGED'
-  | 'APPROVAL_REJECTED'
-  | 'CONTENT_PUBLISHED';
+import { NotificationType } from '@prisma/client';
 
 export interface Notification {
   id: string;
@@ -29,18 +22,104 @@ export class NotificationService {
     userId: string;
     type: NotificationType;
     message: string;
-  }) {
+  }): Promise<Notification> {
+    // First try to find the user by database ID
+    let user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    // If not found, try to find by Clerk ID
+    if (!user) {
+      user = await prisma.user.findUnique({
+        where: { clerkId: userId },
+      });
+    }
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
     const notification = await prisma.notification.create({
       data: {
-        userId,
+        userId: user.id, // Use the database user ID
         type,
         message,
+        read: false,
       },
     });
 
     // Notify any active listeners
-    this.notifyListeners(userId, notification);
+    this.notifyListeners(user.clerkId, notification);
     return notification;
+  }
+
+  static async getNotifications(userId: string): Promise<Notification[]> {
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    return prisma.notification.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  static async getUnreadNotifications(userId: string): Promise<Notification[]> {
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    return prisma.notification.findMany({
+      where: { 
+        userId: user.id,
+        read: false 
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  static async markAsRead(notificationId: string): Promise<Notification> {
+    // First find the notification
+    const notification = await prisma.notification.findUnique({
+      where: { id: notificationId },
+      include: { user: true }
+    });
+
+    if (!notification) {
+      throw new Error('Notification not found');
+    }
+
+    // Update the notification
+    return prisma.notification.update({
+      where: { id: notificationId },
+      data: { read: true },
+    });
+  }
+
+  static async markAllAsRead(userId: string): Promise<void> {
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    await prisma.notification.updateMany({
+      where: { 
+        userId: user.id,
+        read: false 
+      },
+      data: { read: true },
+    });
   }
 
   static subscribeToNotifications(userId: string, callback: (notification: Notification) => void): () => void {
@@ -104,7 +183,7 @@ export class NotificationService {
     const notifications = adminsAndReviewers.map(user =>
       this.createNotification({
         userId: user.id,
-        type: 'CONTENT_SUBMITTED',
+        type: NotificationType.CONTENT_SUBMITTED,
         message: `New content submitted for review (ID: ${contentId})`,
       })
     );
@@ -115,7 +194,7 @@ export class NotificationService {
   static async notifyReviewAssigned(contentId: string, reviewerId: string) {
     await this.createNotification({
       userId: reviewerId,
-      type: 'REVIEW_ASSIGNED',
+      type: NotificationType.REVIEW_ASSIGNED,
       message: `You have been assigned to review content (ID: ${contentId})`,
     });
   }
@@ -123,7 +202,7 @@ export class NotificationService {
   static async notifyFeedbackProvided(contentId: string, creatorId: string) {
     await this.createNotification({
       userId: creatorId,
-      type: 'FEEDBACK_PROVIDED',
+      type: NotificationType.FEEDBACK_PROVIDED,
       message: `New feedback received on your content (ID: ${contentId})`,
     });
   }
@@ -131,7 +210,7 @@ export class NotificationService {
   static async notifyStatusChanged(contentId: string, creatorId: string, status: string) {
     await this.createNotification({
       userId: creatorId,
-      type: 'STATUS_CHANGED',
+      type: NotificationType.STATUS_CHANGED,
       message: `Content status changed to ${status} (ID: ${contentId})`,
     });
   }
@@ -139,7 +218,7 @@ export class NotificationService {
   static async notifyApprovalRejected(contentId: string, creatorId: string) {
     await this.createNotification({
       userId: creatorId,
-      type: 'APPROVAL_REJECTED',
+      type: NotificationType.APPROVAL_REJECTED,
       message: `Your content was rejected (ID: ${contentId})`,
     });
   }
@@ -147,36 +226,8 @@ export class NotificationService {
   static async notifyContentPublished(contentId: string, creatorId: string) {
     await this.createNotification({
       userId: creatorId,
-      type: 'CONTENT_PUBLISHED',
+      type: NotificationType.CONTENT_PUBLISHED,
       message: `Your content has been published (ID: ${contentId})`,
-    });
-  }
-
-  static async markAsRead(notificationId: string) {
-    return prisma.notification.update({
-      where: { id: notificationId },
-      data: { read: true },
-    });
-  }
-
-  static async markAllAsRead(userId: string) {
-    return prisma.notification.updateMany({
-      where: { userId, read: false },
-      data: { read: true },
-    });
-  }
-
-  static async getUnreadNotifications(userId: string) {
-    return prisma.notification.findMany({
-      where: { userId, read: false },
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-
-  static async getAllNotifications(userId: string) {
-    return prisma.notification.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
     });
   }
 } 

@@ -3,20 +3,14 @@ import { getAuth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { NotificationService } from '@/lib/services/notification-service';
+import { ContentStatus, ApprovalStep } from '@prisma/client';
 
 // Validation schemas
-const submitSchema = z.object({
-  assignedTo: z.string().optional(),
-});
-
-const statusSchema = z.object({
-  status: z.enum(['PENDING_REVIEW', 'IN_REVIEW', 'CHANGES_REQUESTED', 'APPROVED', 'REJECTED', 'PUBLISHED', 'ARCHIVED']),
+const approvalSchema = z.object({
+  status: z.nativeEnum(ContentStatus),
+  step: z.nativeEnum(ApprovalStep),
   comment: z.string().optional(),
-});
-
-const commentSchema = z.object({
-  content: z.string().min(1),
-  parentId: z.string().optional(),
+  assignedTo: z.string().optional(),
 });
 
 // GET /api/content/[id]/approval
@@ -35,55 +29,12 @@ export async function GET(
       include: {
         comments: {
           include: {
-            user: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                imageUrl: true,
-              },
-            },
-            replies: {
-              include: {
-                user: {
-                  select: {
-                    id: true,
-                    firstName: true,
-                    lastName: true,
-                    imageUrl: true,
-                  },
-                },
-              },
-            },
+            user: true,
           },
         },
         history: {
           include: {
-            user: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                imageUrl: true,
-              },
-            },
-          },
-          orderBy: { createdAt: 'desc' },
-        },
-        creator: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            imageUrl: true,
-          },
-        },
-        assignee: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            imageUrl: true,
+            user: true,
           },
         },
       },
@@ -103,7 +54,7 @@ export async function GET(
   }
 }
 
-// POST /api/content/[id]/approval/submit
+// POST /api/content/[id]/approval
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -115,15 +66,20 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { assignedTo } = submitSchema.parse(body);
+    const approvalData = approvalSchema.parse(body);
 
-    // Check if content exists
+    // Check if content exists and user has permission
     const content = await prisma.content.findUnique({
       where: { id: params.id },
+      include: { author: true },
     });
 
     if (!content) {
       return NextResponse.json({ message: 'Content not found' }, { status: 404 });
+    }
+
+    if (content.authorId !== userId) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     // Create or update approval
@@ -131,36 +87,69 @@ export async function POST(
       where: { contentId: params.id },
       create: {
         contentId: params.id,
-        status: 'PENDING_REVIEW',
-        currentStep: 'REVIEW',
+        status: approvalData.status,
+        currentStep: approvalData.step,
         createdBy: userId,
-        assignedTo,
+        assignedTo: approvalData.assignedTo,
+        comments: approvalData.comment ? {
+          create: [{
+            content: approvalData.comment,
+            userId: userId,
+          }],
+        } : undefined,
         history: {
-          create: {
-            status: 'PENDING_REVIEW',
-            step: 'REVIEW',
-            createdBy: userId,
-          },
+          create: [{
+            status: approvalData.status,
+            step: approvalData.step,
+            comment: approvalData.comment,
+            userId: userId,
+          }],
         },
       },
       update: {
-        status: 'PENDING_REVIEW',
-        currentStep: 'REVIEW',
-        assignedTo,
+        status: approvalData.status,
+        currentStep: approvalData.step,
+        assignedTo: approvalData.assignedTo,
+        comments: approvalData.comment ? {
+          create: [{
+            content: approvalData.comment,
+            userId: userId,
+          }],
+        } : undefined,
         history: {
-          create: {
-            status: 'PENDING_REVIEW',
-            step: 'REVIEW',
-            createdBy: userId,
+          create: [{
+            status: approvalData.status,
+            step: approvalData.step,
+            comment: approvalData.comment,
+            userId: userId,
+          }],
+        },
+      },
+      include: {
+        comments: {
+          include: {
+            user: true,
+          },
+        },
+        history: {
+          include: {
+            user: true,
           },
         },
       },
     });
 
-    // Send notifications
-    await NotificationService.notifyContentSubmitted(params.id, userId);
-    if (assignedTo) {
-      await NotificationService.notifyReviewAssigned(params.id, assignedTo);
+    // Update content status
+    await prisma.content.update({
+      where: { id: params.id },
+      data: {
+        status: approvalData.status === ContentStatus.APPROVED ? ContentStatus.PUBLISHED : approvalData.status,
+      },
+    });
+
+    // Send notification
+    if (approvalData.assignedTo) {
+      await NotificationService.notifyReviewAssigned(params.id, approvalData.assignedTo);
     }
 
     return NextResponse.json(approval);
@@ -172,7 +161,7 @@ export async function POST(
       );
     }
 
-    console.error('Error submitting for approval:', error);
+    console.error('Error updating approval:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

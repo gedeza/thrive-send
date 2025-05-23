@@ -2,13 +2,16 @@
 
 import React, { useEffect, useState } from 'react';
 import {
-  Box, Button, TextField, Typography, Paper, Grid, MenuItem,
-  FormControl, InputLabel, Select, Divider, CircularProgress, Alert, FormHelperText
+  Box, Button, TextField, Typography, Paper, MenuItem,
+  FormControl, InputLabel, Select, Divider, CircularProgress, Alert, FormHelperText,
+  Tabs, Tab
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { styled } from '@mui/material/styles';
+import { RichTextEditor } from '@/components/rich-text-editor';
+import type { SelectChangeEvent } from '@mui/material/Select';
 
 // --- ENUMS ---
 const CAMPAIGN_STATUSES = [
@@ -28,9 +31,11 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   boxShadow: theme.shadows[2],
   borderRadius: theme.shape.borderRadius * 2,
 }));
+
 const FormSection = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(4),
 }));
+
 const SectionTitle = styled(Typography)(({ theme }) => ({
   fontWeight: 600,
   marginBottom: theme.spacing(2),
@@ -40,10 +45,12 @@ const SectionTitle = styled(Typography)(({ theme }) => ({
 type Organization = { id: string; name: string };
 type Client = { id: string; name: string };
 type Project = { id: string; name: string };
+type Template = { id: string; name: string; description?: string; content?: string };
 
 interface CampaignFormData {
   name: string;
   description: string;
+  content: string;
   startDate: Date | null;
   endDate: Date | null;
   budget: number | '';
@@ -52,6 +59,7 @@ interface CampaignFormData {
   organizationId: string;
   clientId: string;
   projectId: string;
+  templateId: string;
 }
 
 interface FormErrors {
@@ -61,6 +69,7 @@ interface FormErrors {
 const initialFormData: CampaignFormData = {
   name: '',
   description: '',
+  content: '',
   startDate: null,
   endDate: null,
   budget: '',
@@ -69,6 +78,7 @@ const initialFormData: CampaignFormData = {
   organizationId: '',
   clientId: '',
   projectId: '',
+  templateId: '',
 };
 
 const CreateCampaign: React.FC = () => {
@@ -81,6 +91,8 @@ const CreateCampaign: React.FC = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editorTab, setEditorTab] = useState<'editor' | 'preview'>('editor');
+  const [templates, setTemplates] = useState<Template[]>([]);
 
   // --- Fetch dropdown options ---
   useEffect(() => {
@@ -138,6 +150,23 @@ const CreateCampaign: React.FC = () => {
     })();
   }, []);
 
+  // Fetch templates
+  useEffect(() => {
+    async function fetchTemplates() {
+      try {
+        const response = await fetch(`/api/campaign-templates?organizationId=${formData.organizationId}`);
+        if (!response.ok) throw new Error('Failed to fetch templates');
+        const data = await response.json();
+        setTemplates(data);
+      } catch (err: any) {
+        console.error('Error fetching templates:', err);
+      }
+    }
+    if (formData.organizationId) {
+      fetchTemplates();
+    }
+  }, [formData.organizationId]);
+
   // --- Validation ---
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -150,12 +179,13 @@ const CreateCampaign: React.FC = () => {
     if (!formData.organizationId) newErrors.organizationId = "Organization required";
     if (formData.budget !== '' && (isNaN(Number(formData.budget)) || Number(formData.budget) < 0))
       newErrors.budget = "Budget must be a positive number";
+    if (!formData.content.trim()) newErrors.content = "Campaign content is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   // --- Change Handlers ---
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name as string]: value }));
     setErrors((prev) => ({ ...prev, [name as string]: undefined }));
@@ -163,6 +193,24 @@ const CreateCampaign: React.FC = () => {
   const handleDateChange = (name: "startDate" | "endDate", date: Date | null) => {
     setFormData((prev) => ({ ...prev, [name]: date }));
     setErrors((prev) => ({ ...prev, [name]: undefined }));
+  };
+  const handleContentChange = (content: string) => {
+    setFormData((prev) => ({ ...prev, content }));
+    setErrors((prev) => ({ ...prev, content: undefined }));
+  };
+
+  // Handle template selection
+  const handleTemplateSelect = async (templateId: string) => {
+    const selectedTemplate = templates.find(t => t.id === templateId);
+    if (selectedTemplate) {
+      setFormData(prev => ({
+        ...prev,
+        templateId,
+        name: selectedTemplate.name,
+        description: selectedTemplate.description || '',
+        content: selectedTemplate.content || '',
+      }));
+    }
   };
 
   // --- Submit Handler ---
@@ -219,43 +267,102 @@ const CreateCampaign: React.FC = () => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Start with the essential details about your campaign.
           </Typography>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
+          <Box sx={{ 
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: '1fr',
+              md: 'repeat(2, 1fr)'
+            },
+            gap: 3,
+            p: 3
+          }}>
+            <Box>
+              <FormControl fullWidth>
+                <InputLabel>Template</InputLabel>
+                <Select
+                  value={formData.templateId || ''}
+                  onChange={(e) => handleTemplateSelect(e.target.value)}
+                  label="Template"
+                >
+                  <MenuItem value="">Create from scratch</MenuItem>
+                  {templates.map((template) => (
+                    <MenuItem key={template.id} value={template.id}>
+                      {template.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+
+            <Box>
               <TextField
-                fullWidth required label="Campaign Name" name="name"
+                fullWidth
+                label="Campaign Name"
+                name="name"
                 value={formData.name}
                 onChange={handleChange}
-                error={!!errors.name} helperText={errors.name || "Enter a descriptive name for your campaign"}
-                placeholder="e.g., Summer Product Launch 2024"
+                required
               />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth required error={!!errors.status}>
-                <InputLabel id="status-label">Campaign Status</InputLabel>
-                <Select
-                  labelId="status-label"
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  label="Campaign Status"
-                >
-                  {CAMPAIGN_STATUSES.map(opt => <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>)}
-                </Select>
-                <FormHelperText>
-                  {errors.status || "Set the current state of your campaign"}
-                </FormHelperText>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12}>
+            </Box>
+
+            <Box>
               <TextField
-                fullWidth multiline rows={3} label="Campaign Description"
-                name="description" value={formData.description}
+                fullWidth
+                label="Description"
+                name="description"
+                value={formData.description}
                 onChange={handleChange}
-                placeholder="Describe what this campaign aims to achieve and its key focus areas"
-                helperText="Provide a clear overview of your campaign's purpose and scope"
+                multiline
+                rows={4}
               />
-            </Grid>
-          </Grid>
+            </Box>
+
+            <Box>
+              <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <DatePicker
+                  label="Start Date"
+                  value={formData.startDate}
+                  onChange={(date) => handleDateChange('startDate', date)}
+                  slotProps={{ textField: { fullWidth: true } }}
+                />
+              </LocalizationProvider>
+            </Box>
+
+            <Box>
+              <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <DatePicker
+                  label="End Date"
+                  value={formData.endDate}
+                  onChange={(date) => handleDateChange('endDate', date)}
+                  slotProps={{ textField: { fullWidth: true } }}
+                />
+              </LocalizationProvider>
+            </Box>
+
+            <Box>
+              <TextField
+                fullWidth
+                label="Budget"
+                name="budget"
+                type="number"
+                value={formData.budget}
+                onChange={handleChange}
+                InputProps={{
+                  startAdornment: <span>$</span>
+                }}
+              />
+            </Box>
+
+            <Box sx={{ gridColumn: { xs: '1', md: '1 / -1' } }}>
+              <Typography variant="subtitle1" gutterBottom>
+                Campaign Content
+              </Typography>
+              <RichTextEditor
+                value={formData.content}
+                onChange={handleContentChange}
+              />
+            </Box>
+          </Box>
         </FormSection>
 
         {/* Campaign Timeline */}
@@ -264,8 +371,16 @@ const CreateCampaign: React.FC = () => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Set when your campaign will start and end.
           </Typography>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
+          <Box sx={{ 
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: '1fr',
+              md: 'repeat(2, 1fr)'
+            },
+            gap: 3,
+            p: 3
+          }}>
+            <Box>
               <LocalizationProvider dateAdapter={AdapterDateFns}>
                 <DatePicker
                   label="Campaign Start Date" value={formData.startDate}
@@ -279,8 +394,8 @@ const CreateCampaign: React.FC = () => {
                   }}
                 />
               </LocalizationProvider>
-            </Grid>
-            <Grid item xs={12} md={6}>
+            </Box>
+            <Box>
               <LocalizationProvider dateAdapter={AdapterDateFns}>
                 <DatePicker
                   label="Campaign End Date" value={formData.endDate}
@@ -294,8 +409,8 @@ const CreateCampaign: React.FC = () => {
                   }}
                 />
               </LocalizationProvider>
-            </Grid>
-          </Grid>
+            </Box>
+          </Box>
         </FormSection>
 
         {/* Campaign Budget */}
@@ -304,8 +419,16 @@ const CreateCampaign: React.FC = () => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Set your campaign's budget (optional).
           </Typography>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
+          <Box sx={{ 
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: '1fr',
+              md: 'repeat(2, 1fr)'
+            },
+            gap: 3,
+            p: 3
+          }}>
+            <Box>
               <TextField
                 fullWidth label="Total Budget ($)" name="budget" type="number"
                 value={formData.budget} onChange={handleChange}
@@ -313,8 +436,8 @@ const CreateCampaign: React.FC = () => {
                 helperText={errors.budget || "Enter the total budget allocated for this campaign"}
                 placeholder="e.g., 5000"
               />
-            </Grid>
-          </Grid>
+            </Box>
+          </Box>
         </FormSection>
 
         {/* Campaign Connections */}
@@ -323,8 +446,16 @@ const CreateCampaign: React.FC = () => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Link this campaign to your organization and optionally to a specific client or project.
           </Typography>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={4}>
+          <Box sx={{ 
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: '1fr',
+              md: 'repeat(3, 1fr)'
+            },
+            gap: 3,
+            p: 3
+          }}>
+            <Box>
               <FormControl fullWidth required error={!!errors.organizationId}>
                 <InputLabel id="org-label">Your Organization</InputLabel>
                 <Select
@@ -342,8 +473,8 @@ const CreateCampaign: React.FC = () => {
                   {errors.organizationId || "Select the organization this campaign belongs to"}
                 </FormHelperText>
               </FormControl>
-            </Grid>
-            <Grid item xs={12} md={4}>
+            </Box>
+            <Box>
               <FormControl fullWidth>
                 <InputLabel id="client-label">Related Client</InputLabel>
                 <Select
@@ -362,8 +493,8 @@ const CreateCampaign: React.FC = () => {
                   Optional: Select if this campaign is for a specific client
                 </FormHelperText>
               </FormControl>
-            </Grid>
-            <Grid item xs={12} md={4}>
+            </Box>
+            <Box>
               <FormControl fullWidth>
                 <InputLabel id="project-label">Related Project</InputLabel>
                 <Select
@@ -382,8 +513,43 @@ const CreateCampaign: React.FC = () => {
                   Optional: Select if this campaign is part of a larger project
                 </FormHelperText>
               </FormControl>
-            </Grid>
-          </Grid>
+            </Box>
+          </Box>
+        </FormSection>
+
+        {/* Template Selection */}
+        <FormSection>
+          <SectionTitle variant="h6">Campaign Template</SectionTitle>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Choose a template to start with or create from scratch.
+          </Typography>
+          <Box sx={{ 
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: '1fr',
+              md: 'repeat(2, 1fr)'
+            },
+            gap: 3,
+            p: 3
+          }}>
+            <Box>
+              <FormControl fullWidth>
+                <InputLabel>Template</InputLabel>
+                <Select
+                  value={formData.templateId || ''}
+                  onChange={(e) => handleTemplateSelect(e.target.value)}
+                  label="Template"
+                >
+                  <MenuItem value="">Create from scratch</MenuItem>
+                  {templates.map((template) => (
+                    <MenuItem key={template.id} value={template.id}>
+                      {template.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+          </Box>
         </FormSection>
 
         {/* Campaign Goals */}
@@ -392,17 +558,19 @@ const CreateCampaign: React.FC = () => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Define what success looks like for this campaign.
           </Typography>
-          <TextField
-            fullWidth multiline minRows={4} name="goals"
-            label="Campaign Goals & Success Metrics"
-            value={formData.goals}
-            onChange={handleChange}
-            placeholder="List your campaign's main objectives, target metrics, and KPIs. For example:
+          <Box sx={{ p: 3 }}>
+            <TextField
+              fullWidth multiline minRows={4} name="goals"
+              label="Campaign Goals & Success Metrics"
+              value={formData.goals}
+              onChange={handleChange}
+              placeholder="List your campaign's main objectives, target metrics, and KPIs. For example:
 • Increase brand awareness by 25%
 • Generate 1000 new leads
 • Achieve 5% conversion rate"
-            helperText="Be specific about what you want to achieve and how you'll measure success"
-          />
+              helperText="Be specific about what you want to achieve and how you'll measure success"
+            />
+          </Box>
         </FormSection>
         
         {/* Submit */}

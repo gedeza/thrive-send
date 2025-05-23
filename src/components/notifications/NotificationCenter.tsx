@@ -19,18 +19,27 @@ export function NotificationCenter() {
   const { notifications, unreadCount, markAsRead, markAllAsRead, isLoading } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleMarkAsRead = async (notificationId: string) => {
-    await markAsRead(notificationId);
-  };
-
   const handleMarkAllAsRead = async () => {
-    await markAllAsRead();
+    try {
+      await markAllAsRead();
+      setIsOpen(false);
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    if (!isValid(date)) return 'Invalid date';
-    return formatDistanceToNow(date, { addSuffix: true });
+  const handleMarkAsRead = async (notificationId: string) => {
+    try {
+      await markAsRead(notificationId);
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const formatDate = (date: Date | string) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    if (!isValid(dateObj)) return 'Invalid date';
+    return formatDistanceToNow(dateObj, { addSuffix: true });
   };
 
   return (
