@@ -4,57 +4,85 @@ import type { AnalyticsParams } from '@/lib/api/analytics-service';
 
 export function useAnalyticsQueries(params: AnalyticsParams) {
   const analytics = useAnalytics();
+  const queryKey = ['analytics', params];
 
-  // Query for metrics data
-  const metricsQuery = useQuery({
-    queryKey: ['analytics', 'metrics', params],
+  // Metrics query with 5 minute stale time
+  const {
+    data: metrics,
+    isLoading: metricsLoading,
+    error: metricsError,
+    refetch: refetchMetrics
+  } = useQuery({
+    queryKey: [...queryKey, 'metrics'],
     queryFn: () => analytics.fetchAnalyticsMetrics(params),
-    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-    gcTime: 30 * 60 * 1000, // Keep data in cache for 30 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
+    refetchOnWindowFocus: false
   });
 
-  // Query for audience growth data
-  const audienceQuery = useQuery({
-    queryKey: ['analytics', 'audience', params],
+  // Audience data query with 10 minute stale time
+  const {
+    data: audienceData,
+    isLoading: audienceLoading,
+    error: audienceError,
+    refetch: refetchAudience
+  } = useQuery({
+    queryKey: [...queryKey, 'audience'],
     queryFn: () => analytics.fetchAudienceGrowthData(params),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    retry: 2,
+    refetchOnWindowFocus: false
   });
 
-  // Query for engagement breakdown data
-  const engagementQuery = useQuery({
-    queryKey: ['analytics', 'engagement', params],
+  // Engagement data query with 5 minute stale time
+  const {
+    data: engagementData,
+    isLoading: engagementLoading,
+    error: engagementError,
+    refetch: refetchEngagement
+  } = useQuery({
+    queryKey: [...queryKey, 'engagement'],
     queryFn: () => analytics.fetchEngagementBreakdownData(params),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
+    refetchOnWindowFocus: false
   });
 
-  // Query for performance trend data
-  const performanceQuery = useQuery({
-    queryKey: ['analytics', 'performance', params],
+  // Performance data query with 5 minute stale time
+  const {
+    data: performanceData,
+    isLoading: performanceLoading,
+    error: performanceError,
+    refetch: refetchPerformance
+  } = useQuery({
+    queryKey: [...queryKey, 'performance'],
     queryFn: () => analytics.fetchPerformanceTrendData(params),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
+    refetchOnWindowFocus: false
   });
+
+  // Function to refetch all queries
+  const refetchAll = () => {
+    refetchMetrics();
+    refetchAudience();
+    refetchEngagement();
+    refetchPerformance();
+  };
 
   return {
-    metrics: metricsQuery.data || [],
-    metricsLoading: metricsQuery.isLoading,
-    metricsError: metricsQuery.error,
-    audienceData: audienceQuery.data,
-    audienceLoading: audienceQuery.isLoading,
-    audienceError: audienceQuery.error,
-    engagementData: engagementQuery.data,
-    engagementLoading: engagementQuery.isLoading,
-    engagementError: engagementQuery.error,
-    performanceData: performanceQuery.data,
-    performanceLoading: performanceQuery.isLoading,
-    performanceError: performanceQuery.error,
-    refetchAll: () => {
-      metricsQuery.refetch();
-      audienceQuery.refetch();
-      engagementQuery.refetch();
-      performanceQuery.refetch();
-    },
+    metrics,
+    metricsLoading,
+    metricsError,
+    audienceData,
+    audienceLoading,
+    audienceError,
+    engagementData,
+    engagementLoading,
+    engagementError,
+    performanceData,
+    performanceLoading,
+    performanceError,
+    refetchAll
   };
 } 

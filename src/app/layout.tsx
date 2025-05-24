@@ -3,11 +3,22 @@ import "./globals.css";
 import React from 'react';
 import { Inter } from "next/font/google";
 import { ClientLayout } from '@/components/layout/client-layout';
-import { metadata } from './metadata';
+import { Metadata } from 'next';
 
 const inter = Inter({ subsets: ["latin"] });
 
-export { metadata };
+export const metadata: Metadata = {
+  title: 'ThriveSend',
+  description: 'Your all-in-one marketing platform',
+  icons: {
+    icon: [
+      {
+        url: '/favicon.svg',
+        type: 'image/svg+xml',
+      }
+    ]
+  },
+};
 
 export default function RootLayout({
   children,

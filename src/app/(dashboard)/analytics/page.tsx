@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, PieChart, LineChart, FileDown, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,10 @@ import { toast } from '@/components/ui/use-toast';
 import { DateRange } from 'react-day-picker';
 import { useAnalyticsQueries } from '@/lib/hooks/useAnalyticsQueries';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AnalyticsErrorBoundary } from '@/components/analytics/AnalyticsErrorBoundary';
+import { HeatMapWidget } from '@/components/analytics/HeatMapWidget';
+
+type AnalyticsTimeframe = 'day' | 'week' | 'month';
 
 // Create a client
 const queryClient = new QueryClient();
@@ -85,8 +89,26 @@ function AnalyticsPageContent() {
       to: today
     };
   });
-  const [timeframe, setTimeframe] = useState('month');
+  const [timeframe, setTimeframe] = useState<AnalyticsTimeframe>('month');
   const [campaignId, setCampaignId] = useState<string | undefined>(undefined);
+  const [queryParams, setQueryParams] = useState<{
+    startDate: Date;
+    endDate: Date;
+    timeframe: AnalyticsTimeframe;
+    campaignId?: string;
+  } | null>(null);
+
+  // Initialize and update query params
+  useEffect(() => {
+    if (dateRange.from && dateRange.to) {
+      setQueryParams({
+        startDate: dateRange.from,
+        endDate: dateRange.to,
+        timeframe,
+        campaignId
+      });
+    }
+  }, [dateRange, timeframe, campaignId]);
 
   const {
     metrics,
@@ -102,10 +124,10 @@ function AnalyticsPageContent() {
     performanceLoading,
     performanceError,
     refetchAll
-  } = useAnalyticsQueries({
+  } = useAnalyticsQueries(queryParams || {
     startDate: dateRange.from,
     endDate: dateRange.to,
-    timeframe: timeframe as any,
+    timeframe,
     campaignId
   });
   
@@ -160,29 +182,30 @@ function AnalyticsPageContent() {
   }
   
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 md:p-6">
+      {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Analytics</h1>
+          <p className="text-sm md:text-base text-muted-foreground">
             Track your audience engagement and performance metrics.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => refetchAll()}>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" onClick={() => refetchAll()} className="flex-1 md:flex-none">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
-          <Button onClick={handleExport}>
+          <Button onClick={handleExport} className="flex-1 md:flex-none">
             <FileDown className="h-4 w-4 mr-2" />
-            Export Reports
+            Export
           </Button>
         </div>
       </div>
       
-      {/* Filter controls */}
+      {/* Filter Controls */}
       <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="flex-1 md:flex-none">
+        <div className="w-full md:w-auto">
           <DatePickerWithRange 
             date={dateRange} 
             setDate={setDateRange} 
@@ -190,7 +213,10 @@ function AnalyticsPageContent() {
           />
         </div>
         
-        <Select value={timeframe} onValueChange={setTimeframe}>
+        <Select 
+          value={timeframe} 
+          onValueChange={(value) => setTimeframe(value as AnalyticsTimeframe)}
+        >
           <SelectTrigger className="w-full md:w-[180px]">
             <SelectValue placeholder="Timeframe" />
           </SelectTrigger>
@@ -198,169 +224,69 @@ function AnalyticsPageContent() {
             <SelectItem value="day">Daily</SelectItem>
             <SelectItem value="week">Weekly</SelectItem>
             <SelectItem value="month">Monthly</SelectItem>
-            <SelectItem value="year">Yearly</SelectItem>
-          </SelectContent>
-        </Select>
-        
-        <Select value={campaignId || "all"} onValueChange={(val) => setCampaignId(val === "all" ? undefined : val)}>
-          <SelectTrigger className="w-full md:w-[220px]">
-            <SelectValue placeholder="All Campaigns" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Campaigns</SelectItem>
-            <SelectItem value="campaign-1">Summer Campaign</SelectItem>
-            <SelectItem value="campaign-2">Fall Promotion</SelectItem>
-            <SelectItem value="campaign-3">Holiday Special</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {/* Tabs for different analytics views */}
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="mb-6">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="audience">Audience</TabsTrigger>
-          <TabsTrigger value="engagement">Engagement</TabsTrigger>
-          <TabsTrigger value="revenue">Revenue</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="overview">
-          {/* Metric summary grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {metricsLoading ? (
-              Array(4).fill(0).map((_, i) => <MetricCardSkeleton key={i} />)
-            ) : metrics && metrics.length > 0 ? (
-              metrics.map((metric, index) => {
-                // Assign icons based on metric title
-                const icons = [BarChart, PieChart, LineChart, BarChart];
-                return (
-                  <MetricCard 
-                    key={metric.title} 
-                    {...metric} 
-                    icon={icons[index]} 
-                  />
-                );
-              })
-            ) : (
-              <div className="col-span-4 text-center py-8">
-                <p className="text-muted-foreground">No metrics data available</p>
-              </div>
-            )}
-          </div>
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {metricsLoading ? (
+          Array(4).fill(0).map((_, i) => (
+            <MetricCardSkeleton key={i} />
+          ))
+        ) : metrics && Array.isArray(metrics) ? (
+          metrics.map((metric: AnalyticsMetric, index: number) => (
+            <MetricCard
+              key={index}
+              {...metric}
+              icon={[BarChart, PieChart, LineChart, FileDown][index % 4]}
+            />
+          ))
+        ) : (
+          Array(4).fill(0).map((_, i) => (
+            <MetricCardSkeleton key={i} />
+          ))
+        )}
+      </div>
 
-          {/* Charts grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {metricsLoading || audienceLoading || engagementLoading || performanceLoading ? (
-              Array(3).fill(0).map((_, i) => <ChartSkeleton key={i} />)
-            ) : (
-              <>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <BarChart className="h-5 w-5" />
-                      Audience Growth
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {audienceData ? (
-                      <BarChartWidget
-                        title="Audience Growth"
-                        data={audienceData}
-                        options={{
-                          responsive: true,
-                          plugins: { legend: { display: false } },
-                        }}
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center h-[200px]">
-                        No data available
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AnalyticsErrorBoundary>
+          <BarChartWidget
+            data={engagementData}
+            isLoading={engagementLoading}
+            className="h-[400px]"
+            title="Engagement Metrics"
+          />
+        </AnalyticsErrorBoundary>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <PieChart className="h-5 w-5" />
-                      Engagement Breakdown
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {engagementData ? (
-                      <PieChartWidget
-                        title="Engagement Breakdown"
-                        data={engagementData}
-                        options={{
-                          responsive: true,
-                          plugins: { legend: { position: "bottom" } },
-                        }}
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center h-[200px]">
-                        No data available
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+        <AnalyticsErrorBoundary>
+          <PieChartWidget
+            data={audienceData}
+            isLoading={audienceLoading}
+            className="h-[400px]"
+            title="Audience Distribution"
+          />
+        </AnalyticsErrorBoundary>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <LineChart className="h-5 w-5" />
-                      Performance Trends
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {performanceData ? (
-                      <LineChartWidget
-                        title="Performance Trends"
-                        data={performanceData}
-                        options={{
-                          responsive: true,
-                          plugins: { legend: { display: false } },
-                          scales: { y: { beginAtZero: true } },
-                        }}
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center h-[200px]">
-                        No data available
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </>
-            )}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="audience">
-          <div className="p-4 text-center">
-            <h3 className="text-lg font-medium">Detailed Audience Analytics</h3>
-            <p className="text-muted-foreground">
-              Additional audience metrics and demographics would be displayed here.
-            </p>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="engagement">
-          <div className="p-4 text-center">
-            <h3 className="text-lg font-medium">Detailed Engagement Analytics</h3>
-            <p className="text-muted-foreground">
-              Deeper engagement metrics and platform breakdowns would be displayed here.
-            </p>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="revenue">
-          <div className="p-4 text-center">
-            <h3 className="text-lg font-medium">Revenue & Conversion Analytics</h3>
-            <p className="text-muted-foreground">
-              ROI calculations and conversion funnels would be displayed here.
-            </p>
-          </div>
-        </TabsContent>
-      </Tabs>
+        <AnalyticsErrorBoundary>
+          <LineChartWidget
+            data={performanceData}
+            isLoading={performanceLoading}
+            className="h-[400px]"
+            title="Performance Trends"
+          />
+        </AnalyticsErrorBoundary>
+
+        <AnalyticsErrorBoundary>
+          <HeatMapWidget
+            data={performanceData?.heatmap || []}
+            title="Activity Heatmap"
+            isLoading={performanceLoading}
+            className="h-[400px]"
+          />
+        </AnalyticsErrorBoundary>
+      </div>
     </div>
   );
 }
