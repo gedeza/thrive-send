@@ -10,34 +10,53 @@ export async function GET(request: NextRequest) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    // Set up SSE headers
     const encoder = new TextEncoder();
+    let intervalId: NodeJS.Timeout;
+    let isStreamActive = true;
+
     const stream = new ReadableStream({
       async start(controller) {
         try {
           // Send initial data
           const data = await fetchAnalyticsData();
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+          if (isStreamActive) {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+          }
 
           // Set up interval for updates
-          const interval = setInterval(async () => {
+          intervalId = setInterval(async () => {
+            if (!isStreamActive) {
+              clearInterval(intervalId);
+              return;
+            }
+
             try {
               const data = await fetchAnalyticsData();
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+              if (isStreamActive) {
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+              }
             } catch (error) {
               console.error('Error fetching analytics data:', error);
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: 'Failed to fetch analytics data' })}\n\n`));
+              if (isStreamActive) {
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: 'Failed to fetch analytics data' })}\n\n`));
+              }
             }
           }, 30000); // Update every 30 seconds
-
-          // Clean up interval on close
-          return () => clearInterval(interval);
         } catch (error) {
           console.error('Error in analytics stream:', error);
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: 'Failed to initialize analytics stream' })}\n\n`));
-          controller.close();
+          if (isStreamActive) {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: 'Failed to initialize analytics stream' })}\n\n`));
+            controller.close();
+          }
         }
       },
+      cancel() {
+        // Clean up when the stream is cancelled
+        isStreamActive = false;
+        if (intervalId) {
+          clearInterval(intervalId);
+        }
+      }
     });
 
     return new Response(stream, {

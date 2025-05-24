@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="500" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background -->
+    <rect width="100%" height="100%" fill="#ffffff"/>
+    
+    <!-- Title -->
+    <text x="400" y="40" font-family="Arial" font-size="24" text-anchor="middle" fill="#333">Workflow Management Interface</text>
+    
+    <!-- Workflow Stages -->
+    <g id="workflow">
+        <!-- Draft Stage -->
+        <rect x="50" y="100" width="150" height="80" rx="10" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+        <text x="125" y="145" font-family="Arial" font-size="16" text-anchor="middle" fill="#333">Draft</text>
+        
+        <!-- Review Stage -->
+        <rect x="275" y="100" width="150" height="80" rx="10" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+        <text x="350" y="145" font-family="Arial" font-size="16" text-anchor="middle" fill="#333">Review</text>
+        
+        <!-- Approval Stage -->
+        <rect x="500" y="100" width="150" height="80" rx="10" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+        <text x="575" y="145" font-family="Arial" font-size="16" text-anchor="middle" fill="#333">Approval</text>
+        
+        <!-- Published Stage -->
+        <rect x="725" y="100" width="150" height="80" rx="10" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+        <text x="800" y="145" font-family="Arial" font-size="16" text-anchor="middle" fill="#333">Published</text>
+        
+        <!-- Connection Arrows -->
+        <path d="M200,140 L275,140" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+        <path d="M425,140 L500,140" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+        <path d="M650,140 L725,140" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    </g>
+    
+    <!-- Current Workflow -->
+    <g id="current-workflow" transform="translate(50, 250)">
+        <text x="0" y="0" font-family="Arial" font-size="18" fill="#333">Current Workflow</text>
+        
+        <!-- Workflow Items -->
+        <rect x="0" y="30" width="700" height="60" rx="5" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1"/>
+        <text x="20" y="65" font-family="Arial" font-size="14" fill="#333">Blog Post: "Getting Started with Thrive Send"</text>
+        <text x="500" y="65" font-family="Arial" font-size="14" fill="#4a90e2">In Review</text>
+        
+        <rect x="0" y="100" width="700" height="60" rx="5" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1"/>
+        <text x="20" y="135" font-family="Arial" font-size="14" fill="#333">Newsletter: "Product Updates Q1"</text>
+        <text x="500" y="135" font-family="Arial" font-size="14" fill="#50e3c2">Approved</text>
+        
+        <rect x="0" y="170" width="700" height="60" rx="5" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1"/>
+        <text x="20" y="205" font-family="Arial" font-size="14" fill="#333">Social Media Post: "New Feature Launch"</text>
+        <text x="500" y="205" font-family="Arial" font-size="14" fill="#f5a623">Draft</text>
+    </g>
+    
+    <!-- Arrow Marker Definition -->
+    <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#666"/>
+        </marker>
+    </defs>
+</svg> 

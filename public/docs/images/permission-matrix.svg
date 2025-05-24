@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="300" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .header { font-family: -apple-system, system-ui, sans-serif; font-size: 14px; font-weight: bold; fill: #333; }
+    .cell { font-family: -apple-system, system-ui, sans-serif; font-size: 12px; fill: #666; }
+    .grid-line { stroke: #e2e8f0; stroke-width: 1; }
+    .full { fill: #4a90e2; }
+    .partial { fill: #90caf9; }
+    .none { fill: #e2e8f0; }
+  </style>
+  
+  <!-- Title -->
+  <text x="200" y="30" text-anchor="middle" font-family="-apple-system, system-ui, sans-serif" font-size="18" font-weight="bold" fill="#333">Permission Matrix</text>
+  
+  <!-- Headers -->
+  <g transform="translate(0, 50)">
+    <!-- Role Headers -->
+    <text x="100" y="20" text-anchor="middle" class="header">Admin</text>
+    <text x="200" y="20" text-anchor="middle" class="header">Editor</text>
+    <text x="300" y="20" text-anchor="middle" class="header">Author</text>
+    <text x="400" y="20" text-anchor="middle" class="header">Viewer</text>
+    
+    <!-- Permission Rows -->
+    <g transform="translate(0, 40)">
+      <!-- Manage Users -->
+      <text x="20" y="20" class="cell">Manage Users</text>
+      <circle cx="100" cy="20" r="8" class="full"/>
+      <circle cx="200" cy="20" r="8" class="none"/>
+      <circle cx="300" cy="20" r="8" class="none"/>
+      <circle cx="400" cy="20" r="8" class="none"/>
+      
+      <!-- Edit Content -->
+      <text x="20" y="50" class="cell">Edit Content</text>
+      <circle cx="100" cy="50" r="8" class="full"/>
+      <circle cx="200" cy="50" r="8" class="full"/>
+      <circle cx="300" cy="50" r="8" class="partial"/>
+      <circle cx="400" cy="50" r="8" class="none"/>
+      
+      <!-- View Analytics -->
+      <text x="20" y="80" class="cell">View Analytics</text>
+      <circle cx="100" cy="80" r="8" class="full"/>
+      <circle cx="200" cy="80" r="8" class="full"/>
+      <circle cx="300" cy="80" r="8" class="partial"/>
+      <circle cx="400" cy="80" r="8" class="partial"/>
+    </g>
+  </g>
+  
+  <!-- Legend -->
+  <g transform="translate(20, 250)">
+    <circle cx="10" cy="10" r="8" class="full"/>
+    <text x="25" y="15" class="cell">Full Access</text>
+    
+    <circle cx="120" cy="10" r="8" class="partial"/>
+    <text x="135" y="15" class="cell">Partial Access</text>
+    
+    <circle cx="230" cy="10" r="8" class="none"/>
+    <text x="245" y="15" class="cell">No Access</text>
+  </g>
+</svg> 

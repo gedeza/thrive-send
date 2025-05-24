@@ -179,6 +179,11 @@ model User {
   integrations            Integration[]
   reports                 Report[]
   reportShares            ReportShare[]
+  contactLists            ContactList[]        @relation("ContactListCreator")
+  audienceSegments        AudienceSegment[]    @relation("AudienceSegmentCreator")
+  marketplaceListings     MarketplaceListing[] @relation("MarketplaceListingCreator")
+  marketplacePurchases    MarketplacePurchase[] @relation("MarketplacePurchaseBuyer")
+  marketplaceReviews      MarketplaceReview[]  @relation("MarketplaceReviewer")
 }
 
 model Organization {
@@ -208,6 +213,9 @@ model Organization {
   workflows        Workflow[]
   integrations     Integration[]
   reports          Report[]
+  contactLists     ContactList[]
+  audienceSegments AudienceSegment[]
+  marketplaceListings MarketplaceListing[]
 }
 
 model OrganizationMember {
@@ -664,13 +672,13 @@ model ContentApproval {
   status      ContentStatus    @default(PENDING_REVIEW)
   currentStep ApprovalStep     @default(REVIEW)
   createdBy   String
+  creator     User             @relation("CreatedApprovals", fields: [createdBy], references: [id])
   assignedTo  String?
+  assignee    User?            @relation("AssignedApprovals", fields: [assignedTo], references: [id])
   comments    Comment[]
   history     ApprovalHistory[]
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
-
-  @@index([contentId])
 }
 
 model ApprovalHistory {
@@ -779,7 +787,7 @@ model ContactList {
   createdById    String
   audienceId     String?
   organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdBy      User             @relation(fields: [createdById], references: [id])
+  createdBy      User             @relation("ContactListCreator", fields: [createdById], references: [id])
   audience       Audience?        @relation(fields: [audienceId], references: [id])
   contacts       Contact[]
 
@@ -823,7 +831,7 @@ model AudienceSegment {
   createdById    String
   audienceId     String
   organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdBy      User                @relation(fields: [createdById], references: [id])
+  createdBy      User                @relation("AudienceSegmentCreator", fields: [createdById], references: [id])
   audience       Audience            @relation(fields: [audienceId], references: [id])
   size           Int          @default(0)
   lastUpdated    DateTime?
@@ -879,6 +887,8 @@ model TargetingRule {
   segment        AudienceSegment      @relation(fields: [segmentId], references: [id], onDelete: Cascade)
   createdBy      User                 @relation(fields: [createdById], references: [id])
   organization   Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  audienceId     String
+  audience       Audience            @relation(fields: [audienceId], references: [id])
 
   @@index([segmentId])
   @@index([createdById])
@@ -888,17 +898,18 @@ model TargetingRule {
 
 // Advanced Analytics
 model CrossCampaignAnalytics {
-  id             String       @id @default(cuid())
-  campaignIds    String[]     // Array of campaign IDs
-  metrics        Json         // Combined metrics across campaigns
-  comparison     Json?        // Comparison data between campaigns
-  insights       Json?        // AI-generated insights
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id          String   @id @default(cuid())
+  campaignId  String
+  campaign    Campaign @relation(fields: [campaignId], references: [id])
+  metrics     Json
+  comparison  Json?
+  insights    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  @@index([organizationId])
+  @@index([campaignId])
 }
 
 model ROITracking {
@@ -1174,7 +1185,7 @@ model MarketplaceListing {
   organizationId String
   createdById    String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdBy      User         @relation(fields: [createdById], references: [id])
+  createdBy      User         @relation("MarketplaceListingCreator", fields: [createdById], references: [id])
   purchases      MarketplacePurchase[]
   reviews        MarketplaceReview[]
   boosts         Boost[]
@@ -1197,7 +1208,7 @@ model MarketplacePurchase {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
   listing        MarketplaceListing @relation(fields: [listingId], references: [id])
-  buyer          User             @relation(fields: [buyerId], references: [id])
+  buyer          User             @relation("MarketplacePurchaseBuyer", fields: [buyerId], references: [id])
   payment        Payment?         @relation(fields: [paymentId], references: [id])
 
   @@index([listingId])
@@ -1214,7 +1225,7 @@ model MarketplaceReview {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
   listing        MarketplaceListing @relation(fields: [listingId], references: [id])
-  reviewer       User             @relation(fields: [reviewerId], references: [id])
+  reviewer       User             @relation("MarketplaceReviewer", fields: [reviewerId], references: [id])
 
   @@index([listingId])
   @@index([reviewerId])

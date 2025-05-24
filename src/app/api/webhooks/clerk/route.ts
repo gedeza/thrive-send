@@ -119,6 +119,85 @@ export async function POST(req: Request) {
     }
   }
 
+  // Handle organization events
+  if (eventType === 'organization.created') {
+    const { id, name, slug, image_url } = evt.data;
+    console.log('Creating organization:', { id, name, slug, image_url });
+
+    try {
+      // Create the organization in our database
+      const organization = await prisma.organization.create({
+        data: {
+          id,
+          name,
+          slug: slug || name.toLowerCase().replace(/\s+/g, '-'),
+          logoUrl: image_url,
+        },
+      });
+
+      console.log('Organization created successfully:', organization);
+      return new Response('Organization created successfully', {
+        status: 200,
+      });
+    } catch (error) {
+      console.error('Error creating organization:', error);
+      return new Response('Error creating organization', {
+        status: 500,
+      });
+    }
+  }
+
+  if (eventType === 'organizationMembership.created') {
+    const { organization, public_user_data } = evt.data;
+    console.log('Creating organization membership:', { organization, public_user_data });
+
+    try {
+      // Create the organization membership in our database
+      const membership = await prisma.organizationMember.create({
+        data: {
+          organizationId: organization.id,
+          userId: public_user_data.user_id,
+          role: 'MEMBER', // Default role
+        },
+      });
+
+      console.log('Organization membership created successfully:', membership);
+      return new Response('Organization membership created successfully', {
+        status: 200,
+      });
+    } catch (error) {
+      console.error('Error creating organization membership:', error);
+      return new Response('Error creating organization membership', {
+        status: 500,
+      });
+    }
+  }
+
+  if (eventType === 'organizationMembership.deleted') {
+    const { organization, public_user_data } = evt.data;
+    console.log('Deleting organization membership:', { organization, public_user_data });
+
+    try {
+      // Delete the organization membership from our database
+      await prisma.organizationMember.deleteMany({
+        where: {
+          organizationId: organization.id,
+          userId: public_user_data.user_id,
+        },
+      });
+
+      console.log('Organization membership deleted successfully');
+      return new Response('Organization membership deleted successfully', {
+        status: 200,
+      });
+    } catch (error) {
+      console.error('Error deleting organization membership:', error);
+      return new Response('Error deleting organization membership', {
+        status: 500,
+      });
+    }
+  }
+
   console.log('Webhook processed successfully');
   return new Response('Webhook received', {
     status: 200,

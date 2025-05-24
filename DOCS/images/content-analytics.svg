@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background -->
+    <rect width="100%" height="100%" fill="#ffffff"/>
+    
+    <!-- Title -->
+    <text x="400" y="40" font-family="Arial" font-size="24" text-anchor="middle" fill="#333">Content Analytics Dashboard</text>
+    
+    <!-- Metrics Cards -->
+    <g id="metrics">
+        <!-- Total Views -->
+        <rect x="50" y="80" width="200" height="120" rx="10" fill="#4a90e2" stroke="#2171c7" stroke-width="2"/>
+        <text x="150" y="110" font-family="Arial" font-size="16" text-anchor="middle" fill="white">Total Views</text>
+        <text x="150" y="150" font-family="Arial" font-size="32" text-anchor="middle" fill="white">24.5K</text>
+        
+        <!-- Engagement Rate -->
+        <rect x="300" y="80" width="200" height="120" rx="10" fill="#50e3c2" stroke="#2bb8a3" stroke-width="2"/>
+        <text x="400" y="110" font-family="Arial" font-size="16" text-anchor="middle" fill="white">Engagement Rate</text>
+        <text x="400" y="150" font-family="Arial" font-size="32" text-anchor="middle" fill="white">68%</text>
+        
+        <!-- Conversion Rate -->
+        <rect x="550" y="80" width="200" height="120" rx="10" fill="#f5a623" stroke="#d48806" stroke-width="2"/>
+        <text x="650" y="110" font-family="Arial" font-size="16" text-anchor="middle" fill="white">Conversion Rate</text>
+        <text x="650" y="150" font-family="Arial" font-size="32" text-anchor="middle" fill="white">12.3%</text>
+    </g>
+    
+    <!-- Charts -->
+    <g id="charts">
+        <!-- Views Over Time -->
+        <rect x="50" y="240" width="340" height="300" rx="10" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+        <text x="220" y="270" font-family="Arial" font-size="16" text-anchor="middle" fill="#333">Views Over Time</text>
+        
+        <!-- Line Chart -->
+        <polyline points="70,500 120,450 170,480 220,420 270,440 320,400" 
+                 fill="none" stroke="#4a90e2" stroke-width="3"/>
+        
+        <!-- Content Distribution -->
+        <rect x="440" y="240" width="310" height="300" rx="10" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+        <text x="595" y="270" font-family="Arial" font-size="16" text-anchor="middle" fill="#333">Content Distribution</text>
+        
+        <!-- Pie Chart -->
+        <path d="M595,400 L595,300 A100,100 0 0,1 695,400 Z" fill="#4a90e2"/>
+        <path d="M595,400 L695,400 A100,100 0 0,1 595,500 Z" fill="#50e3c2"/>
+        <path d="M595,400 L595,500 A100,100 0 0,1 495,400 Z" fill="#f5a623"/>
+    </g>
+    
+    <!-- Legend -->
+    <g id="legend" transform="translate(50, 560)">
+        <circle cx="10" cy="0" r="5" fill="#4a90e2"/>
+        <text x="20" y="5" font-family="Arial" font-size="12" fill="#333">Views</text>
+        
+        <circle cx="100" cy="0" r="5" fill="#50e3c2"/>
+        <text x="110" y="5" font-family="Arial" font-size="12" fill="#333">Engagement</text>
+        
+        <circle cx="200" cy="0" r="5" fill="#f5a623"/>
+        <text x="210" y="5" font-family="Arial" font-size="12" fill="#333">Conversions</text>
+    </g>
+</svg> 

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="800" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1200" height="800" fill="#ffffff"/>
+  
+  <!-- Header -->
+  <rect width="1200" height="80" fill="#2563eb"/>
+  <text x="40" y="50" font-family="Arial" font-size="24" font-weight="bold" fill="#ffffff">
+    Media Library
+  </text>
+  
+  <!-- Stats -->
+  <g transform="translate(40, 120)">
+    <!-- Total Assets -->
+    <rect width="280" height="120" fill="#f8fafc" rx="4"/>
+    <text x="20" y="30" font-family="Arial" font-size="16" fill="#64748b">Total Assets</text>
+    <text x="20" y="70" font-family="Arial" font-size="32" font-weight="bold" fill="#2563eb">1,245</text>
+    <text x="20" y="100" font-family="Arial" font-size="14" fill="#22c55e">↑ 156 this month</text>
+    
+    <!-- Storage -->
+    <rect x="300" width="280" height="120" fill="#f8fafc" rx="4"/>
+    <text x="320" y="30" font-family="Arial" font-size="16" fill="#64748b">Storage Used</text>
+    <text x="320" y="70" font-family="Arial" font-size="32" font-weight="bold" fill="#2563eb">4.2 GB</text>
+    <text x="320" y="100" font-family="Arial" font-size="14" fill="#64748b">of 10 GB</text>
+    
+    <!-- File Types -->
+    <rect x="600" width="280" height="120" fill="#f8fafc" rx="4"/>
+    <text x="620" y="30" font-family="Arial" font-size="16" fill="#64748b">File Types</text>
+    <text x="620" y="70" font-family="Arial" font-size="32" font-weight="bold" fill="#2563eb">8</text>
+    <text x="620" y="100" font-family="Arial" font-size="14" fill="#64748b">Images, Videos, Docs</text>
+  </g>
+  
+  <!-- Media Grid -->
+  <g transform="translate(40, 280)">
+    <rect width="1120" height="480" fill="#f8fafc" rx="4"/>
+    <text x="20" y="30" font-family="Arial" font-size="18" font-weight="bold" fill="#1e293b">
+      Recent Uploads
+    </text>
+    
+    <!-- Grid Items -->
+    <g transform="translate(20, 50)">
+      <!-- Image 1 -->
+      <rect width="200" height="200" fill="#e2e8f0" rx="4"/>
+      <text x="20" y="220" font-family="Arial" font-size="14" fill="#1e293b">hero-image.jpg</text>
+      <text x="20" y="240" font-family="Arial" font-size="12" fill="#64748b">2.4 MB • 1920x1080</text>
+      
+      <!-- Image 2 -->
+      <rect x="220" width="200" height="200" fill="#e2e8f0" rx="4"/>
+      <text x="240" y="220" font-family="Arial" font-size="14" fill="#1e293b">product-shot.png</text>
+      <text x="240" y="240" font-family="Arial" font-size="12" fill="#64748b">1.8 MB • 800x600</text>
+      
+      <!-- Image 3 -->
+      <rect x="440" width="200" height="200" fill="#e2e8f0" rx="4"/>
+      <text x="460" y="220" font-family="Arial" font-size="14" fill="#1e293b">banner.webp</text>
+      <text x="460" y="240" font-family="Arial" font-size="12" fill="#64748b">3.2 MB • 1600x400</text>
+      
+      <!-- Image 4 -->
+      <rect x="660" width="200" height="200" fill="#e2e8f0" rx="4"/>
+      <text x="680" y="220" font-family="Arial" font-size="14" fill="#1e293b">logo.svg</text>
+      <text x="680" y="240" font-family="Arial" font-size="12" fill="#64748b">0.1 MB • Vector</text>
+    </g>
+  </g>
+</svg> 

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="500" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background -->
+    <rect width="100%" height="100%" fill="#ffffff"/>
+    
+    <!-- Title -->
+    <text x="400" y="40" font-family="Arial" font-size="24" text-anchor="middle" fill="#333">Permission Matrix</text>
+    
+    <!-- Headers -->
+    <rect x="50" y="60" width="150" height="40" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1"/>
+    <text x="125" y="85" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">Permission</text>
+    
+    <!-- Role Headers -->
+    <rect x="200" y="60" width="100" height="40" fill="#4a90e2" stroke="#2171c7" stroke-width="1"/>
+    <text x="250" y="85" font-family="Arial" font-size="14" text-anchor="middle" fill="white">Admin</text>
+    
+    <rect x="300" y="60" width="100" height="40" fill="#50e3c2" stroke="#2bb8a3" stroke-width="1"/>
+    <text x="350" y="85" font-family="Arial" font-size="14" text-anchor="middle" fill="white">Editor</text>
+    
+    <rect x="400" y="60" width="100" height="40" fill="#f5a623" stroke="#d48806" stroke-width="1"/>
+    <text x="450" y="85" font-family="Arial" font-size="14" text-anchor="middle" fill="white">Author</text>
+    
+    <rect x="500" y="60" width="100" height="40" fill="#b8c2cc" stroke="#8795a1" stroke-width="1"/>
+    <text x="550" y="85" font-family="Arial" font-size="14" text-anchor="middle" fill="white">Viewer</text>
+    
+    <!-- Permissions List -->
+    <g id="permissions">
+        <!-- Manage Users -->
+        <rect x="50" y="100" width="150" height="40" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1"/>
+        <text x="125" y="125" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Manage Users</text>
+        <circle cx="250" cy="120" r="8" fill="#4a90e2"/>
+        <circle cx="350" cy="120" r="8" fill="#dee2e6"/>
+        <circle cx="450" cy="120" r="8" fill="#dee2e6"/>
+        <circle cx="550" cy="120" r="8" fill="#dee2e6"/>
+        
+        <!-- Manage Content -->
+        <rect x="50" y="140" width="150" height="40" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1"/>
+        <text x="125" y="165" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Manage Content</text>
+        <circle cx="250" cy="160" r="8" fill="#4a90e2"/>
+        <circle cx="350" cy="160" r="8" fill="#50e3c2"/>
+        <circle cx="450" cy="160" r="8" fill="#dee2e6"/>
+        <circle cx="550" cy="160" r="8" fill="#dee2e6"/>
+        
+        <!-- Create Content -->
+        <rect x="50" y="180" width="150" height="40" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1"/>
+        <text x="125" y="205" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Create Content</text>
+        <circle cx="250" cy="200" r="8" fill="#4a90e2"/>
+        <circle cx="350" cy="200" r="8" fill="#50e3c2"/>
+        <circle cx="450" cy="200" r="8" fill="#f5a623"/>
+        <circle cx="550" cy="200" r="8" fill="#dee2e6"/>
+        
+        <!-- View Analytics -->
+        <rect x="50" y="220" width="150" height="40" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1"/>
+        <text x="125" y="245" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">View Analytics</text>
+        <circle cx="250" cy="240" r="8" fill="#4a90e2"/>
+        <circle cx="350" cy="240" r="8" fill="#50e3c2"/>
+        <circle cx="450" cy="240" r="8" fill="#f5a623"/>
+        <circle cx="550" cy="240" r="8" fill="#b8c2cc"/>
+    </g>
+    
+    <!-- Legend -->
+    <rect x="50" y="400" width="20" height="20" fill="#4a90e2"/>
+    <text x="80" y="415" font-family="Arial" font-size="12" fill="#333">Full Access</text>
+    
+    <rect x="200" y="400" width="20" height="20" fill="#50e3c2"/>
+    <text x="230" y="415" font-family="Arial" font-size="12" fill="#333">Limited Access</text>
+    
+    <rect x="350" y="400" width="20" height="20" fill="#dee2e6"/>
+    <text x="380" y="415" font-family="Arial" font-size="12" fill="#333">No Access</text>
+</svg> 

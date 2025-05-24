@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="400" viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .stage { fill: white; stroke: #4a90e2; stroke-width: 2; rx: 8; ry: 8; }
+    .stage-text { font-family: -apple-system, system-ui, sans-serif; font-size: 14px; fill: #333; }
+    .arrow { stroke: #4a90e2; stroke-width: 2; fill: none; }
+    .arrow-head { fill: #4a90e2; }
+    .item { fill: #f8fafc; stroke: #e2e8f0; stroke-width: 1; rx: 4; ry: 4; }
+    .item-text { font-family: -apple-system, system-ui, sans-serif; font-size: 12px; fill: #666; }
+  </style>
+  
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" font-family="-apple-system, system-ui, sans-serif" font-size="18" font-weight="bold" fill="#333">Workflow Management</text>
+  
+  <!-- Workflow Stages -->
+  <g transform="translate(0, 50)">
+    <!-- Draft Stage -->
+    <rect x="50" y="0" width="150" height="60" class="stage"/>
+    <text x="125" y="35" text-anchor="middle" class="stage-text">Draft</text>
+    
+    <!-- Review Stage -->
+    <rect x="275" y="0" width="150" height="60" class="stage"/>
+    <text x="350" y="35" text-anchor="middle" class="stage-text">Review</text>
+    
+    <!-- Approval Stage -->
+    <rect x="500" y="0" width="150" height="60" class="stage"/>
+    <text x="575" y="35" text-anchor="middle" class="stage-text">Approval</text>
+    
+    <!-- Published Stage -->
+    <rect x="725" y="0" width="150" height="60" class="stage"/>
+    <text x="800" y="35" text-anchor="middle" class="stage-text">Published</text>
+    
+    <!-- Arrows -->
+    <path d="M200 30 L275 30" class="arrow"/>
+    <path d="M425 30 L500 30" class="arrow"/>
+    <path d="M650 30 L725 30" class="arrow"/>
+    
+    <!-- Arrow Heads -->
+    <polygon points="270,25 285,30 270,35" class="arrow-head"/>
+    <polygon points="495,25 510,30 495,35" class="arrow-head"/>
+    <polygon points="720,25 735,30 720,35" class="arrow-head"/>
+  </g>
+  
+  <!-- Current Workflow -->
+  <g transform="translate(0, 150)">
+    <text x="400" y="30" text-anchor="middle" font-family="-apple-system, system-ui, sans-serif" font-size="16" font-weight="bold" fill="#333">Current Workflow</text>
+    
+    <!-- Workflow Items -->
+    <g transform="translate(0, 50)">
+      <!-- Item 1 -->
+      <rect x="50" y="0" width="700" height="40" class="item"/>
+      <text x="70" y="25" class="item-text">Blog Post: Getting Started with Thrive Send</text>
+      <text x="650" y="25" text-anchor="end" class="item-text">In Review</text>
+      
+      <!-- Item 2 -->
+      <rect x="50" y="60" width="700" height="40" class="item"/>
+      <text x="70" y="85" class="item-text">Product Update: New Analytics Features</text>
+      <text x="650" y="85" text-anchor="end" class="item-text">Awaiting Approval</text>
+      
+      <!-- Item 3 -->
+      <rect x="50" y="120" width="700" height="40" class="item"/>
+      <text x="70" y="145" class="item-text">Marketing Campaign: Q2 Launch</text>
+      <text x="650" y="145" text-anchor="end" class="item-text">Published</text>
+    </g>
+  </g>
+</svg> 

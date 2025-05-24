@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, useOrganizationList } from '@clerk/nextjs';
+import { toast } from 'sonner';
 
 export default function CreateOrganizationPage() {
   const [name, setName] = useState('');
@@ -39,6 +40,7 @@ export default function CreateOrganizationPage() {
 
       if (org && setActive) {
         await setActive({ organization: org });
+        toast.success('Organization created successfully');
         router.push('/(dashboard)');
       } else {
         throw new Error('Failed to set active organization');
@@ -53,7 +55,9 @@ export default function CreateOrganizationPage() {
         );
       } else {
         setError(errorMessage);
+        toast.error(errorMessage);
       }
+    } finally {
       setIsLoading(false);
     }
   };
@@ -75,6 +79,7 @@ export default function CreateOrganizationPage() {
               className="w-full p-2 border rounded-md"
               placeholder="Enter organization name"
               required
+              disabled={isLoading}
             />
           </div>
           {error && (
@@ -99,6 +104,7 @@ export default function CreateOrganizationPage() {
               type="button"
               onClick={() => router.push('/organization')}
               className="flex-1 px-4 py-2 border rounded-md hover:bg-accent hover:text-accent-foreground"
+              disabled={isLoading}
             >
               Cancel
             </button>

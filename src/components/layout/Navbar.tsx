@@ -1,10 +1,10 @@
-import { UserButton } from "@clerk/nextjs";
+import { CustomUserButton } from "@/components/ui/user-button";
 
 export default function Navbar() {
   return (
     <nav>
       {/* ... rest of nav ... */}
-      <UserButton afterSignOutUrl="/" />
+      <CustomUserButton afterSignOutUrl="/sign-in" />
     </nav>
   );
 }

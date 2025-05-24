@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="300" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .role-box { fill: white; stroke: #4a90e2; stroke-width: 2; rx: 8; ry: 8; }
+    .role-text { font-family: -apple-system, system-ui, sans-serif; font-size: 14px; fill: #333; }
+    .connector { stroke: #4a90e2; stroke-width: 2; fill: none; }
+  </style>
+  
+  <!-- Title -->
+  <text x="200" y="30" text-anchor="middle" font-family="-apple-system, system-ui, sans-serif" font-size="18" font-weight="bold" fill="#333">Role Hierarchy</text>
+  
+  <!-- Role Boxes -->
+  <g transform="translate(0, 50)">
+    <!-- Administrator -->
+    <rect x="150" y="0" width="100" height="40" class="role-box"/>
+    <text x="200" y="25" text-anchor="middle" class="role-text">Administrator</text>
+    
+    <!-- Editor -->
+    <rect x="100" y="80" width="100" height="40" class="role-box"/>
+    <text x="150" y="105" text-anchor="middle" class="role-text">Editor</text>
+    
+    <!-- Author -->
+    <rect x="200" y="80" width="100" height="40" class="role-box"/>
+    <text x="250" y="105" text-anchor="middle" class="role-text">Author</text>
+    
+    <!-- Viewer -->
+    <rect x="150" y="160" width="100" height="40" class="role-box"/>
+    <text x="200" y="185" text-anchor="middle" class="role-text">Viewer</text>
+    
+    <!-- Connectors -->
+    <path d="M200 40 L150 80" class="connector"/>
+    <path d="M200 40 L250 80" class="connector"/>
+    <path d="M150 120 L200 160" class="connector"/>
+    <path d="M250 120 L200 160" class="connector"/>
+  </g>
+</svg> 

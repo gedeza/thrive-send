@@ -1,18 +1,119 @@
-import Link from "next/link";
-import { Metadata } from "next";
+"use client";
 
-export const metadata: Metadata = {
-  title: "Add Client | ThriveSend",
-  description: "Add a new client to ThriveSend",
-};
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { toast } from "sonner";
+import { useOrganization } from "@clerk/nextjs";
+
+// Form validation schema
+const clientSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  organizationId: z.string().min(1, "Organization is required"),
+});
+
+type ClientFormData = z.infer<typeof clientSchema>;
 
 export default function AddClientPage() {
+  const router = useRouter();
+  const { organization } = useOrganization();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ClientFormData>({
+    resolver: zodResolver(clientSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      address: "",
+      organizationId: organization?.id || "",
+    },
+  });
+
+  const onSubmit = async (data: ClientFormData) => {
+    try {
+      setIsSubmitting(true);
+      
+      if (!organization?.id) {
+        toast.error("No organization selected. Please select an organization first.");
+        return;
+      }
+
+      console.log("Submitting client data:", {
+        ...data,
+        organizationId: organization.id,
+      });
+      
+      const response = await fetch("/api/clients", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...data,
+          organizationId: organization.id,
+        }),
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(responseData.error || "Failed to create client");
+      }
+
+      toast.success("Client created successfully");
+      
+      // Add a small delay before navigation to ensure the toast is visible
+      setTimeout(() => {
+        router.push("/clients");
+        router.refresh();
+      }, 1000);
+    } catch (error) {
+      console.error("Error creating client:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to create client");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!organization) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">No Organization Selected</h1>
+          <p className="text-muted-foreground mb-6">
+            Please select an organization to create a client.
+          </p>
+          <Link
+            href="/organization"
+            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2"
+          >
+            Select Organization
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Add Client</h1>
           <p className="text-muted-foreground">Create a new client in ThriveSend</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Organization: {organization.name}
+          </p>
         </div>
         <Link
           href="/clients"
@@ -24,7 +125,7 @@ export default function AddClientPage() {
       
       <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
         <div className="p-6">
-          <form className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Basic Information */}
             <div className="space-y-4">
               <div>
@@ -46,8 +147,11 @@ export default function AddClientPage() {
                     type="text"
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     placeholder="Enter client's business or organization name"
-                    required
+                    {...register("name")}
                   />
+                  {errors.name && (
+                    <p className="text-sm text-destructive">{errors.name.message}</p>
+                  )}
                 </div>
                 
                 <div className="space-y-2">
@@ -94,8 +198,11 @@ export default function AddClientPage() {
                     type="email"
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     placeholder="client@example.com"
-                    required
+                    {...register("email")}
                   />
+                  {errors.email && (
+                    <p className="text-sm text-destructive">{errors.email.message}</p>
+                  )}
                 </div>
                 
                 <div className="space-y-2">
@@ -110,7 +217,11 @@ export default function AddClientPage() {
                     type="tel"
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     placeholder="+1 (555) 000-0000"
+                    {...register("phone")}
                   />
+                  {errors.phone && (
+                    <p className="text-sm text-destructive">{errors.phone.message}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -166,7 +277,11 @@ export default function AddClientPage() {
                   id="address"
                   className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   placeholder="Enter client's business address"
+                  {...register("address")}
                 />
+                {errors.address && (
+                  <p className="text-sm text-destructive">{errors.address.message}</p>
+                )}
               </div>
             </div>
             
@@ -179,9 +294,10 @@ export default function AddClientPage() {
               </Link>
               <button
                 type="submit"
+                disabled={isSubmitting}
                 className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2"
               >
-                Create Client
+                {isSubmitting ? "Creating..." : "Create Client"}
               </button>
             </div>
           </form>

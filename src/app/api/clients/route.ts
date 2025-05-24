@@ -60,25 +60,47 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
+    console.log("Received client creation request:", body);
+    
     const { name, email, phone, address, organizationId } = body;
 
     // Validate input
     if (!name || !email || !organizationId) {
+      console.error("Missing required fields:", { name, email, organizationId });
       return NextResponse.json(
         { error: "Name, email, and organizationId are required" },
         { status: 400 }
       );
     }
 
-    // Workaround: fetch all clients for org and check email in JS
-    const existingClients = await prisma.client.findMany({
-      where: { organizationId },
-      select: { email: true },
+    // Verify user has access to the organization
+    const membership = await prisma.organizationMember.findFirst({
+      where: {
+        organizationId,
+        user: { clerkId: session.userId }
+      }
     });
-    const emailExists = existingClients.some(c => c.email === email);
-    if (emailExists) {
+
+    if (!membership) {
+      console.error("User does not have access to organization:", { userId: session.userId, organizationId });
       return NextResponse.json(
-        { error: "Client with this email already exists in this organization" },
+        { error: "You don't have access to this organization" },
+        { status: 403 }
+      );
+    }
+
+    // Check for existing client with same email
+    const existingClient = await prisma.client.findFirst({
+      where: {
+        email,
+        organizationId,
+      },
+    });
+
+    if (existingClient) {
+      console.error("Client with email already exists:", { email, organizationId });
+      return NextResponse.json(
+        { error: "A client with this email already exists in this organization" },
         { status: 409 }
       );
     }
@@ -94,9 +116,16 @@ export async function POST(request: Request) {
       },
     });
 
+    console.log("Successfully created client:", client);
     return NextResponse.json(client, { status: 201 });
   } catch (error) {
     console.error("Error creating client:", error);
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return NextResponse.json(
+        { error: "Database error occurred while creating client" },
+        { status: 500 }
+      );
+    }
     return NextResponse.json(
       { error: "Failed to create client" },
       { status: 500 }

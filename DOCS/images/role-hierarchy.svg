@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="600" height="400" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background -->
+    <rect width="100%" height="100%" fill="#ffffff"/>
+    
+    <!-- Title -->
+    <text x="300" y="40" font-family="Arial" font-size="24" text-anchor="middle" fill="#333">Role Hierarchy</text>
+    
+    <!-- Administrator Box -->
+    <rect x="250" y="80" width="100" height="60" rx="10" fill="#4a90e2" stroke="#2171c7" stroke-width="2"/>
+    <text x="300" y="115" font-family="Arial" font-size="14" text-anchor="middle" fill="white">Administrator</text>
+    
+    <!-- Editor Box -->
+    <rect x="150" y="200" width="100" height="60" rx="10" fill="#50e3c2" stroke="#2bb8a3" stroke-width="2"/>
+    <text x="200" y="235" font-family="Arial" font-size="14" text-anchor="middle" fill="white">Editor</text>
+    
+    <!-- Author Box -->
+    <rect x="350" y="200" width="100" height="60" rx="10" fill="#f5a623" stroke="#d48806" stroke-width="2"/>
+    <text x="400" y="235" font-family="Arial" font-size="14" text-anchor="middle" fill="white">Author</text>
+    
+    <!-- Viewer Box -->
+    <rect x="250" y="320" width="100" height="60" rx="10" fill="#b8c2cc" stroke="#8795a1" stroke-width="2"/>
+    <text x="300" y="355" font-family="Arial" font-size="14" text-anchor="middle" fill="white">Viewer</text>
+    
+    <!-- Connection Lines -->
+    <line x1="300" y1="140" x2="200" y2="200" stroke="#666" stroke-width="2"/>
+    <line x1="300" y1="140" x2="400" y2="200" stroke="#666" stroke-width="2"/>
+    <line x1="200" y1="260" x2="300" y2="320" stroke="#666" stroke-width="2"/>
+    <line x1="400" y1="260" x2="300" y2="320" stroke="#666" stroke-width="2"/>
+</svg> 
