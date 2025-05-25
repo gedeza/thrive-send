@@ -1,66 +1,59 @@
-# Getting Started with Thrive Send
+---
+title: "Getting Started with Thrive Send"
+description: "Learn the basics of Thrive Send and how to get started"
+---
 
-Welcome to Thrive Send! This guide will help you get started with our platform.
+# Getting Started with Thrive Send
 
 ## Overview
 
-Thrive Send is a comprehensive content management and marketing automation platform that helps you:
-
-- Create and manage content
-- Track analytics and performance
-- Manage campaigns
-- Organize your media library
-- Collaborate with team members
+Thrive Send is a powerful marketing automation platform that helps you create, manage, and optimize your marketing campaigns. This guide will help you get started with the platform.
 
 ## Quick Start
 
-1. **Sign In**
-   - Visit the login page
-   - Enter your credentials
-   - Access your dashboard
+1. **Sign Up**
+   - Create your account
+   - Verify your email
+   - Complete your profile
 
-2. **Dashboard**
-   - View key metrics
-   - Access recent content
-   - Monitor campaign performance
-
-3. **Content Creation**
-   - Create new content
-   - Upload media
-   - Schedule posts
+2. **Initial Setup**
+   - Connect your domains
+   - Set up your first campaign
+   - Configure basic settings
 
 ## Key Features
 
-### Content Management
-- Create and edit content
-- Media library integration
-- Content calendar
-- Approval workflows
+1. **Content Management**
+   - Create and edit content
+   - Manage media library
+   - Schedule posts
+   - Track performance
 
-### Analytics
-- Real-time metrics
-- Performance tracking
-- Custom reports
-- Data visualization
+2. **Campaign Automation**
+   - Design workflows
+   - Set up triggers
+   - Monitor results
+   - Optimize performance
 
-### Campaign Management
-- Campaign creation
-- Audience targeting
-- Performance tracking
-- A/B testing
+3. **Analytics**
+   - Track key metrics
+   - Generate reports
+   - Analyze trends
+   - Make data-driven decisions
 
-### User Management
-- Team collaboration
-- Role-based access
-- Activity tracking
-- User permissions
+## Best Practices
 
-## Next Steps
+1. **Getting Started**
+   - Complete your profile
+   - Set up your first campaign
+   - Explore the dashboard
+   - Review documentation
 
-1. Explore the [Content Management Guide](./content-management.md)
-2. Learn about [Analytics](./analytics.md)
-3. Read the [Campaign Management Guide](./campaign-management.md)
-4. Review [User Management](./user-management.md)
+2. **Next Steps**
+   - Explore the [Content Management Guide](/docs/user-guides/content-management)
+   - Learn about [Analytics](/docs/user-guides/analytics)
+   - Read the [Campaign Management Guide](/docs/user-guides/campaign-management)
+   - Review [User Management](/docs/user-guides/user-management)
 
 ## Support
 

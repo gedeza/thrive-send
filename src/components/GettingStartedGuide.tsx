@@ -54,8 +54,8 @@ const GettingStartedGuide: React.FC = () => {
               </div>
               <div className="relative w-full h-[500px] mb-8 rounded-lg overflow-hidden bg-gray-50">
                 <Image
-                  src="/docs/images/analytics-dashboard.svg"
-                  alt="Analytics Dashboard"
+                  src="/docs/images/analytics-dashboard-screenshot.png"
+                  alt="Analytics Dashboard Screenshot"
                   fill
                   className="object-contain p-4"
                   priority
