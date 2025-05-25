@@ -18,6 +18,7 @@ import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { useBeforeUnload } from "@/hooks/use-before-unload";
 import { useNavigationWarning } from "@/hooks/use-navigation-warning";
+import { InvitationManagement } from "@/components/users/invitation-management";
 
 const profileSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
@@ -59,6 +60,15 @@ const defaultContentLibrarySettings = {
   defaultVisibility: "private" as const,
   thumbnailSize: "medium" as const
 } as const;
+
+const tabs = [
+  { id: 'profile', label: 'Profile' },
+  { id: 'email', label: 'Email Preferences' },
+  { id: 'campaign', label: 'Campaign Defaults' },
+  { id: 'content', label: 'Content Library' },
+  { id: 'users', label: 'Users' },
+  { id: 'organization', label: 'Organization' },
+];
 
 export default function SettingsPage() {
   const { user, isLoaded } = useUser();
@@ -224,6 +234,8 @@ export default function SettingsPage() {
           <TabsTrigger value="email">Email Preferences</TabsTrigger>
           <TabsTrigger value="campaign">Campaign Defaults</TabsTrigger>
           <TabsTrigger value="content">Content Library</TabsTrigger>
+          <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="organization">Organization</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">
@@ -508,6 +520,39 @@ export default function SettingsPage() {
                   </Button>
                 </div>
               </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="users">
+          <Card>
+            <CardHeader>
+              <CardTitle>User Management</CardTitle>
+              <CardDescription>
+                Manage team members and invitations
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <InvitationManagement />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="organization">
+          <Card>
+            <CardHeader>
+              <CardTitle>Organization Settings</CardTitle>
+              <CardDescription>
+                Manage your organization's settings, members, and billing.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                onClick={() => router.push('/settings/organization')}
+                className="w-full"
+              >
+                Manage Organization Settings
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>

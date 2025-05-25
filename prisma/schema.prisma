@@ -209,13 +209,14 @@ model Organization {
   audiences      Audience[]
   targetingRules TargetingRule[]
   crossCampaignAnalytics CrossCampaignAnalytics[]
-  assets           Asset[]
-  workflows        Workflow[]
-  integrations     Integration[]
-  reports          Report[]
-  contactLists     ContactList[]
+  assets         Asset[]
+  workflows      Workflow[]
+  integrations   Integration[]
+  reports        Report[]
+  contactLists   ContactList[]
   audienceSegments AudienceSegment[]
   marketplaceListings MarketplaceListing[]
+  invitations    Invitation[]
 }
 
 model OrganizationMember {
@@ -1277,4 +1278,19 @@ model Payment {
 
   @@index([status])
   @@index([subscriptionId])
+}
+
+model Invitation {
+  id             String       @id @default(cuid())
+  email          String
+  role           String       @default("MEMBER")
+  token          String       @unique
+  status         String       @default("PENDING") // PENDING, ACCEPTED, EXPIRED
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([email, organizationId])
+  @@index([organizationId])
 } 
