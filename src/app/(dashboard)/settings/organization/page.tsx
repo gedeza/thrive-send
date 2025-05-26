@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,19 +12,18 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { OrganizationMembers } from "@/components/organization/organization-members";
 import { OrganizationBilling } from "@/components/organization/organization-billing";
+import { Loader2 } from "lucide-react";
 
 const organizationSchema = z.object({
   name: z.string().min(2, "Organization name must be at least 2 characters"),
-  domain: z.string().optional(),
-  timezone: z.string(),
-  logo: z.string().optional(),
+  website: z.string().optional(),
+  logoUrl: z.string().url().optional(),
 });
 
 const defaultOrganizationSettings = {
   name: "",
-  domain: "",
-  timezone: "UTC",
-  logo: "",
+  website: "",
+  logoUrl: "",
 } as const;
 
 const tabs = [
@@ -37,6 +36,8 @@ export default function OrganizationSettingsPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("general");
   const [isDirty, setIsDirty] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
 
   // Organization settings form
   const organizationForm = useForm({
@@ -47,22 +48,75 @@ export default function OrganizationSettingsPage() {
   // Track form changes
   const subscription = organizationForm.watch(() => setIsDirty(true));
 
+  // Fetch organization data on mount
+  useEffect(() => {
+    const fetchOrganizationData = async () => {
+      try {
+        const response = await fetch('/api/organizations/current');
+        if (!response.ok) {
+          throw new Error('Failed to fetch organization data');
+        }
+        const data = await response.json();
+        setOrganizationId(data.id);
+        organizationForm.reset({
+          name: data.name || '',
+          website: data.website || '',
+          logoUrl: data.logoUrl || '',
+        });
+      } catch (error) {
+        console.error('Error fetching organization data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load organization settings",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchOrganizationData();
+  }, []);
+
   const handleOrganizationSubmit = async (data: z.infer<typeof organizationSchema>) => {
+    if (!organizationId) {
+      toast({
+        title: "Error",
+        description: "Organization ID not found",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
-      // TODO: Add API call to save organization settings
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulated API call
+      const response = await fetch(`/api/organizations/${organizationId}/settings`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update organization settings");
+      }
+
+      const result = await response.json();
       setIsDirty(false);
       toast({
         title: "Success",
         description: "Organization settings updated successfully",
       });
+      console.log("Organization updated:", result);
     } catch (error) {
       console.error("Error updating organization settings:", error);
       toast({
         title: "Error",
-        description: "Failed to update organization settings",
+        description: error instanceof Error ? error.message : "Failed to update organization settings",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -102,26 +156,55 @@ export default function OrganizationSettingsPage() {
                     id="name"
                     {...organizationForm.register("name")}
                     placeholder="Enter organization name"
+                    disabled={isSubmitting}
                   />
+                  {organizationForm.formState.errors.name && (
+                    <p className="text-sm text-red-500">
+                      {organizationForm.formState.errors.name.message}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="domain">Organization Domain</Label>
+                  <Label htmlFor="website">Organization Website</Label>
                   <Input
-                    id="domain"
-                    {...organizationForm.register("domain")}
+                    id="website"
+                    {...organizationForm.register("website")}
                     placeholder="example.com"
+                    disabled={isSubmitting}
                   />
+                  {organizationForm.formState.errors.website && (
+                    <p className="text-sm text-red-500">
+                      {organizationForm.formState.errors.website.message}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="timezone">Default Timezone</Label>
+                  <Label htmlFor="logoUrl">Logo URL</Label>
                   <Input
-                    id="timezone"
-                    {...organizationForm.register("timezone")}
-                    placeholder="UTC"
+                    id="logoUrl"
+                    {...organizationForm.register("logoUrl")}
+                    placeholder="https://example.com/logo.png"
+                    disabled={isSubmitting}
                   />
+                  {organizationForm.formState.errors.logoUrl && (
+                    <p className="text-sm text-red-500">
+                      {organizationForm.formState.errors.logoUrl.message}
+                    </p>
+                  )}
                 </div>
-                <Button type="submit" disabled={!isDirty}>
-                  Save Changes
+                <Button 
+                  type="submit" 
+                  disabled={!isDirty || isSubmitting}
+                  className="w-full"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
                 </Button>
               </form>
             </CardContent>

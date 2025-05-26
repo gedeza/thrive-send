@@ -1,13 +1,33 @@
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
 import { z } from 'zod';
 import { randomBytes } from 'crypto';
 
 // Validation schemas
 const organizationSettingsSchema = z.object({
-  name: z.string().min(1).max(100),
-  domain: z.string().url().optional(),
-  timezone: z.string().default('UTC'),
-  logo: z.string().url().optional(),
+  name: z.string().min(1).max(100).transform(val => val.trim()),
+  website: z.string().refine((val) => {
+    if (!val) return true; // Allow empty values
+    // Accept either a full URL or just a domain name
+    try {
+      if (val.startsWith('http://') || val.startsWith('https://')) {
+        new URL(val);
+        return true;
+      }
+      // Check if it's a valid domain name
+      return /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$/.test(val);
+    } catch {
+      return false;
+    }
+  }, "Invalid domain format. Please enter a valid domain (e.g., example.com) or full URL").transform(val => {
+    if (!val) return null;
+    // If it's already a full URL, return as is
+    if (val.startsWith('http://') || val.startsWith('https://')) {
+      return val;
+    }
+    // Otherwise, prepend https://
+    return `https://${val}`;
+  }).optional(),
+  logoUrl: z.string().url().optional(),
 });
 
 const memberRoleSchema = z.object({
@@ -17,7 +37,7 @@ const memberRoleSchema = z.object({
 
 export class OrganizationService {
   async getOrganization(organizationId: string) {
-    return prisma.organization.findUnique({
+    return db.organization.findUnique({
       where: { id: organizationId },
       include: {
         members: {
@@ -31,20 +51,88 @@ export class OrganizationService {
   }
 
   async updateSettings(organizationId: string, settings: z.infer<typeof organizationSettingsSchema>) {
-    const validatedSettings = organizationSettingsSchema.parse(settings);
-    
-    return prisma.organization.update({
-      where: { id: organizationId },
-      data: {
+    try {
+      console.log("[OrganizationService] Starting updateSettings with:", {
+        organizationId,
+        settings,
+        settingsType: typeof settings,
+        settingsKeys: Object.keys(settings),
+        settingsValues: Object.values(settings)
+      });
+      
+      // Validate the settings
+      console.log("[OrganizationService] Attempting to validate settings...");
+      const validatedSettings = organizationSettingsSchema.parse(settings);
+      console.log("[OrganizationService] Successfully validated settings:", validatedSettings);
+      
+      // Get current organization to preserve slug
+      console.log("[OrganizationService] Fetching current organization...");
+      const currentOrg = await db.organization.findUnique({
+        where: { id: organizationId },
+        include: {
+          members: {
+            where: {
+              role: "ADMIN"
+            }
+          }
+        }
+      });
+      console.log("[OrganizationService] Found current organization:", {
+        id: currentOrg?.id,
+        name: currentOrg?.name,
+        memberCount: currentOrg?.members.length,
+        hasAdmin: currentOrg?.members.some(m => m.role === "ADMIN")
+      });
+      
+      if (!currentOrg) {
+        throw new Error("Organization not found");
+      }
+
+      if (currentOrg.members.length === 0) {
+        throw new Error("No admin members found for this organization");
+      }
+      
+      // Prepare update data
+      const updateData = {
         name: validatedSettings.name,
-        website: validatedSettings.domain,
-        logoUrl: validatedSettings.logo,
-      },
-    });
+        website: validatedSettings.website || null, // Ensure null for empty strings
+        logoUrl: validatedSettings.logoUrl || null, // Ensure null for empty strings
+        // Don't update the slug as it's a unique identifier
+      };
+      console.log("[OrganizationService] Prepared update data:", updateData);
+      
+      // Update the organization
+      console.log("[OrganizationService] Attempting to update organization...");
+      const updatedOrg = await db.organization.update({
+        where: { id: organizationId },
+        data: updateData,
+      });
+      
+      console.log("[OrganizationService] Successfully updated organization:", {
+        id: updatedOrg.id,
+        name: updatedOrg.name,
+        website: updatedOrg.website,
+        logoUrl: updatedOrg.logoUrl
+      });
+      return updatedOrg;
+    } catch (error) {
+      console.error("[OrganizationService] Error updating settings:", {
+        error,
+        message: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
+        organizationId,
+        settings,
+        errorType: error?.constructor?.name,
+        errorKeys: error ? Object.keys(error) : [],
+        isZodError: error instanceof z.ZodError,
+        zodErrors: error instanceof z.ZodError ? error.errors : undefined
+      });
+      throw error;
+    }
   }
 
   async getMembers(organizationId: string) {
-    return prisma.organizationMember.findMany({
+    return db.organizationMember.findMany({
       where: { organizationId },
       include: {
         user: true,
@@ -53,7 +141,7 @@ export class OrganizationService {
   }
 
   async updateMemberRole(organizationId: string, memberId: string, role: string) {
-    return prisma.organizationMember.update({
+    return db.organizationMember.update({
       where: {
         id: memberId,
         organizationId,
@@ -65,7 +153,7 @@ export class OrganizationService {
   }
 
   async removeMember(organizationId: string, memberId: string) {
-    return prisma.organizationMember.delete({
+    return db.organizationMember.delete({
       where: {
         id: memberId,
         organizationId,
@@ -80,7 +168,7 @@ export class OrganizationService {
     const token = randomBytes(32).toString('hex');
 
     // Create invitation record
-    const invitation = await prisma.invitation.create({
+    const invitation = await db.invitation.create({
       data: {
         email: validatedData.email,
         role: validatedData.role,
@@ -97,7 +185,7 @@ export class OrganizationService {
   }
 
   async getSubscription(organizationId: string) {
-    return prisma.subscription.findUnique({
+    return db.subscription.findUnique({
       where: { organizationId },
     });
   }
@@ -108,7 +196,7 @@ export class OrganizationService {
     billingCycle: string;
     price: number;
   }) {
-    return prisma.subscription.upsert({
+    return db.subscription.upsert({
       where: { organizationId },
       update: subscriptionData,
       create: {
@@ -120,7 +208,7 @@ export class OrganizationService {
   }
 
   async getBillingHistory(organizationId: string) {
-    return prisma.payment.findMany({
+    return db.payment.findMany({
       where: {
         subscription: {
           organizationId,
@@ -130,5 +218,25 @@ export class OrganizationService {
         createdAt: 'desc',
       },
     });
+  }
+
+  async getOrganizationByUserId(userId: string) {
+    const membership = await db.organizationMember.findFirst({
+      where: { userId },
+      include: {
+        organization: {
+          include: {
+            members: {
+              include: {
+                user: true,
+              },
+            },
+            subscription: true,
+          },
+        },
+      },
+    });
+
+    return membership?.organization;
   }
 } 
