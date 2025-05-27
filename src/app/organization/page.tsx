@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, useOrganization, useOrganizationList, useClerk } from '@clerk/nextjs';
 
@@ -12,12 +12,68 @@ export default function OrganizationPage() {
   const router = useRouter();
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
+  const [dbOrganizations, setDbOrganizations] = useState<any[]>([]);
+  const [isLoadingDb, setIsLoadingDb] = useState(true);
 
-  // Debug logs
+  // Fetch organizations from database
   useEffect(() => {
-    console.log('Auth State:', { isLoaded, userId });
-    console.log('Org List State:', { isOrgListLoaded, userMemberships });
-  }, [isLoaded, userId, isOrgListLoaded, userMemberships]);
+    const fetchDbOrganizations = async () => {
+      if (!userId) return;
+      
+      try {
+        const response = await fetch('/api/organizations');
+        if (response.ok) {
+          const data = await response.json();
+          setDbOrganizations(data);
+        }
+      } catch (error) {
+        console.error('Error fetching organizations:', error);
+      } finally {
+        setIsLoadingDb(false);
+      }
+    };
+
+    if (isLoaded && userId) {
+      fetchDbOrganizations();
+    }
+  }, [isLoaded, userId]);
+
+  // Get unique organizations, preferring database entries
+  const uniqueOrganizations = useMemo(() => {
+    if (!isLoaded || !isOrgListLoaded || isLoadingDb) {
+      return [];
+    }
+
+    // Create a map to store unique organizations by name
+    const orgMap = new Map();
+    
+    // First add database organizations
+    dbOrganizations.forEach(org => {
+      // Use the organization name as the key to prevent duplicates
+      if (!orgMap.has(org.name)) {
+        orgMap.set(org.name, {
+          id: org.id,
+          name: org.name,
+          clerkId: org.clerkOrganizationId || org.id, // Fallback to org.id if no clerkId
+          source: 'db'
+        });
+      }
+    });
+
+    // Then add Clerk organizations that don't exist in database
+    userMemberships?.data?.forEach(membership => {
+      if (!orgMap.has(membership.organization.name)) {
+        orgMap.set(membership.organization.name, {
+          id: membership.organization.id,
+          name: membership.organization.name,
+          clerkId: membership.organization.id,
+          source: 'clerk'
+        });
+      }
+    });
+
+    return Array.from(orgMap.values());
+  }, [isLoaded, isOrgListLoaded, isLoadingDb, dbOrganizations, userMemberships?.data]);
 
   useEffect(() => {
     if (isLoaded && !userId) {
@@ -33,17 +89,6 @@ export default function OrganizationPage() {
       console.error('Error signing out:', error);
     }
   };
-
-  if (!isLoaded || !isOrgLoaded || !isOrgListLoaded) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Loading...</h1>
-          <p className="text-muted-foreground">Please wait while we load your organizations.</p>
-        </div>
-      </div>
-    );
-  }
 
   const handleSelectOrganization = async (orgId: string) => {
     try {
@@ -61,8 +106,22 @@ export default function OrganizationPage() {
     }
   };
 
-  // Check if user has any organizations
-  const hasOrganizations = userMemberships?.data && userMemberships.data.length > 0;
+  // Check if we're still loading any data
+  const isLoading = !isLoaded || !isOrgLoaded || !isOrgListLoaded || isLoadingDb;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Loading...</h1>
+          <p className="text-muted-foreground">Please wait while we load your organizations.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Only check for organizations after all data is loaded
+  const hasOrganizations = uniqueOrganizations.length > 0;
 
   return (
     <div className="flex items-center justify-center min-h-screen">
@@ -81,20 +140,20 @@ export default function OrganizationPage() {
         
         {hasOrganizations ? (
           <div className="space-y-4">
-            {userMemberships.data.map((membership) => (
+            {uniqueOrganizations.map((org) => (
               <button
-                key={membership.organization.id}
-                onClick={() => handleSelectOrganization(membership.organization.id)}
+                key={org.id}
+                onClick={() => handleSelectOrganization(org.clerkId)}
                 disabled={isSelecting}
                 className={`w-full p-4 text-left border rounded-lg transition-all ${
-                  selectedOrgId === membership.organization.id
+                  selectedOrgId === org.clerkId
                     ? 'bg-primary text-primary-foreground'
                     : 'hover:bg-accent hover:text-accent-foreground'
                 } ${isSelecting ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <div className="flex items-center justify-between">
-                  <h2 className="font-semibold">{membership.organization.name}</h2>
-                  {selectedOrgId === membership.organization.id && isSelecting && (
+                  <h2 className="font-semibold">{org.name}</h2>
+                  {selectedOrgId === org.clerkId && isSelecting && (
                     <span className="text-sm">Selecting...</span>
                   )}
                 </div>
@@ -119,22 +178,6 @@ export default function OrganizationPage() {
         >
           Create New Organization
         </button>
-
-        {/* Debug Information */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-8 p-4 bg-gray-100 rounded-md text-xs">
-            <h3 className="font-bold mb-2">Debug Information:</h3>
-            <pre className="whitespace-pre-wrap">
-              {JSON.stringify({
-                isLoaded,
-                userId,
-                isOrgListLoaded,
-                userMembershipsCount: userMemberships?.data?.length,
-                userMemberships: userMemberships?.data
-              }, null, 2)}
-            </pre>
-          </div>
-        )}
       </div>
     </div>
   );
