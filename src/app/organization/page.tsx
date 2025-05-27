@@ -52,7 +52,7 @@ export default function OrganizationPage() {
       
       if (setActive) {
         await setActive({ organization: orgId });
-        router.push('/(dashboard)');
+        router.push('/dashboard');
       }
     } catch (error) {
       console.error('Failed to set active organization:', error);

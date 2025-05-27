@@ -20,7 +20,7 @@ export default function SignInPage() {
             },
           }}
           signUpUrl="/sign-up"
-          fallbackRedirectUrl="/dashboard"
+          fallbackRedirectUrl="/organization"
         />
       </div>
     </div>

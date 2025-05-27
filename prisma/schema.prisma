@@ -187,36 +187,37 @@ model User {
 }
 
 model Organization {
-  id             String               @id @default(cuid())
-  name           String               @db.VarChar(100)
-  slug           String               @unique @db.VarChar(100)
-  logoUrl        String?
-  website        String?
-  primaryColor   String?              @default("#000000")
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
-  calendarEvents CalendarEvent[]
-  campaigns      Campaign[]
-  clients        Client[]
-  contentItems   ContentItem[]
-  contentPieces  ContentPiece[]
-  members        OrganizationMember[]
-  projects       Project[]
-  socialAccounts SocialAccount[]
-  subscription   Subscription?
-  Template       Template[]
+  id                String               @id @default(cuid())
+  name              String               @db.VarChar(100)
+  slug              String               @unique @db.VarChar(100)
+  logoUrl           String?
+  website           String?
+  primaryColor      String?              @default("#000000")
+  clerkOrganizationId String?            @unique
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  calendarEvents    CalendarEvent[]
+  campaigns         Campaign[]
+  clients           Client[]
+  contentItems      ContentItem[]
+  contentPieces     ContentPiece[]
+  members           OrganizationMember[]
+  projects          Project[]
+  socialAccounts    SocialAccount[]
+  subscription      Subscription?
+  Template          Template[]
   campaignTemplates CampaignTemplate[]
-  audiences      Audience[]
-  targetingRules TargetingRule[]
+  audiences         Audience[]
+  targetingRules    TargetingRule[]
   crossCampaignAnalytics CrossCampaignAnalytics[]
-  assets         Asset[]
-  workflows      Workflow[]
-  integrations   Integration[]
-  reports        Report[]
-  contactLists   ContactList[]
-  audienceSegments AudienceSegment[]
+  assets            Asset[]
+  workflows         Workflow[]
+  integrations      Integration[]
+  reports           Report[]
+  contactLists      ContactList[]
+  audienceSegments  AudienceSegment[]
   marketplaceListings MarketplaceListing[]
-  invitations    Invitation[]
+  invitations       Invitation[]
 }
 
 model OrganizationMember {

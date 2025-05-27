@@ -1,6 +1,17 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
+// Mock Clerk authentication
+vi.mock('@clerk/nextjs', () => ({
+  auth: () => Promise.resolve({ userId: 'test-user-id' }),
+  currentUser: () => Promise.resolve({
+    id: 'test-user-id',
+    email: 'test@example.com',
+    firstName: 'Test',
+    lastName: 'User',
+  }),
+}));
+
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
@@ -8,9 +19,14 @@ vi.mock('next/navigation', () => ({
     replace: vi.fn(),
     prefetch: vi.fn(),
   }),
-  useSearchParams: () => ({
-    get: vi.fn(),
-  }),
+  usePathname: () => '/',
+  useSearchParams: () => new URLSearchParams(),
+}));
+
+// Mock next/headers
+vi.mock('next/headers', () => ({
+  headers: () => new Headers(),
+  cookies: () => new Map(),
 }));
 
 // Mock next/font

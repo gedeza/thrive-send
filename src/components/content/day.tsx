@@ -1,8 +1,10 @@
-import { format, isSameDay, isSameMonth } from "date-fns";
-import { Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
+import { format, isSameDay, isSameMonth, parseISO } from "date-fns";
+import { formatInTimeZone } from 'date-fns-tz';
+import { Facebook, Twitter, Instagram, Linkedin, Mail, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CalendarEvent, SocialPlatform } from "./content-calendar";
+import { CalendarEvent, SocialPlatform, eventTypeColorMap } from "./content-calendar";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
+import { useTimezone } from "@/hooks/use-timezone";
 
 interface DayProps {
   day: Date;
@@ -11,47 +13,40 @@ interface DayProps {
   onClick: () => void;
 }
 
-// Platform-specific color mapping
+const eventTypeIcons = {
+  email: <Mail className="h-3 w-3" />,
+  social: <Facebook className="h-3 w-3" />,
+  blog: <FileText className="h-3 w-3" />,
+  article: <FileText className="h-3 w-3" />
+};
+
+const platformIcons = {
+  FACEBOOK: <Facebook className="h-3 w-3" />,
+  TWITTER: <Twitter className="h-3 w-3" />,
+  INSTAGRAM: <Instagram className="h-3 w-3" />,
+  LINKEDIN: <Linkedin className="h-3 w-3" />
+};
+
 const platformColorMap = {
   FACEBOOK: {
     bg: "bg-[#1877F2]/10",
     text: "text-[#1877F2]",
-    icon: <Facebook className="h-4 w-4" />
+    icon: <Facebook className="h-3 w-3" />
   },
   TWITTER: {
     bg: "bg-[#1DA1F2]/10",
     text: "text-[#1DA1F2]",
-    icon: <Twitter className="h-4 w-4" />
+    icon: <Twitter className="h-3 w-3" />
   },
   INSTAGRAM: {
     bg: "bg-[#E4405F]/10",
     text: "text-[#E4405F]",
-    icon: <Instagram className="h-4 w-4" />
+    icon: <Instagram className="h-3 w-3" />
   },
   LINKEDIN: {
     bg: "bg-[#0A66C2]/10",
     text: "text-[#0A66C2]",
-    icon: <Linkedin className="h-4 w-4" />
-  }
-};
-
-// Color mapping for event types
-const eventTypeColorMap = {
-  email: {
-    bg: "bg-[var(--color-chart-blue)]/10",
-    text: "text-[var(--color-chart-blue)]"
-  },
-  social: {
-    bg: "bg-[var(--color-chart-green)]/10",
-    text: "text-[var(--color-chart-green)]"
-  },
-  blog: {
-    bg: "bg-[var(--color-chart-purple)]/10",
-    text: "text-[var(--color-chart-purple)]"
-  },
-  other: {
-    bg: "bg-[var(--color-chart-orange)]/10",
-    text: "text-[var(--color-chart-orange)]"
+    icon: <Linkedin className="h-3 w-3" />
   }
 };
 
@@ -122,38 +117,52 @@ function DraggableEvent({ event, onClick }: { event: CalendarEvent; onClick: () 
 }
 
 export function Day({ day, events, onEventClick, onClick }: DayProps) {
+  const userTimezone = useTimezone();
+  const { setNodeRef: setDroppableRef } = useDroppable({
+    id: formatInTimeZone(day, userTimezone, "yyyy-MM-dd"),
+  });
+
   const isToday = isSameDay(day, new Date());
   const isCurrentMonth = isSameMonth(day, new Date());
-  const dayStr = format(day, "yyyy-MM-dd");
 
-  const { setNodeRef, isOver } = useDroppable({
-    id: dayStr,
-    data: {
-      date: dayStr
+  const formatDate = (date: Date, format: string) => {
+    try {
+      return formatInTimeZone(date, userTimezone, format);
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return '';
     }
-  });
+  };
+
+  const formatEventTime = (date: string, time: string) => {
+    try {
+      const dateTime = parseISO(`${date}T${time}`);
+      if (isNaN(dateTime.getTime())) {
+        return time.substring(0, 5);
+      }
+      return formatInTimeZone(dateTime, userTimezone, "h:mm a");
+    } catch (error) {
+      console.error('Error formatting event time:', error);
+      return time.substring(0, 5);
+    }
+  };
 
   return (
     <div
-      ref={setNodeRef}
+      ref={setDroppableRef}
       className={cn(
-        "p-1 min-h-[100px] border border-muted rounded-sm transition-colors duration-200",
-        isToday && "bg-[var(--color-chart-blue)]/5 border-[var(--color-chart-blue)]/30",
-        !isCurrentMonth && "opacity-50",
-        "hover:bg-muted/50 cursor-pointer",
-        isOver && "bg-muted/80 border-primary"
+        "relative min-h-[100px] p-2 border rounded-md",
+        isToday && "bg-primary/5",
+        !isCurrentMonth && "opacity-50"
       )}
       onClick={onClick}
-      data-date={dayStr}
     >
-      <div className="p-1 flex items-center justify-between">
+      <div className="flex justify-between items-center mb-1">
         <span className={cn(
-          "inline-flex items-center justify-center h-6 w-6 rounded-full text-sm transition-colors duration-200",
-          isToday 
-            ? "bg-[var(--color-chart-blue)] text-white font-medium" 
-            : "text-muted-foreground hover:bg-muted"
+          "text-sm font-medium",
+          isToday && "text-primary font-bold"
         )}>
-          {format(day, "d")}
+          {formatDate(day, "d")}
         </span>
         {events.length > 0 && (
           <span className="text-xs text-muted-foreground">
@@ -161,13 +170,43 @@ export function Day({ day, events, onEventClick, onClick }: DayProps) {
           </span>
         )}
       </div>
-      <div className="space-y-1 mt-1 max-h-[80px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+      
+      <div className="space-y-1">
         {events.map((event) => (
-          <DraggableEvent
+          <div
             key={event.id}
-            event={event}
-            onClick={() => onEventClick(event)}
-          />
+            onClick={(e) => {
+              e.stopPropagation();
+              onEventClick(event);
+            }}
+            className={cn(
+              "p-1.5 rounded text-xs truncate flex items-center gap-1.5 hover:opacity-80 transition-opacity",
+              event.type === 'email' && "bg-[var(--color-chart-blue)]/10 text-[var(--color-chart-blue)]",
+              event.type === 'social' && "bg-[var(--color-chart-green)]/10 text-[var(--color-chart-green)]",
+              event.type === 'blog' && "bg-[var(--color-chart-purple)]/10 text-[var(--color-chart-purple)]",
+              event.type === 'article' && "bg-[var(--color-chart-purple)]/10 text-[var(--color-chart-purple)]"
+            )}
+          >
+            {event.type === 'social' && event.socialMediaContent.platforms.length > 0 ? (
+              <div className="flex items-center gap-1">
+                {event.socialMediaContent.platforms.map((platform) => (
+                  <span key={platform} className="text-[10px]">
+                    {platformIcons[platform]}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <span className="text-[10px]">
+                {eventTypeIcons[event.type]}
+              </span>
+            )}
+            <span className="truncate">{event.title}</span>
+            {event.time && (
+              <span className="text-[10px] opacity-70 ml-auto">
+                {formatEventTime(event.date, event.time)}
+              </span>
+            )}
+          </div>
         ))}
       </div>
     </div>

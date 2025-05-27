@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
+import { z } from "zod";
+
+const createOrganizationSchema = z.object({
+  name: z.string().min(2, "Organization name must be at least 2 characters"),
+  slug: z.string().min(2, "Slug must be at least 2 characters")
+    .regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens"),
+  website: z.string().url().optional().or(z.literal("")),
+  description: z.string().optional(),
+  clerkId: z.string(),
+  clerkOrganizationId: z.string(),
+});
 
 export async function GET(req: NextRequest) {
   try {
@@ -58,38 +70,105 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json();
-    const { name, slug, website, logoUrl, primaryColor } = body;
+    console.log('Creating organization for user:', userId);
 
-    if (!name || !slug) {
+    // Get user from database
+    let user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      include: {
+        organizationMemberships: true
+      }
+    });
+
+    console.log('Found user:', user ? 'yes' : 'no');
+
+    if (!user) {
+      // Create user if they don't exist
+      console.log('Creating new user for clerkId:', userId);
+      user = await prisma.user.create({
+        data: {
+          clerkId: userId,
+          email: `${userId}@temp.com`, // Temporary email, will be updated later
+          role: "CONTENT_CREATOR"
+        },
+        include: {
+          organizationMemberships: true
+        }
+      });
+      console.log('Created new user:', user);
+    }
+
+    // Check if user has reached organization limit
+    const MAX_ORGANIZATIONS = 3;
+    if (user.organizationMemberships.length >= MAX_ORGANIZATIONS) {
       return NextResponse.json(
-        { error: "Name and slug are required" },
+        { error: "You have reached the maximum number of organizations allowed" },
         { status: 400 }
       );
     }
 
-    // Create organization and add user as member
-    const organization = await db.organization.create({
-      data: {
-        name,
-        slug,
-        website,
-        logoUrl,
-        primaryColor,
-        members: {
-          create: {
-            userId,
-            role: "ADMIN"
-          }
-        }
-      }
-    });
+    // Parse and validate request body
+    const body = await req.json();
+    console.log('Request body:', body);
+    
+    try {
+      const validatedData = createOrganizationSchema.parse(body);
+      console.log('Validated data:', validatedData);
 
-    return NextResponse.json(organization, { status: 201 });
+      // Check if slug is already taken
+      const existingOrg = await prisma.organization.findFirst({
+        where: { slug: validatedData.slug }
+      });
+
+      if (existingOrg) {
+        return NextResponse.json(
+          { error: "This organization slug is already taken" },
+          { status: 400 }
+        );
+      }
+
+      // Create organization and add user as admin
+      console.log('Creating organization with data:', {
+        name: validatedData.name,
+        slug: validatedData.slug,
+        website: validatedData.website || null,
+        clerkOrganizationId: validatedData.clerkOrganizationId,
+      });
+
+      const organization = await prisma.organization.create({
+        data: {
+          name: validatedData.name,
+          slug: validatedData.slug,
+          website: validatedData.website || null,
+          clerkOrganizationId: validatedData.clerkOrganizationId,
+          members: {
+            create: {
+              userId: user.id,
+              role: "ADMIN"
+            }
+          }
+        },
+        include: {
+          members: true
+        }
+      });
+
+      console.log('Created organization:', organization);
+      return NextResponse.json(organization, { status: 201 });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        console.error("Validation error:", error.errors);
+        return NextResponse.json(
+          { error: "Invalid input", details: error.errors },
+          { status: 400 }
+        );
+      }
+      throw error;
+    }
   } catch (error) {
     console.error("Error creating organization:", error);
     return NextResponse.json(
-      { error: "Failed to create organization" },
+      { error: "Failed to create organization", details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

@@ -1,10 +1,12 @@
 import { db } from '@/lib/db';
 import { z } from 'zod';
 import { randomBytes } from 'crypto';
+import { Subscription } from "@prisma/client";
+import { sendInvitationEmail } from '@/lib/email';
 
 // Validation schemas
 const organizationSettingsSchema = z.object({
-  name: z.string().min(1).max(100).transform(val => val.trim()),
+  name: z.string().min(1, "Name is required").max(100).transform(val => val.trim()),
   website: z.string().refine((val) => {
     if (!val) return true; // Allow empty values
     // Accept either a full URL or just a domain name
@@ -27,7 +29,8 @@ const organizationSettingsSchema = z.object({
     // Otherwise, prepend https://
     return `https://${val}`;
   }).optional(),
-  logoUrl: z.string().url().optional(),
+  logoUrl: z.string().url("Invalid logo URL format").optional(),
+  slug: z.string().min(1, "Slug is required").max(100).optional(),
 });
 
 const memberRoleSchema = z.object({
@@ -35,9 +38,18 @@ const memberRoleSchema = z.object({
   role: z.enum(['ADMIN', 'MEMBER', 'VIEWER']),
 });
 
+const memberSchema = z.object({
+  userId: z.string(),
+  role: z.enum(['ADMIN', 'MEMBER', 'VIEWER']),
+});
+
+const subscriptionPlanSchema = z.enum(['free', 'pro', 'enterprise']);
+
 export class OrganizationService {
+  private prisma = db;
+
   async getOrganization(organizationId: string) {
-    return db.organization.findUnique({
+    return this.prisma.organization.findUnique({
       where: { id: organizationId },
       include: {
         members: {
@@ -45,7 +57,103 @@ export class OrganizationService {
             user: true,
           },
         },
-        subscription: true,
+      },
+    });
+  }
+
+  async updateOrganization(organizationId: string, data: z.infer<typeof organizationSettingsSchema>) {
+    // Validate the input data
+    const validatedData = organizationSettingsSchema.parse(data);
+
+    return this.prisma.organization.update({
+      where: { id: organizationId },
+      data: validatedData,
+    });
+  }
+
+  async getMembers(organizationId: string) {
+    return this.prisma.organizationMember.findMany({
+      where: { organizationId },
+      include: {
+        user: true,
+      },
+    });
+  }
+
+  async addMember(organizationId: string, data: z.infer<typeof memberSchema>) {
+    const validatedData = memberSchema.parse(data);
+    return this.prisma.organizationMember.create({
+      data: {
+        ...validatedData,
+        organizationId,
+      },
+      include: {
+        user: true,
+      },
+    });
+  }
+
+  async updateMember(organizationId: string, userId: string, role: string) {
+    // Validate the role
+    const validatedRole = z.enum(['ADMIN', 'MEMBER', 'VIEWER']).parse(role);
+
+    return this.prisma.organizationMember.update({
+      where: {
+        userId_organizationId: {
+          userId,
+          organizationId,
+        },
+      },
+      data: { role: validatedRole },
+      include: {
+        user: true,
+      },
+    });
+  }
+
+  async removeMember(organizationId: string, userId: string) {
+    return this.prisma.organizationMember.delete({
+      where: {
+        userId_organizationId: {
+          userId,
+          organizationId,
+        },
+      },
+    });
+  }
+
+  async getSubscription(organizationId: string): Promise<Subscription | null> {
+    return this.prisma.subscription.findUnique({
+      where: { organizationId },
+    });
+  }
+
+  async updateSubscription(organizationId: string, plan: string): Promise<Subscription> {
+    // Validate the plan
+    const validatedPlan = subscriptionPlanSchema.parse(plan);
+
+    const planPrices: Record<string, number> = {
+      free: 0,
+      pro: 29,
+      enterprise: 99,
+    };
+
+    return this.prisma.subscription.upsert({
+      where: { organizationId },
+      update: {
+        plan: validatedPlan,
+        updatedAt: new Date(),
+        price: planPrices[validatedPlan],
+      },
+      create: {
+        organizationId,
+        plan: validatedPlan,
+        status: "active",
+        startDate: new Date(),
+        price: planPrices[validatedPlan],
+        currency: "USD",
+        billingCycle: "MONTHLY",
+        cancelAtPeriodEnd: false,
       },
     });
   }
@@ -131,36 +239,6 @@ export class OrganizationService {
     }
   }
 
-  async getMembers(organizationId: string) {
-    return db.organizationMember.findMany({
-      where: { organizationId },
-      include: {
-        user: true,
-      },
-    });
-  }
-
-  async updateMemberRole(organizationId: string, memberId: string, role: string) {
-    return db.organizationMember.update({
-      where: {
-        id: memberId,
-        organizationId,
-      },
-      data: {
-        role,
-      },
-    });
-  }
-
-  async removeMember(organizationId: string, memberId: string) {
-    return db.organizationMember.delete({
-      where: {
-        id: memberId,
-        organizationId,
-      },
-    });
-  }
-
   async inviteMember(organizationId: string, email: string, role: string) {
     const validatedData = memberRoleSchema.parse({ email, role });
 
@@ -178,33 +256,25 @@ export class OrganizationService {
       },
     });
 
-    // TODO: Send invitation email
-    // This would typically integrate with your email service
+    // Get organization name for the email
+    const organization = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { name: true },
+    });
+
+    if (!organization) {
+      throw new Error('Organization not found');
+    }
+
+    // Send invitation email
+    await sendInvitationEmail({
+      email: validatedData.email,
+      token,
+      organizationName: organization.name,
+      role: validatedData.role,
+    });
 
     return invitation;
-  }
-
-  async getSubscription(organizationId: string) {
-    return db.subscription.findUnique({
-      where: { organizationId },
-    });
-  }
-
-  async updateSubscription(organizationId: string, subscriptionData: {
-    plan: string;
-    status: string;
-    billingCycle: string;
-    price: number;
-  }) {
-    return db.subscription.upsert({
-      where: { organizationId },
-      update: subscriptionData,
-      create: {
-        ...subscriptionData,
-        organizationId,
-        startDate: new Date(),
-      },
-    });
   }
 
   async getBillingHistory(organizationId: string) {

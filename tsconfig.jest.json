@@ -4,9 +4,9 @@
     "jsx": "react-jsx",
     "esModuleInterop": true,
     "module": "commonjs",
-    "baseUrl": ".",
+    "baseUrl": "src",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["*"]
     }
   },
   "include": [

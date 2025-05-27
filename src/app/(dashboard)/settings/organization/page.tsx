@@ -13,6 +13,8 @@ import * as z from "zod";
 import { OrganizationMembers } from "@/components/organization/organization-members";
 import { OrganizationBilling } from "@/components/organization/organization-billing";
 import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useOrganization } from "@clerk/nextjs";
 
 const organizationSchema = z.object({
   name: z.string().min(2, "Organization name must be at least 2 characters"),
@@ -34,6 +36,8 @@ const tabs = [
 
 export default function OrganizationSettingsPage() {
   const { toast } = useToast();
+  const router = useRouter();
+  const { organization, isLoaded } = useOrganization();
   const [activeTab, setActiveTab] = useState("general");
   const [isDirty, setIsDirty] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,6 +51,13 @@ export default function OrganizationSettingsPage() {
 
   // Track form changes
   const subscription = organizationForm.watch(() => setIsDirty(true));
+
+  // Check if user has an organization and redirect if not
+  useEffect(() => {
+    if (isLoaded && !organization) {
+      router.push('/create-organization');
+    }
+  }, [isLoaded, organization, router]);
 
   // Fetch organization data on mount
   useEffect(() => {
@@ -73,8 +84,10 @@ export default function OrganizationSettingsPage() {
       }
     };
 
-    fetchOrganizationData();
-  }, []);
+    if (organization) {
+      fetchOrganizationData();
+    }
+  }, [organization, organizationForm, toast]);
 
   const handleOrganizationSubmit = async (data: z.infer<typeof organizationSchema>) => {
     if (!organizationId) {
@@ -119,6 +132,18 @@ export default function OrganizationSettingsPage() {
       setIsSubmitting(false);
     }
   };
+
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!organization) {
+    return null; // Will redirect in useEffect
+  }
 
   return (
     <div className="space-y-6 p-4 md:p-6">

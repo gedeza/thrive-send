@@ -13,11 +13,13 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 import { CalendarIcon, ImageIcon, Loader2, Plus, X, Facebook, Twitter, Instagram, Linkedin, Upload } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { RichTextEditor } from '@/components/rich-text-editor';
 import { ContentType, SocialPlatform, CalendarEvent, SocialMediaContent } from './content-calendar';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useTimezone } from "@/hooks/use-timezone";
 
 interface EventFormProps {
   initialData?: Partial<CalendarEvent>;
@@ -425,6 +427,7 @@ export function EventForm({
   onContentTypeChange,
 }: EventFormProps) {
   const router = useRouter();
+  const userTimezone = useTimezone();
   const [formData, setFormData] = useState<FormData>(() => {
     if (initialData) {
       const { socialMediaContent, ...rest } = initialData;
@@ -480,6 +483,10 @@ export function EventForm({
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const formatDate = (date: Date, format: string) => {
+    return formatInTimeZone(date, userTimezone, format);
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -489,7 +496,7 @@ export function EventForm({
     if (date) {
       setFormData(prev => ({
         ...prev,
-        date: date.toISOString()
+        date: formatDate(date, "yyyy-MM-dd")
       }));
     }
   };
@@ -977,7 +984,7 @@ export function EventForm({
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {formData.date ? (
-                  format(new Date(formData.date), 'PPP')
+                  formatDate(new Date(formData.date), 'PPP')
                 ) : (
                   <span>Pick a date</span>
                 )}
@@ -1043,7 +1050,7 @@ export function EventForm({
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {formData.date ? (
-                        format(new Date(formData.date), "PPP")
+                        formatDate(new Date(formData.date), "PPP")
                       ) : (
                         <span>Pick a date</span>
                       )}

@@ -1,4 +1,4 @@
-import { authMiddleware } from "@clerk/nextjs";
+import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { Ratelimit } from "@upstash/ratelimit";
@@ -44,8 +44,20 @@ async function checkRoleAccess(request: NextRequest, userId: string) {
     allowedPaths.some(path => request.nextUrl.pathname.startsWith(path));
 }
 
-export default authMiddleware({
-  async beforeAuth(request) {
+// Check if user has an organization
+async function checkOrganizationAccess(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { clerkId: userId },
+    include: {
+      organizationMemberships: true
+    }
+  });
+
+  return user?.organizationMemberships && user.organizationMemberships.length > 0;
+}
+
+export default clerkMiddleware({
+  async beforeAuth(request: NextRequest) {
     // Rate limiting
     const ip = request.ip ?? "127.0.0.1";
     const { success, limit, reset, remaining } = await ratelimit.limit(ip);
@@ -64,10 +76,35 @@ export default authMiddleware({
     return null;
   },
 
-  async afterAuth(auth, req) {
+  async afterAuth(auth, req: NextRequest) {
     // Handle authentication
     if (!auth.userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Define public routes that don't require organization check
+    const publicRoutes = [
+      '/',
+      '/sign-in',
+      '/sign-up',
+      '/organization',
+      '/create-organization',
+      '/api/webhook',
+      '/api/public'
+    ];
+
+    // Check if the current route is public
+    const isPublicRoute = publicRoutes.some(route => 
+      req.nextUrl.pathname.startsWith(route)
+    );
+
+    // If not a public route, check for organization access
+    if (!isPublicRoute) {
+      const hasOrganization = await checkOrganizationAccess(auth.userId);
+      if (!hasOrganization) {
+        // Redirect to organization selection page if no organization exists
+        return NextResponse.redirect(new URL('/organization', req.url));
+      }
     }
 
     // Check role-based access
