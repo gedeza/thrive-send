@@ -7,7 +7,7 @@ export default function SignUpPage() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2">Create Account</h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Join ThriveSend and start managing your social media presence
+            Join ThriveSend and start managing your content calendar
           </p>
         </div>
         <SignUp 
@@ -20,7 +20,7 @@ export default function SignUpPage() {
             },
           }}
           signInUrl="/sign-in"
-          redirectUrl="/create-organization"
+          redirectUrl="/content/calendar"
         />
       </div>
     </div>

@@ -647,24 +647,28 @@ model ContentAnalytics {
 }
 
 model CalendarEvent {
-  id                String       @id @default(cuid())
+  id                String   @id @default(cuid())
   title             String
   description       String?
-  date              String
-  time              String?
-  type              String
-  status            String
-  contentType       String?
+  startTime         DateTime
+  endTime           DateTime
+  type              String   // 'social' | 'blog' | 'email' | 'custom'
+  status            String   // 'draft' | 'scheduled' | 'published' | 'sent' | 'failed'
   socialMediaContent Json?
-  userId            String
+  blogPost          Json?
+  emailCampaign     Json?
+  customContent     Json?
+  analytics         Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  createdBy         String
   organizationId    String
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
-  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
   @@index([organizationId])
+  @@index([createdBy])
+  @@index([startTime])
+  @@index([type])
+  @@index([status])
 }
 
 model ContentApproval {

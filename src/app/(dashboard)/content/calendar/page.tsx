@@ -1,134 +1,74 @@
 "use client";
 
-import { ContentCalendar } from "@/components/content/content-calendar";
-import { CalendarEvent } from "@/components/content/content-calendar";
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { listContent } from "@/lib/api/content-service";
+import { ContentCalendar } from "@/components/content/content-calendar";
+import { WelcomeFlow } from "@/components/onboarding/welcome-flow";
+import { CalendarEvent } from "@/types/calendar";
+import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from "@/lib/api/calendar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Search, Filter, Calendar as CalendarIcon, List, Grid, Settings } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function CalendarPage() {
   const { toast } = useToast();
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [isFirstVisit, setIsFirstVisit] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
+  const [filterType, setFilterType] = useState<string>("all");
+
+  useEffect(() => {
+    // Check if this is the user's first visit
+    const hasVisited = localStorage.getItem('has_visited_calendar');
+    if (!hasVisited) {
+      setIsFirstVisit(true);
+      setShowWelcome(true);
+      localStorage.setItem('has_visited_calendar', 'true');
+    }
+  }, []);
 
   const fetchEvents = useCallback(async (): Promise<CalendarEvent[]> => {
     try {
-      setIsLoading(true);
-      console.log('Fetching content...');
-      const response = await listContent({});
-      console.log('Content response:', response);
-
-      if (!response.content || !Array.isArray(response.content)) {
-        console.error('Invalid content response:', response);
-        throw new Error('Invalid content response format');
+      const response = await fetch('/api/calendar/events');
+      if (!response.ok) {
+        throw new Error('Failed to fetch events');
       }
-
-      const calendarEvents: CalendarEvent[] = response.content.map(content => {
-        console.log('Processing content:', content);
-        
-        // Map content type to calendar event type
-        let eventType: CalendarEvent['type'];
-        switch (content.type) {
-          case 'article':
-          case 'blog':
-            eventType = 'blog';
-            break;
-          case 'social':
-            eventType = 'social';
-            break;
-          case 'email':
-            eventType = 'email';
-            break;
-          default:
-            eventType = 'other';
-        }
-
-        // Map content status to calendar event status
-        let eventStatus: CalendarEvent['status'];
-        switch (content.status) {
-          case 'published':
-            eventStatus = 'sent';
-            break;
-          case 'archived':
-            eventStatus = 'failed';
-            break;
-          case 'scheduled':
-            eventStatus = 'scheduled';
-            break;
-          default:
-            eventStatus = 'draft';
-        }
-
-        // Parse media content if it exists
-        let socialMediaContent;
-        try {
-          socialMediaContent = content.media ? JSON.parse(content.media as string) : {
-            platforms: [],
-            mediaUrls: [],
-            crossPost: false,
-            platformSpecificContent: {}
-          };
-        } catch (error) {
-          console.error('Error parsing media content:', error);
-          socialMediaContent = {
-            platforms: [],
-            mediaUrls: [],
-            crossPost: false,
-            platformSpecificContent: {}
-          };
-        }
-
-        const event: CalendarEvent = {
-          id: content.id,
-          title: content.title,
-          description: content.content,
-          type: eventType,
-          status: eventStatus,
-          date: content.scheduledAt || content.createdAt,
-          time: content.scheduledAt ? new Date(content.scheduledAt).toLocaleTimeString() : undefined,
-          socialMediaContent,
-          analytics: {
-            lastUpdated: new Date().toISOString()
-          }
-        };
-
-        console.log('Created calendar event:', event);
-        return event;
-      });
-
-      console.log('Setting events:', calendarEvents);
-      setEvents(calendarEvents);
-      return calendarEvents;
+      const data = await response.json();
+      return data.events;
     } catch (error) {
-      console.error('Error fetching content:', error);
+      console.error('Error fetching events:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch content",
+        description: "Failed to load calendar events",
         variant: "destructive",
       });
-      throw error;
-    } finally {
-      setIsLoading(false);
+      return [];
     }
   }, [toast]);
 
-  useEffect(() => {
-    fetchEvents();
-  }, [fetchEvents]);
-
   const handleEventCreate = async (event: Omit<CalendarEvent, "id">) => {
     try {
-      // Here you would typically make an API call to save the event
-      const newEvent: CalendarEvent = {
-        ...event,
-        id: crypto.randomUUID(),
-      };
-      setEvents(prev => [...prev, newEvent]);
+      const newEvent = await createCalendarEvent(event);
+      toast({
+        title: "Success",
+        description: "Event created successfully",
+      });
       return newEvent;
     } catch (error) {
+      console.error("Failed to create event:", error);
       toast({
         title: "Error",
-        description: "Failed to create event",
+        description: error instanceof Error ? error.message : "Failed to create event",
         variant: "destructive",
       });
       throw error;
@@ -137,13 +77,17 @@ export default function CalendarPage() {
 
   const handleEventUpdate = async (event: CalendarEvent) => {
     try {
-      // Here you would typically make an API call to update the event
-      setEvents(prev => prev.map(e => e.id === event.id ? event : e));
-      return event;
+      const updatedEvent = await updateCalendarEvent(event);
+      toast({
+        title: "Success",
+        description: "Event updated successfully",
+      });
+      return updatedEvent;
     } catch (error) {
+      console.error("Failed to update event:", error);
       toast({
         title: "Error",
-        description: "Failed to update event",
+        description: error instanceof Error ? error.message : "Failed to update event",
         variant: "destructive",
       });
       throw error;
@@ -152,13 +96,17 @@ export default function CalendarPage() {
 
   const handleEventDelete = async (eventId: string) => {
     try {
-      // Here you would typically make an API call to delete the event
-      setEvents(prev => prev.filter(e => e.id !== eventId));
+      await deleteCalendarEvent(eventId);
+      toast({
+        title: "Success",
+        description: "Event deleted successfully",
+      });
       return true;
     } catch (error) {
+      console.error("Failed to delete event:", error);
       toast({
         title: "Error",
-        description: "Failed to delete event",
+        description: error instanceof Error ? error.message : "Failed to delete event",
         variant: "destructive",
       });
       throw error;
@@ -166,14 +114,121 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="container mx-auto py-6">
-      <ContentCalendar
-        events={events}
-        onEventCreate={handleEventCreate}
-        onEventUpdate={handleEventUpdate}
-        onEventDelete={handleEventDelete}
-        fetchEvents={fetchEvents}
-      />
+    <div className="px-8 py-8">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-1">Content Calendar</h1>
+          <p className="text-muted-foreground text-base">Schedule and manage your content publishing</p>
+        </div>
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            className="font-medium"
+            onClick={() => router.push("/analytics")}
+          >
+            View Analytics
+          </Button>
+          <Button
+            className="bg-primary text-primary-foreground font-semibold"
+            onClick={() => router.push("/content/new")}
+          >
+            + Create Content
+          </Button>
+        </div>
+      </div>
+
+      <div className="mb-6">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search content..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Filter className="h-4 w-4" />
+                Filter
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setFilterType("all")}>
+                All Content
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFilterType("social")}>
+                Social Media
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFilterType("blog")}>
+                Blog Posts
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFilterType("email")}>
+                Email Campaigns
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <div className="flex items-center gap-2">
+            <Button
+              variant={viewMode === "calendar" ? "default" : "outline"}
+              size="icon"
+              onClick={() => setViewMode("calendar")}
+            >
+              <CalendarIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "default" : "outline"}
+              size="icon"
+              onClick={() => setViewMode("list")}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+          <Button variant="outline" size="icon">
+            <Settings className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <Tabs defaultValue="calendar" value={viewMode} onValueChange={(v) => setViewMode(v as "calendar" | "list")}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="calendar" className="gap-2">
+            <CalendarIcon className="h-4 w-4" />
+            Calendar View
+          </TabsTrigger>
+          <TabsTrigger value="list" className="gap-2">
+            <List className="h-4 w-4" />
+            List View
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="calendar">
+          <ContentCalendar
+            onEventCreate={handleEventCreate}
+            onEventUpdate={handleEventUpdate}
+            onEventDelete={handleEventDelete}
+            fetchEvents={fetchEvents}
+          />
+        </TabsContent>
+
+        <TabsContent value="list">
+          <div className="rounded-lg border bg-card">
+            {/* List view implementation */}
+            <div className="p-4">
+              <p className="text-muted-foreground">List view coming soon...</p>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {isFirstVisit && (
+        <WelcomeFlow
+          isOpen={showWelcome}
+          onClose={() => setShowWelcome(false)}
+        />
+      )}
     </div>
   );
 } 

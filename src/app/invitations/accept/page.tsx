@@ -40,7 +40,7 @@ export default function AcceptInvitationPage() {
         description: "Invitation accepted successfully",
       });
 
-      router.push("/dashboard");
+      router.push("/content/calendar");
     } catch (error) {
       toast({
         title: "Error",

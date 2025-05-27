@@ -97,7 +97,7 @@ export default function OrganizationPage() {
       
       if (setActive) {
         await setActive({ organization: orgId });
-        router.push('/dashboard');
+        router.push('/content/calendar');
       }
     } catch (error) {
       console.error('Failed to set active organization:', error);

@@ -32,7 +32,7 @@ export function SignInForm() {
         return;
       }
 
-      router.push('/dashboard');
+      router.push('/content/calendar');
       router.refresh();
     } catch (error) {
       setError('An error occurred. Please try again.');

@@ -1,4 +1,4 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
+import { authMiddleware } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { Ratelimit } from "@upstash/ratelimit";
@@ -56,126 +56,48 @@ async function checkOrganizationAccess(userId: string) {
   return user?.organizationMemberships && user.organizationMemberships.length > 0;
 }
 
-export default clerkMiddleware({
-  async beforeAuth(request: NextRequest) {
-    // Rate limiting
-    const ip = request.ip ?? "127.0.0.1";
-    const { success, limit, reset, remaining } = await ratelimit.limit(ip);
+// Define public routes that don't require authentication
+const publicRoutes = [
+  '/',
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+  '/api/webhook(.*)',
+  '/api/public(.*)'
+];
 
-    if (!success) {
-      return new NextResponse("Too Many Requests", {
-        status: 429,
-        headers: {
-          "X-RateLimit-Limit": limit.toString(),
-          "X-RateLimit-Remaining": remaining.toString(),
-          "X-RateLimit-Reset": reset.toString(),
-        },
-      });
-    }
-
-    return null;
-  },
-
+export default authMiddleware({
+  publicRoutes,
   async afterAuth(auth, req: NextRequest) {
     // Handle authentication
-    if (!auth.userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!auth.userId && !publicRoutes.some(route => req.nextUrl.pathname.match(new RegExp(`^${route}$`)))) {
+      const signInUrl = new URL('/sign-in', req.url);
+      signInUrl.searchParams.set('redirect_url', req.url);
+      return NextResponse.redirect(signInUrl);
     }
 
-    // Define public routes that don't require organization check
-    const publicRoutes = [
-      '/',
-      '/sign-in',
-      '/sign-up',
-      '/organization',
-      '/create-organization',
-      '/api/webhook',
-      '/api/public'
-    ];
+    // If the user is signed in and trying to access a public route,
+    // redirect them to the content calendar
+    if (auth.userId && publicRoutes.some(route => req.nextUrl.pathname.match(new RegExp(`^${route}$`)))) {
+      return NextResponse.redirect(new URL('/content/calendar', req.url));
+    }
 
-    // Check if the current route is public
-    const isPublicRoute = publicRoutes.some(route => 
-      req.nextUrl.pathname.startsWith(route)
-    );
-
-    // If not a public route, check for organization access
-    if (!isPublicRoute) {
+    // Check organization access for protected routes
+    if (auth.userId && !publicRoutes.some(route => req.nextUrl.pathname.match(new RegExp(`^${route}$`)))) {
       const hasOrganization = await checkOrganizationAccess(auth.userId);
       if (!hasOrganization) {
-        // Redirect to organization selection page if no organization exists
         return NextResponse.redirect(new URL('/organization', req.url));
       }
     }
 
-    // Check role-based access
-    const hasAccess = await checkRoleAccess(req, auth.userId);
-    if (!hasAccess) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    // Redirect root path to content calendar
+    if (auth.userId && req.nextUrl.pathname === '/') {
+      return NextResponse.redirect(new URL('/content/calendar', req.url));
     }
 
-    console.log("Middleware: Starting afterAuth with auth:", {
-      userId: auth.userId,
-      sessionId: auth.sessionId,
-      orgId: auth.orgId,
-    });
-
-    // If the user is signed in, ensure they exist in our database
-    if (auth.userId) {
-      try {
-        console.log("Middleware: Checking for user with clerkId:", auth.userId);
-        
-        // Check if user exists
-        const user = await prisma.user.findUnique({
-          where: { clerkId: auth.userId },
-        });
-
-        // If user doesn't exist, create them
-        if (!user) {
-          const userData = {
-            clerkId: auth.userId,
-            email: auth.sessionClaims?.email,
-            name: `${auth.sessionClaims?.firstName || ''} ${auth.sessionClaims?.lastName || ''}`.trim(),
-          };
-          
-          console.log("Middleware: Creating new user with data:", userData);
-
-          try {
-            const newUser = await prisma.user.create({
-              data: userData,
-            });
-            console.log("Middleware: Successfully created new user:", newUser);
-          } catch (createError) {
-            console.error("Middleware: Failed to create user:", {
-              error: createError,
-              userData,
-              stack: createError instanceof Error ? createError.stack : undefined,
-            });
-            throw createError; // Re-throw to handle it in the outer catch
-          }
-        } else {
-          console.log("Middleware: Found existing user:", user);
-        }
-      } catch (error) {
-        console.error("Middleware: Error in user creation/check:", {
-          error,
-          stack: error instanceof Error ? error.stack : undefined,
-          auth: {
-            userId: auth.userId,
-            sessionId: auth.sessionId,
-            orgId: auth.orgId,
-          },
-        });
-        // Don't throw the error, just log it
-        // This ensures the request continues even if user creation fails
-      }
-    } else {
-      console.log("Middleware: No userId in auth object");
-    }
-
-    return null;
-  },
+    return NextResponse.next();
+  }
 });
 
 export const config = {
-  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
+  matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],
 }; 
