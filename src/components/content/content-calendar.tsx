@@ -30,6 +30,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, parseISO, startOfWeek, endOfWeek, addDays, addHours, setHours, setMinutes } from "date-fns";
+import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 import { useToast } from "@/components/ui/use-toast";
 import {
   Popover,
@@ -51,6 +52,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { EventForm } from './EventForm';
 import { EventDetails } from './EventDetails';
+import { useTimezone } from "@/hooks/use-timezone";
 
 // Enhanced content type definitions
 export type SocialPlatform = 'FACEBOOK' | 'TWITTER' | 'INSTAGRAM' | 'LINKEDIN';
@@ -114,7 +116,7 @@ export interface ContentCalendarProps {
 type CalendarView = "month" | "week" | "day";
 
 // Color mapping for event types
-const eventTypeColorMap = {
+export const eventTypeColorMap = {
   email: {
     bg: "bg-[var(--color-chart-blue)]/10",
     text: "text-[var(--color-chart-blue)]"
@@ -346,9 +348,14 @@ export function ContentCalendar({
   fetchEvents
 }: ContentCalendarProps) {
   const { toast } = useToast();
+  const userTimezone = useTimezone();
+  
   // State
   const [events, setEvents] = useState<CalendarEvent[]>(initialEvents);
-  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [currentDate, setCurrentDate] = useState<Date>(() => {
+    const now = new Date();
+    return toZonedTime(now, userTimezone);
+  });
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [calendarView, setCalendarView] = useState<CalendarView>("month");
@@ -376,13 +383,18 @@ export function ContentCalendar({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<CalendarEvent | null>(null);
   const [showEventDetails, setShowEventDetails] = useState(false);
+  const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
+  const [pendingDialogClose, setPendingDialogClose] = useState(false);
 
   // Calculate days to display based on current month
   const daysInMonth = React.useMemo(() => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
-    return eachDayOfInterval({ start: monthStart, end: monthEnd });
-  }, [currentDate]);
+    const startDate = startOfWeek(monthStart);
+    const endDate = endOfWeek(monthEnd);
+    const days = eachDayOfInterval({ start: startDate, end: endDate });
+    return days.map(day => toZonedTime(day, userTimezone));
+  }, [currentDate, userTimezone]);
 
   // Load events
   const loadEvents = async () => {
@@ -435,7 +447,7 @@ export function ContentCalendar({
 
   // Reset form when dialog opens/closes
   useEffect(() => {
-    if (!isCreateDialogOpen && !isEditDialogOpen) {
+    if (!isCreateDialogOpen && !isEditDialogOpen && !pendingDialogClose) {
       setSelectedEvent(null);
       setNewEvent({
         title: "",
@@ -451,7 +463,7 @@ export function ContentCalendar({
         }
       });
     }
-  }, [isCreateDialogOpen, isEditDialogOpen]);
+  }, [isCreateDialogOpen, isEditDialogOpen, pendingDialogClose]);
 
   // Handle creating a new event
   const handleCreateEvent = async (eventData: Omit<CalendarEvent, 'id'>) => {
@@ -500,24 +512,76 @@ export function ContentCalendar({
     });
   }, [events, searchTerm, selectedType, selectedStatus]);
 
-  // Update getEventsForDay to use filteredEvents
+  // Update getEventsForDay to use timezone-aware comparison
   const getEventsForDay = (day: Date) => {
-    const dayStr = format(day, "yyyy-MM-dd");
-    return filteredEvents.filter(event => event.date.startsWith(dayStr));
-  };
-
-  // Update getEventsForTimeRange to use filteredEvents
-  const getEventsForTimeRange = (start: Date, end: Date) => {
+    const dayStr = formatInTimeZone(day, userTimezone, "yyyy-MM-dd");
     return filteredEvents.filter(event => {
       const eventDate = parseISO(event.date);
-      const eventTime = event.time ? parseISO(`${event.date}T${event.time}`) : eventDate;
-      return eventTime >= start && eventTime <= end;
+      const eventDateStr = formatInTimeZone(eventDate, userTimezone, "yyyy-MM-dd");
+      return eventDateStr === dayStr;
     });
+  };
+
+  // Update getEventsForTimeRange to use timezone-aware comparison
+  const getEventsForTimeRange = (start: Date, end: Date) => {
+    try {
+      const startStr = formatInTimeZone(start, userTimezone, "yyyy-MM-dd'T'HH:mm:ss");
+      const endStr = formatInTimeZone(end, userTimezone, "yyyy-MM-dd'T'HH:mm:ss");
+      
+      return filteredEvents.filter(event => {
+        try {
+          const eventDate = parseISO(event.date);
+          if (isNaN(eventDate.getTime())) {
+            console.error('Invalid event date:', event.date);
+            return false;
+          }
+
+          // Format the time string properly if it exists
+          let eventTime;
+          if (event.time) {
+            try {
+              // Parse the time string and ensure it's in HH:mm format
+              const [hours, minutes] = event.time.split(':').map(Number);
+              if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+                console.error('Invalid time values:', event.time);
+                return false;
+              }
+              const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+              eventTime = parseISO(`${event.date}T${formattedTime}:00`);
+            } catch (timeError) {
+              console.error('Error parsing time:', timeError);
+              return false;
+            }
+          } else {
+            eventTime = eventDate;
+          }
+
+          if (isNaN(eventTime.getTime())) {
+            console.error('Invalid event time:', event.time);
+            return false;
+          }
+
+          const eventStr = formatInTimeZone(eventTime, userTimezone, "yyyy-MM-dd'T'HH:mm:ss");
+          return eventStr >= startStr && eventStr <= endStr;
+        } catch (error) {
+          console.error('Error processing event:', error);
+          return false;
+        }
+      });
+    } catch (error) {
+      console.error('Error in getEventsForTimeRange:', error);
+      return [];
+    }
   };
 
   // Add a search handler to ensure immediate updates
   const handleSearch = (value: string) => {
     setSearchTerm(value);
+  };
+
+  // Update date formatting to use user's timezone
+  const formatDate = (date: Date, format: string) => {
+    return formatInTimeZone(date, userTimezone, format);
   };
 
   // Render day view
@@ -535,14 +599,26 @@ export function ContentCalendar({
             const hourStart = setHours(currentDate, hour);
             const hourEnd = setHours(currentDate, hour + 1);
             const hourEvents = dayEvents.filter(event => {
-              const eventTime = event.time ? parseISO(`${event.date}T${event.time}`) : parseISO(event.date);
-              return eventTime >= hourStart && eventTime < hourEnd;
+              try {
+                if (!event.time) {
+                  return false;
+                }
+                const [hours, minutes] = event.time.split(':').map(Number);
+                if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+                  return false;
+                }
+                const eventTime = parseISO(`${event.date}T${event.time}:00`);
+                return eventTime >= hourStart && eventTime < hourEnd;
+              } catch (error) {
+                console.error('Error processing event time:', error);
+                return false;
+              }
             });
 
             return (
               <div key={hour} className="relative min-h-[60px] p-2">
                 <div className="absolute left-0 top-0 w-16 text-sm text-muted-foreground">
-                  {format(hourStart, "h:mm a")}
+                  {formatDate(hourStart, "h:mm a")}
                 </div>
                 <div className="ml-16">
                   {hourEvents.map((event) => (
@@ -559,7 +635,7 @@ export function ContentCalendar({
                       <div className="font-medium">{event.title}</div>
                       {event.time && (
                         <div className="text-xs text-muted-foreground">
-                          {format(parseISO(`${event.date}T${event.time}`), "h:mm a")}
+                          {event.time.substring(0, 5)}
                         </div>
                       )}
                     </div>
@@ -590,7 +666,7 @@ export function ContentCalendar({
             </div>
             {hours.map((hour) => (
               <div key={hour} className="h-20 border-b p-1 text-xs text-muted-foreground">
-                {format(setHours(currentDate, hour), "h:mm a")}
+                {formatDate(setHours(currentDate, hour), "h:mm a")}
               </div>
             ))}
           </div>
@@ -604,9 +680,9 @@ export function ContentCalendar({
               <div key={day.toISOString()} className="relative">
                 {/* Day header */}
                 <div className={`h-12 border-b p-2 text-center ${isToday ? "bg-primary/5" : ""}`}>
-                  <div className="font-medium">{format(day, "EEE")}</div>
+                  <div className="font-medium">{formatDate(day, "EEE")}</div>
                   <div className={`text-sm ${isToday ? "text-primary font-bold" : "text-muted-foreground"}`}>
-                    {format(day, "MMM d")}
+                    {formatDate(day, "MMM d")}
                   </div>
                 </div>
                 
@@ -620,29 +696,40 @@ export function ContentCalendar({
                 {/* Positioned events */}
                 <div className="absolute top-12 left-0 right-0 bottom-0 pointer-events-none">
                   {dayEvents.map((event) => {
-                    const eventTime = event.time || "00:00";
-                    const [hours, minutes] = eventTime.split(":").map(Number);
-                    const topPosition = (hours * 60 + minutes) * (20 / 60); // 20px per hour
-                    
-                    return (
-                      <div
-                        key={event.id}
-                        className={cn(
-                          "absolute left-1 right-1 p-2 rounded text-xs pointer-events-auto cursor-pointer",
-                          eventTypeColorMap[event.type]?.bg || "bg-gray-100 dark:bg-gray-700/30",
-                          eventTypeColorMap[event.type]?.text || "text-foreground",
-                          "hover:opacity-80"
-                        )}
-                        style={{
-                          top: `${topPosition}px`,
-                          height: "50px"
-                        }}
-                        onClick={() => handleEventClick(event)}
-                      >
-                        <div className="font-medium truncate">{event.title}</div>
-                        <div className="text-muted-foreground">{eventTime}</div>
-                      </div>
-                    );
+                    try {
+                      if (!event.time) {
+                        return null;
+                      }
+                      const [hours, minutes] = event.time.split(':').map(Number);
+                      if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+                        console.error('Invalid time values:', event.time);
+                        return null;
+                      }
+                      const topPosition = (hours * 60 + minutes) * (20 / 60); // 20px per hour
+                      
+                      return (
+                        <div
+                          key={event.id}
+                          className={cn(
+                            "absolute left-1 right-1 p-2 rounded text-xs pointer-events-auto cursor-pointer",
+                            eventTypeColorMap[event.type]?.bg || "bg-gray-100 dark:bg-gray-700/30",
+                            eventTypeColorMap[event.type]?.text || "text-foreground",
+                            "hover:opacity-80"
+                          )}
+                          style={{
+                            top: `${topPosition}px`,
+                            height: "50px"
+                          }}
+                          onClick={() => handleEventClick(event)}
+                        >
+                          <div className="font-medium truncate">{event.title}</div>
+                          <div className="text-muted-foreground">{event.time.substring(0, 5)}</div>
+                        </div>
+                      );
+                    } catch (error) {
+                      console.error('Error processing event:', error);
+                      return null;
+                    }
                   })}
                 </div>
               </div>
@@ -849,6 +936,23 @@ export function ContentCalendar({
     }));
   };
 
+  const handleDialogClose = () => {
+    setPendingDialogClose(true);
+    setShowUnsavedChangesDialog(true);
+  };
+
+  const handleConfirmClose = () => {
+    setShowUnsavedChangesDialog(false);
+    setPendingDialogClose(false);
+    setIsCreateDialogOpen(false);
+    setIsEditDialogOpen(false);
+  };
+
+  const handleCancelClose = () => {
+    setShowUnsavedChangesDialog(false);
+    setPendingDialogClose(false);
+  };
+
   // Render loading state
   if (loading) {
     return (
@@ -883,7 +987,7 @@ export function ContentCalendar({
       </div>
 
       {/* Add/Edit Event Dialog */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+      <Dialog open={isCreateDialogOpen} onOpenChange={handleDialogClose}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create New Event</DialogTitle>
@@ -893,12 +997,16 @@ export function ContentCalendar({
           </DialogHeader>
           <EventForm
             onSubmit={handleCreateEvent}
-            onCancel={() => setIsCreateDialogOpen(false)}
+            onCancel={() => {
+              setPendingDialogClose(false);
+              setIsCreateDialogOpen(false);
+            }}
+            initialData={selectedEvent || undefined}
           />
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+      <Dialog open={isEditDialogOpen} onOpenChange={handleDialogClose}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Event</DialogTitle>
@@ -912,6 +1020,7 @@ export function ContentCalendar({
               mode="edit"
               onSubmit={handleUpdateEvent}
               onCancel={() => {
+                setPendingDialogClose(false);
                 setIsEditDialogOpen(false);
                 setSelectedEvent(null);
               }}
@@ -919,6 +1028,22 @@ export function ContentCalendar({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Unsaved Changes Dialog */}
+      <AlertDialog open={showUnsavedChangesDialog} onOpenChange={setShowUnsavedChangesDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes. Are you sure you want to close without saving?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelClose}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmClose}>Discard Changes</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Event Details Dialog */}
       <Dialog open={showEventDetails} onOpenChange={setShowEventDetails}>
@@ -1040,12 +1165,12 @@ export function ContentCalendar({
           <Button variant="outline" size="icon" onClick={() => setCurrentDate(addMonths(currentDate, 1))}>
             <ChevronRight className="h-4 w-4" />
           </Button>
-          <Button variant="outline" onClick={() => setCurrentDate(new Date())}>
+          <Button variant="outline" onClick={() => setCurrentDate(toZonedTime(new Date(), userTimezone))}>
             Today
           </Button>
         </div>
         <div className="text-lg font-medium">
-          {format(currentDate, "MMMM yyyy")}
+          {formatDate(currentDate, "MMMM yyyy")}
         </div>
       </div>
 
@@ -1072,20 +1197,39 @@ export function ContentCalendar({
               <div className="grid grid-cols-7 gap-1 auto-rows-fr" style={{ minHeight: "500px" }}>
                 {daysInMonth.map((day) => {
                   const dayEvents = getEventsForDay(day);
-                  const dayStr = format(day, "yyyy-MM-dd");
+                  const isCurrentMonth = isSameMonth(day, currentDate);
                   return (
                     <div
-                      key={dayStr}
-                      id={dayStr}
-                      className="relative"
+                      key={formatInTimeZone(day, userTimezone, "yyyy-MM-dd")}
+                      id={formatInTimeZone(day, userTimezone, "yyyy-MM-dd")}
+                      className={cn(
+                        "relative",
+                        !isCurrentMonth && "opacity-50"
+                      )}
                     >
                       <Day
                         day={day}
                         events={dayEvents}
                         onEventClick={handleEventClick}
                         onClick={() => {
+                          const selectedDate = formatInTimeZone(day, userTimezone, "yyyy-MM-dd");
                           setNewEvent(prev => ({ ...prev, start: day }));
                           setIsCreateDialogOpen(true);
+                          setSelectedEvent({
+                            id: crypto.randomUUID(),
+                            title: "",
+                            description: "",
+                            type: "email",
+                            status: "draft",
+                            date: selectedDate,
+                            time: "",
+                            socialMediaContent: {
+                              platforms: [],
+                              crossPost: false,
+                              mediaUrls: [],
+                              platformSpecificContent: {}
+                            }
+                          });
                         }}
                       />
                     </div>
