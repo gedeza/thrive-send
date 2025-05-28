@@ -67,7 +67,10 @@ const steps: WizardStep[] = [
     label: "Schedule",
     description: "Choose when you want your content to be published.",
     validation: (event) => {
-      if (!event.date) return false;
+      // If no date is provided, content can be saved as draft
+      if (!event.date || event.date === '') return true;
+      
+      // If date is provided, validate it
       const date = new Date(event.date);
       const now = new Date();
       // Allow scheduling for today or future dates
@@ -173,7 +176,7 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
     description: initialData?.description || '',
     type: initialData?.type || "blog",
     status: initialData?.status || "draft",
-    date: initialData?.date || new Date().toISOString(),
+    date: initialData?.date || '',
     time: initialData?.time || '',
     socialMediaContent: initialData?.socialMediaContent || {
       platforms: [],
@@ -476,6 +479,25 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
     });
   };
 
+  // Add function to handle saving as draft (no specific date)
+  const handleSaveAsDraft = () => {
+    setEvent(prev => ({
+      ...prev,
+      status: "draft"
+    }));
+
+    // Show success feedback
+    setFeedback({
+      type: 'success',
+      message: 'Content will be saved as draft'
+    });
+
+    // Track the draft saving
+    trackAnalytics('validation', {
+      validationErrors: []
+    });
+  };
+
   const handleComplete = async () => {
     try {
       setIsSubmitting(true);
@@ -511,7 +533,7 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
         content: event.description || '',
         tags: [],
         status: event.status?.toUpperCase() as 'DRAFT' | 'IN_REVIEW' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'APPROVED' | 'REJECTED' | 'PUBLISHED' | 'ARCHIVED',
-        scheduledAt: event.date,
+        scheduledAt: event.date && event.date !== '' ? event.date : undefined,
         media: event.socialMediaContent?.mediaUrls || []
       };
 
@@ -525,16 +547,18 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
         description: savedContent.content,
         type: savedContent.type.toLowerCase() as ContentType,
         status: savedContent.status.toLowerCase() as ContentStatus,
-        date: savedContent.scheduledAt || new Date().toISOString(),
-        time: savedContent.scheduledAt || '',
-        scheduledDate: savedContent.scheduledAt || new Date().toISOString(),
-        scheduledTime: savedContent.scheduledAt || '',
+        date: savedContent.scheduledAt || event.date || new Date().toISOString(),
+        time: event.time || (savedContent.scheduledAt ? new Date(savedContent.scheduledAt).toLocaleTimeString() : ''),
+        scheduledDate: savedContent.scheduledAt || event.date,
+        scheduledTime: event.time || (savedContent.scheduledAt ? new Date(savedContent.scheduledAt).toLocaleTimeString() : ''),
         socialMediaContent: {
           platforms: [],
           mediaUrls: savedContent.media || [],
           crossPost: false,
           platformSpecificContent: {}
-        }
+        },
+        organizationId: '', // TODO: Get from user context
+        createdBy: '' // TODO: Get from user context
       };
 
       handleSuccess('Content saved successfully!');
@@ -724,8 +748,10 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
                   <EventDetails 
                     event={{
                       ...event,
-                      scheduledDate: event.date ? new Date(event.date).toISOString() : undefined,
-                      scheduledTime: event.time
+                      scheduledDate: event.date && event.date !== '' ? event.date : undefined,
+                      scheduledTime: event.time || undefined,
+                      organizationId: event.organizationId || '',
+                      createdBy: event.createdBy || ''
                     } as CalendarEvent} 
                   />
                 </div>
