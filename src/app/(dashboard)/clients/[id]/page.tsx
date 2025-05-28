@@ -9,6 +9,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useOrganization } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import ClientAnalytics from "@/components/clients/ClientAnalytics";
 
 // Types
 type ClientType = "MUNICIPALITY" | "BUSINESS" | "STARTUP" | "INDIVIDUAL" | "NONPROFIT";
@@ -233,6 +234,9 @@ export default function ClientDetailsPage() {
           </button>
         </div>
       </div>
+
+      {/* Analytics Section */}
+      <ClientAnalytics clientId={params.id} />
 
       {/* Client Information */}
       <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
