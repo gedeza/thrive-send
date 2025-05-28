@@ -994,7 +994,10 @@ export function EventForm({
               <Calendar
                 mode="single"
                 selected={formData.date ? new Date(formData.date) : undefined}
-                onSelect={handleDateSelect}
+                onSelect={(date) => {
+                  console.log('Date selected in schedule mode:', date);
+                  handleSchedule(date);
+                }}
                 initialFocus
               />
             </PopoverContent>

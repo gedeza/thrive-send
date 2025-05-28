@@ -61,13 +61,28 @@ export async function saveContent(data: ContentFormData): Promise<ContentData> {
     console.log('Content saved successfully:', savedContent);
 
     // Create corresponding calendar event if content is scheduled or published
+    // Include draft content that has a scheduled date
     if (savedContent.scheduledAt || savedContent.status === 'PUBLISHED' || savedContent.status === 'APPROVED') {
       try {
-        await createCalendarEventFromContent(savedContent);
+        console.log('Creating calendar event for content:', {
+          title: savedContent.title,
+          status: savedContent.status,
+          scheduledAt: savedContent.scheduledAt,
+          type: savedContent.type
+        });
+        const calendarEvent = await createCalendarEventFromContent(savedContent);
+        console.log('Calendar event created successfully:', calendarEvent.id);
       } catch (calendarError) {
-        console.warn('Failed to create calendar event for content:', calendarError);
+        console.error('Failed to create calendar event for content:', calendarError);
         // Don't fail the content creation if calendar event creation fails
       }
+    } else {
+      console.log('Content does not meet criteria for calendar event creation:', {
+        title: savedContent.title,
+        status: savedContent.status,
+        scheduledAt: savedContent.scheduledAt,
+        hasScheduledAt: !!savedContent.scheduledAt
+      });
     }
 
     return savedContent;
@@ -240,7 +255,7 @@ export async function createCalendarEventFromContent(content: ContentData): Prom
 
     // Map content status to calendar event status
     const statusMapping: Record<string, string> = {
-      'DRAFT': 'draft',
+      'DRAFT': 'scheduled',
       'IN_REVIEW': 'draft',
       'PENDING_REVIEW': 'draft',
       'CHANGES_REQUESTED': 'draft',
@@ -252,20 +267,34 @@ export async function createCalendarEventFromContent(content: ContentData): Prom
     const eventStartTime = content.scheduledAt || content.publishedAt || new Date().toISOString();
     const eventEndTime = new Date(new Date(eventStartTime).getTime() + 60 * 60 * 1000).toISOString(); // 1 hour duration
 
+    // Determine calendar status - if content has scheduledAt, it should be 'scheduled' even if status is DRAFT
+    const calendarStatus = content.scheduledAt && content.scheduledAt !== '' 
+      ? 'scheduled' 
+      : statusMapping[content.status] || 'draft';
+
+    console.log('Calendar event mapping:', {
+      contentType: content.type,
+      contentStatus: content.status,
+      calendarType: typeMapping[content.type] || 'article',
+      calendarStatus,
+      eventStartTime,
+      hasScheduledAt: !!content.scheduledAt
+    });
+
     const calendarEventData = {
       title: content.title,
       description: content.excerpt || content.content.substring(0, 200) + '...',
       startTime: eventStartTime,
       endTime: eventEndTime,
       type: typeMapping[content.type] || 'article',
-      status: statusMapping[content.status] || 'draft',
+      status: calendarStatus,
       socialMediaContent: content.type === 'SOCIAL' ? {
         platform: 'FACEBOOK', // Default platform, could be made configurable
         postType: 'post',
         content: content.content,
         mediaUrls: content.media ? [content.media] : [],
         scheduledTime: content.scheduledAt,
-        status: statusMapping[content.status] || 'draft'
+        status: calendarStatus
       } : undefined,
       articleContent: content.type === 'ARTICLE' ? {
         content: content.content,
@@ -282,13 +311,13 @@ export async function createCalendarEventFromContent(content: ContentData): Prom
         tags: content.tags,
         slug: content.slug,
         publishedAt: content.publishedAt,
-        status: statusMapping[content.status] || 'draft'
+        status: calendarStatus
       } : undefined,
       emailCampaign: content.type === 'EMAIL' ? {
         subject: content.title,
         content: content.content,
         scheduledAt: content.scheduledAt,
-        status: statusMapping[content.status] || 'draft'
+        status: calendarStatus
       } : undefined,
       analytics: {
         views: 0,
