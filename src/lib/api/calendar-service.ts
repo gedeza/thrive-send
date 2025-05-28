@@ -55,16 +55,23 @@ export async function createCalendarEvent(event: Omit<CalendarEvent, "id" | "cre
  * Update an existing calendar event
  */
 export async function updateCalendarEvent(event: CalendarEvent): Promise<CalendarEvent> {
-  const response = await fetch(API_URL, {
+  const response = await fetch(`${API_URL}/${event.id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: 'include',
     body: JSON.stringify(event),
   });
 
   if (!response.ok) {
-    throw new Error("Failed to update calendar event");
+    const errorData = await response.json().catch(() => ({}));
+    console.error("Update calendar event failed:", {
+      status: response.status,
+      statusText: response.statusText,
+      error: errorData
+    });
+    throw new Error(errorData.error || errorData.message || "Failed to update calendar event");
   }
 
   return response.json();
@@ -74,12 +81,19 @@ export async function updateCalendarEvent(event: CalendarEvent): Promise<Calenda
  * Delete a calendar event
  */
 export async function deleteCalendarEvent(id: string): Promise<void> {
-  const response = await fetch(`${API_URL}?id=${id}`, {
+  const response = await fetch(`${API_URL}/${id}`, {
     method: "DELETE",
+    credentials: 'include',
   });
 
   if (!response.ok) {
-    throw new Error("Failed to delete calendar event");
+    const errorData = await response.json().catch(() => ({}));
+    console.error("Delete calendar event failed:", {
+      status: response.status,
+      statusText: response.statusText,
+      error: errorData
+    });
+    throw new Error(errorData.error || errorData.message || "Failed to delete calendar event");
   }
 }
 

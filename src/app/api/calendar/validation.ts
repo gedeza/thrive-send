@@ -36,17 +36,18 @@ export const CustomContentSchema = z.object({
   data: z.record(z.string(), z.any()),
 });
 
-// Main calendar event schema
+// Updated calendar event schema to match actual database structure
 export const CalendarEventSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
-  startTime: z.string().min(1, "Start time is required"),
-  endTime: z.string().min(1, "End time is required"),
+  date: z.string().min(1, "Date is required"),
+  time: z.string().optional(),
   type: z.enum(["social", "blog", "email", "custom", "article"]),
   status: z.enum(["draft", "scheduled", "published", "sent", "failed"]).default("draft"),
-  socialMediaContent: SocialMediaContentSchema,
-  blogPost: BlogPostSchema.optional(),
-  emailCampaign: EmailCampaignSchema.optional(),
+  contentType: z.string().optional(),
+  socialMediaContent: z.any().optional(),
+  blogPost: z.any().optional(),
+  emailCampaign: z.any().optional(),
   articleContent: z.object({
     content: z.string(),
     metadata: z.record(z.any()).optional(),
