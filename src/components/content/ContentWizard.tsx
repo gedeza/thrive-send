@@ -440,6 +440,27 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
     });
   };
 
+  // Add a new function to handle platform updates
+  const handlePlatformUpdate = (platforms: SocialPlatform[]) => {
+    console.log('ContentWizard: Platform update received:', platforms);
+    setEvent(prev => ({
+      ...prev,
+      socialMediaContent: {
+        platforms,
+        mediaUrls: prev.socialMediaContent?.mediaUrls || [],
+        crossPost: prev.socialMediaContent?.crossPost || false,
+        platformSpecificContent: platforms.reduce((acc, platform) => {
+          acc[platform] = prev.socialMediaContent?.platformSpecificContent?.[platform] || {
+            text: '',
+            mediaUrls: [],
+            scheduledTime: prev.time
+          };
+          return acc;
+        }, {} as Record<SocialPlatform, any>)
+      }
+    }));
+  };
+
   const handleTitleChange = (title: string) => {
     setEvent(prev => ({
       ...prev,
@@ -537,8 +558,12 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
         media: event.socialMediaContent?.mediaUrls || []
       };
 
+      console.log('Content data being saved:', contentData);
+      console.log('Original event data:', event);
+
       // Save the content
       const savedContent = await saveContent(contentData);
+      console.log('Content saved, response:', savedContent);
 
       // Transform the response back to match CalendarEvent type
       const calendarEvent: CalendarEvent = {
@@ -552,10 +577,10 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
         scheduledDate: savedContent.scheduledAt || event.date,
         scheduledTime: event.time || (savedContent.scheduledAt ? new Date(savedContent.scheduledAt).toLocaleTimeString() : ''),
         socialMediaContent: {
-          platforms: [],
+          platforms: event.socialMediaContent?.platforms || [],
           mediaUrls: savedContent.media || [],
-          crossPost: false,
-          platformSpecificContent: {}
+          crossPost: event.socialMediaContent?.crossPost || false,
+          platformSpecificContent: event.socialMediaContent?.platformSpecificContent || {}
         },
         organizationId: '', // TODO: Get from user context
         createdBy: '' // TODO: Get from user context
@@ -720,6 +745,7 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
                     initialData={event}
                     onContentChange={handleContentUpdate}
                     onTitleChange={handleTitleChange}
+                    onPlatformsChange={handlePlatformUpdate}
                     mode="content-edit"
                   />
                 </div>

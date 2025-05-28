@@ -84,7 +84,10 @@ export default function CalendarPage() {
 
   const fetchEvents = useCallback(async (): Promise<ContentCalendarEvent[]> => {
     try {
+      console.log('Fetching calendar events...');
       const events = await fetchCalendarEvents();
+      console.log('Calendar events fetched:', events.length);
+      
       // Transform the events to match the ContentCalendar's CalendarEvent type
       return events.map(event => ({
         id: event.id,
