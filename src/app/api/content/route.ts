@@ -115,16 +115,35 @@ export async function POST(request: Request) {
     }
 
     // Get the user from our database using their Clerk ID
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { clerkId }
     });
 
+    // If user doesn't exist in our database, create them
+    // This handles cases where the webhook might not have fired or failed
     if (!user) {
-      console.error('User not found in database:', clerkId);
-      return NextResponse.json({ 
-        error: 'User not found', 
-        details: 'The authenticated user does not exist in our database'
-      }, { status: 404 });
+      console.log('User not found in database, attempting to create:', clerkId);
+      
+      try {
+        // We'll create a minimal user record - this should ideally be handled by webhooks
+        // but this provides a fallback for development/testing
+        user = await prisma.user.create({
+          data: {
+            clerkId,
+            email: `user-${clerkId}@temp.local`, // Temporary email - should be updated by webhook
+            firstName: 'User',
+            lastName: 'Account',
+            role: 'CONTENT_CREATOR', // Default role
+          }
+        });
+        console.log('Created fallback user record:', user.id);
+      } catch (createError) {
+        console.error('Failed to create fallback user:', createError);
+        return NextResponse.json({ 
+          error: 'User account setup incomplete', 
+          details: 'Please contact support to complete your account setup'
+        }, { status: 500 });
+      }
     }
 
     const body = await request.json();
@@ -160,7 +179,7 @@ export async function POST(request: Request) {
             status: validatedData.status,
             content: validatedData.content,
             excerpt: validatedData.excerpt,
-            media: validatedData.media ? JSON.stringify(validatedData.media) : null,
+            media: validatedData.media ? JSON.stringify(validatedData.media) : undefined,
             tags: validatedData.tags,
             authorId: user.id,
             scheduledAt: validatedData.scheduledAt ? new Date(validatedData.scheduledAt) : null,

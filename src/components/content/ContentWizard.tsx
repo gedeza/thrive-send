@@ -49,6 +49,10 @@ interface ValidationError {
 type ContentType = 'article' | 'blog' | 'social' | 'email';
 type ContentStatus = 'draft' | 'scheduled' | 'sent' | 'failed';
 
+// Create specific type aliases to avoid conflicts with imported types
+type WizardContentType = 'article' | 'blog' | 'social' | 'email';
+type WizardContentStatus = 'draft' | 'scheduled' | 'sent' | 'failed';
+
 const steps: WizardStep[] = [
   {
     id: "type",
@@ -86,7 +90,7 @@ const steps: WizardStep[] = [
 ];
 
 // Add type guard
-const isAllowedContentType = (type: string): type is ContentType => {
+const isAllowedContentType = (type: string): type is WizardContentType => {
   return ["article", "blog", "social", "email"].includes(type);
 };
 
@@ -138,7 +142,7 @@ const contentTypeValidationRules = {
 interface AnalyticsEvent {
   step: Step;
   action: 'start' | 'complete' | 'error' | 'back' | 'next' | 'validation' | 'media_upload' | 'preview';
-  contentType?: ContentType;
+  contentType?: WizardContentType;
   error?: string;
   duration?: number;
   metadata?: {
@@ -148,7 +152,7 @@ interface AnalyticsEvent {
     platformCount?: number;
     timeSpent?: number;
     interactionCount?: number;
-    contentType?: ContentType;
+    contentType?: WizardContentType;
   }
 }
 
@@ -205,7 +209,7 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
     trackEvent({
       step: currentStep,
       action: 'complete',
-      contentType: event.type,
+      contentType: event.type as WizardContentType,
       duration
     });
     setStepStartTime(Date.now());
@@ -225,7 +229,7 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
     const analyticsEvent: AnalyticsEvent = {
       step: currentStep,
       action,
-      contentType: event.type,
+      contentType: event.type as WizardContentType,
       duration: Date.now() - stepStartTime,
       metadata: {
         ...metadata,
@@ -416,7 +420,7 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
           platformSpecificContent: {}
         }
       }));
-      trackAnalytics('preview', { contentType: type });
+      trackAnalytics('preview', { contentType: type as WizardContentType });
     }
   };
 
@@ -564,23 +568,45 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
         }
       };
 
+      // Helper function to map ContentWizard status to Prisma ContentStatus
+      const mapStatusToPrisma = (status: string | undefined, hasScheduledDate: boolean): string => {
+        if (!status) {
+          return hasScheduledDate ? 'APPROVED' : 'DRAFT';
+        }
+        
+        switch (status.toLowerCase()) {
+          case 'draft':
+            return 'DRAFT';
+          case 'scheduled':
+            return hasScheduledDate ? 'APPROVED' : 'DRAFT';
+          case 'sent':
+            return 'PUBLISHED';
+          case 'failed':
+            return 'REJECTED';
+          default:
+            return hasScheduledDate ? 'APPROVED' : 'DRAFT';
+        }
+      };
+
+      const hasScheduledDate = !!(event.date && event.date !== '');
+      
       // Transform the event to match the API's expected format
       const contentData = {
         title: event.title || '',
         type: event.type?.toUpperCase() as 'BLOG' | 'SOCIAL' | 'EMAIL' | 'ARTICLE',
         content: event.description || '',
         tags: [],
-        status: event.status?.toUpperCase() as 'DRAFT' | 'IN_REVIEW' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'APPROVED' | 'REJECTED' | 'PUBLISHED' | 'ARCHIVED',
+        status: mapStatusToPrisma(event.status, hasScheduledDate) as 'DRAFT' | 'IN_REVIEW' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'APPROVED' | 'REJECTED' | 'PUBLISHED' | 'ARCHIVED',
         scheduledAt: formatScheduledDate(event.date),
         media: event.socialMediaContent?.mediaUrls || []
       };
 
       console.log('Content data being saved:', contentData);
       console.log('Original event data:', event);
-      console.log('Scheduled date details:', {
-        originalDate: event.date,
-        formattedDate: event.date && event.date !== '' ? new Date(event.date).toISOString() : undefined,
-        isValidDate: event.date ? !isNaN(new Date(event.date).getTime()) : false
+      console.log('Status mapping details:', {
+        originalStatus: event.status,
+        hasScheduledDate,
+        mappedStatus: mapStatusToPrisma(event.status, hasScheduledDate)
       });
 
       // Save the content
