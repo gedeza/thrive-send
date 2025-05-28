@@ -4,7 +4,7 @@ export const contentFormSchema = z.object({
   title: z.string()
     .min(3, 'Please enter a title (at least 3 characters)')
     .max(100, 'Title is too long (maximum 100 characters)'),
-  type: z.enum(['article', 'blog', 'social', 'email'] as const, {
+  type: z.enum(['ARTICLE', 'BLOG', 'SOCIAL', 'EMAIL'] as const, {
     errorMap: () => ({ message: 'Please select a content type' })
   }),
   content: z.string()
@@ -19,7 +19,7 @@ export const contentFormSchema = z.object({
     .max(5, 'You can add up to 5 tags')
     .default([]),
   media: z.array(z.any()).optional(),
-  status: z.enum(['draft', 'scheduled', 'sent', 'failed'] as const).optional().default('draft'),
+  status: z.enum(['DRAFT', 'IN_REVIEW', 'PENDING_REVIEW', 'CHANGES_REQUESTED', 'APPROVED', 'REJECTED', 'PUBLISHED', 'ARCHIVED'] as const).default('DRAFT'),
   scheduledAt: z.string().datetime().optional(),
   slug: z.string().min(1, 'Please enter a slug').optional(),
 }).catchall(z.any());

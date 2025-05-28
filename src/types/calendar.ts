@@ -45,11 +45,15 @@ export interface CalendarEvent {
   description?: string;
   startTime: string;
   endTime: string;
-  type: 'social' | 'blog' | 'email' | 'custom';
+  type: 'social' | 'blog' | 'email' | 'custom' | 'article';
   status: 'draft' | 'scheduled' | 'published' | 'sent' | 'failed';
   socialMediaContent?: SocialMediaContent;
   blogPost?: BlogPost;
   emailCampaign?: EmailCampaign;
+  articleContent?: {
+    content: string;
+    metadata?: Record<string, any>;
+  };
   customContent?: {
     type: string;
     content: any;

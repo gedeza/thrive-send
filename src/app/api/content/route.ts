@@ -11,24 +11,32 @@ const contentTypes = ['article', 'blog', 'social', 'email'] as const;
 type ContentType = typeof contentTypes[number];
 
 const contentSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  type: z.enum(['article', 'blog', 'social', 'email'], {
+  title: z.string()
+    .min(3, 'Please enter a title (at least 3 characters)')
+    .max(100, 'Title is too long (maximum 100 characters)'),
+  type: z.enum(['ARTICLE', 'BLOG', 'SOCIAL', 'EMAIL'] as const, {
     errorMap: () => ({ message: 'Please select a valid content type' })
   }),
-  content: z.string().min(1, 'Content is required'),
-  tags: z.array(z.string()).default([]),
-  excerpt: z.string().optional(),
-  media: z.any().optional(),
-  status: z.enum(['draft', 'scheduled', 'published', 'archived'], {
-    errorMap: () => ({ message: 'Status must be either draft, scheduled, published, or archived' })
-  }),
+  content: z.string()
+    .min(10, 'Please enter some content (at least 10 characters)')
+    .refine((val) => val.trim().length > 0, {
+      message: 'Please enter some content'
+    }),
+  excerpt: z.string()
+    .max(200, 'Excerpt is too long (maximum 200 characters)')
+    .optional(),
+  tags: z.array(z.string())
+    .max(5, 'You can add up to 5 tags')
+    .default([]),
+  media: z.array(z.any()).optional(),
+  status: z.enum(['DRAFT', 'IN_REVIEW', 'PENDING_REVIEW', 'CHANGES_REQUESTED', 'APPROVED', 'REJECTED', 'PUBLISHED', 'ARCHIVED'] as const).default('DRAFT'),
   scheduledAt: z.string().datetime().optional(),
-  slug: z.string().min(1, 'Slug is required'),
-});
+  slug: z.string().min(1, 'Please enter a slug').optional(),
+}).catchall(z.any());
 
 const querySchema = z.object({
-  type: z.enum(['article', 'blog', 'social', 'email']).optional(),
-  status: z.enum(['draft', 'scheduled', 'published', 'archived']).optional(),
+  type: z.enum(['ARTICLE', 'BLOG', 'SOCIAL', 'EMAIL'] as const).optional(),
+  status: z.enum(['DRAFT', 'IN_REVIEW', 'PENDING_REVIEW', 'CHANGES_REQUESTED', 'APPROVED', 'REJECTED', 'PUBLISHED', 'ARCHIVED'] as const).optional(),
   page: z.string().optional(),
   limit: z.string().optional(),
 });
@@ -123,31 +131,38 @@ export async function POST(request: Request) {
     console.log('API received body:', body);
     
     try {
-      const validatedData = contentSchema.parse(body);
+      // Transform the request body to use uppercase enum values
+      const transformedBody = {
+        ...body,
+        type: body.type?.toUpperCase(),
+        status: body.status?.toUpperCase() || 'DRAFT'
+      };
+      
+      const validatedData = contentSchema.parse(transformedBody);
       console.log('Validation successful:', validatedData);
 
       try {
+        // Generate slug from title if not provided
+        const slug = validatedData.slug || validatedData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
         // Check if slug already exists
         const existingContent = await prisma.content.findUnique({
-          where: { slug: validatedData.slug }
+          where: { slug }
         });
 
-        if (existingContent) {
-          // Append a timestamp to make the slug unique
-          validatedData.slug = `${validatedData.slug}-${Date.now()}`;
-        }
+        const finalSlug = existingContent ? `${slug}-${Date.now()}` : slug;
 
         const content = await prisma.content.create({
           data: {
             title: validatedData.title,
-            slug: validatedData.slug,
+            slug: finalSlug,
             type: validatedData.type,
             status: validatedData.status,
             content: validatedData.content,
             excerpt: validatedData.excerpt,
             media: validatedData.media ? JSON.stringify(validatedData.media) : null,
             tags: validatedData.tags,
-            authorId: user.id, // Use the database user ID instead of Clerk ID
+            authorId: user.id,
             scheduledAt: validatedData.scheduledAt ? new Date(validatedData.scheduledAt) : null,
           },
         });

@@ -63,7 +63,7 @@ export default function LandingPage() {
                 </Button>
                 <Button 
                   className="rounded-lg shadow-sm transition-colors"
-                  onClick={() => handleProtectedRoute('/calendar')}
+                  onClick={() => handleProtectedRoute('/content/calendar')}
                 >
                   Calendar
                 </Button>
@@ -88,7 +88,7 @@ export default function LandingPage() {
                 <Button 
                   size="lg" 
                   className="min-w-[200px] rounded-lg shadow-sm transition-colors"
-                  onClick={() => handleProtectedRoute('/calendar')}
+                  onClick={() => handleProtectedRoute('/content/calendar')}
                 >
                   Start 14-Day Free Trial
                 </Button>
@@ -368,7 +368,7 @@ export default function LandingPage() {
               size="lg" 
               variant="secondary"
               className="text-on-accent text-lg px-8 py-6 h-auto rounded-lg shadow-md"
-              onClick={() => handleProtectedRoute('/calendar')}
+              onClick={() => handleProtectedRoute('/content/calendar')}
             >
               Start Your 14-Day Free Trial
             </Button>
@@ -648,7 +648,7 @@ function PricingCard({ title, price, description, features, ctaText, popular }: 
           </li>
         ))}
       </ul>
-      <Link href={popular ? "/calendar" : ctaText === "Contact Sales" ? "/dashboard" : "/calendar"}>
+      <Link href={popular ? "/content/calendar" : ctaText === "Contact Sales" ? "/dashboard" : "/content/calendar"}>
         <Button 
           className="w-full rounded-lg"
           variant={popular ? "default" : "outline"}

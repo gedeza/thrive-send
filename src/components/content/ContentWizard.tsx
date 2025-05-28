@@ -10,10 +10,11 @@ import { EventDetails } from './EventDetails';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { saveContent } from '@/lib/api/content-service';
+import { saveContent, createCalendarEventFromContent } from '@/lib/api/content-service';
 import { toast } from '@/components/ui/use-toast';
 import { Alert } from '@/components/ui/Alert';
 import { InfoIcon, AlertCircleIcon, CheckCircleIcon, Loader2 } from 'lucide-react';
+import { trackAnalyticsEvent } from '@/lib/api/analytics-service';
 
 interface ContentWizardProps {
   onComplete?: (event: CalendarEvent) => void;
@@ -45,7 +46,8 @@ interface ValidationError {
   details?: string;
 }
 
-type ContentType = "blog" | "social" | "email" | "article";
+type ContentType = 'article' | 'blog' | 'social' | 'email';
+type ContentStatus = 'draft' | 'scheduled' | 'sent' | 'failed';
 
 const steps: WizardStep[] = [
   {
@@ -82,12 +84,12 @@ const steps: WizardStep[] = [
 
 // Add type guard
 const isAllowedContentType = (type: string): type is ContentType => {
-  return ["blog", "social", "email", "article"].includes(type);
+  return ["article", "blog", "social", "email"].includes(type);
 };
 
 // Content type specific validation rules
 const contentTypeValidationRules = {
-  blog: {
+  BLOG: {
     minLength: 500,
     maxLength: 5000,
     requiredFields: ['title', 'description'],
@@ -97,7 +99,7 @@ const contentTypeValidationRules = {
       supportedFormats: ['image/jpeg', 'image/png', 'image/gif']
     }
   },
-  social: {
+  SOCIAL: {
     minLength: 10,
     maxLength: 280,
     requiredFields: ['title', 'description', 'socialMediaContent.platforms'],
@@ -107,7 +109,7 @@ const contentTypeValidationRules = {
       supportedFormats: ['image/jpeg', 'image/png', 'image/gif', 'video/mp4']
     }
   },
-  email: {
+  EMAIL: {
     minLength: 100,
     maxLength: 2000,
     requiredFields: ['title', 'description', 'content', 'preheaderText'],
@@ -117,7 +119,7 @@ const contentTypeValidationRules = {
       supportedFormats: ['image/jpeg', 'image/png']
     }
   },
-  article: {
+  ARTICLE: {
     minLength: 50,
     maxLength: 1000,
     requiredFields: ['title', 'description'],
@@ -143,13 +145,23 @@ interface AnalyticsEvent {
     platformCount?: number;
     timeSpent?: number;
     interactionCount?: number;
-  };
+    contentType?: ContentType;
+  }
 }
 
-// Mock analytics tracking function (replace with your actual analytics implementation)
-const trackEvent = (event: AnalyticsEvent) => {
-  console.log('Analytics Event:', event);
-  // Implement your analytics tracking here
+// Replace the mock trackEvent function with our new analytics service
+const trackEvent = async (event: AnalyticsEvent) => {
+  await trackAnalyticsEvent(
+    event.action === 'error' ? 'error_occurred' : 'user_action',
+    {
+      step: event.step,
+      action: event.action,
+      contentType: event.contentType,
+      error: event.error,
+      duration: event.duration,
+      ...event.metadata
+    }
+  );
 };
 
 export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
@@ -206,7 +218,7 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
   }, []);
 
   // Enhanced analytics tracking
-  const trackAnalytics = (action: AnalyticsEvent['action'], metadata?: AnalyticsEvent['metadata']) => {
+  const trackAnalytics = async (action: AnalyticsEvent['action'], metadata?: AnalyticsEvent['metadata']) => {
     const analyticsEvent: AnalyticsEvent = {
       step: currentStep,
       action,
@@ -221,7 +233,7 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
         platformCount: event.socialMediaContent?.platforms.length
       }
     };
-    trackEvent(analyticsEvent);
+    await trackEvent(analyticsEvent);
   };
 
   // Enhanced validation for content type specific rules
@@ -388,19 +400,21 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
   };
 
   const handleContentTypeSelect = (type: string) => {
-    if (!isAllowedContentType(type)) {
-      setFeedback({
-        type: 'info',
-        message: 'Please select a valid content type'
-      });
-      return;
+    if (isAllowedContentType(type)) {
+      setEvent(prev => ({
+        ...prev,
+        type: type.toLowerCase() as ContentType,
+        // Reset content-specific fields when type changes
+        description: '',
+        socialMediaContent: {
+          platforms: [],
+          mediaUrls: [],
+          crossPost: false,
+          platformSpecificContent: {}
+        }
+      }));
+      trackAnalytics('preview', { contentType: type });
     }
-
-    setEvent(prev => ({
-      ...prev,
-      type: type as ContentType
-    }));
-    setCurrentStep("details");
   };
 
   const handleContentUpdate = (content: string, mediaUrls: string[]) => {
@@ -463,98 +477,75 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
   };
 
   const handleComplete = async () => {
-    setIsSubmitting(true);
     try {
-      // Validate all steps before completing
-      const allStepsValid = steps.every(step => validateStep(step.id));
-      if (!allStepsValid) {
-        throw new Error("Please complete all required fields before submitting");
-      }
+      setIsSubmitting(true);
+      setFeedback(null);
 
-      // Ensure we have the required fields
-      if (!event.title || !event.type || !event.description) {
-        throw new Error("Title, content type, and content are required");
-      }
+      // Validate all steps
+      const stepErrors = steps
+        .map(step => {
+          if (!validateStep(step.id)) {
+            return {
+              step: step.id,
+              type: 'required' as ValidationErrorType,
+              message: `Please complete the ${step.label.toLowerCase()} step`
+            };
+          }
+          return null;
+        })
+        .filter((error): error is ValidationError => error !== null);
 
-      // Additional validation for social media content
-      if (event.type === 'social') {
-        console.log('Validating social media content:', {
-          platforms: event.socialMediaContent?.platforms,
-          hasPlatforms: Boolean(event.socialMediaContent?.platforms),
-          platformsLength: event.socialMediaContent?.platforms?.length
+      if (stepErrors.length > 0) {
+        setValidationErrors(stepErrors);
+        setFeedback({
+          type: 'error',
+          message: 'Please complete all required fields before submitting'
         });
-        
-        if (!event.socialMediaContent?.platforms || event.socialMediaContent.platforms.length === 0) {
-        throw new Error("Please select at least one social media platform");
-        }
+        return;
       }
 
-      // Prepare the data for the content service
+      // Transform the event to match the API's expected format
       const contentData = {
-        title: event.title,
-        type: event.type,
-        content: event.description,
-        tags: event.socialMediaContent?.platforms || [],
-        status: event.status || 'draft',
-        scheduledAt: event.date ? new Date(event.date).toISOString() : undefined,
-        media: event.socialMediaContent?.mediaUrls || [],
-        excerpt: event.description?.substring(0, 200) || undefined,
-        platforms: event.type === 'social' ? event.socialMediaContent?.platforms : undefined,
+        title: event.title || '',
+        type: event.type?.toUpperCase() as 'BLOG' | 'SOCIAL' | 'EMAIL' | 'ARTICLE',
+        content: event.description || '',
+        tags: [],
+        status: event.status?.toUpperCase() as 'DRAFT' | 'IN_REVIEW' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'APPROVED' | 'REJECTED' | 'PUBLISHED' | 'ARCHIVED',
+        scheduledAt: event.date,
+        media: event.socialMediaContent?.mediaUrls || []
       };
 
-      console.log('Sending content data:', contentData);
-
-      // Save using the content service
+      // Save the content
       const savedContent = await saveContent(contentData);
-      console.log('Content saved:', savedContent);
-      
-      // Call onComplete if provided
-      if (onComplete) {
-        const calendarEvent: CalendarEvent = {
-          id: savedContent.id,
-          title: savedContent.title,
-          description: savedContent.content,
-          type: savedContent.type,
-          status: savedContent.status === 'published' ? 'sent' : 
-                 savedContent.status === 'archived' ? 'failed' : 
-                 savedContent.status === 'scheduled' ? 'scheduled' : 'draft',
-          date: savedContent.scheduledAt || savedContent.createdAt,
-          time: savedContent.scheduledAt ? new Date(savedContent.scheduledAt).toLocaleTimeString() : undefined,
-          socialMediaContent: {
-            platforms: savedContent.tags as SocialPlatform[],
-            mediaUrls: savedContent.media || [],
-            crossPost: false,
-            platformSpecificContent: {}
-          },
-          analytics: {
-            lastUpdated: new Date().toISOString()
-          }
-        };
-        await onComplete(calendarEvent);
-      }
-      
-      toast({
-        title: 'Success',
-        description: 'Content saved successfully',
-        action: (
-          <Button
-            variant="outline"
-            onClick={() => router.push('/content/calendar')}
-            className="mt-2"
-          >
-            View Content
-          </Button>
-        ),
-      });
-      
-      // Navigate to the calendar view
+
+      // Transform the response back to match CalendarEvent type
+      const calendarEvent: CalendarEvent = {
+        id: savedContent.id,
+        title: savedContent.title,
+        description: savedContent.content,
+        type: savedContent.type.toLowerCase() as ContentType,
+        status: savedContent.status.toLowerCase() as ContentStatus,
+        date: savedContent.scheduledAt || new Date().toISOString(),
+        time: savedContent.scheduledAt || '',
+        scheduledDate: savedContent.scheduledAt || new Date().toISOString(),
+        scheduledTime: savedContent.scheduledAt || '',
+        socialMediaContent: {
+          platforms: [],
+          mediaUrls: savedContent.media || [],
+          crossPost: false,
+          platformSpecificContent: {}
+        }
+      };
+
+      handleSuccess('Content saved successfully!');
+      onComplete?.(calendarEvent);
       router.push('/content/calendar');
     } catch (error) {
       console.error('Error saving content:', error);
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to save content. Please try again.',
-        variant: 'destructive',
+      handleError({
+        step: 'preview',
+        type: 'required',
+        message: error instanceof Error ? error.message : 'Failed to save content'
       });
     } finally {
       setIsSubmitting(false);

@@ -85,7 +85,7 @@ export function SidebarNavigation({ className, ...props }: SidebarNavProps) {
     },
     {
       title: "Calendar",
-      href: "/calendar",
+      href: "/content/calendar",
       icon: <Calendar className="h-5 w-5" />,
       variant: "default"
     },

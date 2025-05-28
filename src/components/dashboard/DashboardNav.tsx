@@ -23,7 +23,7 @@ export function DashboardNav() {
     },
     {
       title: "Calendar",
-      href: "/calendar",
+      href: "/content/calendar",
     },
     {
       title: "Clients",

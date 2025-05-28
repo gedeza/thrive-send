@@ -14,7 +14,7 @@ export const ROUTES = {
   DASHBOARD: '/dashboard',
   
   // Feature routes
-  CALENDAR: '/calendar',
+  CALENDAR: '/content/calendar',
   ANALYTICS: '/analytics',
   CLIENTS: '/clients',
   CREATORS: '/creators',

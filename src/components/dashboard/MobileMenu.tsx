@@ -6,7 +6,7 @@ const menuItems = [
   { label: "Analytics", href: "/dashboard#analytics", icon: "📈" },
   { label: "Campaigns", href: "/campaigns", icon: "📢" },
   { label: "Subscribers", href: "/subscribers", icon: "👥" },
-  { label: "Calendar", href: "/calendar", icon: "📅" },
+  { label: "Calendar", href: "/content/calendar", icon: "📅" },
   { label: "Clients", href: "/clients", icon: "🤝" }
 ];
 

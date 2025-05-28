@@ -81,6 +81,103 @@ export interface ConversionMetrics {
   }[];
 }
 
+// Standardized event types
+export type AnalyticsEventType = 
+  | 'content_created'
+  | 'content_updated'
+  | 'content_published'
+  | 'content_scheduled'
+  | 'content_deleted'
+  | 'content_viewed'
+  | 'content_engaged'
+  | 'campaign_created'
+  | 'campaign_updated'
+  | 'campaign_published'
+  | 'campaign_scheduled'
+  | 'campaign_deleted'
+  | 'user_action'
+  | 'error_occurred';
+
+// Base event interface
+export interface AnalyticsEvent {
+  type: AnalyticsEventType;
+  timestamp: string;
+  userId?: string;
+  organizationId?: string;
+  metadata: Record<string, any>;
+}
+
+// Analytics service class
+export class AnalyticsService {
+  private static instance: AnalyticsService;
+  private events: AnalyticsEvent[] = [];
+
+  private constructor() {}
+
+  public static getInstance(): AnalyticsService {
+    if (!AnalyticsService.instance) {
+      AnalyticsService.instance = new AnalyticsService();
+    }
+    return AnalyticsService.instance;
+  }
+
+  // Track a new event
+  public async trackEvent(event: Omit<AnalyticsEvent, 'timestamp'>): Promise<void> {
+    const fullEvent: AnalyticsEvent = {
+      ...event,
+      timestamp: new Date().toISOString()
+    };
+
+    // Store event locally
+    this.events.push(fullEvent);
+
+    // TODO: Implement actual analytics provider integration
+    // For now, we'll just log to console
+    console.log('Analytics Event:', fullEvent);
+
+    // In a real implementation, you would:
+    // 1. Send to analytics provider
+    // 2. Store in database
+    // 3. Trigger any necessary webhooks
+  }
+
+  // Get analytics data for a specific timeframe
+  public async getAnalytics(params: AnalyticsParams): Promise<AnalyticsMetric[]> {
+    // TODO: Implement actual analytics data fetching
+    // This would typically query your analytics provider or database
+    return [];
+  }
+
+  // Get events for a specific timeframe
+  public async getEvents(params: AnalyticsParams): Promise<AnalyticsEvent[]> {
+    const { startDate, endDate } = params;
+    
+    return this.events.filter(event => {
+      const eventDate = new Date(event.timestamp);
+      return (!startDate || eventDate >= startDate) && 
+             (!endDate || eventDate <= endDate);
+    });
+  }
+}
+
+// Export a singleton instance
+export const analyticsService = AnalyticsService.getInstance();
+
+// Helper function to track events
+export const trackAnalyticsEvent = async (
+  type: AnalyticsEventType,
+  metadata: Record<string, any>,
+  userId?: string,
+  organizationId?: string
+): Promise<void> => {
+  await analyticsService.trackEvent({
+    type,
+    metadata,
+    userId,
+    organizationId
+  });
+};
+
 export function useAnalytics() {
   const { getToken } = useAuth();
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';

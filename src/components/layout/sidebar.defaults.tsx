@@ -38,7 +38,7 @@ export const defaultSidebarItems: SidebarItemWithRoles[] = [
     key: "calendar",
     label: "Calendar",
     icon: <Calendar size={18} />,
-    href: "/calendar",
+    href: "/content/calendar",
     roles: ["admin", "manager", "user"], // Not for viewers or guests
   },
   {

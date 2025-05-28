@@ -67,7 +67,7 @@ export function PricingCard({
   description, 
   features, 
   ctaText, 
-  ctaLink = "/calendar",
+  ctaLink = "/content/calendar",
   popular = false,
   className = "" 
 }: { 

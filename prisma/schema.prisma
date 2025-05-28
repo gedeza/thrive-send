@@ -8,216 +8,81 @@ datasource db {
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
-enum UserRole {
-  CONTENT_CREATOR
-  REVIEWER
-  APPROVER
-  PUBLISHER
-  ADMIN
-}
-
-enum CampaignStatus {
-  draft
-  active
-  completed
-  paused
-  cancelled
-}
-
-enum CampaignGoalType {
-  AWARENESS
-  ENGAGEMENT
-  CONVERSION
-  RETENTION
-  REVENUE
-  CUSTOM
-}
-
-enum ScheduleFrequency {
-  ONCE
-  DAILY
-  WEEKLY
-  MONTHLY
-  CUSTOM
-}
-
-enum ContentStatus {
-  DRAFT
-  IN_REVIEW
-  PENDING_REVIEW
-  CHANGES_REQUESTED
-  APPROVED
-  REJECTED
-  PUBLISHED
-  ARCHIVED
-}
-
-enum ApprovalStep {
-  REVIEW
-  APPROVAL
-  PUBLISH
-}
-
-enum NotificationType {
-  INFO
-  SUCCESS
-  WARNING
-  ERROR
-  CONTENT_SUBMITTED
-  REVIEW_ASSIGNED
-  FEEDBACK_PROVIDED
-  STATUS_CHANGED
-  APPROVAL_REJECTED
-  CONTENT_PUBLISHED
-}
-
-enum AudienceType {
-  CUSTOM
-  DYNAMIC
-  STATIC
-}
-
-enum ContactListType {
-  EMAIL
-  PHONE
-  CUSTOM
-}
-
-enum AudienceSegmentType {
-  CUSTOM
-  BEHAVIORAL
-  DEMOGRAPHIC
-  GEOGRAPHIC
-  DEVICE
-  TIME_BASED
-}
-
-enum ContactStatus {
-  ACTIVE
-  INACTIVE
-  UNSUBSCRIBED
-  BOUNCED
-  SPAM
-}
-
-enum AudienceStatus {
-  ACTIVE
-  INACTIVE
-  ARCHIVED
-  DRAFT
-}
-
-enum TargetingRuleOperator {
-  EQUALS
-  NOT_EQUALS
-  CONTAINS
-  NOT_CONTAINS
-  GREATER_THAN
-  LESS_THAN
-  BETWEEN
-  IN
-  NOT_IN
-  EXISTS
-  NOT_EXISTS
-}
-
-enum TargetingRuleType {
-  DEMOGRAPHIC
-  BEHAVIORAL
-  GEOGRAPHIC
-  DEVICE
-  TIME
-  CUSTOM
-}
-
-enum ContentType {
-  BLOG
-  SOCIAL
-  EMAIL
-  ARTICLE
-  NEWSLETTER
-  PODCAST
-  VIDEO
-  EVENT
-  ANNOUNCEMENT
-  RESOURCE
-}
-
 model User {
-  id                      String               @id @default(cuid())
-  clerkId                 String               @unique
-  email                   String               @unique @db.VarChar(255)
-  firstName               String?              @db.VarChar(100)
-  lastName                String?              @db.VarChar(100)
+  id                      String                @id @default(cuid())
+  clerkId                 String                @unique
+  email                   String                @unique @db.VarChar(255)
+  firstName               String?               @db.VarChar(100)
+  lastName                String?               @db.VarChar(100)
   imageUrl                String?
-  createdAt               DateTime             @default(now())
-  updatedAt               DateTime             @updatedAt
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
   emailVerified           DateTime?
   image                   String?
   name                    String?
-  role                    UserRole             @default(CONTENT_CREATOR)
+  role                    UserRole              @default(CONTENT_CREATOR)
   accounts                Account[]
   activities              Activity[]
+  approvalHistory         ApprovalHistory[]     @relation("HistoryCreator")
+  assets                  Asset[]
+  createdAudiences        Audience[]
+  audienceSegments        AudienceSegment[]     @relation("AudienceSegmentCreator")
   calendarEvents          CalendarEvent[]
+  campaignTemplates       CampaignTemplate[]
+  comments                Comment[]             @relation("CommentCreator")
+  contactLists            ContactList[]         @relation("ContactListCreator")
   content                 Content[]
+  assignedApprovals       ContentApproval[]     @relation("AssignedApprovals")
+  createdApprovals        ContentApproval[]     @relation("CreatedApprovals")
   contentItems            ContentItem[]
   createdContent          ContentPiece[]
+  integrations            Integration[]
+  marketplaceListings     MarketplaceListing[]  @relation("MarketplaceListingCreator")
+  marketplacePurchases    MarketplacePurchase[] @relation("MarketplacePurchaseBuyer")
+  marketplaceReviews      MarketplaceReview[]   @relation("MarketplaceReviewer")
+  notifications           Notification[]
   organizationMemberships OrganizationMember[]
   projects                Project[]
-  sessions                Session[]
-  Template                Template[]
-  createdApprovals        ContentApproval[]    @relation("CreatedApprovals")
-  assignedApprovals       ContentApproval[]    @relation("AssignedApprovals")
-  approvalHistory         ApprovalHistory[]     @relation("HistoryCreator")
-  comments                Comment[]             @relation("CommentCreator")
-  notifications           Notification[]
-  campaignTemplates       CampaignTemplate[]
-  createdAudiences        Audience[]
-  targetingRules          TargetingRule[]
-  assets                  Asset[]
-  workflows               Workflow[]
-  integrations            Integration[]
   reports                 Report[]
   reportShares            ReportShare[]
-  contactLists            ContactList[]        @relation("ContactListCreator")
-  audienceSegments        AudienceSegment[]    @relation("AudienceSegmentCreator")
-  marketplaceListings     MarketplaceListing[] @relation("MarketplaceListingCreator")
-  marketplacePurchases    MarketplacePurchase[] @relation("MarketplacePurchaseBuyer")
-  marketplaceReviews      MarketplaceReview[]  @relation("MarketplaceReviewer")
+  sessions                Session[]
+  targetingRules          TargetingRule[]
+  Template                Template[]
+  workflows               Workflow[]
 }
 
 model Organization {
-  id                String               @id @default(cuid())
-  name              String               @db.VarChar(100)
-  slug              String               @unique @db.VarChar(100)
-  logoUrl           String?
-  website           String?
-  primaryColor      String?              @default("#000000")
-  clerkOrganizationId String?            @unique
-  createdAt         DateTime             @default(now())
-  updatedAt         DateTime             @updatedAt
-  calendarEvents    CalendarEvent[]
-  campaigns         Campaign[]
-  clients           Client[]
-  contentItems      ContentItem[]
-  contentPieces     ContentPiece[]
-  members           OrganizationMember[]
-  projects          Project[]
-  socialAccounts    SocialAccount[]
-  subscription      Subscription?
-  Template          Template[]
-  campaignTemplates CampaignTemplate[]
-  audiences         Audience[]
-  targetingRules    TargetingRule[]
+  id                     String                   @id @default(cuid())
+  name                   String                   @db.VarChar(100)
+  slug                   String                   @unique @db.VarChar(100)
+  logoUrl                String?
+  website                String?
+  primaryColor           String?                  @default("#000000")
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  clerkOrganizationId    String?                  @unique
+  assets                 Asset[]
+  audiences              Audience[]
+  audienceSegments       AudienceSegment[]
+  calendarEvents         CalendarEvent[]
+  campaigns              Campaign[]
+  campaignTemplates      CampaignTemplate[]
+  clients                Client[]
+  contactLists           ContactList[]
+  contentItems           ContentItem[]
+  contentPieces          ContentPiece[]
   crossCampaignAnalytics CrossCampaignAnalytics[]
-  assets            Asset[]
-  workflows         Workflow[]
-  integrations      Integration[]
-  reports           Report[]
-  contactLists      ContactList[]
-  audienceSegments  AudienceSegment[]
-  marketplaceListings MarketplaceListing[]
-  invitations       Invitation[]
+  integrations           Integration[]
+  invitations            Invitation[]
+  marketplaceListings    MarketplaceListing[]
+  members                OrganizationMember[]
+  projects               Project[]
+  reports                Report[]
+  socialAccounts         SocialAccount[]
+  subscription           Subscription?
+  targetingRules         TargetingRule[]
+  Template               Template[]
+  workflows              Workflow[]
 }
 
 model OrganizationMember {
@@ -376,20 +241,20 @@ model Subscription {
   createdAt            DateTime     @default(now())
   updatedAt            DateTime     @updatedAt
   organizationId       String       @unique
-  organization         Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  payments             Payment[]
-  features             Json?        // Subscription features and limits
-  billingCycle         String       // MONTHLY, YEARLY, etc.
-  price                Float
-  currency             String       @default("USD")
-  trialEndsAt          DateTime?
+  billingAddress       Json?
+  billingCycle         String
   cancelAtPeriodEnd    Boolean      @default(false)
+  currency             String       @default("USD")
+  discount             Json?
+  features             Json?
   lastBillingDate      DateTime?
   nextBillingDate      DateTime?
-  billingAddress       Json?        // Billing address details
-  taxInfo              Json?        // Tax information
-  discount             Json?        // Discount information
-  usage                Json?        // Usage tracking
+  price                Float
+  taxInfo              Json?
+  trialEndsAt          DateTime?
+  usage                Json?
+  payments             Payment[]
+  organization         Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
 
 model ContentItem {
@@ -422,45 +287,40 @@ model Activity {
 }
 
 model Campaign {
-  id             String         @id @default(cuid())
-  name           String
-  description    String?
-  startDate      DateTime?
-  endDate        DateTime?
-  budget         Float?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  organizationId String
-  clientId       String?
-  projectId      String?
-  status         CampaignStatus @default(draft)
-  
-  // New fields for goals and metrics
-  goalType       CampaignGoalType
-  customGoal     String?
-  targetMetrics  Json?          // Store target metrics like reach, engagement, etc.
-  actualMetrics  Json?          // Store actual achieved metrics
-  
-  // Advanced scheduling
-  scheduleFrequency ScheduleFrequency @default(ONCE)
-  scheduleConfig    Json?             // Store schedule configuration (days, times, etc.)
-  timezone          String?           // Store timezone for scheduling
-  lastScheduled     DateTime?         // Track last scheduled execution
-  nextScheduled     DateTime?         // Track next scheduled execution
-  
-  analytics      Analytics[]
-  client         Client?        @relation(fields: [clientId], references: [id], onUpdate: NoAction)
-  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  project        Project?       @relation(fields: [projectId], references: [id], onUpdate: NoAction)
-  contentPieces  ContentPiece[]
-  templateId     String?
-  template       CampaignTemplate? @relation(fields: [templateId], references: [id])
-  audienceId     String?
-  audience       Audience?       @relation(fields: [audienceId], references: [id])
+  id                     String                   @id @default(cuid())
+  name                   String
+  description            String?
+  startDate              DateTime?
+  endDate                DateTime?
+  budget                 Float?
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  organizationId         String
+  clientId               String?
+  projectId              String?
+  status                 CampaignStatus           @default(draft)
+  actualMetrics          Json?
+  audienceId             String?
+  customGoal             String?
+  goalType               CampaignGoalType
+  lastScheduled          DateTime?
+  nextScheduled          DateTime?
+  scheduleConfig         Json?
+  scheduleFrequency      ScheduleFrequency        @default(ONCE)
+  targetMetrics          Json?
+  templateId             String?
+  timezone               String?
+  abTests                ABTest[]
+  analytics              Analytics[]
+  audience               Audience?                @relation(fields: [audienceId], references: [id])
+  client                 Client?                  @relation(fields: [clientId], references: [id], onUpdate: NoAction)
+  organization           Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project                Project?                 @relation(fields: [projectId], references: [id], onUpdate: NoAction)
+  template               CampaignTemplate?        @relation(fields: [templateId], references: [id])
+  contentPieces          ContentPiece[]
+  conversionFunnels      ConversionFunnel[]
   crossCampaignAnalytics CrossCampaignAnalytics[]
-  roiTracking           ROITracking[]
-  abTests               ABTest[]
-  conversionFunnels     ConversionFunnel[]
+  roiTracking            ROITracking[]
 
   @@index([clientId])
   @@index([projectId])
@@ -481,9 +341,9 @@ model Template {
   previewImage   String?
   organizationId String
   authorId       String
+  contents       Content[]
   User           User         @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  contents       Content[]
 
   @@index([authorId])
   @@index([organizationId])
@@ -524,29 +384,29 @@ model VerificationToken {
 }
 
 model Content {
-  id          String      @id @default(cuid())
+  id          String            @id @default(cuid())
   title       String
-  slug        String      @unique
-  type        ContentType
-  status      ContentStatus
-  content     String      @db.Text
-  excerpt     String?     @db.Text
-  media       Json?       // Array of media files
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  content     String
   tags        String[]
   authorId    String
-  author      User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  scheduledAt DateTime?
+  excerpt     String?
+  media       Json?
   publishedAt DateTime?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  approval    ContentApproval?
-  schedule    Schedule?
-  mediaItems  MediaItem[]
-  template    Template?   @relation(fields: [templateId], references: [id])
+  scheduledAt DateTime?
+  slug        String            @unique
+  metadata    Json?
   templateId  String?
-  metadata    Json?       // Additional content metadata
-  seo         SEO?        // SEO information
+  status      ContentStatus
+  type        ContentType
+  author      User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  template    Template?         @relation(fields: [templateId], references: [id])
   analytics   ContentAnalytics?
+  approval    ContentApproval?
+  mediaItems  MediaItem[]
+  seo         SEO?
+  schedule    Schedule?
 
   @@index([authorId])
   @@index([type])
@@ -555,18 +415,18 @@ model Content {
 }
 
 model Schedule {
-  id             String           @id @default(cuid())
-  contentId      String           @unique
-  frequency      ScheduleFrequency
-  startDate      DateTime
-  endDate        DateTime?
-  timezone       String           @default("UTC")
-  recurrence     Json?            // Recurrence rules
-  lastScheduled  DateTime?
-  nextScheduled  DateTime?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  content        Content          @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  id            String            @id @default(cuid())
+  contentId     String            @unique
+  frequency     ScheduleFrequency
+  startDate     DateTime
+  endDate       DateTime?
+  timezone      String            @default("UTC")
+  recurrence    Json?
+  lastScheduled DateTime?
+  nextScheduled DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  content       Content           @relation(fields: [contentId], references: [id], onDelete: Cascade)
 
   @@index([contentId])
   @@index([nextScheduled])
@@ -582,49 +442,49 @@ model MediaItem {
   altText     String?
   caption     String?
   contentId   String
-  content     Content        @relation(fields: [contentId], references: [id], onDelete: Cascade)
-  versions    MediaVersion[]
-  usage       MediaUsage[]
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
+  content     Content        @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  usage       MediaUsage[]
+  versions    MediaVersion[]
 
   @@index([contentId])
 }
 
 model MediaVersion {
-  id         String    @id @default(cuid())
-  url        String
-  type       String
-  metadata   Json?
+  id          String    @id @default(cuid())
+  url         String
+  type        String
+  metadata    Json?
   mediaItemId String
-  mediaItem  MediaItem @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
-  createdAt  DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  mediaItem   MediaItem @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
 
   @@index([mediaItemId])
 }
 
 model MediaUsage {
-  id         String    @id @default(cuid())
+  id          String    @id @default(cuid())
   mediaItemId String
-  mediaItem  MediaItem @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
-  usageType  String
-  metadata   Json?
-  createdAt  DateTime  @default(now())
+  usageType   String
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+  mediaItem   MediaItem @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
 
   @@index([mediaItemId])
 }
 
 model SEO {
-  id             String     @id @default(cuid())
-  contentId      String     @unique
-  title          String?
-  description    String?
-  keywords       String[]
-  ogImage        String?
-  canonicalUrl   String?
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
-  content        Content    @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  id           String   @id @default(cuid())
+  contentId    String   @unique
+  title        String?
+  description  String?
+  keywords     String[]
+  ogImage      String?
+  canonicalUrl String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  content      Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
 
   @@index([contentId])
 }
@@ -632,7 +492,6 @@ model SEO {
 model ContentAnalytics {
   id             String   @id @default(cuid())
   contentId      String   @unique
-  content        Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
   views          Int      @default(0)
   likes          Int      @default(0)
   shares         Int      @default(0)
@@ -642,27 +501,31 @@ model ContentAnalytics {
   metadata       Json?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  content        Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
 
   @@index([contentId])
 }
 
 model CalendarEvent {
-  id                String   @id @default(cuid())
-  title             String
-  description       String?
-  startTime         DateTime
-  endTime           DateTime
-  type              String   // 'social' | 'blog' | 'email' | 'custom'
-  status            String   // 'draft' | 'scheduled' | 'published' | 'sent' | 'failed'
+  id                 String       @id @default(cuid())
+  title              String
+  description        String?
+  type               String
+  status             String
+  organizationId     String
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
   socialMediaContent Json?
-  blogPost          Json?
-  emailCampaign     Json?
-  customContent     Json?
-  analytics         Json?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  createdBy         String
-  organizationId    String
+  analytics          Json?
+  articleContent     Json?
+  blogPost           Json?
+  createdBy          String
+  customContent      Json?
+  emailCampaign      Json?
+  endTime            DateTime
+  startTime          DateTime
+  creator            User         @relation(fields: [createdBy], references: [id])
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
   @@index([createdBy])
@@ -672,58 +535,58 @@ model CalendarEvent {
 }
 
 model ContentApproval {
-  id          String           @id @default(cuid())
-  contentId   String           @unique
-  content     Content          @relation(fields: [contentId], references: [id], onDelete: Cascade)
-  status      ContentStatus    @default(PENDING_REVIEW)
-  currentStep ApprovalStep     @default(REVIEW)
+  id          String            @id @default(cuid())
+  contentId   String            @unique
+  status      ContentStatus     @default(PENDING_REVIEW)
+  currentStep ApprovalStep      @default(REVIEW)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
   createdBy   String
-  creator     User             @relation("CreatedApprovals", fields: [createdBy], references: [id])
   assignedTo  String?
-  assignee    User?            @relation("AssignedApprovals", fields: [assignedTo], references: [id])
-  comments    Comment[]
   history     ApprovalHistory[]
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  comments    Comment[]
+  assignee    User?             @relation("AssignedApprovals", fields: [assignedTo], references: [id])
+  content     Content           @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  creator     User              @relation("CreatedApprovals", fields: [createdBy], references: [id])
 }
 
 model ApprovalHistory {
-  id        String        @id @default(cuid())
+  id         String          @id @default(cuid())
   approvalId String
-  approval  ContentApproval @relation(fields: [approvalId], references: [id], onDelete: Cascade)
-  status    ContentStatus
-  step      ApprovalStep
-  comment   String?
-  user      User          @relation("HistoryCreator", fields: [userId], references: [id])
-  userId    String
-  createdAt DateTime      @default(now())
+  status     ContentStatus
+  step       ApprovalStep
+  comment    String?
+  createdAt  DateTime        @default(now())
+  userId     String
+  approval   ContentApproval @relation(fields: [approvalId], references: [id], onDelete: Cascade)
+  user       User            @relation("HistoryCreator", fields: [userId], references: [id])
 
   @@index([approvalId])
   @@index([userId])
 }
 
 model Comment {
-  id          String         @id @default(cuid())
-  content     String
-  approvalId  String
-  approval    ContentApproval @relation(fields: [approvalId], references: [id], onDelete: Cascade)
-  user        User           @relation("CommentCreator", fields: [userId], references: [id])
-  userId      String
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  id         String          @id @default(cuid())
+  approvalId String
+  content    String
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  userId     String
+  approval   ContentApproval @relation(fields: [approvalId], references: [id], onDelete: Cascade)
+  user       User            @relation("CommentCreator", fields: [userId], references: [id])
 
   @@index([approvalId])
   @@index([userId])
 }
 
 model Notification {
-  id          String           @id @default(cuid())
-  type        NotificationType
-  message     String
-  read        Boolean         @default(false)
-  userId      String
-  createdAt   DateTime        @default(now())
-  user        User            @relation(fields: [userId], references: [id])
+  id        String           @id @default(cuid())
+  message   String
+  read      Boolean          @default(false)
+  userId    String
+  createdAt DateTime         @default(now())
+  type      NotificationType
+  user      User             @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([type])
@@ -742,60 +605,60 @@ model CampaignTemplate {
   previewImage   String?
   organizationId String
   authorId       String
+  campaigns      Campaign[]
   user           User         @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  campaigns      Campaign[]
 
   @@index([authorId])
   @@index([organizationId])
 }
 
 model Audience {
-  id             String         @id @default(cuid())
-  name           String
-  description    String?
-  type           AudienceType   @default(CUSTOM)
-  status         AudienceStatus @default(ACTIVE)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  organizationId String
-  createdById    String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdBy      User         @relation(fields: [createdById], references: [id])
-  segments       AudienceSegment[]
-  contactLists   ContactList[]
-  analytics      AudienceAnalytics[]
-  campaigns      Campaign[]
-  tags           String[]
-  lastUpdated    DateTime?
-  size           Int          @default(0)
-  source         String?      // Where the audience was created/imported from
-  importHistory  Json?        // Track import history
-  changeLogs     AudienceChangeLog[]
-  targetingRules TargetingRule[]
-  interactions          AudienceInteraction[]
-  engagementScores      EngagementScore[]
-  behavioralTracking    BehavioralTracking[]
+  id                 String                @id @default(cuid())
+  name               String
+  description        String?
+  type               AudienceType          @default(CUSTOM)
+  status             AudienceStatus        @default(ACTIVE)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  organizationId     String
+  createdById        String
+  tags               String[]
+  lastUpdated        DateTime?
+  size               Int                   @default(0)
+  source             String?
+  importHistory      Json?
+  createdBy          User                  @relation(fields: [createdById], references: [id])
+  organization       Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  analytics          AudienceAnalytics[]
+  changeLogs         AudienceChangeLog[]
+  interactions       AudienceInteraction[]
+  segments           AudienceSegment[]
+  behavioralTracking BehavioralTracking[]
+  campaigns          Campaign[]
+  contactLists       ContactList[]
+  engagementScores   EngagementScore[]
+  targetingRules     TargetingRule[]
 
   @@index([organizationId])
   @@index([createdById])
 }
 
 model ContactList {
-  id             String           @id @default(cuid())
+  id             String          @id @default(cuid())
   name           String
   description    String?
-  type           ContactListType  @default(EMAIL)
-  status         AudienceStatus   @default(ACTIVE)
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  type           ContactListType @default(EMAIL)
+  status         AudienceStatus  @default(ACTIVE)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
   organizationId String
   createdById    String
   audienceId     String?
-  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdBy      User             @relation("ContactListCreator", fields: [createdById], references: [id])
-  audience       Audience?        @relation(fields: [audienceId], references: [id])
   contacts       Contact[]
+  audience       Audience?       @relation(fields: [audienceId], references: [id])
+  createdBy      User            @relation("ContactListCreator", fields: [createdById], references: [id])
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
   @@index([createdById])
@@ -803,25 +666,25 @@ model ContactList {
 }
 
 model Contact {
-  id             String         @id @default(cuid())
-  email          String?
-  phone          String?
-  firstName      String?
-  lastName       String?
-  customFields   Json?
-  status         ContactStatus  @default(ACTIVE)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  contactListId  String
-  contactList    ContactList    @relation(fields: [contactListId], references: [id], onDelete: Cascade)
-  tags           String[]
-  lastContacted  DateTime?
-  source         String?      // Where the contact was added from
-  metadata       Json?        // Additional contact metadata
+  id            String        @id @default(cuid())
+  email         String?
+  phone         String?
+  firstName     String?
+  lastName      String?
+  customFields  Json?
+  status        ContactStatus @default(ACTIVE)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  contactListId String
+  tags          String[]
+  lastContacted DateTime?
+  source        String?
+  metadata      Json?
+  contactList   ContactList   @relation(fields: [contactListId], references: [id], onDelete: Cascade)
 
-  @@index([contactListId])
   @@unique([email, contactListId])
   @@unique([phone, contactListId])
+  @@index([contactListId])
 }
 
 model AudienceSegment {
@@ -829,19 +692,19 @@ model AudienceSegment {
   name           String
   description    String?
   type           AudienceSegmentType @default(CUSTOM)
-  rules          Json?               // Store targeting rules
+  rules          Json?
   status         AudienceStatus      @default(ACTIVE)
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
   organizationId String
   createdById    String
   audienceId     String
-  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdBy      User                @relation("AudienceSegmentCreator", fields: [createdById], references: [id])
-  audience       Audience            @relation(fields: [audienceId], references: [id])
-  size           Int          @default(0)
+  size           Int                 @default(0)
   lastUpdated    DateTime?
-  conditions     Json?        // Store segment conditions
+  conditions     Json?
+  audience       Audience            @relation(fields: [audienceId], references: [id])
+  createdBy      User                @relation("AudienceSegmentCreator", fields: [createdById], references: [id])
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   targetingRules TargetingRule[]
 
   @@index([organizationId])
@@ -850,27 +713,27 @@ model AudienceSegment {
 }
 
 model AudienceAnalytics {
-  id             String       @id @default(cuid())
+  id             String   @id @default(cuid())
   audienceId     String
-  metrics        Json?        // Store various metrics like size, engagement, etc.
-  timestamp      DateTime     @default(now())
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  audience       Audience     @relation(fields: [audienceId], references: [id])
-  segmentMetrics Json?        // Store segment-specific metrics
-  growthRate     Float?       // Audience growth rate
-  engagementRate Float?       // Engagement rate
+  metrics        Json?
+  timestamp      DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  segmentMetrics Json?
+  growthRate     Float?
+  engagementRate Float?
+  audience       Audience @relation(fields: [audienceId], references: [id])
 
   @@index([audienceId])
 }
 
 model AudienceChangeLog {
-  id             String       @id @default(cuid())
-  audienceId     String
-  changeType     String       // ADD, REMOVE, UPDATE
-  changeDetails  Json
-  createdAt      DateTime     @default(now())
-  audience       Audience     @relation(fields: [audienceId], references: [id])
+  id            String   @id @default(cuid())
+  audienceId    String
+  changeType    String
+  changeDetails Json
+  createdAt     DateTime @default(now())
+  audience      Audience @relation(fields: [audienceId], references: [id])
 
   @@index([audienceId])
 }
@@ -881,20 +744,20 @@ model TargetingRule {
   description    String?
   type           TargetingRuleType
   operator       TargetingRuleOperator
-  value          Json                  // Store the target value(s)
-  conditions     Json?                 // Additional conditions
-  isActive       Boolean              @default(true)
-  priority       Int                  @default(0)
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
+  value          Json
+  conditions     Json?
+  isActive       Boolean               @default(true)
+  priority       Int                   @default(0)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
   segmentId      String
   createdById    String
   organizationId String
-  segment        AudienceSegment      @relation(fields: [segmentId], references: [id], onDelete: Cascade)
-  createdBy      User                 @relation(fields: [createdById], references: [id])
-  organization   Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   audienceId     String
-  audience       Audience            @relation(fields: [audienceId], references: [id])
+  audience       Audience              @relation(fields: [audienceId], references: [id])
+  createdBy      User                  @relation(fields: [createdById], references: [id])
+  organization   Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  segment        AudienceSegment       @relation(fields: [segmentId], references: [id], onDelete: Cascade)
 
   @@index([segmentId])
   @@index([createdById])
@@ -902,130 +765,127 @@ model TargetingRule {
   @@index([type])
 }
 
-// Advanced Analytics
 model CrossCampaignAnalytics {
-  id          String   @id @default(cuid())
-  campaignId  String
-  campaign    Campaign @relation(fields: [campaignId], references: [id])
-  metrics     Json
-  comparison  Json?
-  insights    Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String       @id @default(cuid())
+  campaignId     String
+  metrics        Json
+  comparison     Json?
+  insights       Json?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
   organizationId String
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  campaign       Campaign     @relation(fields: [campaignId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([campaignId])
 }
 
 model ROITracking {
-  id             String       @id @default(cuid())
-  campaignId     String
-  investment     Float
-  revenue        Float
-  roi            Float
-  period         String       // Daily, Weekly, Monthly, etc.
-  details        Json?        // Additional ROI details
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  campaign       Campaign     @relation(fields: [campaignId], references: [id])
+  id         String   @id @default(cuid())
+  campaignId String
+  investment Float
+  revenue    Float
+  roi        Float
+  period     String
+  details    Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  campaign   Campaign @relation(fields: [campaignId], references: [id])
 
   @@index([campaignId])
 }
 
 model ABTest {
-  id             String       @id @default(cuid())
-  name           String
-  description    String?
-  status         String       @default("DRAFT")
-  variants       Json         // Test variants
-  results        Json?        // Test results
-  startDate      DateTime
-  endDate        DateTime?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  campaignId     String
-  campaign       Campaign     @relation(fields: [campaignId], references: [id])
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  status      String    @default("DRAFT")
+  variants    Json
+  results     Json?
+  startDate   DateTime
+  endDate     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  campaignId  String
+  campaign    Campaign  @relation(fields: [campaignId], references: [id])
 
   @@index([campaignId])
 }
 
 model ConversionFunnel {
-  id             String       @id @default(cuid())
-  name           String
-  stages         Json         // Funnel stages
-  metrics        Json         // Stage metrics
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  campaignId     String
-  campaign       Campaign     @relation(fields: [campaignId], references: [id])
+  id         String   @id @default(cuid())
+  name       String
+  stages     Json
+  metrics    Json
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id])
 
   @@index([campaignId])
 }
 
-// Asset Management
 model Asset {
-  id             String       @id @default(cuid())
+  id             String         @id @default(cuid())
   name           String
-  type           String       // Image, Video, Document, etc.
+  type           String
   url            String
   metadata       Json?
   tags           String[]
   category       String?
-  status         String       @default("ACTIVE")
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  status         String         @default("ACTIVE")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
   organizationId String
   createdById    String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdBy      User         @relation(fields: [createdById], references: [id])
-  versions       AssetVersion[]
+  createdBy      User           @relation(fields: [createdById], references: [id])
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   usages         AssetUsage[]
+  versions       AssetVersion[]
 
   @@index([organizationId])
   @@index([createdById])
 }
 
 model AssetVersion {
-  id             String       @id @default(cuid())
-  version        Int
-  url            String
-  changes        Json?        // Version changes
-  createdAt      DateTime     @default(now())
-  assetId        String
-  asset          Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  version   Int
+  url       String
+  changes   Json?
+  createdAt DateTime @default(now())
+  assetId   String
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
 
   @@index([assetId])
 }
 
 model AssetUsage {
-  id             String       @id @default(cuid())
-  assetId        String
-  entityType     String       // Content, Campaign, etc.
-  entityId       String
-  usageType      String       // Primary, Secondary, etc.
-  createdAt      DateTime     @default(now())
-  asset          Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  assetId    String
+  entityType String
+  entityId   String
+  usageType  String
+  createdAt  DateTime @default(now())
+  asset      Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
 
   @@index([assetId])
   @@index([entityType, entityId])
 }
 
-// Workflow Automation
 model Workflow {
-  id             String       @id @default(cuid())
+  id             String              @id @default(cuid())
   name           String
   description    String?
-  type           String       // Approval, Notification, etc.
-  steps          Json         // Workflow steps
-  triggers       Json?        // Trigger conditions
-  status         String       @default("ACTIVE")
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  type           String
+  steps          Json
+  triggers       Json?
+  status         String              @default("ACTIVE")
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
   organizationId String
   createdById    String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdBy      User         @relation(fields: [createdById], references: [id])
+  createdBy      User                @relation(fields: [createdById], references: [id])
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   executions     WorkflowExecution[]
 
   @@index([organizationId])
@@ -1033,81 +893,79 @@ model Workflow {
 }
 
 model WorkflowExecution {
-  id             String       @id @default(cuid())
-  workflowId     String
-  status         String
-  currentStep    Int
-  data           Json?        // Execution data
-  startedAt      DateTime     @default(now())
-  completedAt    DateTime?
-  workflow       Workflow     @relation(fields: [workflowId], references: [id])
+  id          String    @id @default(cuid())
+  workflowId  String
+  status      String
+  currentStep Int
+  data        Json?
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  workflow    Workflow  @relation(fields: [workflowId], references: [id])
 
   @@index([workflowId])
 }
 
-// Integration Management
 model Integration {
   id             String       @id @default(cuid())
   name           String
-  type           String       // API, Webhook, etc.
-  config         Json         // Integration configuration
+  type           String
+  config         Json
   status         String       @default("ACTIVE")
   lastSync       DateTime?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   organizationId String
   createdById    String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdBy      User         @relation(fields: [createdById], references: [id])
-  webhooks       Webhook[]
   apiKeys        APIKey[]
+  createdBy      User         @relation(fields: [createdById], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  webhooks       Webhook[]
 
   @@index([organizationId])
   @@index([createdById])
 }
 
 model Webhook {
-  id             String       @id @default(cuid())
-  url            String
-  events         String[]     // Events to trigger webhook
-  secret         String?      // Webhook secret
-  status         String       @default("ACTIVE")
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  integrationId  String
-  integration    Integration  @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  id            String      @id @default(cuid())
+  url           String
+  events        String[]
+  secret        String?
+  status        String      @default("ACTIVE")
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  integrationId String
+  integration   Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
 
   @@index([integrationId])
 }
 
 model APIKey {
-  id             String       @id @default(cuid())
-  name           String
-  key            String       @unique
-  permissions    String[]     // API permissions
-  expiresAt      DateTime?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  integrationId  String
-  integration    Integration  @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  id            String      @id @default(cuid())
+  name          String
+  key           String      @unique
+  permissions   String[]
+  expiresAt     DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  integrationId String
+  integration   Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
 
   @@index([integrationId])
 }
 
-// Reporting
 model Report {
-  id             String       @id @default(cuid())
+  id             String         @id @default(cuid())
   name           String
-  type           String       // Analytics, Performance, etc.
-  template       Json         // Report template
-  schedule       Json?        // Schedule configuration
-  status         String       @default("ACTIVE")
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  type           String
+  template       Json
+  schedule       Json?
+  status         String         @default("ACTIVE")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
   organizationId String
   createdById    String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdBy      User         @relation(fields: [createdById], references: [id])
+  createdBy      User           @relation(fields: [createdById], references: [id])
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   exports        ReportExport[]
   shares         ReportShare[]
 
@@ -1116,85 +974,83 @@ model Report {
 }
 
 model ReportExport {
-  id             String       @id @default(cuid())
-  reportId       String
-  format         String       // PDF, CSV, etc.
-  status         String
-  url            String?
-  createdAt      DateTime     @default(now())
-  report         Report       @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  reportId  String
+  format    String
+  status    String
+  url       String?
+  createdAt DateTime @default(now())
+  report    Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
   @@index([reportId])
 }
 
 model ReportShare {
-  id             String       @id @default(cuid())
-  reportId       String
-  userId         String
-  permissions    String[]     // View, Edit, etc.
-  createdAt      DateTime     @default(now())
-  report         Report       @relation(fields: [reportId], references: [id], onDelete: Cascade)
-  user           User         @relation(fields: [userId], references: [id])
+  id          String   @id @default(cuid())
+  reportId    String
+  userId      String
+  permissions String[]
+  createdAt   DateTime @default(now())
+  report      Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id])
 
   @@index([reportId])
   @@index([userId])
 }
 
-// Audience Engagement
 model AudienceInteraction {
-  id             String       @id @default(cuid())
-  audienceId     String
-  type           String       // Click, View, etc.
-  data           Json?        // Interaction data
-  createdAt      DateTime     @default(now())
-  audience       Audience     @relation(fields: [audienceId], references: [id])
+  id         String   @id @default(cuid())
+  audienceId String
+  type       String
+  data       Json?
+  createdAt  DateTime @default(now())
+  audience   Audience @relation(fields: [audienceId], references: [id])
 
   @@index([audienceId])
 }
 
 model EngagementScore {
-  id             String       @id @default(cuid())
-  audienceId     String
-  score          Float
-  factors        Json         // Scoring factors
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  audience       Audience     @relation(fields: [audienceId], references: [id])
+  id         String   @id @default(cuid())
+  audienceId String
+  score      Float
+  factors    Json
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  audience   Audience @relation(fields: [audienceId], references: [id])
 
   @@index([audienceId])
 }
 
 model BehavioralTracking {
-  id             String       @id @default(cuid())
-  audienceId     String
-  event          String
-  properties     Json?        // Event properties
-  createdAt      DateTime     @default(now())
-  audience       Audience     @relation(fields: [audienceId], references: [id])
+  id         String   @id @default(cuid())
+  audienceId String
+  event      String
+  properties Json?
+  createdAt  DateTime @default(now())
+  audience   Audience @relation(fields: [audienceId], references: [id])
 
   @@index([audienceId])
   @@index([event])
 }
 
-// Marketplace Features
 model MarketplaceListing {
-  id             String       @id @default(cuid())
-  title          String
-  description    String
-  type           String       // BOOST, CONTENT, SERVICE
-  price          Float
-  currency       String       @default("USD")
-  status         String       @default("ACTIVE")
-  metadata       Json?        // Additional listing details
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  organizationId String
-  createdById    String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdBy      User         @relation("MarketplaceListingCreator", fields: [createdById], references: [id])
-  purchases      MarketplacePurchase[]
-  reviews        MarketplaceReview[]
-  boosts         Boost[]
+  id              String                @id @default(cuid())
+  title           String
+  description     String
+  type            String
+  price           Float
+  currency        String                @default("USD")
+  status          String                @default("ACTIVE")
+  metadata        Json?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  organizationId  String
+  createdById     String
+  boosts          Boost[]
+  createdBy       User                  @relation("MarketplaceListingCreator", fields: [createdById], references: [id])
+  organization    Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  purchases       MarketplacePurchase[]
+  reviews         MarketplaceReview[]
   recommendations Recommendation[]
 
   @@index([organizationId])
@@ -1204,18 +1060,18 @@ model MarketplaceListing {
 }
 
 model MarketplacePurchase {
-  id             String            @id @default(cuid())
-  listingId      String
-  buyerId        String
-  amount         Float
-  currency       String
-  status         String           @default("PENDING")
-  paymentId      String?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  listing        MarketplaceListing @relation(fields: [listingId], references: [id])
-  buyer          User             @relation("MarketplacePurchaseBuyer", fields: [buyerId], references: [id])
-  payment        Payment?         @relation(fields: [paymentId], references: [id])
+  id        String             @id @default(cuid())
+  listingId String
+  buyerId   String
+  amount    Float
+  currency  String
+  status    String             @default("PENDING")
+  paymentId String?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  buyer     User               @relation("MarketplacePurchaseBuyer", fields: [buyerId], references: [id])
+  listing   MarketplaceListing @relation(fields: [listingId], references: [id])
+  payment   Payment?           @relation(fields: [paymentId], references: [id])
 
   @@index([listingId])
   @@index([buyerId])
@@ -1223,63 +1079,63 @@ model MarketplacePurchase {
 }
 
 model MarketplaceReview {
-  id             String            @id @default(cuid())
-  listingId      String
-  reviewerId     String
-  rating         Int
-  comment        String?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  listing        MarketplaceListing @relation(fields: [listingId], references: [id])
-  reviewer       User             @relation("MarketplaceReviewer", fields: [reviewerId], references: [id])
+  id         String             @id @default(cuid())
+  listingId  String
+  reviewerId String
+  rating     Int
+  comment    String?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  listing    MarketplaceListing @relation(fields: [listingId], references: [id])
+  reviewer   User               @relation("MarketplaceReviewer", fields: [reviewerId], references: [id])
 
   @@index([listingId])
   @@index([reviewerId])
 }
 
 model Boost {
-  id             String            @id @default(cuid())
-  listingId      String
-  type           String           // FEATURED, SPONSORED, etc.
-  startDate      DateTime
-  endDate        DateTime
-  status         String           @default("ACTIVE")
-  metadata       Json?            // Boost configuration
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  listing        MarketplaceListing @relation(fields: [listingId], references: [id])
+  id        String             @id @default(cuid())
+  listingId String
+  type      String
+  startDate DateTime
+  endDate   DateTime
+  status    String             @default("ACTIVE")
+  metadata  Json?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  listing   MarketplaceListing @relation(fields: [listingId], references: [id])
 
   @@index([listingId])
   @@index([status])
 }
 
 model Recommendation {
-  id             String            @id @default(cuid())
-  listingId      String
-  type           String           // SIMILAR, POPULAR, TRENDING
-  score          Float
-  metadata       Json?            // Recommendation factors
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  listing        MarketplaceListing @relation(fields: [listingId], references: [id])
+  id        String             @id @default(cuid())
+  listingId String
+  type      String
+  score     Float
+  metadata  Json?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  listing   MarketplaceListing @relation(fields: [listingId], references: [id])
 
   @@index([listingId])
   @@index([type])
 }
 
 model Payment {
-  id             String              @id @default(cuid())
+  id             String                @id @default(cuid())
   amount         Float
   currency       String
-  status         String             @default("PENDING")
+  status         String                @default("PENDING")
   paymentMethod  String
-  paymentIntent  String?            // Stripe payment intent ID
-  metadata       Json?              // Payment details
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
-  purchases      MarketplacePurchase[]
-  subscription   Subscription?      @relation(fields: [subscriptionId], references: [id])
+  paymentIntent  String?
+  metadata       Json?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
   subscriptionId String?
+  purchases      MarketplacePurchase[]
+  subscription   Subscription?         @relation(fields: [subscriptionId], references: [id])
 
   @@index([status])
   @@index([subscriptionId])
@@ -1290,7 +1146,7 @@ model Invitation {
   email          String
   role           String       @default("MEMBER")
   token          String       @unique
-  status         String       @default("PENDING") // PENDING, ACCEPTED, EXPIRED
+  status         String       @default("PENDING")
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   organizationId String
@@ -1298,4 +1154,139 @@ model Invitation {
 
   @@unique([email, organizationId])
   @@index([organizationId])
-} 
+}
+
+enum UserRole {
+  CONTENT_CREATOR
+  REVIEWER
+  APPROVER
+  PUBLISHER
+  ADMIN
+}
+
+enum CampaignStatus {
+  draft
+  active
+  completed
+  paused
+  cancelled
+}
+
+enum CampaignGoalType {
+  AWARENESS
+  ENGAGEMENT
+  CONVERSION
+  RETENTION
+  REVENUE
+  CUSTOM
+}
+
+enum ScheduleFrequency {
+  ONCE
+  DAILY
+  WEEKLY
+  MONTHLY
+  CUSTOM
+}
+
+enum ContentStatus {
+  DRAFT
+  PENDING_REVIEW
+  IN_REVIEW
+  CHANGES_REQUESTED
+  APPROVED
+  REJECTED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ApprovalStep {
+  REVIEW
+  APPROVAL
+  PUBLISH
+}
+
+enum NotificationType {
+  CONTENT_SUBMITTED
+  REVIEW_ASSIGNED
+  FEEDBACK_PROVIDED
+  STATUS_CHANGED
+  APPROVAL_REJECTED
+  CONTENT_PUBLISHED
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+}
+
+enum AudienceType {
+  CUSTOM
+  DYNAMIC
+  STATIC
+}
+
+enum ContactListType {
+  EMAIL
+  PHONE
+  CUSTOM
+}
+
+enum AudienceSegmentType {
+  CUSTOM
+  BEHAVIORAL
+  DEMOGRAPHIC
+  GEOGRAPHIC
+  DEVICE
+  TIME_BASED
+}
+
+enum ContactStatus {
+  ACTIVE
+  INACTIVE
+  UNSUBSCRIBED
+  BOUNCED
+  SPAM
+}
+
+enum AudienceStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+  DRAFT
+}
+
+enum TargetingRuleOperator {
+  EQUALS
+  NOT_EQUALS
+  CONTAINS
+  NOT_CONTAINS
+  GREATER_THAN
+  LESS_THAN
+  BETWEEN
+  IN
+  NOT_IN
+  EXISTS
+  NOT_EXISTS
+}
+
+enum TargetingRuleType {
+  DEMOGRAPHIC
+  BEHAVIORAL
+  GEOGRAPHIC
+  DEVICE
+  TIME
+  CUSTOM
+}
+
+enum ContentType {
+  BLOG
+  SOCIAL
+  EMAIL
+  ARTICLE
+  NEWSLETTER
+  PODCAST
+  VIDEO
+  EVENT
+  ANNOUNCEMENT
+  RESOURCE
+}
