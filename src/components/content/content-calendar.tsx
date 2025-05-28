@@ -70,68 +70,30 @@ export interface SocialMediaContent {
   };
 }
 
-export interface CalendarEvent {
-  id: string;
-  title: string;
-  description: string;
-  type: 'article' | 'blog' | 'social' | 'email';
-  status: 'draft' | 'scheduled' | 'sent' | 'failed';
-  date: string;
-  time?: string;
-  scheduledDate?: string;
-  scheduledTime?: string;
-  socialMediaContent: SocialMediaContent;
-  analytics?: {
-    views?: number;
-    engagement?: {
-      likes?: number;
-      shares?: number;
-      comments?: number;
-    };
-    clicks?: number;
-    lastUpdated?: string;
-  };
-  preview?: {
-    thumbnail?: string;
-    platformPreviews?: {
-      [key in SocialPlatform]?: {
-        previewUrl?: string;
-        status?: 'pending' | 'approved' | 'rejected';
-        rejectionReason?: string;
-      };
-    };
-  };
-}
+// Update the content type to match the backend expectations
+export type ContentType = 'social' | 'blog' | 'email' | 'custom' | 'article';
 
-export interface ContentCalendarProps {
-  events?: CalendarEvent[];
-  onEventCreate?: (event: Omit<CalendarEvent, "id">) => Promise<CalendarEvent>;
-  onEventUpdate?: (event: CalendarEvent) => Promise<CalendarEvent>;
-  onEventDelete?: (eventId: string) => Promise<boolean>;
-  onDateSelect?: (day: string) => void;
-  fetchEvents?: () => Promise<CalendarEvent[]>;
-}
-
-// Calendar views
-type CalendarView = "month" | "week" | "day";
-
-// Color mapping for event types
-export const eventTypeColorMap = {
+// Update the event type color map to include all content types
+export const eventTypeColorMap: Record<ContentType, { bg: string; text: string }> = {
   email: {
-    bg: "bg-[var(--color-chart-blue)]/10",
-    text: "text-[var(--color-chart-blue)]"
+    bg: "bg-blue-100 dark:bg-blue-900/30",
+    text: "text-blue-700 dark:text-blue-300"
   },
   social: {
-    bg: "bg-[var(--color-chart-green)]/10",
-    text: "text-[var(--color-chart-green)]"
+    bg: "bg-purple-100 dark:bg-purple-900/30",
+    text: "text-purple-700 dark:text-purple-300"
   },
   blog: {
-    bg: "bg-[var(--color-chart-purple)]/10",
-    text: "text-[var(--color-chart-purple)]"
+    bg: "bg-green-100 dark:bg-green-900/30",
+    text: "text-green-700 dark:text-green-300"
+  },
+  custom: {
+    bg: "bg-gray-100 dark:bg-gray-700/30",
+    text: "text-gray-700 dark:text-gray-300"
   },
   article: {
-    bg: "bg-[var(--color-chart-purple)]/10",
-    text: "text-[var(--color-chart-purple)]"
+    bg: "bg-orange-100 dark:bg-orange-900/30",
+    text: "text-orange-700 dark:text-orange-300"
   }
 };
 
@@ -327,8 +289,14 @@ function MediaUploader({
   );
 }
 
-// Add ContentType definition
-export type ContentType = "email" | "social" | "blog" | "other";
+// Add these constants at the top of the file, after the imports
+const DEFAULT_DURATIONS: Record<ContentType, number> = {
+  social: 30, // 30 minutes for social posts
+  blog: 120,  // 2 hours for blog posts
+  email: 60,  // 1 hour for emails
+  custom: 60, // 1 hour default for custom content
+  article: 120 // 2 hours for articles
+};
 
 // Add this function near the top of the file, after imports
 async function fetchEventAnalytics(eventId: string): Promise<void> {
@@ -338,6 +306,56 @@ async function fetchEventAnalytics(eventId: string): Promise<void> {
     setTimeout(resolve, 1000);
   });
 }
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  description: string;
+  type: ContentType;
+  status: 'draft' | 'scheduled' | 'sent' | 'failed';
+  date: string;
+  time?: string;
+  duration?: number; // Duration in minutes
+  startTime?: string; // ISO string for backend
+  endTime?: string;   // ISO string for backend
+  scheduledDate?: string;
+  scheduledTime?: string;
+  socialMediaContent: SocialMediaContent;
+  analytics?: {
+    views?: number;
+    engagement?: {
+      likes?: number;
+      shares?: number;
+      comments?: number;
+    };
+    clicks?: number;
+    lastUpdated?: string;
+  };
+  preview?: {
+    thumbnail?: string;
+    platformPreviews?: {
+      [key in SocialPlatform]?: {
+        previewUrl?: string;
+        status?: 'pending' | 'approved' | 'rejected';
+        rejectionReason?: string;
+      };
+    };
+  };
+  organizationId: string;
+  createdBy: string;
+}
+
+export interface ContentCalendarProps {
+  events?: CalendarEvent[];
+  onEventCreate?: (event: Omit<CalendarEvent, "id">) => Promise<CalendarEvent>;
+  onEventUpdate?: (event: CalendarEvent) => Promise<CalendarEvent>;
+  onEventDelete?: (eventId: string) => Promise<boolean>;
+  onDateSelect?: (day: string) => void;
+  fetchEvents?: () => Promise<CalendarEvent[]>;
+}
+
+// Calendar views
+type CalendarView = "month" | "week" | "day";
 
 export function ContentCalendar({
   events: initialEvents = [],
@@ -465,14 +483,68 @@ export function ContentCalendar({
     }
   }, [isCreateDialogOpen, isEditDialogOpen, pendingDialogClose]);
 
-  // Handle creating a new event
+  // Update the handleCreateEvent function
   const handleCreateEvent = async (eventData: Omit<CalendarEvent, 'id'>) => {
     try {
       console.log("Creating event:", eventData);
       if (!onEventCreate) {
         throw new Error("onEventCreate handler is not provided");
       }
-      const newEvent = await onEventCreate(eventData);
+
+      // Get the default duration in minutes for this content type
+      const defaultDurationMinutes = DEFAULT_DURATIONS[eventData.type];
+
+      // Validate date and time
+      if (!eventData.date) {
+        throw new Error("Date is required");
+      }
+
+      // Parse the date
+      const dateObj = new Date(eventData.date);
+      if (isNaN(dateObj.getTime())) {
+        throw new Error("Invalid date format");
+      }
+
+      // If time is provided, validate it
+      let startTime: string;
+      if (eventData.time) {
+        const [hours, minutes] = eventData.time.split(':').map(Number);
+        if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+          throw new Error("Invalid time format");
+        }
+        // Create date with time
+        const dateTime = new Date(dateObj);
+        dateTime.setHours(hours, minutes, 0, 0);
+        startTime = dateTime.toISOString();
+      } else {
+        // If no time provided, use start of day
+        const dateTime = new Date(dateObj);
+        dateTime.setHours(0, 0, 0, 0);
+        startTime = dateTime.toISOString();
+      }
+
+      // Calculate endTime based on content type and any custom duration
+      const endTime = new Date(
+        new Date(startTime).getTime() + 
+        (eventData.duration || defaultDurationMinutes) * 60 * 1000
+      ).toISOString();
+
+      // Transform the event data to match the backend requirements
+      const eventToSend: Omit<CalendarEvent, 'id'> = {
+        ...eventData,
+        startTime,
+        endTime,
+        // Remove date and time fields as they're now in startTime/endTime
+        date: eventData.date, // Keep the original date for display purposes
+        time: eventData.time, // Keep the original time for display purposes
+        // Ensure required fields are present
+        type: eventData.type,
+        status: eventData.status || 'draft',
+        organizationId: eventData.organizationId,
+        createdBy: eventData.createdBy
+      };
+
+      const newEvent = await onEventCreate(eventToSend);
       console.log("Event created successfully:", newEvent);
       setEvents(prev => [...prev, newEvent]);
       setIsCreateDialogOpen(false);
@@ -1228,7 +1300,9 @@ export function ContentCalendar({
                               crossPost: false,
                               mediaUrls: [],
                               platformSpecificContent: {}
-                            }
+                            },
+                            organizationId: "",
+                            createdBy: ""
                           });
                         }}
                       />
