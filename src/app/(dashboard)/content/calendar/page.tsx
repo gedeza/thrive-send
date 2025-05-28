@@ -35,6 +35,22 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { format } from "date-fns";
 
 // Update the type definitions at the top of the file
 type CalendarEventType = 'social' | 'blog' | 'email' | 'custom' | 'article';
@@ -920,6 +936,324 @@ export default function CalendarPage() {
           onClose={() => setShowWelcome(false)}
         />
       )}
+
+      {/* Event Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Event</DialogTitle>
+            <DialogDescription>
+              Make changes to your event and save them.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedEvent && (
+            <div className="py-4">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Title</label>
+                  <Input 
+                    value={selectedEvent.title} 
+                    onChange={(e) => setSelectedEvent({...selectedEvent, title: e.target.value})}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Description</label>
+                  <textarea 
+                    className="min-h-[100px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm"
+                    value={selectedEvent.description} 
+                    onChange={(e) => setSelectedEvent({...selectedEvent, description: e.target.value})}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Type</label>
+                    <Select
+                      value={selectedEvent.type}
+                      onValueChange={(value: CalendarEventType) => setSelectedEvent({...selectedEvent, type: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="social">Social Media</SelectItem>
+                        <SelectItem value="blog">Blog Post</SelectItem>
+                        <SelectItem value="email">Email Campaign</SelectItem>
+                        <SelectItem value="article">Article</SelectItem>
+                        <SelectItem value="custom">Custom</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Status</label>
+                    <Select
+                      value={selectedEvent.status}
+                      onValueChange={(value: CalendarEventStatus) => setSelectedEvent({...selectedEvent, status: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="scheduled">Scheduled</SelectItem>
+                        <SelectItem value="sent">Sent</SelectItem>
+                        <SelectItem value="failed">Failed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Date</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start text-left font-normal"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {selectedEvent.date ? format(new Date(selectedEvent.date), 'PPP') : <span>Pick a date</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={selectedEvent.date ? new Date(selectedEvent.date) : undefined}
+                          onSelect={(date) => {
+                            if (date) {
+                              const formattedDate = format(date, 'yyyy-MM-dd');
+                              setSelectedEvent({
+                                ...selectedEvent, 
+                                date: formattedDate,
+                                startTime: formattedDate + 'T' + (selectedEvent.time || '00:00:00')
+                              });
+                            }
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Time</label>
+                    <Input
+                      type="time"
+                      value={selectedEvent.time ? selectedEvent.time.substring(0, 5) : ''}
+                      onChange={(e) => {
+                        const newTime = e.target.value;
+                        setSelectedEvent({
+                          ...selectedEvent, 
+                          time: newTime,
+                          startTime: selectedEvent.date + 'T' + newTime + ':00'
+                        });
+                      }}
+                    />
+                  </div>
+                </div>
+                
+                {selectedEvent.type === 'social' && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Social Media Platforms</label>
+                    <div className="flex flex-wrap gap-2">
+                      {['FACEBOOK', 'TWITTER', 'INSTAGRAM', 'LINKEDIN'].map((platform) => (
+                        <Button
+                          key={platform}
+                          variant={selectedEvent.socialMediaContent.platforms.includes(platform as SocialPlatform) ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => {
+                            const currentPlatforms = selectedEvent.socialMediaContent.platforms;
+                            const platformTyped = platform as SocialPlatform;
+                            const newPlatforms = currentPlatforms.includes(platformTyped)
+                              ? currentPlatforms.filter(p => p !== platformTyped)
+                              : [...currentPlatforms, platformTyped];
+                            
+                            setSelectedEvent({
+                              ...selectedEvent,
+                              socialMediaContent: {
+                                ...selectedEvent.socialMediaContent,
+                                platforms: newPlatforms
+                              }
+                            });
+                          }}
+                        >
+                          {platform}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={async () => {
+              if (selectedEvent) {
+                try {
+                  await handleEventUpdate(selectedEvent);
+                  setIsEditDialogOpen(false);
+                  toast({
+                    title: "Success",
+                    description: "Event updated successfully",
+                  });
+                  
+                  // Refresh events after update
+                  const updatedEvents = await fetchEvents();
+                  setEvents(updatedEvents);
+                } catch (error) {
+                  toast({
+                    title: "Error",
+                    description: "Failed to update event",
+                    variant: "destructive",
+                  });
+                }
+              }
+            }}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Event Details Dialog */}
+      <Dialog open={showEventDetails} onOpenChange={setShowEventDetails}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Event Details</DialogTitle>
+            <DialogDescription>
+              View details for this scheduled content.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedEvent && (
+            <div className="py-4">
+              <div className="grid gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold">{selectedEvent.title}</h3>
+                  <p className="text-sm text-muted-foreground">{selectedEvent.description}</p>
+                </div>
+                
+                <div className="flex flex-wrap gap-2">
+                  <div className={cn(
+                    "px-2 py-1 rounded-full text-xs font-medium",
+                    selectedEvent.status === 'draft' && "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
+                    selectedEvent.status === 'scheduled' && "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+                    selectedEvent.status === 'sent' && "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+                    selectedEvent.status === 'failed' && "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                  )}>
+                    {selectedEvent.status}
+                  </div>
+                  <div className={cn(
+                    "px-2 py-1 rounded-full text-xs font-medium",
+                    selectedEvent.type === 'email' && "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+                    selectedEvent.type === 'social' && "bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+                    selectedEvent.type === 'blog' && "bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+                    selectedEvent.type === 'article' && "bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
+                  )}>
+                    {selectedEvent.type}
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                  <span>
+                    {new Date(selectedEvent.date).toLocaleDateString()}
+                    {selectedEvent.time && ` at ${selectedEvent.time}`}
+                  </span>
+                </div>
+                
+                {selectedEvent.type === 'social' && selectedEvent.socialMediaContent?.platforms && selectedEvent.socialMediaContent.platforms.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Platforms:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedEvent.socialMediaContent.platforms.map(platform => (
+                        <span key={platform} className="px-2 py-1 rounded-full text-xs font-medium bg-muted">
+                          {platform}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {selectedEvent.analytics && (
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Analytics:</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="border rounded-md p-3">
+                        <span className="text-sm text-muted-foreground">Views</span>
+                        <p className="text-2xl font-bold">{selectedEvent.analytics.views || 0}</p>
+                      </div>
+                      <div className="border rounded-md p-3">
+                        <span className="text-sm text-muted-foreground">Clicks</span>
+                        <p className="text-2xl font-bold">{selectedEvent.analytics.clicks || 0}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {selectedEvent.tags && selectedEvent.tags.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Tags:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedEvent.tags.map((tag, index) => (
+                        <span key={index} className="px-2 py-1 rounded-full text-xs font-medium bg-muted">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEventDetails(false)}>
+              Close
+            </Button>
+            <Button variant="outline" onClick={() => {
+              if (selectedEvent) {
+                setShowEventDetails(false);
+                setSelectedEvent(selectedEvent);
+                setIsEditDialogOpen(true);
+              }
+            }}>
+              Edit
+            </Button>
+            <Button variant="destructive" onClick={() => {
+              if (selectedEvent) {
+                setShowEventDetails(false);
+                handleDeleteClick(selectedEvent);
+              }
+            }}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the event
+              {eventToDelete ? ` "${eventToDelete.title}"` : ''}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmedDelete} className="bg-destructive text-destructive-foreground">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Calendar Settings Dialog */}
       <Dialog open={showSettings} onOpenChange={setShowSettings}>

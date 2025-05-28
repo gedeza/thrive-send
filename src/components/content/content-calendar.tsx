@@ -343,6 +343,7 @@ export interface CalendarEvent {
   };
   organizationId: string;
   createdBy: string;
+  tags?: string[]; // Add tags property to match main app interface
 }
 
 export interface ContentCalendarProps {
