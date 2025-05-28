@@ -547,6 +547,23 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
         return;
       }
 
+      // Helper function to safely convert date to ISO string
+      const formatScheduledDate = (dateString: string | undefined): string | undefined => {
+        if (!dateString || dateString === '') return undefined;
+        
+        try {
+          const date = new Date(dateString);
+          if (isNaN(date.getTime())) {
+            console.error('Invalid date provided:', dateString);
+            return undefined;
+          }
+          return date.toISOString();
+        } catch (error) {
+          console.error('Error converting date:', error, 'Original date:', dateString);
+          return undefined;
+        }
+      };
+
       // Transform the event to match the API's expected format
       const contentData = {
         title: event.title || '',
@@ -554,12 +571,17 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
         content: event.description || '',
         tags: [],
         status: event.status?.toUpperCase() as 'DRAFT' | 'IN_REVIEW' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'APPROVED' | 'REJECTED' | 'PUBLISHED' | 'ARCHIVED',
-        scheduledAt: event.date && event.date !== '' ? event.date : undefined,
+        scheduledAt: formatScheduledDate(event.date),
         media: event.socialMediaContent?.mediaUrls || []
       };
 
       console.log('Content data being saved:', contentData);
       console.log('Original event data:', event);
+      console.log('Scheduled date details:', {
+        originalDate: event.date,
+        formattedDate: event.date && event.date !== '' ? new Date(event.date).toISOString() : undefined,
+        isValidDate: event.date ? !isNaN(new Date(event.date).getTime()) : false
+      });
 
       // Save the content
       const savedContent = await saveContent(contentData);
