@@ -214,29 +214,28 @@ model Engagement {
 }
 
 model Analytics {
-  id             String    @id @default(cuid())
-  clientId       String
-  date           DateTime
-  projectCount   Int       @default(0)
-  activeProjects Int       @default(0)
-  completedProjects Int    @default(0)
-  totalBudget    Float     @default(0)
-  usedBudget     Float     @default(0)
-  engagementRate Float     @default(0)
-  contentCount   Int       @default(0)
-  reachCount     Int       @default(0)
-  interactionCount Int     @default(0)
-  conversionRate Float     @default(0)
-  roi            Float     @default(0)
-  nps            Float?    // Net Promoter Score
-  healthScore    Float     @default(0) // Client Health Score
-  lastActivity   DateTime  @default(now())
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  client         Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  id                String    @id @default(cuid())
+  clientId         String
+  campaignId       String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  projectCount     Int       @default(0)
+  activeProjects   Int       @default(0)
+  completedProjects Int      @default(0)
+  totalBudget      Float     @default(0)
+  usedBudget       Float     @default(0)
+  engagementRate   Float     @default(0)
+  contentCount     Int       @default(0)
+  reachCount       Int       @default(0)
+  interactionCount Int       @default(0)
+  conversionRate   Float     @default(0)
+  roi              Float     @default(0)
+  lastActivity     DateTime  @default(now())
+  client           Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  campaign         Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
 
-  @@index([clientId, date])
-  @@index([clientId, healthScore])
+  @@index([clientId])
+  @@index([campaignId])
 }
 
 model Subscription {

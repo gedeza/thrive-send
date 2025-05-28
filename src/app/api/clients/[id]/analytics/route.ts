@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { handleApiError } from "@/lib/api/error-handler";
+import { Analytics } from "@prisma/client";
 
 type ProjectStats = {
   status: string;
@@ -15,12 +16,37 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { userId, orgId } = auth();
-    if (!userId || !orgId) {
+    const session = await auth();
+    if (!session?.userId || !session?.orgId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const { id } = params;
+    // Validate client exists and user has access
+    const client = await prisma.client.findUnique({
+      where: { id: params.id },
+      include: {
+        organization: {
+          include: {
+            members: {
+              where: {
+                user: {
+                  clerkId: session.userId,
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!client) {
+      return new NextResponse("Client not found", { status: 404 });
+    }
+
+    if (client.organization.members.length === 0) {
+      return new NextResponse("You don't have access to this client", { status: 403 });
+    }
+
     const { searchParams } = new URL(request.url);
     const period = searchParams.get("period") || "30d"; // Default to last 30 days
 
@@ -47,14 +73,14 @@ export async function GET(
     // Fetch client analytics
     const analytics = await prisma.analytics.findMany({
       where: {
-        clientId: id,
-        date: {
+        clientId: params.id,
+        createdAt: {
           gte: startDate,
           lte: now,
         },
       },
       orderBy: {
-        date: "asc",
+        createdAt: "asc",
       },
     });
 
@@ -62,7 +88,7 @@ export async function GET(
     const projectStats = await prisma.project.groupBy({
       by: ["status"],
       where: {
-        clientId: id,
+        clientId: params.id,
       },
       _count: {
         id: true,
@@ -81,7 +107,7 @@ export async function GET(
     const contentMetrics = await prisma.contentPiece.aggregate({
       where: {
         project: {
-          clientId: id,
+          clientId: params.id,
         },
         createdAt: {
           gte: startDate,
@@ -94,7 +120,7 @@ export async function GET(
     });
 
     // Calculate client health score
-    const healthScore = await calculateClientHealthScore(id);
+    const healthScore = await calculateClientHealthScore(params.id);
 
     return NextResponse.json({
       analytics,
@@ -120,8 +146,8 @@ async function calculateClientHealthScore(clientId: string): Promise<number> {
     // Get latest analytics
     const latestAnalytics = await prisma.analytics.findFirst({
       where: { clientId },
-      orderBy: { date: "desc" },
-    });
+      orderBy: { createdAt: "desc" },
+    }) as Analytics | null;
 
     if (!latestAnalytics) return 0;
 
