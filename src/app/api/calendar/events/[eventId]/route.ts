@@ -128,6 +128,28 @@ export async function PUT(
 
     // Prepare data for update
     const updateData: any = { ...validationBody };
+    
+    // Convert date strings to proper ISO DateTime format if needed
+    if (validationBody.startTime) {
+      const startDate = new Date(validationBody.startTime);
+      if (isNaN(startDate.getTime())) {
+        // If it's just a date like "2025-05-31", add default time
+        updateData.startTime = new Date(validationBody.startTime + 'T00:00:00.000Z');
+      } else {
+        updateData.startTime = startDate;
+      }
+    }
+    
+    if (validationBody.endTime) {
+      const endDate = new Date(validationBody.endTime);
+      if (isNaN(endDate.getTime())) {
+        // If it's just a date like "2025-05-31", add default time
+        updateData.endTime = new Date(validationBody.endTime + 'T23:59:59.000Z');
+      } else {
+        updateData.endTime = endDate;
+      }
+    }
+    
     updateData.updatedAt = new Date();
 
     // Update the event

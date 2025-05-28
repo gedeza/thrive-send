@@ -40,8 +40,8 @@ export const CustomContentSchema = z.object({
 export const CalendarEventSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
-  date: z.string().min(1, "Date is required"),
-  time: z.string().optional(),
+  startTime: z.string().min(1, "Start time is required"),
+  endTime: z.string().min(1, "End time is required"),
   type: z.enum(["social", "blog", "email", "custom", "article"]),
   status: z.enum(["draft", "scheduled", "published", "sent", "failed"]).default("draft"),
   contentType: z.string().optional(),

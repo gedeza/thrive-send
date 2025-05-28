@@ -71,22 +71,24 @@ export async function GET(req: NextRequest) {
       where: {
         organizationId,
         ...(startDate && endDate ? {
-          date: {
-            gte: startDate,
-            lte: endDate,
+          startTime: {
+            gte: new Date(startDate),
+            lte: new Date(endDate),
           }
         } : {}),
         ...(type ? { type } : {}),
         ...(status ? { status } : {}),
       },
       orderBy: {
-        date: "asc",
+        startTime: "asc",
       },
     });
 
     // Transform dates to ISO strings for JSON serialization
     const transformedEvents = events.map(event => ({
       ...event,
+      startTime: event.startTime.toISOString(),
+      endTime: event.endTime.toISOString(),
       createdAt: event.createdAt.toISOString(),
       updatedAt: event.updatedAt.toISOString(),
     }));
@@ -137,6 +139,8 @@ export async function POST(req: NextRequest) {
     const event = await db.calendarEvent.create({
       data: {
         ...validationBody,
+        startTime: new Date(validationBody.startTime),
+        endTime: new Date(validationBody.endTime),
         createdAt: new Date(),
         updatedAt: new Date(),
         userId: user.id,
@@ -216,6 +220,28 @@ export async function PUT(req: NextRequest) {
 
     // Prepare update data, excluding server-controlled fields
     const { id, organizationId: _, createdBy: __, createdAt: ___, ...updateData } = body;
+    
+    // Convert date strings to proper ISO DateTime format if needed
+    if (updateData.startTime) {
+      const startDate = new Date(updateData.startTime);
+      if (isNaN(startDate.getTime())) {
+        // If it's just a date like "2025-05-31", add default time
+        updateData.startTime = new Date(updateData.startTime + 'T00:00:00.000Z');
+      } else {
+        updateData.startTime = startDate;
+      }
+    }
+    
+    if (updateData.endTime) {
+      const endDate = new Date(updateData.endTime);
+      if (isNaN(endDate.getTime())) {
+        // If it's just a date like "2025-05-31", add default time
+        updateData.endTime = new Date(updateData.endTime + 'T23:59:59.000Z');
+      } else {
+        updateData.endTime = endDate;
+      }
+    }
+    
     updateData.updatedAt = new Date();
 
     const event = await db.calendarEvent.update({
