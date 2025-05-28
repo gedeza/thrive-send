@@ -90,6 +90,7 @@ interface CalendarEvent {
   };
   organizationId: string;
   createdBy: string;
+  tags: string[];
 }
 
 interface ApiCalendarEvent {
@@ -314,7 +315,8 @@ export default function CalendarPage() {
           lastUpdated: response.analytics.lastUpdated || new Date().toISOString()
         } : undefined,
         organizationId: response.organizationId,
-        createdBy: response.createdBy
+        createdBy: response.createdBy,
+        tags: response.tags || []
       };
 
       return transformedEvent;
@@ -400,7 +402,8 @@ export default function CalendarPage() {
           lastUpdated: updatedEvent.analytics.lastUpdated || new Date().toISOString()
         } : undefined,
         organizationId: updatedEvent.organizationId,
-        createdBy: updatedEvent.createdBy
+        createdBy: updatedEvent.createdBy,
+        tags: updatedEvent.tags || []
       };
       
       return transformedEvent;
