@@ -1,69 +1,82 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
-import { PROJECT_STATUS, ProjectFormSchema } from "@/types/project";
 
 // Form validation schema
 const projectSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   description: z.string().optional(),
-  status: z.enum([PROJECT_STATUS.PLANNED, PROJECT_STATUS.IN_PROGRESS, PROJECT_STATUS.COMPLETED], {
+  status: z.enum(["PLANNING", "IN_PROGRESS", "ON_HOLD", "COMPLETED", "CANCELLED"], {
     required_error: "Status is required",
   }),
   startDate: z.string().min(1, "Start date is required"),
-  endDate: z.string()
+  endDate: z.string().optional(),
+  budget: z.string()
     .optional()
-    .refine(
-      (date) => !date || new Date(date) >= new Date(),
-      "End date must be in the future"
-    ),
-  organizationId: z.string(),
-  managerId: z.string().optional(),
-  clientId: z.string(),
-}).refine(
-  (data) => {
-    if (data.endDate && data.startDate) {
-      return new Date(data.endDate) >= new Date(data.startDate);
-    }
-    return true;
-  },
-  {
-    message: "End date must be after start date",
-    path: ["endDate"],
-  }
-);
+    .transform(val => {
+      if (!val) return null;
+      const num = parseFloat(val);
+      return isNaN(num) ? null : num;
+    }),
+});
 
-export default function NewProjectPage() {
+type ProjectFormData = z.infer<typeof projectSchema>;
+
+export default function EditProjectPage() {
   const router = useRouter();
-  const params = useParams() as { id: string };
+  const params = useParams() as { id: string; projectId: string };
+  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<ProjectFormSchema>({
+    reset,
+  } = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
-    defaultValues: {
-      status: PROJECT_STATUS.PLANNED,
-      startDate: new Date().toISOString().split("T")[0],
-      organizationId: "", // This should be set from your organization context
-      clientId: params.id,
-    },
   });
 
-  const onSubmit = async (data: ProjectFormSchema) => {
+  useEffect(() => {
+    const fetchProject = async () => {
+      try {
+        const response = await fetch(`/api/clients/${params.id}/projects/${params.projectId}`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch project");
+        }
+        const data = await response.json();
+        
+        // Format dates for form inputs
+        const formattedData = {
+          ...data,
+          startDate: data.startDate.split('T')[0],
+          endDate: data.endDate ? data.endDate.split('T')[0] : undefined,
+        };
+        
+        reset(formattedData);
+      } catch (error) {
+        console.error("Error fetching project:", error);
+        toast.error("Failed to load project data");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProject();
+  }, [params.id, params.projectId, reset]);
+
+  const onSubmit = async (data: ProjectFormData) => {
     try {
       setIsSubmitting(true);
 
-      const response = await fetch(`/api/projects`, {
-        method: "POST",
+      const response = await fetch(`/api/clients/${params.id}/projects/${params.projectId}`, {
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
@@ -72,27 +85,35 @@ export default function NewProjectPage() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Failed to create project");
+        throw new Error(error.message || "Failed to update project");
       }
 
-      toast.success("Project created successfully!");
+      toast.success("Project updated successfully!");
       router.push(`/clients/${params.id}`);
       router.refresh();
     } catch (error) {
-      console.error("Error creating project:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to create project");
+      console.error("Error updating project:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to update project");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">New Project</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Edit Project</h1>
           <p className="text-muted-foreground">
-            Create a new project for this client
+            Update project information
           </p>
         </div>
         <Link
@@ -138,9 +159,11 @@ export default function NewProjectPage() {
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     {...register("status")}
                   >
-                    <option value={PROJECT_STATUS.PLANNED}>Planned</option>
-                    <option value={PROJECT_STATUS.IN_PROGRESS}>In Progress</option>
-                    <option value={PROJECT_STATUS.COMPLETED}>Completed</option>
+                    <option value="PLANNING">Planning</option>
+                    <option value="IN_PROGRESS">In Progress</option>
+                    <option value="ON_HOLD">On Hold</option>
+                    <option value="COMPLETED">Completed</option>
+                    <option value="CANCELLED">Cancelled</option>
                   </select>
                   {errors.status && (
                     <p className="text-sm text-destructive">{errors.status.message}</p>
@@ -186,6 +209,28 @@ export default function NewProjectPage() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label
+                    htmlFor="budget"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Budget
+                  </label>
+                  <input
+                    id="budget"
+                    type="number"
+                    step="0.01"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    placeholder="0.00"
+                    {...register("budget")}
+                  />
+                  {errors.budget && (
+                    <p className="text-sm text-destructive">{errors.budget.message}</p>
+                  )}
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <label
                   htmlFor="description"
@@ -216,7 +261,7 @@ export default function NewProjectPage() {
                 disabled={isSubmitting}
                 className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2"
               >
-                {isSubmitting ? "Creating..." : "Create Project"}
+                {isSubmitting ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </form>
@@ -224,4 +269,4 @@ export default function NewProjectPage() {
       </div>
     </div>
   );
-}
+} 

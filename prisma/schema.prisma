@@ -101,6 +101,9 @@ model OrganizationMember {
 model Client {
   id             String          @id @default(cuid())
   name           String
+  type           String
+  industry       String?
+  website        String?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   organizationId String
@@ -597,20 +600,18 @@ model CampaignTemplate {
   id             String       @id @default(cuid())
   name           String
   description    String?
-  content        String?
-  category       String
+  content        String?      @db.Text
   status         String       @default("DRAFT")
-  lastUpdated    DateTime
   createdAt      DateTime     @default(now())
-  previewImage   String?
+  updatedAt      DateTime     @updatedAt
   organizationId String
-  authorId       String
+  userId         String       // Foreign key for User
   campaigns      Campaign[]
-  user           User         @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([authorId])
   @@index([organizationId])
+  @@index([userId])
 }
 
 model Audience {

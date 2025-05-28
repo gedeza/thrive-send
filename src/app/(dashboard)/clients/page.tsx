@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Users, Globe, Facebook, Twitter, Instagram, Linkedin, Mail, User, RefreshCcw } from "lucide-react";
+import { useOrganization } from "@clerk/nextjs";
 
 // Types
 type ClientType = "MUNICIPALITY" | "BUSINESS" | "STARTUP" | "INDIVIDUAL" | "NONPROFIT";
@@ -71,14 +72,18 @@ export default function ClientsPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const { organization } = useOrganization();
 
   const fetchClients = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      const organizationId = 'org_123'; // Hardcoded for testing; replace with actual org ID later
-      const res = await fetch(`/api/clients?organizationId=${organizationId}`);
+      if (!organization?.id) {
+        throw new Error("No organization selected");
+      }
+
+      const res = await fetch(`/api/clients?organizationId=${organization.id}`);
       
       if (!res.ok) {
         const errorText = await res.text();
@@ -87,17 +92,19 @@ export default function ClientsPage() {
       
       const data = await res.json();
       setClients(Array.isArray(data) ? data : []);
-      setLoading(false);
     } catch (err: any) {
       console.error("Failed to load clients:", err);
-      setError("Unable to load client data. Please try again later.");
+      setError(err.message || "Unable to load client data. Please try again later.");
+    } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchClients();
-  }, []);
+    if (organization?.id) {
+      fetchClients();
+    }
+  }, [organization?.id]);
 
   // For large datasets, memoization prevents unnecessary filtering
   const filteredClients = useMemo(() => {

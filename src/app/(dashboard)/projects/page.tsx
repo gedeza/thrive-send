@@ -2,18 +2,33 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ProjectCard, Project } from "@/components/projects/ProjectCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-const STATUS_OPTIONS = ["All", "In Progress", "Planned", "Completed"];
+const STATUS_OPTIONS = ["All", "PLANNED", "IN_PROGRESS", "COMPLETED"];
 
 export default function ProjectsPage() {
+  const router = useRouter();
+  const { toast } = useToast();
   const [projects, setProjects] = useState<Project[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("All");
+  const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
 
   // Filter button color sets from theme (for clarity)
   const FILTER_BUTTON_VARIANTS = {
@@ -22,56 +37,58 @@ export default function ProjectsPage() {
   };
 
   useEffect(() => {
-    // Simulated async fetch, replace with real API call
-    const fetchProjects = async () => {
-      try {
-        // In a real app, this would be an API call
-        // await fetch('/api/projects')
-        setTimeout(() => {
-          setProjects([
-            { 
-              id: '1', 
-              name: 'Website Redesign', 
-              status: 'In Progress', 
-              progress: 65,
-              owner: "Alice",
-              lastUpdated: "2024-06-03"
-            },
-            { 
-              id: '2', 
-              name: 'Email Campaign', 
-              status: 'Planned', 
-              progress: 10,
-              owner: "Bob",
-              lastUpdated: "2024-05-28"
-            },
-            { 
-              id: '3', 
-              name: 'Social Media Strategy', 
-              status: 'Completed', 
-              progress: 100,
-              owner: "Charlie",
-              lastUpdated: "2024-05-15"
-            },
-            { 
-              id: '4', 
-              name: 'Mobile App Launch', 
-              status: 'In Progress', 
-              progress: 40,
-              owner: "Alice",
-              lastUpdated: "2024-06-01"
-            }
-          ]);
-          setLoading(false);
-        }, 800);
-      } catch (e) {
-        setError("Failed to fetch projects");
-        setLoading(false);
-      }
-    };
-
     fetchProjects();
   }, []);
+
+  const fetchProjects = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/projects');
+      if (!response.ok) {
+        throw new Error('Failed to fetch projects');
+      }
+      const data = await response.json();
+      setProjects(data);
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to fetch projects");
+      toast({
+        title: "Error",
+        description: "Failed to fetch projects. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteProject = async (id: string) => {
+    try {
+      const response = await fetch(`/api/projects/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete project');
+      }
+
+      // Remove project from state
+      setProjects((prev) => prev ? prev.filter(p => p.id !== id) : null);
+      
+      toast({
+        title: "Success",
+        description: "Project deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete project. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteProjectId(null);
+    }
+  };
 
   // Search and Filter logic
   const filteredProjects = useMemo(() => {
@@ -81,11 +98,11 @@ export default function ProjectsPage() {
       filtered = filtered.filter((p) => p.status === statusFilter);
     }
     if (search.trim()) {
+      const searchLower = search.toLowerCase();
       filtered = filtered.filter(
         (p) =>
-          p.name.toLowerCase().includes(search.toLowerCase()) ||
-          p.owner.toLowerCase().includes(search.toLowerCase()) ||
-          p.status.toLowerCase().includes(search.toLowerCase())
+          p.name.toLowerCase().includes(searchLower) ||
+          (p.description?.toLowerCase().includes(searchLower))
       );
     }
     return filtered;
@@ -105,7 +122,7 @@ export default function ProjectsPage() {
             type="search"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search by name, owner or status..."
+            placeholder="Search by name or description..."
             className="max-w-xs"
             aria-label="Search projects"
             data-testid="search-projects"
@@ -139,7 +156,7 @@ export default function ProjectsPage() {
               aria-pressed={statusFilter === status}
               tabIndex={0}
             >
-              {status}
+              {status === "IN_PROGRESS" ? "In Progress" : status.charAt(0) + status.slice(1).toLowerCase()}
             </button>
           ))}
         </nav>
@@ -157,7 +174,11 @@ export default function ProjectsPage() {
         {filteredProjects && filteredProjects.length > 0 ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredProjects.map(project => (
-              <ProjectCard key={project.id} project={project} />
+              <ProjectCard 
+                key={project.id} 
+                project={project}
+                onDelete={(id) => setDeleteProjectId(id)}
+              />
             ))}
           </div>
         ) : !loading && (
@@ -169,6 +190,26 @@ export default function ProjectsPage() {
           </div>
         )}
       </section>
+
+      <AlertDialog open={!!deleteProjectId} onOpenChange={() => setDeleteProjectId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the project and all its data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteProjectId && handleDeleteProject(deleteProjectId)}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

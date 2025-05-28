@@ -1,4 +1,4 @@
-import { authMiddleware } from "@clerk/nextjs";
+import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { Ratelimit } from "@upstash/ratelimit";
@@ -65,7 +65,7 @@ const publicRoutes = [
   '/api/public(.*)'
 ];
 
-export default authMiddleware({
+export default clerkMiddleware({
   publicRoutes,
   async afterAuth(auth, req: NextRequest) {
     // Handle authentication

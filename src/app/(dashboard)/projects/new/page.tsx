@@ -6,35 +6,62 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from "@/components/ui/use-toast";
+import { Loader2 } from "lucide-react";
+import { useOrganization } from "@clerk/nextjs";
+
+interface Client {
+  id: string;
+  name: string;
+  organizationId: string;
+}
 
 export default function NewProjectPage() {
   const router = useRouter();
+  const { toast } = useToast();
+  const { organization, isLoaded: isOrgLoaded } = useOrganization();
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // Sample client data - replace with actual API call
-  const clients = [
-    { id: '1', name: 'Acme Corporation' },
-    { id: '2', name: 'Tech Innovations Inc.' },
-    { id: '3', name: 'Global Marketing Group' }
-  ];
+  const [clients, setClients] = useState<Client[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  // Simulate checking if we have clients
   useEffect(() => {
-    // In a real app, this would fetch clients from an API
     const fetchClients = async () => {
       try {
-        // Replace with actual API call
-        await new Promise(resolve => setTimeout(resolve, 500));
-        setIsLoading(false);
+        if (!organization?.id) {
+          throw new Error('No organization selected');
+        }
+
+        setIsLoading(true);
+        setError(null);
+        
+        // Use the Clerk organization ID
+        const response = await fetch(`/api/clients?organizationId=${organization.id}`);
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || 'Failed to fetch clients');
+        }
+
+        const data = await response.json();
+        setClients(data);
       } catch (error) {
-        console.error('Error fetching clients:', error);
+        const message = error instanceof Error ? error.message : 'Failed to load clients';
+        setError(message);
+        toast({
+          title: "Error",
+          description: message,
+          variant: "destructive",
+        });
+      } finally {
         setIsLoading(false);
       }
     };
     
-    fetchClients();
-  }, []);
+    if (isOrgLoaded && organization?.id) {
+      fetchClients();
+    }
+  }, [isOrgLoaded, organization?.id, toast]);
 
   const handleClientSelect = (clientId: string) => {
     setSelectedClient(clientId);
@@ -46,15 +73,43 @@ export default function NewProjectPage() {
     }
   };
 
-  if (isLoading) {
+  if (!isOrgLoaded || !organization) {
     return (
       <div className="flex justify-center items-center h-64">
-        <p>Loading...</p>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  // If no clients exist, show a message and option to create a client first
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-md mx-auto p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Error</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-destructive mb-4">{error}</p>
+            <Button 
+              onClick={() => router.refresh()}
+              className="w-full"
+            >
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (clients.length === 0) {
     return (
       <div className="max-w-md mx-auto p-6">

@@ -15,6 +15,47 @@ const clientSchema = z.object({
   email: z.string().email("Invalid email address"),
   phone: z.string().optional(),
   address: z.string().optional(),
+  type: z.string().min(1, "Client type is required"),
+  website: z.string()
+    .transform(val => {
+      if (!val) return "";
+      // Check if URL starts with http:// or https://
+      if (!/^https?:\/\//i.test(val)) {
+        return `https://${val}`;
+      }
+      return val;
+    })
+    .refine(val => {
+      if (!val) return true;
+      try {
+        new URL(val);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }, "Invalid URL")
+    .optional()
+    .or(z.literal("")),
+  industry: z.string().optional(),
+  logoUrl: z.string()
+    .transform(val => {
+      if (!val) return "";
+      if (!/^https?:\/\//i.test(val)) {
+        return `https://${val}`;
+      }
+      return val;
+    })
+    .refine(val => {
+      if (!val) return true;
+      try {
+        new URL(val);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }, "Invalid URL format")
+    .optional()
+    .or(z.literal("")),
   organizationId: z.string().min(1, "Organization is required"),
 });
 
@@ -36,6 +77,10 @@ export default function AddClientPage() {
       email: "",
       phone: "",
       address: "",
+      type: "",
+      website: "",
+      industry: "",
+      logoUrl: "",
       organizationId: organization?.id || "",
     },
   });
@@ -49,35 +94,51 @@ export default function AddClientPage() {
         return;
       }
 
-      console.log("Submitting client data:", {
+      // Clean up the data before sending
+      const cleanData = {
         ...data,
+        website: data.website || null,
+        phone: data.phone || null,
+        industry: data.industry || null,
+        address: data.address || null,
+        logoUrl: data.logoUrl || null,
         organizationId: organization.id,
-      });
-      
+      };
+
       const response = await fetch("/api/clients", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          ...data,
-          organizationId: organization.id,
-        }),
+        body: JSON.stringify(cleanData),
       });
 
-      const responseData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(responseData.error || "Failed to create client");
+      let responseData;
+      const textData = await response.text();
+      
+      try {
+        responseData = textData ? JSON.parse(textData) : {};
+      } catch (error) {
+        console.error("Error parsing response:", error);
+        throw new Error("Server returned an invalid response");
       }
 
-      toast.success("Client created successfully");
+      if (!response.ok) {
+        throw new Error(responseData.error || `Failed to create client (${response.status})`);
+      }
+
+      toast.success("Client created successfully!");
       
-      // Add a small delay before navigation to ensure the toast is visible
-      setTimeout(() => {
+      // Redirect to the client details page or client list
+      if (responseData.id) {
+        router.push(`/clients/${responseData.id}`);
+      } else {
         router.push("/clients");
-        router.refresh();
-      }, 1000);
+      }
+      
+      // Force a refresh of the client list
+      router.refresh();
+      
     } catch (error) {
       console.error("Error creating client:", error);
       toast.error(error instanceof Error ? error.message : "Failed to create client");
@@ -165,6 +226,7 @@ export default function AddClientPage() {
                     id="type"
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     required
+                    {...register("type")}
                   >
                     <option value="">Select client type...</option>
                     <option value="MUNICIPALITY">Municipality</option>
@@ -173,6 +235,9 @@ export default function AddClientPage() {
                     <option value="INDIVIDUAL">Individual</option>
                     <option value="NONPROFIT">Nonprofit</option>
                   </select>
+                  {errors.type && (
+                    <p className="text-sm text-destructive">{errors.type.message}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -247,7 +312,11 @@ export default function AddClientPage() {
                     type="url"
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     placeholder="https://www.example.com"
+                    {...register("website")}
                   />
+                  {errors.website && (
+                    <p className="text-sm text-destructive">{errors.website.message}</p>
+                  )}
                 </div>
                 
                 <div className="space-y-2">
@@ -262,25 +331,43 @@ export default function AddClientPage() {
                     type="text"
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     placeholder="e.g., Technology, Healthcare, Education"
+                    {...register("industry")}
                   />
+                  {errors.industry && (
+                    <p className="text-sm text-destructive">{errors.industry.message}</p>
+                  )}
                 </div>
               </div>
               
               <div className="space-y-2">
                 <label 
-                  htmlFor="address"
+                  htmlFor="logoUrl"
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
-                  Address
+                  Logo URL
                 </label>
+                <input
+                  id="logoUrl"
+                  type="url"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  placeholder="https://example.com/logo.png"
+                  {...register("logoUrl")}
+                />
+                {errors.logoUrl && (
+                  <p className="text-sm text-destructive">{errors.logoUrl.message}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2 col-span-2">
+                <label htmlFor="address" className="text-sm font-medium">Address</label>
                 <textarea
                   id="address"
-                  className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  placeholder="Enter client's business address"
                   {...register("address")}
+                  rows={3}
+                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 />
                 {errors.address && (
-                  <p className="text-sm text-destructive">{errors.address.message}</p>
+                  <p className="text-sm text-red-500">{errors.address.message}</p>
                 )}
               </div>
             </div>
