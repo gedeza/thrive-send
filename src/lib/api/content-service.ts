@@ -357,9 +357,12 @@ export async function createCalendarEventFromContent(content: ContentData): Prom
 }
 
 /**
- * Sync existing content to calendar events
+ * Sync existing content to calendar events with retry mechanism
  */
-export async function syncContentToCalendar(): Promise<{ synced: number; errors: number }> {
+export async function syncContentToCalendar(retryCount = 0): Promise<{ synced: number; errors: number }> {
+  const MAX_RETRIES = 3;
+  const INITIAL_RETRY_DELAY = 1000; // 1 second
+
   try {
     console.log('Starting content to calendar sync...');
     
@@ -376,6 +379,7 @@ export async function syncContentToCalendar(): Promise<{ synced: number; errors:
 
         if (!response.ok) {
           console.error(`Failed to fetch ${status} content:`, response.status, response.statusText);
+          errors++;
           continue;
         }
 
@@ -464,10 +468,25 @@ export async function syncContentToCalendar(): Promise<{ synced: number; errors:
       errors++;
     }
 
+    // If there were errors and we haven't exceeded max retries, retry with exponential backoff
+    if (errors > 0 && retryCount < MAX_RETRIES) {
+      const delay = INITIAL_RETRY_DELAY * Math.pow(2, retryCount);
+      console.log(`Retrying sync in ${delay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return syncContentToCalendar(retryCount + 1);
+    }
+
     console.log(`Sync completed: ${synced} synced, ${errors} errors`);
     return { synced, errors };
   } catch (error) {
     console.error('Error during content to calendar sync:', error);
+    // If this is a retry attempt, throw the error to be handled by the retry mechanism
+    if (retryCount < MAX_RETRIES) {
+      const delay = INITIAL_RETRY_DELAY * Math.pow(2, retryCount);
+      console.log(`Retrying sync in ${delay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return syncContentToCalendar(retryCount + 1);
+    }
     throw error;
   }
 } 

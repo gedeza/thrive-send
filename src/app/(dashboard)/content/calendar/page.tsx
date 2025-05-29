@@ -4,13 +4,14 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { ContentCalendar, ContentType, SocialPlatform } from "@/components/content/content-calendar";
+import { ContentCalendar, ContentType, SocialPlatform, CalendarEvent as ContentCalendarEvent } from "@/components/content/content-calendar";
 import { WelcomeFlow } from "@/components/onboarding/welcome-flow";
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent, fetchCalendarEvents } from "@/lib/api/calendar-service";
 import { ContentCalendarSync } from "@/components/content/ContentCalendarSync";
+import { syncContentToCalendar } from "@/lib/api/content-service";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Search, Filter, Calendar as CalendarIcon, List, Grid, Settings, Edit, Trash2, X } from "lucide-react";
+import { Search, Filter, Calendar as CalendarIcon, List, Grid, Settings, Edit, Trash2, X, RefreshCw } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,7 +51,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
+
+// Use the CalendarEvent type from the content calendar component
+type CalendarEvent = ContentCalendarEvent;
 
 // Update the type definitions at the top of the file
 type CalendarEventType = 'social' | 'blog' | 'email' | 'custom' | 'article';
@@ -58,56 +62,6 @@ type CalendarEventType = 'social' | 'blog' | 'email' | 'custom' | 'article';
 type CalendarEventStatus = 'draft' | 'scheduled' | 'sent' | 'failed';
 // API status includes 'published' instead of 'sent', so we need to map between them
 type ApiEventStatus = 'draft' | 'scheduled' | 'published' | 'failed';
-
-interface CalendarEvent {
-  id: string;
-  title: string;
-  description: string;
-  type: CalendarEventType;
-  status: CalendarEventStatus;
-  date: string;
-  time?: string;
-  duration?: number; // Duration in minutes
-  startTime?: string; // ISO string for backend
-  endTime?: string;   // ISO string for backend
-  scheduledDate?: string;
-  scheduledTime?: string;
-  socialMediaContent: {
-    platforms: SocialPlatform[];
-    crossPost: boolean;
-    mediaUrls: string[];
-    platformSpecificContent: {
-      [key in SocialPlatform]?: {
-        text: string;
-        mediaUrls: string[];
-        scheduledTime?: string;
-      };
-    };
-  };
-  analytics?: {
-    views?: number;
-    engagement?: {
-      likes?: number;
-      shares?: number;
-      comments?: number;
-    };
-    clicks?: number;
-    lastUpdated?: string;
-  };
-  preview?: {
-    thumbnail?: string;
-    platformPreviews?: {
-      [key in SocialPlatform]?: {
-        previewUrl?: string;
-        status?: 'pending' | 'approved' | 'rejected';
-        rejectionReason?: string;
-      };
-    };
-  };
-  organizationId: string;
-  createdBy: string;
-  tags: string[];
-}
 
 interface ApiCalendarEvent {
   id: string;
@@ -193,6 +147,8 @@ export default function CalendarPage() {
     engagementThreshold: 0,
     customTags: [] as string[]
   });
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
 
   // Utility functions for mapping statuses between API and UI
   const mapApiStatusToUi = (status: string): CalendarEventStatus => {
@@ -290,7 +246,8 @@ export default function CalendarPage() {
           lastUpdated: event.analytics.lastUpdated || new Date().toISOString()
         } : undefined,
         organizationId: event.organizationId,
-        createdBy: event.createdBy
+        createdBy: event.createdBy,
+        tags: event.tags || []
       };
 
       const response = await createCalendarEvent(apiEvent);
@@ -520,11 +477,73 @@ export default function CalendarPage() {
 
       // Custom tags filter
       if (advancedFilters.customTags.length > 0) {
-        if (!advancedFilters.customTags.some(tag => event.tags.includes(tag))) return false;
+        const eventTags = event.tags || [];
+        if (!advancedFilters.customTags.some(tag => eventTags.includes(tag))) return false;
       }
 
       return true;
     });
+  };
+
+  // Add auto-sync when switching to list view
+  useEffect(() => {
+    if (viewMode === 'list' && !isSyncing) {
+      handleAutoSync();
+    }
+  }, [viewMode]);
+
+  // Add background sync for list view
+  useEffect(() => {
+    if (viewMode === 'list') {
+      const syncInterval = setInterval(() => {
+        handleAutoSync();
+      }, 5 * 60 * 1000); // Sync every 5 minutes
+
+      return () => clearInterval(syncInterval);
+    }
+  }, [viewMode]);
+
+  const handleAutoSync = async () => {
+    if (isSyncing) return;
+    
+    setIsSyncing(true);
+    try {
+      const result = await syncContentToCalendar();
+      if (result.synced > 0 || result.errors === 0) {
+        // Only show toast if there were actual changes
+        if (result.synced > 0) {
+          toast({
+            title: "Calendar Updated",
+            description: `Successfully synced ${result.synced} content items to calendar`,
+          });
+        }
+        // Refresh events after sync
+        const updatedEvents = await fetchEvents();
+        setEvents(updatedEvents);
+        setLastSyncTime(new Date());
+      } else if (result.errors > 0) {
+        // Show error toast for failed syncs
+        toast({
+          title: "Sync Failed",
+          description: `${result.errors} items failed to sync. Please try again or check the sync panel for details.`,
+          variant: "destructive",
+        });
+        // Show the sync panel to allow manual retry
+        setShowSync(true);
+      }
+    } catch (error) {
+      console.error('Auto-sync failed:', error);
+      // Show error toast for unexpected errors
+      toast({
+        title: "Sync Error",
+        description: error instanceof Error ? error.message : "An unexpected error occurred during sync",
+        variant: "destructive",
+      });
+      // Show the sync panel to allow manual retry
+      setShowSync(true);
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   return (
@@ -639,292 +658,304 @@ export default function CalendarPage() {
           <TabsTrigger value="list" className="gap-2">
             <List className="h-4 w-4" />
             List View
+            {isSyncing && (
+              <span className="ml-2">
+                <RefreshCw className="h-3 w-3 animate-spin" />
+              </span>
+            )}
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="calendar">
           <ContentCalendar
-            onEventCreate={handleEventCreate as (event: Omit<import("@/components/content/content-calendar").CalendarEvent, "id">) => Promise<import("@/components/content/content-calendar").CalendarEvent>}
-            onEventUpdate={handleEventUpdate as (event: import("@/components/content/content-calendar").CalendarEvent) => Promise<import("@/components/content/content-calendar").CalendarEvent>}
+            onEventCreate={handleEventCreate}
+            onEventUpdate={handleEventUpdate}
             onEventDelete={handleEventDelete}
-            fetchEvents={fetchEvents as () => Promise<import("@/components/content/content-calendar").CalendarEvent[]>}
+            fetchEvents={fetchEvents}
           />
         </TabsContent>
 
         <TabsContent value="list">
-          <div className="rounded-lg border bg-card">
-            <div className="p-6">
-              {events.length === 0 ? (
-                <div className="text-center py-12">
-                  <CalendarIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium text-foreground mb-2">No events found</h3>
-                  <p className="text-muted-foreground mb-4">
-                    {searchQuery || filterType !== "all" 
-                      ? "No events match your current filters. Try adjusting your search or filters."
-                      : "Get started by creating your first content event."
-                    }
-                  </p>
-                  <Button onClick={() => router.push("/content/new")}>
-                    + Create Your First Event
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {/* List View Header */}
-                  <div className="flex items-center justify-between border-b pb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold">All Events</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {events.length} {events.length === 1 ? 'event' : 'events'} found
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                        <SelectTrigger className="w-[140px]">
-                          <SelectValue placeholder="Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Statuses</SelectItem>
-                          <SelectItem value="draft">Draft</SelectItem>
-                          <SelectItem value="scheduled">Scheduled</SelectItem>
-                          <SelectItem value="sent">Sent</SelectItem>
-                          <SelectItem value="failed">Failed</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Select value={selectedType} onValueChange={setSelectedType}>
-                        <SelectTrigger className="w-[140px]">
-                          <SelectValue placeholder="Type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Types</SelectItem>
-                          <SelectItem value="social">Social Media</SelectItem>
-                          <SelectItem value="blog">Blog Posts</SelectItem>
-                          <SelectItem value="email">Email</SelectItem>
-                          <SelectItem value="article">Articles</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Select value={listViewGroupBy} onValueChange={(value) => setListViewGroupBy(value as 'none' | 'type' | 'status')}>
-                        <SelectTrigger className="w-[140px]">
-                          <SelectValue placeholder="Group by" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">No Grouping</SelectItem>
-                          <SelectItem value="type">Group by Type</SelectItem>
-                          <SelectItem value="status">Group by Status</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Select value={listViewSort.field} onValueChange={(value) => setListViewSort(prev => ({ ...prev, field: value as 'date' | 'title' | 'type' | 'status' }))}>
-                        <SelectTrigger className="w-[140px]">
-                          <SelectValue placeholder="Sort by" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="date">Date</SelectItem>
-                          <SelectItem value="title">Title</SelectItem>
-                          <SelectItem value="type">Type</SelectItem>
-                          <SelectItem value="status">Status</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setListViewSort(prev => ({
-                          ...prev,
-                          direction: prev.direction === 'asc' ? 'desc' : 'asc'
-                        }))}
-                      >
-                        {listViewSort.direction === 'asc' ? '↑' : '↓'}
-                      </Button>
-                    </div>
+          <div className="space-y-4">
+            {lastSyncTime && (
+              <p className="text-sm text-muted-foreground">
+                Last synced: {formatDistanceToNow(lastSyncTime, { addSuffix: true })}
+              </p>
+            )}
+            <div className="rounded-lg border bg-card">
+              <div className="p-6">
+                {events.length === 0 ? (
+                  <div className="text-center py-12">
+                    <CalendarIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-medium text-foreground mb-2">No events found</h3>
+                    <p className="text-muted-foreground mb-4">
+                      {searchQuery || filterType !== "all" 
+                        ? "No events match your current filters. Try adjusting your search or filters."
+                        : "Get started by creating your first content event."
+                      }
+                    </p>
+                    <Button onClick={() => router.push("/content/new")}>
+                      + Create Your First Event
+                    </Button>
                   </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* List View Header */}
+                    <div className="flex items-center justify-between border-b pb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold">All Events</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {events.length} {events.length === 1 ? 'event' : 'events'} found
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue placeholder="Status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Statuses</SelectItem>
+                            <SelectItem value="draft">Draft</SelectItem>
+                            <SelectItem value="scheduled">Scheduled</SelectItem>
+                            <SelectItem value="sent">Sent</SelectItem>
+                            <SelectItem value="failed">Failed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Select value={selectedType} onValueChange={setSelectedType}>
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue placeholder="Type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Types</SelectItem>
+                            <SelectItem value="social">Social Media</SelectItem>
+                            <SelectItem value="blog">Blog Posts</SelectItem>
+                            <SelectItem value="email">Email</SelectItem>
+                            <SelectItem value="article">Articles</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Select value={listViewGroupBy} onValueChange={(value) => setListViewGroupBy(value as 'none' | 'type' | 'status')}>
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue placeholder="Group by" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No Grouping</SelectItem>
+                            <SelectItem value="type">Group by Type</SelectItem>
+                            <SelectItem value="status">Group by Status</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Select value={listViewSort.field} onValueChange={(value) => setListViewSort(prev => ({ ...prev, field: value as 'date' | 'title' | 'type' | 'status' }))}>
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue placeholder="Sort by" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="date">Date</SelectItem>
+                            <SelectItem value="title">Title</SelectItem>
+                            <SelectItem value="type">Type</SelectItem>
+                            <SelectItem value="status">Status</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => setListViewSort(prev => ({
+                            ...prev,
+                            direction: prev.direction === 'asc' ? 'desc' : 'asc'
+                          }))}
+                        >
+                          {listViewSort.direction === 'asc' ? '↑' : '↓'}
+                        </Button>
+                      </div>
+                    </div>
 
-                  {/* Events List */}
-                  <div className="space-y-6">
-                    {Object.entries(getGroupedEvents(applyAdvancedFilters(events
-                      .filter(event => {
-                        // Apply search filter
-                        if (searchQuery && !event.title.toLowerCase().includes(searchQuery.toLowerCase()) && 
-                            !event.description.toLowerCase().includes(searchQuery.toLowerCase())) {
-                          return false;
-                        }
-                        // Apply type filter
-                        if (selectedType !== "all" && event.type !== selectedType) {
-                          return false;
-                        }
-                        // Apply status filter
-                        if (selectedStatus !== "all" && event.status !== selectedStatus) {
-                          return false;
-                        }
-                        return true;
-                      })
-                      .sort((a, b) => {
-                        const direction = listViewSort.direction === 'asc' ? 1 : -1;
-                        switch (listViewSort.field) {
-                          case 'date':
-                            return direction * (new Date(a.date || a.startTime || '').getTime() - new Date(b.date || b.startTime || '').getTime());
-                          case 'title':
-                            return direction * a.title.localeCompare(b.title);
-                          case 'type':
-                            return direction * a.type.localeCompare(b.type);
-                          case 'status':
-                            return direction * a.status.localeCompare(b.status);
-                          default:
-                            return 0;
-                        }
-                      })
-                      .slice((listViewPage - 1) * listViewPageSize, listViewPage * listViewPageSize)
-                    ))).map(([groupName, groupEvents]) => (
-                      <div key={groupName} className="space-y-3">
-                        {listViewGroupBy !== 'none' && (
-                          <h4 className="text-sm font-medium text-muted-foreground">
-                            {groupName} ({groupEvents.length})
-                          </h4>
-                        )}
-                        {groupEvents.map((event) => (
-                          <div
-                            key={event.id}
-                            className="p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                            onClick={() => {
-                              setSelectedEvent(event);
-                              setShowEventDetails(true);
-                            }}
-                          >
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-3 mb-2">
-                                  <h4 className="font-medium text-foreground truncate">{event.title}</h4>
-                                  <div className="flex items-center gap-2">
-                                    <span className={cn(
-                                      "px-2 py-1 rounded-full text-xs font-medium",
-                                      event.status === 'draft' && "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
-                                      event.status === 'scheduled' && "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-                                      event.status === 'sent' && "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-                                      event.status === 'failed' && "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
-                                    )}>
-                                      {event.status}
-                                    </span>
-                                    <span className={cn(
-                                      "px-2 py-1 rounded-full text-xs font-medium",
-                                      event.type === 'email' && "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
-                                      event.type === 'social' && "bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
-                                      event.type === 'blog' && "bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300",
-                                      event.type === 'article' && "bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
-                                    )}>
-                                      {event.type}
-                                    </span>
-                                  </div>
-                                </div>
-                                
-                                {event.description && (
-                                  <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
-                                    {event.description}
-                                  </p>
-                                )}
-                                
-                                <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                                  <div className="flex items-center gap-1">
-                                    <CalendarIcon className="h-3 w-3" />
-                                    <span>
-                                      {new Date(event.date).toLocaleDateString()}
-                                      {event.time && ` at ${event.time}`}
-                                    </span>
+                    {/* Events List */}
+                    <div className="space-y-6">
+                      {Object.entries(getGroupedEvents(applyAdvancedFilters(events
+                        .filter(event => {
+                          // Apply search filter
+                          if (searchQuery && !event.title.toLowerCase().includes(searchQuery.toLowerCase()) && 
+                              !event.description.toLowerCase().includes(searchQuery.toLowerCase())) {
+                            return false;
+                          }
+                          // Apply type filter
+                          if (selectedType !== "all" && event.type !== selectedType) {
+                            return false;
+                          }
+                          // Apply status filter
+                          if (selectedStatus !== "all" && event.status !== selectedStatus) {
+                            return false;
+                          }
+                          return true;
+                        })
+                        .sort((a, b) => {
+                          const direction = listViewSort.direction === 'asc' ? 1 : -1;
+                          switch (listViewSort.field) {
+                            case 'date':
+                              return direction * (new Date(a.date || a.startTime || '').getTime() - new Date(b.date || b.startTime || '').getTime());
+                            case 'title':
+                              return direction * a.title.localeCompare(b.title);
+                            case 'type':
+                              return direction * a.type.localeCompare(b.type);
+                            case 'status':
+                              return direction * a.status.localeCompare(b.status);
+                            default:
+                              return 0;
+                          }
+                        })
+                        .slice((listViewPage - 1) * listViewPageSize, listViewPage * listViewPageSize)
+                      ))).map(([groupName, groupEvents]) => (
+                        <div key={groupName} className="space-y-3">
+                          {listViewGroupBy !== 'none' && (
+                            <h4 className="text-sm font-medium text-muted-foreground">
+                              {groupName} ({groupEvents.length})
+                            </h4>
+                          )}
+                          {groupEvents.map((event) => (
+                            <div
+                              key={event.id}
+                              className="p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                              onClick={() => {
+                                setSelectedEvent(event);
+                                setShowEventDetails(true);
+                              }}
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <h4 className="font-medium text-foreground truncate">{event.title}</h4>
+                                    <div className="flex items-center gap-2">
+                                      <span className={cn(
+                                        "px-2 py-1 rounded-full text-xs font-medium",
+                                        event.status === 'draft' && "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
+                                        event.status === 'scheduled' && "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+                                        event.status === 'sent' && "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+                                        event.status === 'failed' && "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                                      )}>
+                                        {event.status}
+                                      </span>
+                                      <span className={cn(
+                                        "px-2 py-1 rounded-full text-xs font-medium",
+                                        event.type === 'email' && "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+                                        event.type === 'social' && "bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+                                        event.type === 'blog' && "bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+                                        event.type === 'article' && "bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
+                                      )}>
+                                        {event.type}
+                                      </span>
+                                    </div>
                                   </div>
                                   
-                                  {event.type === 'social' && event.socialMediaContent?.platforms && event.socialMediaContent.platforms.length > 0 && (
+                                  {event.description && (
+                                    <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                                      {event.description}
+                                    </p>
+                                  )}
+                                  
+                                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
                                     <div className="flex items-center gap-1">
-                                      <span className="text-xs">Platforms:</span>
-                                      <div className="flex gap-1">
-                                        {event.socialMediaContent.platforms.map(platform => (
-                                          <span key={platform} className="text-xs font-medium">
-                                            {platform}
-                                          </span>
-                                        ))}
+                                      <CalendarIcon className="h-3 w-3" />
+                                      <span>
+                                        {new Date(event.date).toLocaleDateString()}
+                                        {event.time && ` at ${event.time}`}
+                                      </span>
+                                    </div>
+                                    
+                                    {event.type === 'social' && event.socialMediaContent?.platforms && event.socialMediaContent.platforms.length > 0 && (
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-xs">Platforms:</span>
+                                        <div className="flex gap-1">
+                                          {event.socialMediaContent.platforms.map(platform => (
+                                            <span key={platform} className="text-xs font-medium">
+                                              {platform}
+                                            </span>
+                                          ))}
+                                        </div>
                                       </div>
-                                    </div>
-                                  )}
-                                  
-                                  {event.analytics && (
-                                    <div className="flex items-center gap-1">
-                                      <span>Views: {event.analytics.views || 0}</span>
-                                    </div>
-                                  )}
+                                    )}
+                                    
+                                    {event.analytics && (
+                                      <div className="flex items-center gap-1">
+                                        <span>Views: {event.analytics.views || 0}</span>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                              
-                              <div className="flex items-center gap-2 ml-4">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedEvent(event);
-                                    setIsEditDialogOpen(true);
-                                  }}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteClick(event);
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                                
+                                <div className="flex items-center gap-2 ml-4">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedEvent(event);
+                                      setIsEditDialogOpen(true);
+                                    }}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteClick(event);
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
 
-                  {/* Pagination */}
-                  <div className="flex items-center justify-between border-t pt-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">
-                        Showing {Math.min((listViewPage - 1) * listViewPageSize + 1, events.length)} to {Math.min(listViewPage * listViewPageSize, events.length)} of {events.length} events
-                      </span>
-                      <Select
-                        value={listViewPageSize.toString()}
-                        onValueChange={(value) => {
-                          setListViewPageSize(parseInt(value));
-                          setListViewPage(1);
-                        }}
-                      >
-                        <SelectTrigger className="w-[100px]">
-                          <SelectValue placeholder="Page size" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="10">10 per page</SelectItem>
-                          <SelectItem value="25">25 per page</SelectItem>
-                          <SelectItem value="50">50 per page</SelectItem>
-                          <SelectItem value="100">100 per page</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setListViewPage(prev => Math.max(1, prev - 1))}
-                        disabled={listViewPage === 1}
-                      >
-                        Previous
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setListViewPage(prev => prev + 1)}
-                        disabled={listViewPage * listViewPageSize >= events.length}
-                      >
-                        Next
-                      </Button>
+                    {/* Pagination */}
+                    <div className="flex items-center justify-between border-t pt-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">
+                          Showing {Math.min((listViewPage - 1) * listViewPageSize + 1, events.length)} to {Math.min(listViewPage * listViewPageSize, events.length)} of {events.length} events
+                        </span>
+                        <Select
+                          value={listViewPageSize.toString()}
+                          onValueChange={(value) => {
+                            setListViewPageSize(parseInt(value));
+                            setListViewPage(1);
+                          }}
+                        >
+                          <SelectTrigger className="w-[100px]">
+                            <SelectValue placeholder="Page size" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="10">10 per page</SelectItem>
+                            <SelectItem value="25">25 per page</SelectItem>
+                            <SelectItem value="50">50 per page</SelectItem>
+                            <SelectItem value="100">100 per page</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setListViewPage(prev => Math.max(1, prev - 1))}
+                          disabled={listViewPage === 1}
+                        >
+                          Previous
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setListViewPage(prev => prev + 1)}
+                          disabled={listViewPage * listViewPageSize >= events.length}
+                        >
+                          Next
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </TabsContent>

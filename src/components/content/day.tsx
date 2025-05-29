@@ -118,8 +118,11 @@ function DraggableEvent({ event, onClick }: { event: CalendarEvent; onClick: () 
 
 export function Day({ day, events, onEventClick, onClick }: DayProps) {
   const userTimezone = useTimezone();
-  const { setNodeRef: setDroppableRef } = useDroppable({
-    id: formatInTimeZone(day, userTimezone, "yyyy-MM-dd"),
+  const { setNodeRef, isOver } = useDroppable({
+    id: format(day, 'yyyy-MM-dd'),
+    data: {
+      date: format(day, 'yyyy-MM-dd')
+    }
   });
 
   const isToday = isSameDay(day, new Date());
@@ -147,13 +150,29 @@ export function Day({ day, events, onEventClick, onClick }: DayProps) {
     }
   };
 
+  const getEventTypeStyles = (type: string) => {
+    switch (type) {
+      case 'email':
+        return "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300";
+      case 'social':
+        return "bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300";
+      case 'blog':
+        return "bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300";
+      case 'article':
+        return "bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300";
+      default:
+        return "bg-gray-50 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300";
+    }
+  };
+
   return (
     <div
-      ref={setDroppableRef}
+      ref={setNodeRef}
       className={cn(
         "relative min-h-[100px] p-2 border rounded-md",
         isToday && "bg-primary/5",
-        !isCurrentMonth && "opacity-50"
+        !isCurrentMonth && "opacity-50",
+        isOver && "drop-target"
       )}
       onClick={onClick}
     >
@@ -175,37 +194,23 @@ export function Day({ day, events, onEventClick, onClick }: DayProps) {
         {events.map((event) => (
           <div
             key={event.id}
+            id={`event-${event.id}`}
+            className={cn(
+              "text-xs p-1.5 px-2 rounded-md truncate cursor-move",
+              getEventTypeStyles(event.type),
+              "hover:opacity-80"
+            )}
             onClick={(e) => {
               e.stopPropagation();
               onEventClick(event);
             }}
-            className={cn(
-              "p-1.5 rounded text-xs truncate flex items-center gap-1.5 hover:opacity-80 transition-opacity",
-              event.type === 'email' && "bg-[var(--color-chart-blue)]/10 text-[var(--color-chart-blue)]",
-              event.type === 'social' && "bg-[var(--color-chart-green)]/10 text-[var(--color-chart-green)]",
-              event.type === 'blog' && "bg-[var(--color-chart-purple)]/10 text-[var(--color-chart-purple)]",
-              event.type === 'article' && "bg-[var(--color-chart-purple)]/10 text-[var(--color-chart-purple)]"
-            )}
           >
-            {event.type === 'social' && event.socialMediaContent.platforms.length > 0 ? (
-              <div className="flex items-center gap-1">
-                {event.socialMediaContent.platforms.map((platform) => (
-                  <span key={platform} className="text-[10px]">
-                    {platformIcons[platform]}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <span className="text-[10px]">
-                {eventTypeIcons[event.type]}
+            {event.time && (
+              <span className="text-[10px] font-medium opacity-70">
+                {event.time.substring(0, 5)}
               </span>
             )}
             <span className="truncate">{event.title}</span>
-            {event.time && (
-              <span className="text-[10px] opacity-70 ml-auto">
-                {formatEventTime(event.date, event.time)}
-              </span>
-            )}
           </div>
         ))}
       </div>
