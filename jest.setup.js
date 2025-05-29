@@ -195,3 +195,6 @@ jest.mock('date-fns-tz', () => ({
 beforeEach(() => {
   jest.clearAllMocks();
 });
+
+// Add support for act(...)
+import { act } from '@testing-library/react';

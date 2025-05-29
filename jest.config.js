@@ -17,7 +17,7 @@ const customJestConfig = {
       tsconfig: 'tsconfig.json',
     }],
   },
-  testMatch: ['**/__tests__/**/*.test.ts'],
+  testMatch: ['**/__tests__/**/*.test.ts', '**/__tests__/**/*.test.tsx'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
 };
 

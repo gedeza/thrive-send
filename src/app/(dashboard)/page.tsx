@@ -11,8 +11,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/solid';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import SafeAnalyticsChart from "@/components/dashboard/analytics-chart"
-import SafeActivityFeed, { type Activity as ActivityType } from "@/components/dashboard/activity-feed"
+import SafeActivityFeed from "@/components/activity/ActivityFeed"
 import { DashboardOverview } from '@/components/dashboard/DashboardOverview';
+import { Activity } from "@/types/activity";
 
 interface AnalyticsData {
   metrics: {
@@ -63,7 +64,7 @@ const chartData = [
 ]
 
 // Sample data for the activity feed
-const activities: ActivityType[] = [
+const activities: Activity[] = [
   {
     id: "1",
     type: "campaign",
@@ -71,9 +72,11 @@ const activities: ActivityType[] = [
     description: "Spring Sale Campaign was created",
     timestamp: "2024-06-01T10:00:00Z",
     user: {
+      id: "user1",
       name: "John Doe",
       image: "https://github.com/shadcn.png",
     },
+    status: "published"
   },
   {
     id: "2",
@@ -81,6 +84,8 @@ const activities: ActivityType[] = [
     title: "Email Sent",
     description: "Newsletter was sent to 1,000 subscribers",
     timestamp: "2024-06-01T09:30:00Z",
+    status: "sent",
+    recipientCount: 1000
   },
   {
     id: "3",
@@ -89,8 +94,10 @@ const activities: ActivityType[] = [
     description: "Sarah Smith joined the organization",
     timestamp: "2024-06-01T09:00:00Z",
     user: {
+      id: "user2",
       name: "Sarah Smith",
     },
+    action: "joined"
   },
   {
     id: "4",
@@ -98,8 +105,9 @@ const activities: ActivityType[] = [
     title: "System Update",
     description: "System maintenance completed successfully",
     timestamp: "2024-06-01T08:30:00Z",
+    severity: "info"
   },
-]
+];
 
 export default function DashboardHomePage() {
   const router = useRouter();
@@ -168,7 +176,12 @@ export default function DashboardHomePage() {
 
       {/* Activity Feed Section */}
       <div className="mt-8">
-        <SafeActivityFeed activities={activities} />
+        <SafeActivityFeed 
+          activities={activities}
+          showFilters={true}
+          realTimeUpdates={true}
+          maxHeight="400px"
+        />
       </div>
     </div>
   );

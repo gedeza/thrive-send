@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Activity, Briefcase, Globe, MapPin, Twitter, Linkedin, Github, Settings, Bell, Shield } from 'lucide-react';
 import { ActivityFeed } from '@/components/activity/ActivityFeed';
 import { profileFormSchema, type ProfileFormData } from '@/lib/validations/profile';
-import { activityService } from '@/lib/services/activity';
+import { activityService } from '@/lib/services/activity-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,11 +19,13 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import type { Activity as ActivityType } from '@/types/activity';
+import type { ProfileActivity } from '@/types/activity';
 
 export default function ProfilePage() {
   const { user, isLoaded } = useUser();
   const [isUpdating, setIsUpdating] = useState(false);
-  const [activities, setActivities] = useState<any[]>([]);
+  const [activities, setActivities] = useState<ActivityType[]>([]);
   const [isDirty, setIsDirty] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -77,11 +79,12 @@ export default function ProfilePage() {
 
   const loadActivities = async () => {
     try {
-      const response = await fetch('/api/activity');
-      if (!response.ok) {
-        throw new Error('Failed to load activities');
-      }
-      const data = await response.json();
+      if (!user?.id) return;
+      const data = await activityService.getActivities({
+        userId: user.id,
+        type: 'profile',
+        limit: 10
+      });
       setActivities(data);
     } catch (error) {
       console.error('Failed to load activities:', error);
@@ -138,45 +141,31 @@ export default function ProfilePage() {
         throw new Error(responseData.message || 'Failed to update profile');
       }
 
-      // Record the activity through the API
-      const activityResponse = await fetch('/api/activity', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: 'PROFILE_UPDATE',
+      // Record the activity through the activity service
+      if (user?.id) {
+        await activityService.recordActivity({
+          type: 'profile',
+          title: 'Profile Updated',
           description: 'Updated profile information',
+          user: {
+            id: user.id,
+            name: user.fullName || 'Unknown User',
+            image: user.imageUrl,
+          },
+          action: 'PROFILE_UPDATE',
           metadata: {
             updatedFields: Object.keys(validatedData),
           },
-        }),
-      });
-
-      if (!activityResponse.ok) {
-        console.error('Failed to record activity');
+        } as Omit<ProfileActivity, 'id' | 'timestamp'>);
       }
 
-      // Reload activities
+      // Reload activities to show the new update
       await loadActivities();
-
       setIsDirty(false);
       toast.success('Profile updated successfully');
     } catch (error) {
-      console.error('Profile update error:', error);
-      if (error instanceof Error) {
-        // Format the error message to be more user-friendly
-        const errorMessage = error.message
-          .replace(/^ZodError: /, '')
-          .replace(/^Error: /, '')
-          .replace(/^Failed to update profile: /, '')
-          .replace(/^Validation error: /, '');
-        
-        toast.error(errorMessage || 'Please check your input and try again');
-      } else {
-        toast.error('Failed to update profile. Please try again.');
-      }
-      throw error; // Re-throw to let ProfileCard handle the error
+      console.error('Failed to update profile:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update profile');
     } finally {
       setIsUpdating(false);
     }
@@ -303,11 +292,16 @@ export default function ProfilePage() {
                 <CardHeader>
                   <CardTitle className="text-lg">Recent Activity</CardTitle>
                   <CardDescription>
-                    Track your recent actions and updates
+                    Track your recent profile updates and actions
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ActivityFeed activities={activities} />
+                  <ActivityFeed 
+                    activities={activities}
+                    showFilters={true}
+                    realTimeUpdates={true}
+                    maxHeight="400px"
+                  />
                 </CardContent>
               </Card>
             </TabsContent>
