@@ -106,8 +106,6 @@ export default function DashboardHomePage() {
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [dateRange, setDateRange] = useState<'1d' | '7d' | '30d' | 'custom'>('7d');
-  const [customRange, setCustomRange] = useState<{ from: string; to: string } | null>(null);
 
   useEffect(() => {
     let eventSource: EventSource | null = null;
@@ -155,62 +153,13 @@ export default function DashboardHomePage() {
 
   return (
     <div className="flex-1 space-y-8 p-8 pt-6 bg-neutral-background">
-      {/* Date Range Buttons */}
-      <div className="flex flex-wrap items-center gap-2 mb-6">
-        <Button
-          variant={dateRange === '1d' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setDateRange('1d')}
-        >
-          1D
-        </Button>
-        <Button
-          variant={dateRange === '7d' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setDateRange('7d')}
-        >
-          7D
-        </Button>
-        <Button
-          variant={dateRange === '30d' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setDateRange('30d')}
-        >
-          30D
-        </Button>
-        <Button
-          variant={dateRange === 'custom' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setDateRange('custom')}
-        >
-          CUSTOM
-        </Button>
-        {dateRange === 'custom' && (
-          <div className="flex items-center gap-2 ml-2">
-            <input
-              type="date"
-              value={customRange?.from || ''}
-              onChange={e => setCustomRange(r => ({ ...r, from: e.target.value }))}
-              className="border rounded px-2 py-1 text-sm"
-            />
-            <span>-</span>
-            <input
-              type="date"
-              value={customRange?.to || ''}
-              onChange={e => setCustomRange(r => ({ ...r, to: e.target.value }))}
-              className="border rounded px-2 py-1 text-sm"
-            />
-          </div>
-        )}
-      </div>
-
       {/* Dashboard Overview Section */}
-      <DashboardOverview dateRange={dateRange} customRange={customRange} />
+      <DashboardOverview dateRange="7d" />
 
       {/* Analytics Chart Section */}
       <div className="mt-8">
         <AnalyticsChart
-          data={[]}
+          data={chartData}
           title="Monthly Engagement"
           value="900"
           description="Engagement over the last 6 months"
@@ -219,7 +168,7 @@ export default function DashboardHomePage() {
 
       {/* Activity Feed Section */}
       <div className="mt-8">
-        <ActivityFeed activities={[]} />
+        <ActivityFeed activities={activities} />
       </div>
     </div>
   );

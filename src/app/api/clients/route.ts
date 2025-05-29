@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 
 // GET: List all clients for the user's organizations
@@ -23,7 +22,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Find the organization by either internal ID or Clerk ID
-    const organization = await prisma.organization.findFirst({
+    const organization = await db.organization.findFirst({
       where: {
         OR: [
           { id: organizationId },
@@ -39,7 +38,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const clients = await prisma.client.findMany({
+    const clients = await db.client.findMany({
       where: {
         organizationId: organization.id, // Always use internal ID
       },
@@ -100,7 +99,7 @@ export async function POST(request: Request) {
     }
 
     // Map Clerk organizationId to internal organization id
-    const organization = await prisma.organization.findUnique({
+    const organization = await db.organization.findUnique({
       where: { clerkOrganizationId: organizationId },
     });
     if (!organization) {
@@ -114,7 +113,7 @@ export async function POST(request: Request) {
 
     // Verify user has access to the organization
     try {
-      const membership = await prisma.organizationMember.findFirst({
+      const membership = await db.organizationMember.findFirst({
         where: {
           organizationId: internalOrganizationId,
           user: { clerkId: session.userId }
@@ -134,7 +133,7 @@ export async function POST(request: Request) {
       */
 
       // Check for existing client with same email
-      const existingClient = await prisma.client.findFirst({
+      const existingClient = await db.client.findFirst({
         where: {
           email,
           organizationId: internalOrganizationId,
@@ -150,7 +149,7 @@ export async function POST(request: Request) {
       }
 
       // Create new client
-      const client = await prisma.client.create({
+      const client = await db.client.create({
         data: {
           name,
           email,

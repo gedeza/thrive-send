@@ -1,3 +1,5 @@
+import React from 'react';
+
 interface SidebarItem {
   key: string;
   label: string;
@@ -26,8 +28,20 @@ export const defaultSidebarItems: SidebarItem[] = [
   {
     key: 'dashboard',
     label: 'Dashboard',
-    href: '/',
+    href: '/dashboard',
     // icon: <DashboardIcon />,
+  },
+  {
+    key: 'calendar',
+    label: 'Calendar',
+    href: '/content/calendar',
+    // icon: <CalendarIcon />,
+  },
+  {
+    key: 'clients',
+    label: 'Clients',
+    href: '/clients',
+    // icon: <ClientsIcon />,
   },
   projectsItem,
   templatesItem,

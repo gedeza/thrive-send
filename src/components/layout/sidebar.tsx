@@ -72,7 +72,7 @@ export function Sidebar({
 
   // Toggle collapsed state
   const toggleCollapsed = React.useCallback(() => {
-    setCollapsed(prevState => !prevState);
+    setCollapsed((prevState: boolean) => !prevState);
   }, []);
 
 
@@ -110,12 +110,9 @@ export function Sidebar({
       <nav className="flex-1 p-3 overflow-y-auto">
         <ul className="space-y-1">
           {items.map((item) => {
-            // Special case for dashboard to ensure it points to /dashboard
+            // Use the item's href as provided
             let href = item.href;
-            if (item.key === 'dashboard') {
-              // Always ensure dashboard points to /dashboard
-              href = '/dashboard';
-            } else if (item.href === "/settings") {
+            if (item.href === "/settings") {
               href = "/settings";
             } else if (item.href) {
               href = item.href.startsWith("/") ? item.href : `/${item.href}`;
@@ -125,7 +122,7 @@ export function Sidebar({
             const isActive = item.isActive ?? (
               href && (
                 pathname === href || 
-                (pathname?.startsWith(href) && href !== "/dashboard")
+                (pathname?.startsWith(href) && href !== "/")
               )
             );
             

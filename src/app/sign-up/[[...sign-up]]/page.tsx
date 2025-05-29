@@ -5,9 +5,9 @@ export default function SignUpPage() {
     <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">Create Account</h1>
+          <h1 className="text-3xl font-bold mb-2">Create Your Account</h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Join ThriveSend and start managing your content calendar
+            Get started with ThriveSend
           </p>
         </div>
         <SignUp 

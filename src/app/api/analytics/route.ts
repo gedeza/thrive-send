@@ -59,15 +59,21 @@ export async function GET(request: NextRequest) {
         createdAt: 'asc',
       },
       select: {
-        views: true,
-        engagements: true,
-        shares: true,
-        likes: true,
-        comments: true,
-        conversions: true,
-        follows: true,
-        new_followers: true,
-        revenue: true,
+        id: true,
+        clientId: true,
+        campaignId: true,
+        projectCount: true,
+        activeProjects: true,
+        completedProjects: true,
+        totalBudget: true,
+        usedBudget: true,
+        engagementRate: true,
+        contentCount: true,
+        reachCount: true,
+        interactionCount: true,
+        conversionRate: true,
+        roi: true,
+        lastActivity: true,
         createdAt: true,
       },
     });
@@ -77,36 +83,38 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         data: [],
         total: {
-          views: 0,
-          engagements: 0,
-          shares: 0,
-          likes: 0,
-          comments: 0,
-          conversions: 0,
-          follows: 0,
-          new_followers: 0,
-          revenue: 0,
+          projectCount: 0,
+          activeProjects: 0,
+          completedProjects: 0,
+          totalBudget: 0,
+          usedBudget: 0,
+          engagementRate: 0,
+          contentCount: 0,
+          reachCount: 0,
+          interactionCount: 0,
+          conversionRate: 0,
+          roi: 0,
         },
         audienceGrowthData: {
           labels: [],
           datasets: [{
-            label: "New Followers",
+            label: "Content Growth",
             data: [],
             backgroundColor: "#1976d2",
           }]
         },
         engagementPieData: {
-          labels: ["Likes", "Comments", "Shares", "Follows"],
+          labels: ["Active", "Completed", "Planned"],
           datasets: [{
-            label: "Engagement",
-            data: [0, 0, 0, 0],
-            backgroundColor: ["#1976d2", "#43a047", "#fbc02d", "#e53935"],
+            label: "Projects",
+            data: [0, 0, 0],
+            backgroundColor: ["#1976d2", "#43a047", "#fbc02d"],
           }]
         },
         performanceLineData: {
           labels: [],
           datasets: [{
-            label: "Engagement Trend",
+            label: "Engagement Rate Trend",
             data: [],
             borderColor: "#1976d2",
             backgroundColor: "rgba(25, 118, 210, 0.2)",
@@ -138,72 +146,78 @@ export async function GET(request: NextRequest) {
       if (!acc[key]) {
         acc[key] = {
           date: key,
-          views: 0,
-          engagements: 0,
-          shares: 0,
-          likes: 0,
-          comments: 0,
-          conversions: 0,
-          follows: 0,
-          new_followers: 0,
-          revenue: 0,
+          projectCount: 0,
+          activeProjects: 0,
+          completedProjects: 0,
+          totalBudget: 0,
+          usedBudget: 0,
+          engagementRate: 0,
+          contentCount: 0,
+          reachCount: 0,
+          interactionCount: 0,
+          conversionRate: 0,
+          roi: 0,
         };
       }
 
-      acc[key].views += curr.views ?? 0;
-      acc[key].engagements += curr.engagements ?? 0;
-      acc[key].shares += curr.shares ?? 0;
-      acc[key].likes += curr.likes ?? 0;
-      acc[key].comments += curr.comments ?? 0;
-      acc[key].conversions += curr.conversions ?? 0;
-      acc[key].follows += curr.follows ?? 0;
-      acc[key].new_followers += curr.new_followers ?? 0;
-      acc[key].revenue += curr.revenue ?? 0;
+      acc[key].projectCount += curr.projectCount ?? 0;
+      acc[key].activeProjects += curr.activeProjects ?? 0;
+      acc[key].completedProjects += curr.completedProjects ?? 0;
+      acc[key].totalBudget += curr.totalBudget ?? 0;
+      acc[key].usedBudget += curr.usedBudget ?? 0;
+      acc[key].engagementRate = Math.max(acc[key].engagementRate, curr.engagementRate ?? 0);
+      acc[key].contentCount += curr.contentCount ?? 0;
+      acc[key].reachCount += curr.reachCount ?? 0;
+      acc[key].interactionCount += curr.interactionCount ?? 0;
+      acc[key].conversionRate = Math.max(acc[key].conversionRate, curr.conversionRate ?? 0);
+      acc[key].roi = Math.max(acc[key].roi, curr.roi ?? 0);
 
       return acc;
     }, {} as Record<string, any>);
 
     const groupedDataValues = Object.values(groupedData);
-    const totalEngagements = analytics.reduce((sum, curr) => sum + (curr.engagements ?? 0), 0);
-    const totalLikes = analytics.reduce((sum, curr) => sum + (curr.likes ?? 0), 0);
-    const totalComments = analytics.reduce((sum, curr) => sum + (curr.comments ?? 0), 0);
-    const totalShares = analytics.reduce((sum, curr) => sum + (curr.shares ?? 0), 0);
-    const totalFollows = analytics.reduce((sum, curr) => sum + (curr.follows ?? 0), 0);
+    const totalProjectCount = analytics.reduce((sum, curr) => sum + (curr.projectCount ?? 0), 0);
+    const totalActiveProjects = analytics.reduce((sum, curr) => sum + (curr.activeProjects ?? 0), 0);
+    const totalCompletedProjects = analytics.reduce((sum, curr) => sum + (curr.completedProjects ?? 0), 0);
+    const totalPlannedProjects = totalProjectCount - (totalActiveProjects + totalCompletedProjects);
 
     return NextResponse.json({
       data: groupedDataValues,
       total: {
-        views: analytics.reduce((sum, curr) => sum + (curr.views ?? 0), 0),
-        engagements: totalEngagements,
-        shares: totalShares,
-        likes: totalLikes,
-        comments: totalComments,
-        conversions: analytics.reduce((sum, curr) => sum + (curr.conversions ?? 0), 0),
-        follows: totalFollows,
-        new_followers: analytics.reduce((sum, curr) => sum + (curr.new_followers ?? 0), 0),
-        revenue: analytics.reduce((sum, curr) => sum + (curr.revenue ?? 0), 0),
+        projectCount: totalProjectCount,
+        activeProjects: totalActiveProjects,
+        completedProjects: totalCompletedProjects,
+        plannedProjects: totalPlannedProjects,
+        totalBudget: analytics.reduce((sum, curr) => sum + (curr.totalBudget ?? 0), 0),
+        usedBudget: analytics.reduce((sum, curr) => sum + (curr.usedBudget ?? 0), 0),
+        engagementRate: analytics.length > 0 ? analytics.reduce((sum, curr) => sum + (curr.engagementRate ?? 0), 0) / analytics.length : 0,
+        contentCount: analytics.reduce((sum, curr) => sum + (curr.contentCount ?? 0), 0),
+        reachCount: analytics.reduce((sum, curr) => sum + (curr.reachCount ?? 0), 0),
+        interactionCount: analytics.reduce((sum, curr) => sum + (curr.interactionCount ?? 0), 0),
+        conversionRate: analytics.length > 0 ? analytics.reduce((sum, curr) => sum + (curr.conversionRate ?? 0), 0) / analytics.length : 0,
+        roi: analytics.length > 0 ? analytics.reduce((sum, curr) => sum + (curr.roi ?? 0), 0) / analytics.length : 0,
       },
       audienceGrowthData: {
         labels: Object.keys(groupedData),
         datasets: [{
-          label: "New Followers",
-          data: groupedDataValues.map(d => d.new_followers),
+          label: "Content Growth",
+          data: groupedDataValues.map(d => d.contentCount),
           backgroundColor: "#1976d2",
         }]
       },
       engagementPieData: {
-        labels: ["Likes", "Comments", "Shares", "Follows"],
+        labels: ["Active", "Completed", "Planned"],
         datasets: [{
-          label: "Engagement",
-          data: [totalLikes, totalComments, totalShares, totalFollows],
-          backgroundColor: ["#1976d2", "#43a047", "#fbc02d", "#e53935"],
+          label: "Projects",
+          data: [totalActiveProjects, totalCompletedProjects, totalPlannedProjects],
+          backgroundColor: ["#1976d2", "#43a047", "#fbc02d"],
         }]
       },
       performanceLineData: {
         labels: Object.keys(groupedData),
         datasets: [{
-          label: "Engagement Trend",
-          data: groupedDataValues.map(d => d.engagements),
+          label: "Engagement Rate Trend",
+          data: groupedDataValues.map(d => d.engagementRate),
           borderColor: "#1976d2",
           backgroundColor: "rgba(25, 118, 210, 0.2)",
           tension: 0.35,

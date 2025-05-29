@@ -1,4 +1,4 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { Ratelimit } from "@upstash/ratelimit";
@@ -58,44 +58,45 @@ async function checkOrganizationAccess(userId: string) {
 
 // Define public routes that don't require authentication
 const publicRoutes = [
-  '/',
+  '/landing',
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/api/webhook(.*)',
   '/api/public(.*)'
 ];
 
-export default clerkMiddleware({
-  publicRoutes,
-  async afterAuth(auth, req: NextRequest) {
-    // Handle authentication
-    if (!auth.userId && !publicRoutes.some(route => req.nextUrl.pathname.match(new RegExp(`^${route}$`)))) {
-      const signInUrl = new URL('/sign-in', req.url);
-      signInUrl.searchParams.set('redirect_url', req.url);
-      return NextResponse.redirect(signInUrl);
-    }
+const isPublicRoute = createRouteMatcher(publicRoutes);
 
-    // If the user is signed in and trying to access a public route,
-    // redirect them to the content calendar
-    if (auth.userId && publicRoutes.some(route => req.nextUrl.pathname.match(new RegExp(`^${route}$`)))) {
-      return NextResponse.redirect(new URL('/content/calendar', req.url));
-    }
+export default clerkMiddleware(async (auth, req) => {
+  const { userId } = await auth();
 
-    // Check organization access for protected routes
-    if (auth.userId && !publicRoutes.some(route => req.nextUrl.pathname.match(new RegExp(`^${route}$`)))) {
-      const hasOrganization = await checkOrganizationAccess(auth.userId);
-      if (!hasOrganization) {
-        return NextResponse.redirect(new URL('/organization', req.url));
-      }
-    }
-
-    // Redirect root path to content calendar
-    if (auth.userId && req.nextUrl.pathname === '/') {
-      return NextResponse.redirect(new URL('/content/calendar', req.url));
-    }
-
-    return NextResponse.next();
+  // Handle authentication
+  if (!userId && !isPublicRoute(req)) {
+    const signInUrl = new URL('/sign-in', req.url);
+    signInUrl.searchParams.set('redirect_url', req.url);
+    return NextResponse.redirect(signInUrl);
   }
+
+  // If the user is signed in and trying to access a public route,
+  // redirect them to the content calendar
+  if (userId && isPublicRoute(req)) {
+    return NextResponse.redirect(new URL('/content/calendar', req.url));
+  }
+
+  // Check organization access for protected routes
+  if (userId && !isPublicRoute(req)) {
+    const hasOrganization = await checkOrganizationAccess(userId);
+    if (!hasOrganization) {
+      return NextResponse.redirect(new URL('/organization', req.url));
+    }
+  }
+
+  // Redirect landing page to content calendar for authenticated users
+  if (userId && req.nextUrl.pathname === '/landing') {
+    return NextResponse.redirect(new URL('/content/calendar', req.url));
+  }
+
+  return NextResponse.next();
 });
 
 export const config = {

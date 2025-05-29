@@ -57,11 +57,13 @@ export function formatNumber(value: number): string {
 /**
  * Format a number as currency
  */
-export function formatCurrency(value: number): string {
+export function formatCurrency(amount: number, currency = 'USD'): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'USD',
-  }).format(value);
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
 }
 
 /**
@@ -142,4 +144,20 @@ export function isActivePath(pathname: string, href: string): boolean {
     return pathname === href;
   }
   return pathname.startsWith(href);
+}
+
+export function formatPercentage(value: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'percent',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 1,
+  }).format(value / 100);
+}
+
+export function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase();
 }

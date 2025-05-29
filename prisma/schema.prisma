@@ -49,6 +49,10 @@ model User {
   targetingRules          TargetingRule[]
   Template                Template[]
   workflows               Workflow[]
+  uploadedDocuments       ClientDocument[]      @relation("DocumentUploader")
+
+  @@index([clerkId])
+  @@index([email])
 }
 
 model Organization {
@@ -115,6 +119,10 @@ model Client {
   organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   projects       Project[]
   socialAccounts SocialAccount[]
+  goals          ClientGoal[]
+  documents      ClientDocument[]
+  feedback       ClientFeedback[]
+  budgets        Budget[]
 
   @@index([organizationId])
 }
@@ -137,6 +145,12 @@ model Project {
   client         Client?        @relation(fields: [clientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   manager        User?          @relation(fields: [managerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  feedback       ClientFeedback[]
+  budgets        Budget[]
+
+  @@index([clientId])
+  @@index([organizationId])
+  @@index([managerId])
 }
 
 model SocialAccount {
@@ -1162,6 +1176,139 @@ model Invitation {
   @@index([organizationId])
 }
 
+model ClientGoal {
+  id             String           @id @default(cuid())
+  name           String
+  description    String?
+  targetValue    Float?
+  currentValue   Float?
+  startDate      DateTime
+  endDate        DateTime?
+  status         GoalStatus       @default(IN_PROGRESS)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  clientId       String
+  client         Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  milestones     Milestone[]
+  metrics        SuccessMetric[]
+
+  @@index([clientId])
+}
+
+model Milestone {
+  id             String           @id @default(cuid())
+  name           String
+  description    String?
+  dueDate        DateTime
+  completedDate  DateTime?
+  status         MilestoneStatus  @default(PENDING)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  goalId         String
+  goal           ClientGoal       @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId])
+}
+
+model SuccessMetric {
+  id             String           @id @default(cuid())
+  name           String
+  description    String?
+  metricType     MetricType
+  targetValue    Float?
+  currentValue   Float?
+  unit           String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  goalId         String
+  goal           ClientGoal       @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId])
+}
+
+model ClientDocument {
+  id             String           @id @default(cuid())
+  title          String
+  fileUrl        String
+  fileType       String
+  status         DocumentStatus   @default(DRAFT)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  clientId       String
+  uploadedById   String
+  client         Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  uploadedBy     User             @relation("DocumentUploader", fields: [uploadedById], references: [id])
+  documentHistory DocumentVersion[]
+
+  @@index([clientId])
+  @@index([uploadedById])
+}
+
+model DocumentVersion {
+  id             String           @id @default(cuid())
+  version        Int
+  fileUrl        String
+  changeNotes    String?
+  createdAt      DateTime         @default(now())
+  documentId     String
+  document       ClientDocument   @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+}
+
+model ClientFeedback {
+  id             String           @id @default(cuid())
+  rating         Int
+  comment        String?
+  category       FeedbackCategory
+  status         FeedbackStatus   @default(NEW)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  clientId       String
+  projectId      String?
+  client         Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  project        Project?         @relation(fields: [projectId], references: [id])
+
+  @@index([clientId])
+  @@index([projectId])
+}
+
+model Budget {
+  id             String           @id @default(cuid())
+  amount         Float
+  spent          Float            @default(0)
+  remaining      Float            @default(0)
+  currency       String           @default("USD")
+  startDate      DateTime
+  endDate        DateTime?
+  status         BudgetStatus     @default(ACTIVE)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  clientId       String
+  projectId      String?
+  client         Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  project        Project?         @relation(fields: [projectId], references: [id])
+  expenses       Expense[]
+
+  @@index([clientId])
+  @@index([projectId])
+}
+
+model Expense {
+  id             String           @id @default(cuid())
+  description    String
+  amount         Float
+  date           DateTime
+  category       ExpenseCategory
+  status         ExpenseStatus    @default(PENDING)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  budgetId       String
+  budget         Budget           @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+
+  @@index([budgetId])
+}
+
 enum UserRole {
   CONTENT_CREATOR
   REVIEWER
@@ -1295,4 +1442,74 @@ enum ContentType {
   EVENT
   ANNOUNCEMENT
   RESOURCE
+}
+
+enum GoalStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  ON_HOLD
+  CANCELLED
+}
+
+enum MilestoneStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  DELAYED
+  CANCELLED
+}
+
+enum MetricType {
+  NUMERIC
+  PERCENTAGE
+  CURRENCY
+  BOOLEAN
+  RATING
+}
+
+enum DocumentStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+  DELETED
+}
+
+enum FeedbackCategory {
+  GENERAL
+  SERVICE_QUALITY
+  COMMUNICATION
+  DELIVERABLES
+  SUPPORT
+  OTHER
+}
+
+enum FeedbackStatus {
+  NEW
+  IN_REVIEW
+  ADDRESSED
+  CLOSED
+}
+
+enum BudgetStatus {
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum ExpenseCategory {
+  MARKETING
+  DEVELOPMENT
+  DESIGN
+  CONSULTING
+  TOOLS
+  OTHER
+}
+
+enum ExpenseStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
 }
