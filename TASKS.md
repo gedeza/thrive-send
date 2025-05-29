@@ -1,14 +1,5 @@
 # Development Tasks
 
-## UI/UX Improvements
-
-### Date Picker Button Responsiveness
-- [ ] Fix date picker button responsiveness in analytics dashboard
-  - Current issue: Button width and text alignment not properly handling mobile viewports
-  - Location: `src/components/ui/date-picker-range.tsx`
-  - Priority: Medium
-  - Notes: Button needs better mobile optimization and text truncation handling
-
 ## Phase 5: Calendar Improvements ✅
 
 ### Core Calendar Functionality
@@ -43,7 +34,7 @@
   - Added "more events" functionality
   - Improved visual hierarchy and readability
 
-## Phase 6: Event Management (Next Phase)
+## Phase 6: Event Management
 
 ### Event Management Features
 - [ ] Add bulk event actions
@@ -72,6 +63,15 @@
 - [ ] Implement calendar sharing
 - [ ] Add calendar export functionality
 - [ ] Implement calendar import from other platforms
+
+## UI/UX Improvements
+
+### Date Picker Button Responsiveness
+- [ ] Fix date picker button responsiveness in analytics dashboard
+  - Current issue: Button width and text alignment not properly handling mobile viewports
+  - Location: `src/components/ui/date-picker-range.tsx`
+  - Priority: Medium
+  - Notes: Button needs better mobile optimization and text truncation handling
 
 ## Other Tasks
 - [ ] Add more tasks here as needed 
