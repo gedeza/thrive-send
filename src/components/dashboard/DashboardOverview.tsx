@@ -299,75 +299,109 @@ export function RecentCampaigns({ campaigns }: { campaigns: { name: string, stat
   }
 }
 
+// Safe version of RecentSubscribers with error handling
+const SafeRecentSubscribers: React.FC<{ subscribers: { email: string, joinedAt: string }[] }> = (props) => (
+  <ErrorBoundary
+    fallback={
+      <div className="bg-card rounded-xl shadow p-6">
+        <div className="text-sm text-muted-foreground">Failed to load subscribers</div>
+      </div>
+    }
+  >
+    <RecentSubscribers {...props} />
+  </ErrorBoundary>
+)
+
 // --- Recent Subscribers List with search and pagination
 export function RecentSubscribers({ subscribers }: { subscribers: { email: string, joinedAt: string }[] }) {
+  const { error, handleError } = useErrorHandler({
+    fallbackMessage: 'Failed to load subscribers',
+  });
+
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  const filteredSubscribers = subscribers.filter(s => 
-    s.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  try {
+    const filteredSubscribers = subscribers.filter(s => 
+      s.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
-  const paginatedSubscribers = filteredSubscribers.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+    const paginatedSubscribers = filteredSubscribers.slice(
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage
+    );
 
-  return (
-    <div className="bg-card rounded-xl shadow p-6" role="region" aria-label="Recent Subscribers">
-      <div className="flex justify-between items-center mb-4">
-        <div className="font-semibold text-[var(--color-chart-orange)]">Recent Subscribers</div>
-        <input
-          type="search"
-          placeholder="Search subscribers..."
-          className="px-3 py-1 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-chart-orange)]"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          aria-label="Search subscribers"
-        />
-      </div>
-      <ul className="space-y-2" role="list">
-        {paginatedSubscribers.map((s, i) => (
-          <motion.li
-            key={i}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.1 }}
-            className="flex justify-between items-center border-b border-neutral-200 dark:border-neutral-800 py-2"
-          >
-            <span className="text-neutral-800 dark:text-neutral-100">{s.email}</span>
-            <span className="text-xs text-neutral-500 dark:text-neutral-400">{s.joinedAt}</span>
-          </motion.li>
-        ))}
-      </ul>
-      <div className="mt-4 flex justify-between items-center">
-        <div className="text-sm text-neutral-500">
-          Showing {paginatedSubscribers.length} of {filteredSubscribers.length} subscribers
+    if (error.hasError) {
+      return (
+        <div className="bg-card rounded-xl shadow p-6">
+          <div className="text-sm text-muted-foreground">{error.message}</div>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
-            aria-label="Previous page"
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(prev => prev + 1)}
-            disabled={currentPage * itemsPerPage >= filteredSubscribers.length}
-            aria-label="Next page"
-          >
-            Next
-          </Button>
+      );
+    }
+
+    return (
+      <div className="bg-card rounded-xl shadow p-6" role="region" aria-label="Recent Subscribers">
+        <div className="flex justify-between items-center mb-4">
+          <div className="font-semibold text-[var(--color-chart-orange)]">Recent Subscribers</div>
+          <input
+            type="search"
+            placeholder="Search subscribers..."
+            className="px-3 py-1 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-chart-orange)]"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            aria-label="Search subscribers"
+          />
+        </div>
+        <ul className="space-y-2" role="list">
+          {paginatedSubscribers.map((s, i) => (
+            <motion.li
+              key={i}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className="flex justify-between items-center border-b border-neutral-200 dark:border-neutral-800 py-2"
+            >
+              <span className="text-neutral-800 dark:text-neutral-100">{s.email}</span>
+              <span className="text-xs text-neutral-500 dark:text-neutral-400">{s.joinedAt}</span>
+            </motion.li>
+          ))}
+        </ul>
+        <div className="mt-4 flex justify-between items-center">
+          <div className="text-sm text-neutral-500">
+            Showing {paginatedSubscribers.length} of {filteredSubscribers.length} subscribers
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              aria-label="Previous page"
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => prev + 1)}
+              disabled={currentPage * itemsPerPage >= filteredSubscribers.length}
+              aria-label="Next page"
+            >
+              Next
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
-  )
+    );
+  } catch (error) {
+    handleError(error);
+    return (
+      <div className="bg-card rounded-xl shadow p-6">
+        <div className="text-sm text-muted-foreground">Failed to load subscribers</div>
+      </div>
+    );
+  }
 }
 
 // --- (Stub) Tiny Area/Bar Chart for quick visuals
@@ -523,15 +557,7 @@ export function DashboardOverview({ dateRange, customRange }: DashboardOverviewP
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <SafeRecentCampaigns campaigns={campaigns} />
-        <ErrorBoundary
-          fallback={
-            <div className="bg-card rounded-xl shadow p-6">
-              <div className="text-sm text-muted-foreground">Failed to load subscribers</div>
-            </div>
-          }
-        >
-          <RecentSubscribers subscribers={subscribers} />
-        </ErrorBoundary>
+        <SafeRecentSubscribers subscribers={subscribers} />
       </div>
     </div>
   );
