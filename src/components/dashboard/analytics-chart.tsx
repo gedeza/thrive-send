@@ -5,6 +5,8 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Calendar, Download } from "lucide-react"
+import { ErrorBoundary } from "@/components/error/ErrorBoundary"
+import { useErrorHandler } from "@/hooks/useErrorHandler"
 
 interface ChartData {
   date: string
@@ -18,36 +20,100 @@ interface AnalyticsChartProps {
   description?: string
 }
 
+// Safe version of AnalyticsChart with error handling
+const SafeAnalyticsChart: React.FC<AnalyticsChartProps> = (props) => (
+  <ErrorBoundary
+    fallback={
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-medium text-destructive">Error Loading Chart</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center p-4 text-center">
+            <p className="text-sm text-muted-foreground mb-4">
+              An error occurred while loading this chart.
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => window.location.reload()}
+            >
+              Try Again
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    }
+  >
+    <AnalyticsChart {...props} />
+  </ErrorBoundary>
+)
+
 export function AnalyticsChart({ data, title, value, description }: AnalyticsChartProps) {
+  const { error, handleError } = useErrorHandler({
+    fallbackMessage: 'Failed to load chart data',
+  });
+
   const [timeRange, setTimeRange] = useState<'1d' | '7d' | '30d'>('7d')
   const [brushStartIndex, setBrushStartIndex] = useState(0)
   const [brushEndIndex, setBrushEndIndex] = useState(data.length - 1)
 
   const handleBrushChange = (newDomain: any) => {
-    setBrushStartIndex(newDomain.startIndex)
-    setBrushEndIndex(newDomain.endIndex)
+    try {
+      setBrushStartIndex(newDomain.startIndex)
+      setBrushEndIndex(newDomain.endIndex)
+    } catch (error) {
+      handleError(error)
+    }
   }
 
   // Filter data based on selected time range
   const filteredData = data.filter((item) => {
-    const date = new Date(item.date)
-    const now = new Date()
-    const diffTime = Math.abs(now.getTime() - date.getTime())
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    
-    switch (timeRange) {
-      case '1d':
-        return diffDays <= 1
-      case '7d':
-        return diffDays <= 7
-      case '30d':
-        return diffDays <= 30
-      default:
-        return true
+    try {
+      const date = new Date(item.date)
+      const now = new Date()
+      const diffTime = Math.abs(now.getTime() - date.getTime())
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      
+      switch (timeRange) {
+        case '1d':
+          return diffDays <= 1
+        case '7d':
+          return diffDays <= 7
+        case '30d':
+          return diffDays <= 30
+        default:
+          return true
+      }
+    } catch (error) {
+      handleError(error)
+      return false
     }
   })
 
   const averageValue = filteredData.reduce((acc, curr) => acc + curr.value, 0) / filteredData.length
+
+  if (error.hasError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-medium text-destructive">Error Loading Chart</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center p-4 text-center">
+            <p className="text-sm text-muted-foreground mb-4">
+              {error.message}
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => window.location.reload()}
+            >
+              Try Again
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <Card>
@@ -137,4 +203,6 @@ export function AnalyticsChart({ data, title, value, description }: AnalyticsCha
       </CardContent>
     </Card>
   )
-} 
+}
+
+export default SafeAnalyticsChart 

@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/solid';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
-import { AnalyticsChart } from "@/components/dashboard/analytics-chart"
+import SafeAnalyticsChart from "@/components/dashboard/analytics-chart"
 import { ActivityFeed, type Activity as ActivityType } from "@/components/dashboard/activity-feed"
 import { DashboardOverview } from '@/components/dashboard/DashboardOverview';
 
@@ -154,11 +154,11 @@ export default function DashboardHomePage() {
   return (
     <div className="flex-1 space-y-8 p-8 pt-6 bg-neutral-background">
       {/* Dashboard Overview Section */}
-      <DashboardOverview />
+      <DashboardOverview dateRange="7d" />
 
       {/* Analytics Chart Section */}
       <div className="mt-8">
-        <AnalyticsChart
+        <SafeAnalyticsChart
           data={chartData}
           title="Monthly Engagement"
           value="900"
