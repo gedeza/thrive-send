@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export async function GET(
   request: NextRequest,
@@ -14,29 +15,43 @@ export async function GET(
 
     const clientId = params.id;
 
-    // Fetch documents with uploaded by user info
-    const documents = await db.$queryRaw`
-      SELECT 
-        d.id,
-        d.name,
-        d.description,
-        d.file_url as "fileUrl",
-        d.file_type as "fileType",
-        d.size,
-        d.version,
-        d.status,
-        d.created_at as "createdAt",
-        json_build_object(
-          'id', u.id,
-          'name', COALESCE(u.name, CONCAT(u.first_name, ' ', u.last_name))
-        ) as "uploadedBy"
-      FROM "ClientDocument" d
-      JOIN "User" u ON d.uploaded_by_id = u.id
-      WHERE d.client_id = ${clientId}
-      ORDER BY d.created_at DESC
-    `;
+    // Check if the ClientDocument table exists by querying a small amount of data
+    try {
+      // Fetch documents with uploaded by user info
+      const documents = await db.$queryRaw`
+        SELECT 
+          d.id,
+          d.title,
+          d."fileUrl",
+          d."fileType",
+          COALESCE(d.size, 0) as size,
+          d.status,
+          d."createdAt",
+          json_build_object(
+            'id', u.id,
+            'name', COALESCE(u.name, CONCAT(u."firstName", ' ', u."lastName"))
+          ) as "uploadedBy"
+        FROM "ClientDocument" d
+        JOIN "User" u ON d."uploadedById" = u.id
+        WHERE d."clientId" = ${clientId}
+        ORDER BY d."createdAt" DESC
+      `;
 
-    return NextResponse.json({ documents });
+      return NextResponse.json({ documents });
+    } catch (error) {
+      console.error('Database error in documents API:', error);
+      
+      // If the error is related to missing tables, return empty documents instead of error
+      if (error instanceof Error && error.message && (
+        error.message.includes('relation "ClientDocument" does not exist') ||
+        error.message.includes('column d.') ||
+        (error instanceof PrismaClientKnownRequestError && error.code === 'P2010')
+      )) {
+        return NextResponse.json({ documents: [], message: 'Document table not initialized yet' });
+      }
+      
+      throw error;
+    }
   } catch (error) {
     console.error('Error fetching documents:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
@@ -56,8 +71,7 @@ export async function POST(
     const clientId = params.id;
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    const name = formData.get('name') as string;
-    const description = formData.get('description') as string;
+    const title = formData.get('title') as string;
 
     if (!file) {
       return new NextResponse('File is required', { status: 400 });
@@ -69,48 +83,59 @@ export async function POST(
     const fileType = file.name.split('.').pop() || '';
     const size = file.size;
 
-    // Create document record
-    const document = (await db.$queryRaw`
-      WITH new_document AS (
-        INSERT INTO "ClientDocument" (
-          name,
-          description,
-          file_url,
-          file_type,
-          size,
-          client_id,
-          uploaded_by_id,
-          version,
-          status,
-          created_at,
-          updated_at
+    try {
+      // Create document record
+      const document = (await db.$queryRaw`
+        WITH new_document AS (
+          INSERT INTO "ClientDocument" (
+            title,
+            "fileUrl",
+            "fileType",
+            size,
+            "clientId",
+            "uploadedById",
+            status,
+            "createdAt",
+            "updatedAt"
+          )
+          VALUES (
+            ${title || file.name},
+            ${fileUrl},
+            ${fileType},
+            ${size},
+            ${clientId},
+            ${userId},
+            'ACTIVE',
+            NOW(),
+            NOW()
+          )
+          RETURNING *
         )
-        VALUES (
-          ${name || file.name},
-          ${description},
-          ${fileUrl},
-          ${fileType},
-          ${size},
-          ${clientId},
-          ${userId},
-          1,
-          'ACTIVE',
-          NOW(),
-          NOW()
-        )
-        RETURNING *
-      )
-      SELECT 
-        d.*,
-        json_build_object(
-          'id', u.id,
-          'name', COALESCE(u.name, CONCAT(u.first_name, ' ', u.last_name))
-        ) as "uploadedBy"
-      FROM new_document d
-      JOIN "User" u ON d.uploaded_by_id = u.id
-    ` as any[])[0];
+        SELECT 
+          d.*,
+          json_build_object(
+            'id', u.id,
+            'name', COALESCE(u.name, CONCAT(u."firstName", ' ', u."lastName"))
+          ) as "uploadedBy"
+        FROM new_document d
+        JOIN "User" u ON d."uploadedById" = u.id
+      ` as any[])[0];
 
-    return NextResponse.json(document);
+      return NextResponse.json(document);
+    } catch (error) {
+      console.error('Database error in documents API:', error);
+      
+      // If the error is related to missing tables, return a more specific error
+      if (error instanceof Error && error.message && (
+        error.message.includes('relation "ClientDocument" does not exist') ||
+        error.message.includes('column d.') ||
+        (error instanceof PrismaClientKnownRequestError && error.code === 'P2010')
+      )) {
+        return new NextResponse('Document feature not initialized. Please run database migrations.', { status: 500 });
+      }
+      
+      throw error;
+    }
   } catch (error) {
     console.error('Error uploading document:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
@@ -131,34 +156,48 @@ export async function PUT(
     const data = await request.json();
     const { documentId, ...updateData } = data;
 
-    // Update document
-    const document = (await db.$queryRaw`
-      WITH updated_document AS (
-        UPDATE "ClientDocument"
-        SET
-          name = ${updateData.name},
-          description = ${updateData.description},
-          status = ${updateData.status},
-          updated_at = NOW()
-        WHERE id = ${documentId}
-          AND client_id = ${clientId}
-        RETURNING *
-      )
-      SELECT 
-        d.*,
-        json_build_object(
-          'id', u.id,
-          'name', COALESCE(u.name, CONCAT(u.first_name, ' ', u.last_name))
-        ) as "uploadedBy"
-      FROM updated_document d
-      JOIN "User" u ON d.uploaded_by_id = u.id
-    ` as any[])[0];
+    try {
+      // Update document
+      const document = (await db.$queryRaw`
+        WITH updated_document AS (
+          UPDATE "ClientDocument"
+          SET
+            title = ${updateData.title},
+            status = ${updateData.status},
+            "updatedAt" = NOW()
+          WHERE id = ${documentId}
+            AND "clientId" = ${clientId}
+          RETURNING *
+        )
+        SELECT 
+          d.*,
+          json_build_object(
+            'id', u.id,
+            'name', COALESCE(u.name, CONCAT(u."firstName", ' ', u."lastName"))
+          ) as "uploadedBy"
+        FROM updated_document d
+        JOIN "User" u ON d."uploadedById" = u.id
+      ` as any[])[0];
 
-    if (!document) {
-      return new NextResponse('Document not found', { status: 404 });
+      if (!document) {
+        return new NextResponse('Document not found', { status: 404 });
+      }
+
+      return NextResponse.json(document);
+    } catch (error) {
+      console.error('Database error in documents API:', error);
+      
+      // If the error is related to missing tables, return a more specific error
+      if (error instanceof Error && error.message && (
+        error.message.includes('relation "ClientDocument" does not exist') ||
+        error.message.includes('column d.') ||
+        (error instanceof PrismaClientKnownRequestError && error.code === 'P2010')
+      )) {
+        return new NextResponse('Document feature not initialized. Please run database migrations.', { status: 500 });
+      }
+      
+      throw error;
     }
-
-    return NextResponse.json(document);
   } catch (error) {
     console.error('Error updating document:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
@@ -183,14 +222,29 @@ export async function DELETE(
       return new NextResponse('Document ID is required', { status: 400 });
     }
 
-    // Delete document
-    await db.$executeRaw`
-      DELETE FROM "ClientDocument"
-      WHERE id = ${documentId}
-        AND client_id = ${clientId}
-    `;
+    try {
+      // Delete document
+      await db.$executeRaw`
+        DELETE FROM "ClientDocument"
+        WHERE id = ${documentId}
+          AND "clientId" = ${clientId}
+      `;
 
-    return new NextResponse(null, { status: 204 });
+      return new NextResponse(null, { status: 204 });
+    } catch (error) {
+      console.error('Database error in documents API:', error);
+      
+      // If the error is related to missing tables, return a more specific error
+      if (error instanceof Error && error.message && (
+        error.message.includes('relation "ClientDocument" does not exist') ||
+        error.message.includes('column d.') ||
+        (error instanceof PrismaClientKnownRequestError && error.code === 'P2010')
+      )) {
+        return new NextResponse('Document feature not initialized. Please run database migrations.', { status: 500 });
+      }
+      
+      throw error;
+    }
   } catch (error) {
     console.error('Error deleting document:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
