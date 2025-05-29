@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Line } from "react-chartjs-2"
+import { ErrorBoundary } from "@/components/error/ErrorBoundary"
+import { useErrorHandler } from "@/hooks/useErrorHandler"
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -355,8 +357,48 @@ export function TinyBarChart({ data }: { data: number[] }) {
   );
 }
 
-// --- Main DashboardOverview
+// Wrap InfoCard with ErrorBoundary
+const SafeInfoCard: React.FC<{
+  title: string;
+  value: string | number;
+  icon: React.ReactNode;
+  change?: string | null;
+  iconClass: string;
+  numberClass: string;
+}> = (props) => (
+  <ErrorBoundary
+    fallback={
+      <div className="rounded-xl shadow p-5 flex items-center min-w-[180px] bg-card">
+        <div className="text-sm text-muted-foreground">Failed to load metric</div>
+      </div>
+    }
+  >
+    <InfoCard {...props} />
+  </ErrorBoundary>
+);
+
+// Wrap GrowthChart with ErrorBoundary
+const SafeGrowthChart: React.FC<{
+  data: number[];
+  dateRange: '1d' | '7d' | '30d' | 'custom';
+}> = (props) => (
+  <ErrorBoundary
+    fallback={
+      <div className="h-[200px] flex items-center justify-center bg-card rounded-lg">
+        <div className="text-sm text-muted-foreground">Failed to load chart</div>
+      </div>
+    }
+  >
+    <GrowthChart {...props} />
+  </ErrorBoundary>
+);
+
+// Main DashboardOverview component
 export function DashboardOverview({ dateRange, customRange }: DashboardOverviewProps) {
+  const { error, handleError, resetError } = useErrorHandler({
+    fallbackMessage: 'Failed to load dashboard data',
+  });
+
   // Demo data, integrate with backend/schema later
   const metrics = [
     { title: "Active Campaigns", value: 5, change: "+8%" },
@@ -367,17 +409,21 @@ export function DashboardOverview({ dateRange, customRange }: DashboardOverviewP
 
   // Generate data based on date range
   const getDataForRange = (range: '1d' | '7d' | '30d' | 'custom', custom?: { from: string; to: string } | null) => {
-    if (range === '1d') return [Math.floor(Math.random() * 50) + 10];
-    if (range === '7d') return Array.from({ length: 7 }, () => Math.floor(Math.random() * 50) + 10);
-    if (range === '30d') return Array.from({ length: 30 }, () => Math.floor(Math.random() * 50) + 10);
-    if (range === 'custom' && custom && custom.from && custom.to) {
-      // Calculate days between from and to
-      const fromDate = new Date(custom.from);
-      const toDate = new Date(custom.to);
-      const days = Math.max(1, Math.floor((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
-      return Array.from({ length: days }, () => Math.floor(Math.random() * 50) + 10);
+    try {
+      if (range === '1d') return [Math.floor(Math.random() * 50) + 10];
+      if (range === '7d') return Array.from({ length: 7 }, () => Math.floor(Math.random() * 50) + 10);
+      if (range === '30d') return Array.from({ length: 30 }, () => Math.floor(Math.random() * 50) + 10);
+      if (range === 'custom' && custom && custom.from && custom.to) {
+        const fromDate = new Date(custom.from);
+        const toDate = new Date(custom.to);
+        const days = Math.max(1, Math.floor((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+        return Array.from({ length: days }, () => Math.floor(Math.random() * 50) + 10);
+      }
+      return Array.from({ length: 7 }, () => Math.floor(Math.random() * 50) + 10);
+    } catch (error) {
+      handleError(error);
+      return Array.from({ length: 7 }, () => 0);
     }
-    return Array.from({ length: 7 }, () => Math.floor(Math.random() * 50) + 10); // default to 7d
   };
 
   const growthData = getDataForRange(dateRange, customRange);
@@ -392,12 +438,23 @@ export function DashboardOverview({ dateRange, customRange }: DashboardOverviewP
     { email: "chris@email.com", joinedAt: "2024-05-29" },
   ];
 
+  if (error.hasError) {
+    return (
+      <div className="space-y-8 bg-transparent">
+        <div className="bg-card rounded-xl shadow p-6">
+          <div className="text-destructive mb-4">{error.message}</div>
+          <Button onClick={resetError}>Try Again</Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 bg-transparent">
       <AnimatePresence>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
           {metrics.map((m, i) => (
-            <InfoCard
+            <SafeInfoCard
               key={i}
               title={m.title}
               value={m.value}
@@ -427,12 +484,28 @@ export function DashboardOverview({ dateRange, customRange }: DashboardOverviewP
             Full analytics →
           </a>
         </div>
-        <GrowthChart data={growthData} dateRange={dateRange} />
+        <SafeGrowthChart data={growthData} dateRange={dateRange} />
       </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <RecentCampaigns campaigns={campaigns} />
-        <RecentSubscribers subscribers={subscribers} />
+        <ErrorBoundary
+          fallback={
+            <div className="bg-card rounded-xl shadow p-6">
+              <div className="text-sm text-muted-foreground">Failed to load campaigns</div>
+            </div>
+          }
+        >
+          <RecentCampaigns campaigns={campaigns} />
+        </ErrorBoundary>
+        <ErrorBoundary
+          fallback={
+            <div className="bg-card rounded-xl shadow p-6">
+              <div className="text-sm text-muted-foreground">Failed to load subscribers</div>
+            </div>
+          }
+        >
+          <RecentSubscribers subscribers={subscribers} />
+        </ErrorBoundary>
       </div>
     </div>
   );
