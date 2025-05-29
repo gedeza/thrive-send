@@ -16,11 +16,11 @@
 - [x] Add fallback UI for error states
 
 #### ActivityFeed Component
-- [ ] Add error boundary wrapper
-- [ ] Implement error handling for activity data
-- [ ] Add error states for failed activity loading
-- [ ] Add retry mechanism for activity updates
-- [ ] Add fallback UI for error states
+- [x] Add error boundary wrapper
+- [x] Implement error handling for activity data
+- [x] Add error states for failed activity loading
+- [x] Add retry mechanism for activity updates
+- [x] Add fallback UI for error states
 
 #### RecentCampaigns Component
 - [ ] Add error boundary wrapper
