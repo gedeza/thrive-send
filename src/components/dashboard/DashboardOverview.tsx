@@ -184,85 +184,119 @@ function GrowthChart({ data, dateRange }: { data: number[], dateRange: '1d' | '7
   )
 }
 
+// Safe version of RecentCampaigns with error handling
+const SafeRecentCampaigns: React.FC<{ campaigns: { name: string, status: string, sentAt: string }[] }> = (props) => (
+  <ErrorBoundary
+    fallback={
+      <div className="bg-card rounded-xl shadow p-6">
+        <div className="text-sm text-muted-foreground">Failed to load campaigns</div>
+      </div>
+    }
+  >
+    <RecentCampaigns {...props} />
+  </ErrorBoundary>
+)
+
 // --- Recent Campaigns List with sorting and filtering
 export function RecentCampaigns({ campaigns }: { campaigns: { name: string, status: string, sentAt: string }[] }) {
+  const { error, handleError } = useErrorHandler({
+    fallbackMessage: 'Failed to load campaigns',
+  });
+
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
-  const sortedAndFilteredCampaigns = campaigns
-    .filter(c => filterStatus === 'all' || c.status === filterStatus)
-    .sort((a, b) => {
-      if (a.sentAt === '—' && b.sentAt === '—') return 0;
-      if (a.sentAt === '—') return 1;
-      if (b.sentAt === '—') return -1;
-      return sortOrder === 'asc' 
-        ? new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime()
-        : new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime();
-    });
+  try {
+    const sortedAndFilteredCampaigns = campaigns
+      .filter(c => filterStatus === 'all' || c.status === filterStatus)
+      .sort((a, b) => {
+        if (a.sentAt === '—' && b.sentAt === '—') return 0;
+        if (a.sentAt === '—') return 1;
+        if (b.sentAt === '—') return -1;
+        return sortOrder === 'asc' 
+          ? new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime()
+          : new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime();
+      });
 
-  return (
-    <div className="bg-card rounded-xl shadow p-6" role="region" aria-label="Recent Campaigns">
-      <div className="flex justify-between items-center mb-4">
-        <div className="font-semibold text-[var(--color-chart-green)]">Recent Campaigns</div>
-        <div className="flex gap-2">
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-[120px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="Sent">Sent</SelectItem>
-              <SelectItem value="Draft">Draft</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
-            aria-label={`Sort ${sortOrder === 'asc' ? 'descending' : 'ascending'}`}
+    if (error.hasError) {
+      return (
+        <div className="bg-card rounded-xl shadow p-6">
+          <div className="text-sm text-muted-foreground">{error.message}</div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="bg-card rounded-xl shadow p-6" role="region" aria-label="Recent Campaigns">
+        <div className="flex justify-between items-center mb-4">
+          <div className="font-semibold text-[var(--color-chart-green)]">Recent Campaigns</div>
+          <div className="flex gap-2">
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="Sent">Sent</SelectItem>
+                <SelectItem value="Draft">Draft</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+              aria-label={`Sort ${sortOrder === 'asc' ? 'descending' : 'ascending'}`}
+            >
+              {sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
+          </div>
+        </div>
+        <ul className="space-y-2" role="list">
+          {sortedAndFilteredCampaigns.map((c, i) => (
+            <motion.li
+              key={i}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className="flex justify-between items-center border-b border-neutral-200 dark:border-neutral-800 py-2"
+            >
+              <span className="font-medium text-neutral-800 dark:text-neutral-100">{c.name}</span>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className={`flex items-center text-xs px-2 py-1 rounded-full font-semibold gap-1 ${statusColorMap[c.status as keyof typeof statusColorMap] || "bg-[var(--activity-info)]/10 text-[var(--activity-info)]"}`}>
+                      {statusIconMap[c.status as keyof typeof statusIconMap] || null}
+                      {c.status}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Campaign status: {c.status}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <span className="text-xs text-neutral-500 dark:text-neutral-400">{c.sentAt}</span>
+            </motion.li>
+          ))}
+        </ul>
+        <div className="mt-3 text-right">
+          <a 
+            href="/campaigns" 
+            className="text-[var(--color-chart-blue)] hover:text-[var(--color-chart-green)] text-sm transition-colors"
+            aria-label="View all campaigns"
           >
-            {sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </Button>
+            View all
+          </a>
         </div>
       </div>
-      <ul className="space-y-2" role="list">
-        {sortedAndFilteredCampaigns.map((c, i) => (
-          <motion.li
-            key={i}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.1 }}
-            className="flex justify-between items-center border-b border-neutral-200 dark:border-neutral-800 py-2"
-          >
-            <span className="font-medium text-neutral-800 dark:text-neutral-100">{c.name}</span>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className={`flex items-center text-xs px-2 py-1 rounded-full font-semibold gap-1 ${statusColorMap[c.status as keyof typeof statusColorMap] || "bg-[var(--activity-info)]/10 text-[var(--activity-info)]"}`}>
-                    {statusIconMap[c.status as keyof typeof statusIconMap] || null}
-                    {c.status}
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Campaign status: {c.status}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <span className="text-xs text-neutral-500 dark:text-neutral-400">{c.sentAt}</span>
-          </motion.li>
-        ))}
-      </ul>
-      <div className="mt-3 text-right">
-        <a 
-          href="/campaigns" 
-          className="text-[var(--color-chart-blue)] hover:text-[var(--color-chart-green)] text-sm transition-colors"
-          aria-label="View all campaigns"
-        >
-          View all
-        </a>
+    );
+  } catch (error) {
+    handleError(error);
+    return (
+      <div className="bg-card rounded-xl shadow p-6">
+        <div className="text-sm text-muted-foreground">Failed to load campaigns</div>
       </div>
-    </div>
-  )
+    );
+  }
 }
 
 // --- Recent Subscribers List with search and pagination
@@ -488,15 +522,7 @@ export function DashboardOverview({ dateRange, customRange }: DashboardOverviewP
       </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <ErrorBoundary
-          fallback={
-            <div className="bg-card rounded-xl shadow p-6">
-              <div className="text-sm text-muted-foreground">Failed to load campaigns</div>
-            </div>
-          }
-        >
-          <RecentCampaigns campaigns={campaigns} />
-        </ErrorBoundary>
+        <SafeRecentCampaigns campaigns={campaigns} />
         <ErrorBoundary
           fallback={
             <div className="bg-card rounded-xl shadow p-6">
