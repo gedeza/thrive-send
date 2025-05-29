@@ -22,12 +22,18 @@
 - [x] Add retry mechanism for activity updates
 - [x] Add fallback UI for error states
 
+> **Note**: There are two ActivityFeed implementations that need to be analyzed:
+> 1. `src/components/activity/ActivityFeed.tsx` - User profile activities
+> 2. `src/components/dashboard/activity-feed.tsx` - Campaign activities
+> 
+> TODO: Analyze both implementations to determine if they should be consolidated or kept separate.
+
 #### RecentCampaigns Component
-- [ ] Add error boundary wrapper
-- [ ] Implement error handling for campaign data
-- [ ] Add error states for failed campaign loading
-- [ ] Add retry mechanism for campaign updates
-- [ ] Add fallback UI for error states
+- [x] Add error boundary wrapper
+- [x] Implement error handling for campaign data
+- [x] Add error states for failed campaign loading
+- [x] Add retry mechanism for campaign updates
+- [x] Add fallback UI for error states
 
 #### RecentSubscribers Component
 - [ ] Add error boundary wrapper
