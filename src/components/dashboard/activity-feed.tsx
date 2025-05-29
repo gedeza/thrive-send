@@ -6,6 +6,9 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { formatDistanceToNow } from "date-fns"
+import { ErrorBoundary } from "@/components/error/ErrorBoundary"
+import { useErrorHandler } from "@/hooks/useErrorHandler"
+import { Button } from "@/components/ui/button"
 
 export interface Activity {
   id: string
@@ -23,27 +26,68 @@ interface ActivityFeedProps {
   activities: Activity[]
 }
 
+// Safe version of ActivityFeed with error handling
+const SafeActivityFeed: React.FC<ActivityFeedProps> = (props) => (
+  <ErrorBoundary
+    fallback={
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-medium text-destructive">Error Loading Activity Feed</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center p-4 text-center">
+            <p className="text-sm text-muted-foreground mb-4">
+              An error occurred while loading the activity feed.
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => window.location.reload()}
+            >
+              Try Again
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    }
+  >
+    <ActivityFeed {...props} />
+  </ErrorBoundary>
+)
+
 export function ActivityFeed({ activities: initialActivities }: ActivityFeedProps) {
+  const { error, handleError } = useErrorHandler({
+    fallbackMessage: 'Failed to load activity feed',
+  });
+
   const [activities, setActivities] = useState<Activity[]>(initialActivities)
   const [filter, setFilter] = useState<Activity["type"] | "all">("all")
 
   // Simulate real-time updates
   useEffect(() => {
-    const interval = setInterval(() => {
-      setActivities((prev) => {
-        const newActivity = {
-          id: Math.random().toString(),
-          type: ["campaign", "email", "user", "system"][Math.floor(Math.random() * 4)] as Activity["type"],
-          title: "New Activity",
-          description: "This is a simulated real-time update",
-          timestamp: new Date().toISOString(),
-        }
-        return [newActivity, ...prev].slice(0, 10)
-      })
-    }, 30000) // Add new activity every 30 seconds
+    try {
+      const interval = setInterval(() => {
+        setActivities((prev) => {
+          try {
+            const newActivity = {
+              id: Math.random().toString(),
+              type: ["campaign", "email", "user", "system"][Math.floor(Math.random() * 4)] as Activity["type"],
+              title: "New Activity",
+              description: "This is a simulated real-time update",
+              timestamp: new Date().toISOString(),
+            }
+            return [newActivity, ...prev].slice(0, 10)
+          } catch (error) {
+            handleError(error)
+            return prev
+          }
+        })
+      }, 30000) // Add new activity every 30 seconds
 
-    return () => clearInterval(interval)
-  }, [])
+      return () => clearInterval(interval)
+    } catch (error) {
+      handleError(error)
+    }
+  }, [handleError])
 
   const filteredActivities = filter === "all" 
     ? activities 
@@ -62,6 +106,29 @@ export function ActivityFeed({ activities: initialActivities }: ActivityFeedProp
       default:
         return "bg-muted"
     }
+  }
+
+  if (error.hasError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-medium text-destructive">Error Loading Activity Feed</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center p-4 text-center">
+            <p className="text-sm text-muted-foreground mb-4">
+              {error.message}
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => window.location.reload()}
+            >
+              Try Again
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
@@ -160,4 +227,6 @@ export function ActivityFeed({ activities: initialActivities }: ActivityFeedProp
       </CardContent>
     </Card>
   )
-} 
+}
+
+export default SafeActivityFeed 

@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/solid';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import SafeAnalyticsChart from "@/components/dashboard/analytics-chart"
-import { ActivityFeed, type Activity as ActivityType } from "@/components/dashboard/activity-feed"
+import SafeActivityFeed, { type Activity as ActivityType } from "@/components/dashboard/activity-feed"
 import { DashboardOverview } from '@/components/dashboard/DashboardOverview';
 
 interface AnalyticsData {
@@ -168,7 +168,7 @@ export default function DashboardHomePage() {
 
       {/* Activity Feed Section */}
       <div className="mt-8">
-        <ActivityFeed activities={activities} />
+        <SafeActivityFeed activities={activities} />
       </div>
     </div>
   );
