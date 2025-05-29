@@ -49,7 +49,7 @@ export async function GET(
           'name', u.name,
           'email', u.email
         ) as "assignedTo"
-      FROM "Goal" g
+      FROM "ClientGoal" g
       LEFT JOIN "User" u ON g."assignedToId" = u.id
       WHERE g."clientId" = ${clientId}
       ORDER BY 

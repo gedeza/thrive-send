@@ -45,7 +45,7 @@ export async function GET(
           'name', u.name,
           'email', u.email
         ) as "createdBy"
-      FROM "Feedback" f
+      FROM "ClientFeedback" f
       LEFT JOIN "User" u ON f."createdById" = u.id
       WHERE f."clientId" = ${clientId}
       ORDER BY f.created_at DESC

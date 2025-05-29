@@ -138,12 +138,37 @@ export class OrganizationService {
       enterprise: 99,
     };
 
+    const features = {
+      free: {
+        ai: {
+          enabled: false,
+          usage: 0,
+          limit: 0
+        }
+      },
+      pro: {
+        ai: {
+          enabled: true,
+          usage: 0,
+          limit: 50
+        }
+      },
+      enterprise: {
+        ai: {
+          enabled: true,
+          usage: 0,
+          limit: -1 // unlimited
+        }
+      }
+    };
+
     return this.prisma.subscription.upsert({
       where: { organizationId },
       update: {
         plan: validatedPlan,
         updatedAt: new Date(),
         price: planPrices[validatedPlan],
+        features: features[validatedPlan]
       },
       create: {
         organizationId,
@@ -154,7 +179,46 @@ export class OrganizationService {
         currency: "USD",
         billingCycle: "MONTHLY",
         cancelAtPeriodEnd: false,
+        features: features[validatedPlan]
       },
+    });
+  }
+
+  async checkAIFeatureAvailability(organizationId: string): Promise<boolean> {
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { organizationId }
+    });
+
+    if (!subscription) return false;
+
+    const aiFeatures = subscription.aiFeatures as { enabled: boolean; usage: number; limit: number };
+    
+    if (!aiFeatures.enabled) return false;
+    if (aiFeatures.limit === -1) return true; // unlimited
+    return aiFeatures.usage < aiFeatures.limit;
+  }
+
+  async trackAIFeatureUsage(organizationId: string): Promise<void> {
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { organizationId }
+    });
+
+    if (!subscription) return;
+
+    const aiFeatures = subscription.aiFeatures as { enabled: boolean; usage: number; limit: number };
+    
+    if (!aiFeatures.enabled || (aiFeatures.limit !== -1 && aiFeatures.usage >= aiFeatures.limit)) {
+      return;
+    }
+
+    await this.prisma.subscription.update({
+      where: { organizationId },
+      data: {
+        aiFeatures: {
+          ...aiFeatures,
+          usage: aiFeatures.usage + 1
+        }
+      }
     });
   }
 

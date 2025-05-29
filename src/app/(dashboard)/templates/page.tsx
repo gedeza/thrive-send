@@ -1,116 +1,212 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useMemo, useEffect } from "react";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Copy, Edit, Trash } from 'lucide-react';
+import { PlusCircle, Copy, Edit, Trash, Loader2, Plus, Search, Filter, Sparkles, Mail, MessageSquare, FileText } from 'lucide-react';
 import Link from 'next/link';
-import { templates, type Template } from "@/app/(dashboard)/templates/templates.mock-data";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/use-toast";
+import { useOrganization } from "@clerk/nextjs";
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-const statusBadgeMap: Record<Template["status"], string> = {
-  published: "bg-green-100 text-green-800",
-  draft: "bg-yellow-100 text-yellow-900",
-  archived: "bg-gray-100 text-gray-600"
+interface Template {
+  id: string;
+  name: string;
+  description: string;
+  type: 'email' | 'social' | 'blog';
+  category: string;
+  status: 'draft' | 'published';
+  createdAt: string;
+  updatedAt: string;
+}
+
+const statusBadgeMap: Record<string, string> = {
+  PUBLISHED: "bg-green-100 text-green-800",
+  DRAFT: "bg-yellow-100 text-yellow-900",
+  ARCHIVED: "bg-gray-100 text-gray-600"
 };
 
-const typeBadgeMap: Record<Template["type"], string> = {
+const categoryBadgeMap: Record<string, string> = {
   email: "bg-blue-100 text-blue-800",
   social: "bg-indigo-100 text-indigo-800",
   blog: "bg-orange-100 text-orange-800"
 };
 
 export default function TemplatesPage() {
-  const [search, setSearch] = useState("");
+  const { organization } = useOrganization();
+  const { toast } = useToast();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedType, setSelectedType] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filtered = useMemo(() => {
-    if (!search.trim()) return templates;
-    return templates.filter((template: Template) =>
-      template.name.toLowerCase().includes(search.toLowerCase()) ||
-      template.createdBy.toLowerCase().includes(search.toLowerCase()) ||
-      template.description.toLowerCase().includes(search.toLowerCase()) ||
-      template.type.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [search]);
+  useEffect(() => {
+    async function fetchTemplates() {
+      try {
+        setIsLoading(true);
+        const response = await fetch("/api/templates");
+        
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        setTemplates(data);
+      } catch (err) {
+        console.error("Failed to fetch templates:", err);
+        toast({
+          title: "Unable to load templates",
+          description: "Don't worry! You can still create new templates while we fix this.",
+          variant: "default",
+          className: "bg-blue-50 border-blue-200",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchTemplates();
+  }, [toast]);
+
+  const filteredTemplates = templates.filter(template => {
+    const matchesSearch = template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         template.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType = selectedType === 'all' || template.type === selectedType;
+    const matchesCategory = selectedCategory === 'all' || template.category === selectedCategory;
+    return matchesSearch && matchesType && matchesCategory;
+  });
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'email':
+        return <Mail className="h-4 w-4" />;
+      case 'social':
+        return <MessageSquare className="h-4 w-4" />;
+      case 'blog':
+        return <FileText className="h-4 w-4" />;
+      default:
+        return null;
+    }
+  };
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Templates</h1>
-          <p className="text-muted-foreground">
-            Create and manage reusable content templates
-          </p>
+    <div className="container mx-auto py-8">
+      {/* Hero Section */}
+      <div className="mb-8 text-center">
+        <h1 className="text-4xl font-bold mb-4">Content Templates</h1>
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          Create, manage, and organize your content templates. Use AI-powered suggestions to enhance your content.
+        </p>
+      </div>
+
+      {/* Search and Filter Bar */}
+      <div className="mb-8 flex flex-col sm:flex-row gap-4 items-center justify-between">
+        <div className="flex-1 max-w-md w-full">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Search templates..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
         </div>
-        <div className="flex gap-3">
-          <Input
-            type="search"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search by name, type, author..."
-            className="max-w-xs"
-            aria-label="Search templates"
-          />
-          <Button asChild>
-            <Link href="/templates/new">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Create Template
-            </Link>
-          </Button>
+        <div className="flex gap-4">
+          <Select value={selectedType} onValueChange={setSelectedType}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="email">Email</SelectItem>
+              <SelectItem value="social">Social</SelectItem>
+              <SelectItem value="blog">Blog</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value="marketing">Marketing</SelectItem>
+              <SelectItem value="sales">Sales</SelectItem>
+              <SelectItem value="support">Support</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
+      {/* Templates Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filtered.length > 0 ? filtered.map((template: Template) => (
-          <Card key={template.id} className="overflow-hidden group shadow-sm border">
-            <CardHeader className="pb-3 flex flex-row justify-between items-center">
-              <div>
-                <CardTitle>{template.name}</CardTitle>
-                <span className={`text-xs rounded-full px-2 py-1 capitalize ml-2 ${typeBadgeMap[template.type]}`}>
-                  {template.type}
-                </span>
-                <span className={`ml-2 text-xs rounded-full px-2 py-1 capitalize ${statusBadgeMap[template.status]}`}>
-                  {template.status}
-                </span>
+        {/* New Template Card */}
+        <Link href="/templates/new">
+          <Card className="h-full border-2 border-dashed hover:border-primary/50 transition-colors cursor-pointer">
+            <CardContent className="flex flex-col items-center justify-center h-[300px] text-center p-6">
+              <div className="rounded-full bg-primary/10 p-4 mb-4">
+                <Plus className="h-8 w-8 text-primary" />
               </div>
-              <div>
-                <span className="text-xs text-muted-foreground ml-2">by {template.createdBy}</span>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="h-24 bg-gray-50 rounded flex items-center justify-center text-gray-400 text-sm">
-                Template Preview
-              </div>
-              <p className="text-xs text-muted-foreground mt-3 mb-2">
-                Last updated: {new Date(template.updatedAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+              <h3 className="text-xl font-semibold mb-2">Create New Template</h3>
+              <p className="text-muted-foreground">
+                Start from scratch or use AI-powered suggestions
               </p>
-              <p className="text-xs mb-2">{template.description}</p>
             </CardContent>
-            <CardFooter className="flex justify-between border-t p-3 bg-gray-50">
-              <Button variant="ghost" size="sm">
-                <Copy className="h-4 w-4 mr-1" />
-                Duplicate
-              </Button>
-              <div className="flex space-x-1">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  asChild
-                >
-                  <Link href={`/templates/editor/${template.id}`}>
-                    <Edit className="h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button variant="ghost" size="sm">
-                  <Trash className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardFooter>
           </Card>
-        )) : (
-          <div className="text-center py-8 col-span-full text-muted-foreground border rounded-lg">No templates found</div>
-        )}
+        </Link>
+
+        {/* Template Cards */}
+        {filteredTemplates.map((template) => (
+          <Link key={template.id} href={`/templates/editor/${template.id}`}>
+            <Card className="h-full hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="flex items-center justify-between mb-2">
+                  <Badge variant={template.status === 'published' ? 'default' : 'secondary'}>
+                    {template.status}
+                  </Badge>
+                  <div className="flex items-center text-muted-foreground">
+                    {getTypeIcon(template.type)}
+                    <span className="ml-2 text-sm capitalize">{template.type}</span>
+                  </div>
+                </div>
+                <CardTitle className="line-clamp-1">{template.name}</CardTitle>
+                <CardDescription className="line-clamp-2">{template.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <span>{template.category}</span>
+                  <span>Updated {new Date(template.updatedAt).toLocaleDateString()}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
       </div>
+
+      {/* Empty State */}
+      {filteredTemplates.length === 0 && !isLoading && (
+        <div className="text-center py-12">
+          <div className="rounded-full bg-blue-50 p-4 w-16 h-16 mx-auto mb-4">
+            <Sparkles className="h-8 w-8 text-blue-500" />
+          </div>
+          <h3 className="text-xl font-semibold mb-2">No templates found</h3>
+          <p className="text-muted-foreground mb-4">
+            {searchQuery || selectedType !== 'all' || selectedCategory !== 'all'
+              ? "Try adjusting your search or filters to find what you're looking for"
+              : "Ready to create your first template? Let's get started!"}
+          </p>
+          <Link href="/templates/new">
+            <Button className="bg-blue-500 hover:bg-blue-600">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Template
+            </Button>
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
