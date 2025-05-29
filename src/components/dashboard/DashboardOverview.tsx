@@ -404,25 +404,78 @@ export function RecentSubscribers({ subscribers }: { subscribers: { email: strin
   }
 }
 
-// --- (Stub) Tiny Area/Bar Chart for quick visuals
+// Safe version of TinyBarChart with error handling
+const SafeTinyBarChart: React.FC<{ data: number[] }> = (props) => (
+  <ErrorBoundary
+    fallback={
+      <div className="h-[30px] w-[100px] flex items-center justify-center bg-card rounded">
+        <div className="text-xs text-muted-foreground">Failed to load chart</div>
+      </div>
+    }
+  >
+    <TinyBarChart {...props} />
+  </ErrorBoundary>
+)
+
+// --- Tiny Bar Chart for quick visuals
 export function TinyBarChart({ data }: { data: number[] }) {
-  // Real charts should use a lib, here is a stub
-  const max = Math.max(...data, 1);
-  return (
-    <svg width={100} height={30}>
-      {data.map((val, i) => (
-        <rect
-          key={i}
-          x={i * 12}
-          y={30 - (val / max) * 28}
-          width={8}
-          height={(val / max) * 28}
-          fill="var(--primary-500)"
-          rx={2}
-        />
-      ))}
-    </svg>
-  );
+  const { error, handleError } = useErrorHandler({
+    fallbackMessage: 'Failed to render chart',
+  });
+
+  try {
+    // Validate data
+    if (!Array.isArray(data)) {
+      throw new Error('Invalid data format: expected an array');
+    }
+
+    if (data.length === 0) {
+      throw new Error('No data available');
+    }
+
+    if (data.some(val => typeof val !== 'number' || isNaN(val))) {
+      throw new Error('Invalid data: all values must be numbers');
+    }
+
+    const max = Math.max(...data, 1);
+    const min = Math.min(...data);
+    
+    if (min < 0) {
+      throw new Error('Invalid data: negative values are not supported');
+    }
+
+    if (error.hasError) {
+      return (
+        <div className="h-[30px] w-[100px] flex items-center justify-center bg-card rounded">
+          <div className="text-xs text-muted-foreground">{error.message}</div>
+        </div>
+      );
+    }
+
+    return (
+      <svg width={100} height={30} role="img" aria-label="Bar chart visualization">
+        {data.map((val, i) => (
+          <rect
+            key={i}
+            x={i * 12}
+            y={30 - (val / max) * 28}
+            width={8}
+            height={(val / max) * 28}
+            fill="var(--primary-500)"
+            rx={2}
+            aria-label={`Bar ${i + 1}: ${val}`}
+          />
+        ))}
+      </svg>
+    );
+  } catch (error) {
+    handleError(error);
+    return (
+      <div className="h-[30px] w-[100px] flex items-center justify-center bg-card rounded">
+        <div className="text-xs text-muted-foreground">Failed to render chart</div>
+      </div>
+    );
+  }
 }
 
 // Wrap InfoCard with ErrorBoundary
