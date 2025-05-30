@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useState, useEffect, useCallback } from "react";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Search, Filter, LayoutGrid, LayoutList, Clock, Facebook, Twitter, Instagram, Linkedin, Upload, X } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Search, Filter, LayoutGrid, LayoutList, Clock, Facebook, Twitter, Instagram, Linkedin, Upload, X, Settings as SettingsIcon } from "lucide-react";
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useSensor, useSensors, PointerSensor, closestCenter } from "@dnd-kit/core";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import { Button } from "@/components/ui/button";
@@ -55,6 +55,7 @@ import { EventDetails } from './EventDetails';
 import { useTimezone } from "@/hooks/use-timezone";
 import { CSS } from '@dnd-kit/utilities';
 import { useDroppable } from '@dnd-kit/core';
+import { ContentCalendarSync } from "@/components/content/ContentCalendarSync";
 
 // Enhanced content type definitions
 export type SocialPlatform = 'FACEBOOK' | 'TWITTER' | 'INSTAGRAM' | 'LINKEDIN';
@@ -152,6 +153,7 @@ const tabs = [
   { value: "month", label: "Month" },
   { value: "week", label: "Week" },
   { value: "day", label: "Day" },
+  { value: "list", label: "List" }
 ] as const;
 
 // Add these interfaces after the existing interfaces
@@ -377,10 +379,163 @@ export interface ContentCalendarProps {
   onEventDelete?: (eventId: string) => Promise<boolean>;
   onDateSelect?: (day: string) => void;
   fetchEvents?: () => Promise<CalendarEvent[]>;
+  defaultView?: CalendarView;
+  onViewChange?: (view: CalendarView) => void;
 }
 
 // Calendar views
-type CalendarView = "month" | "week" | "day";
+type CalendarView = "month" | "week" | "day" | "list";
+
+// Add this component before the ContentCalendar component
+function TimeSlot({ hour, date }: { hour: number; date: string }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `time-${date}-${hour}`,
+    data: {
+      date,
+      time: `${hour.toString().padStart(2, '0')}:00`
+    } as DropData
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "h-20 border-b relative",
+        isOver && "bg-primary/5"
+      )}
+    />
+  );
+}
+
+// List View Component
+function ListView({ events, onEventClick }: { 
+  events: CalendarEvent[];
+  onEventClick: (event: CalendarEvent) => void;
+}) {
+  const userTimezone = useTimezone();
+  const { toast } = useToast();
+
+  // Sort events by date and time
+  const sortedEvents = React.useMemo(() => {
+    return [...events].sort((a, b) => {
+      const dateA = new Date(`${a.date}T${a.time || '00:00'}`);
+      const dateB = new Date(`${b.date}T${b.time || '00:00'}`);
+      return dateA.getTime() - dateB.getTime();
+    });
+  }, [events]);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-12 gap-4 p-4 bg-muted/50 rounded-md font-medium text-sm">
+        <div className="col-span-3">Title</div>
+        <div className="col-span-2">Type</div>
+        <div className="col-span-2">Date & Time</div>
+        <div className="col-span-2">Status</div>
+        <div className="col-span-3">Platforms</div>
+      </div>
+      
+      {sortedEvents.map((event) => (
+        <div 
+          key={event.id} 
+          className="grid grid-cols-12 gap-4 p-4 border rounded-md hover:bg-muted/50 transition-colors cursor-pointer"
+          onClick={() => onEventClick(event)}
+        >
+          <div className="col-span-3">
+            <div className="font-medium">{event.title}</div>
+            {event.description && (
+              <div className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                {event.description}
+              </div>
+            )}
+          </div>
+          
+          <div className="col-span-2">
+            <span className={cn(
+              "px-2 py-1 rounded-full text-xs font-medium",
+              eventTypeColorMap[event.type]?.bg,
+              eventTypeColorMap[event.type]?.text
+            )}>
+              {event.type}
+            </span>
+          </div>
+          
+          <div className="col-span-2">
+            <div className="text-sm">
+              {formatInTimeZone(new Date(event.date), userTimezone, "MMM d, yyyy")}
+            </div>
+            {event.time && (
+              <div className="text-sm text-muted-foreground">
+                {event.time.substring(0, 5)}
+              </div>
+            )}
+          </div>
+          
+          <div className="col-span-2">
+            <span className={cn(
+              "px-2 py-1 rounded-full text-xs font-medium",
+              event.status === 'draft' && "bg-yellow-100 text-yellow-800",
+              event.status === 'scheduled' && "bg-blue-100 text-blue-800",
+              event.status === 'sent' && "bg-green-100 text-green-800",
+              event.status === 'failed' && "bg-red-100 text-red-800"
+            )}>
+              {event.status}
+            </span>
+          </div>
+          
+          <div className="col-span-3">
+            {event.type === 'social' && event.socialMediaContent?.platforms?.length > 0 ? (
+              <div className="flex flex-wrap gap-1">
+                {event.socialMediaContent.platforms.map(platform => (
+                  <span
+                    key={platform}
+                    className={cn(
+                      "px-2 py-1 rounded-full text-xs font-medium",
+                      platformColorMap[platform].bg,
+                      platformColorMap[platform].text
+                    )}
+                  >
+                    {platform}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <span className="text-sm text-muted-foreground">-</span>
+            )}
+          </div>
+        </div>
+      ))}
+
+      {sortedEvents.length === 0 && (
+        <div className="text-center py-8 text-muted-foreground">
+          No events found
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Settings Component
+function Settings() {
+  return (
+    <div className="space-y-4">
+      <h3 className="font-bold">Settings</h3>
+      <div>
+        <label>Default View:</label>
+        <select>
+          <option value="month">Month</option>
+          <option value="week">Week</option>
+          <option value="day">Day</option>
+          <option value="list">List</option>
+        </select>
+      </div>
+      <div>
+        <label>Notifications:</label>
+        <input type="checkbox" />
+      </div>
+      {/* Add more settings as needed */}
+    </div>
+  );
+}
 
 export function ContentCalendar({
   events: initialEvents = [],
@@ -388,7 +543,9 @@ export function ContentCalendar({
   onEventUpdate,
   onEventDelete,
   onDateSelect,
-  fetchEvents
+  fetchEvents,
+  defaultView = "month",
+  onViewChange
 }: ContentCalendarProps) {
   const { toast } = useToast();
   const userTimezone = useTimezone();
@@ -401,7 +558,7 @@ export function ContentCalendar({
   });
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [calendarView, setCalendarView] = useState<CalendarView>("month");
+  const [calendarView, setCalendarView] = useState<CalendarView>(defaultView);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
@@ -428,6 +585,18 @@ export function ContentCalendar({
   const [showEventDetails, setShowEventDetails] = useState(false);
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
   const [pendingDialogClose, setPendingDialogClose] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showSync, setShowSync] = useState(false);
+
+  // Update calendar view when defaultView prop changes
+  useEffect(() => {
+    setCalendarView(defaultView);
+  }, [defaultView]);
+
+  // Notify parent component when view changes
+  useEffect(() => {
+    onViewChange?.(calendarView);
+  }, [calendarView, onViewChange]);
 
   // Calculate days to display based on current month
   const daysInMonth = React.useMemo(() => {
@@ -896,26 +1065,13 @@ export function ContentCalendar({
                 
                 {/* Hour cells with droppable areas */}
                 <div className="relative">
-                  {hours.map((hour) => {
-                    const { setNodeRef, isOver } = useDroppable({
-                      id: `time-${formatDate(day, 'yyyy-MM-dd')}-${hour}`,
-                      data: {
-                        date: formatDate(day, 'yyyy-MM-dd'),
-                        time: `${hour.toString().padStart(2, '0')}:00`
-                      } as DropData
-                    });
-
-                    return (
-                      <div
-                        key={hour}
-                        ref={setNodeRef}
-                        className={cn(
-                          "h-20 border-b relative",
-                          isOver && "bg-primary/5"
-                        )}
-                      />
-                    );
-                  })}
+                  {hours.map((hour) => (
+                    <TimeSlot
+                      key={hour}
+                      hour={hour}
+                      date={formatDate(day, 'yyyy-MM-dd')}
+                    />
+                  ))}
                 </div>
                 
                 {/* Positioned events */}
@@ -1430,158 +1586,82 @@ export function ContentCalendar({
     );
   }
 
-  // Add this new component for time slots
-  const TimeSlot = ({ hour, date }: { hour: number; date: string }) => {
-    const { setNodeRef } = useDroppable({
-      id: `time-${date}-${hour}`,
-      data: {
-        date,
-        time: `${hour.toString().padStart(2, '0')}:00`
-      } as DropData
-    });
-
-    return (
-      <div
-        ref={setNodeRef}
-        className="h-[60px] border-b border-border hover:bg-muted/50 transition-colors"
-        style={{ height: TIME_SLOT_HEIGHT }}
-      />
-    );
-  };
-
   // Update the calendar view rendering in the main component's return statement
   return (
-    <div className="space-y-4 border rounded-lg p-4 bg-card">
-      {/* Calendar Header */}
-      <div className="flex items-center justify-between mb-2">
-        <h1 className="text-2xl font-bold tracking-tight text-[var(--color-chart-blue)]">Content Calendar</h1>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" /> Add Event
-        </Button>
+    <div className="space-y-4 border rounded-xl p-4 bg-card shadow-sm">
+      {/* Calendar Header with Actions */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--color-chart-blue)]">
+            Content Calendar
+          </h1>
+          <div className="h-6 w-px bg-border" />
+          <Tabs 
+            defaultValue="month"
+            value={calendarView} 
+            onValueChange={(value) => {
+              const newView = value as CalendarView;
+              setCalendarView(newView);
+              onViewChange?.(newView);
+            }}
+            className="w-[280px]"
+          >
+            <TabsList className="grid w-full grid-cols-4 bg-muted p-1">
+              {tabs.map((tab) => (
+                <TabsTrigger
+                  key={tab.value}
+                  value={tab.value}
+                  className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm cursor-pointer transition-all duration-200"
+                >
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline"
+            onClick={() => setShowSync(true)}
+            className="h-9 hover:bg-muted/80 transition-colors"
+          >
+            <Upload className="h-4 w-4 mr-2" /> Sync Content
+          </Button>
+          <Button 
+            variant="outline"
+            onClick={() => setShowSettings(true)}
+            className="h-9 hover:bg-muted/80 transition-colors"
+          >
+            <SettingsIcon className="h-4 w-4 mr-2" /> Settings
+          </Button>
+          <Button 
+            onClick={() => {
+              setNewEvent(prev => ({ ...prev, start: currentDate }));
+              setIsCreateDialogOpen(true);
+            }}
+            className="h-9 bg-[var(--color-chart-blue)] hover:bg-[var(--color-chart-blue)]/90 text-white transition-colors"
+          >
+            <Plus className="h-4 w-4 mr-2" /> Add Event
+          </Button>
+        </div>
       </div>
 
-      {/* Add/Edit Event Dialog */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={handleDialogClose}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Create New Event</DialogTitle>
-            <DialogDescription>
-              Fill in the details for your new event.
-            </DialogDescription>
-          </DialogHeader>
-          <EventForm
-            onSubmit={handleCreateEvent}
-            onCancel={() => {
-              setPendingDialogClose(false);
-              setIsCreateDialogOpen(false);
-            }}
-            initialData={selectedEvent || undefined}
-          />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isEditDialogOpen} onOpenChange={handleDialogClose}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Event</DialogTitle>
-            <DialogDescription>
-              Update the event details.
-            </DialogDescription>
-          </DialogHeader>
-          {selectedEvent && (
-            <EventForm
-              initialData={selectedEvent}
-              mode="edit"
-              onSubmit={handleUpdateEvent}
-              onCancel={() => {
-                setPendingDialogClose(false);
-                setIsEditDialogOpen(false);
-                setSelectedEvent(null);
-              }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Unsaved Changes Dialog */}
-      <AlertDialog open={showUnsavedChangesDialog} onOpenChange={setShowUnsavedChangesDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
-            <AlertDialogDescription>
-              You have unsaved changes. Are you sure you want to close without saving?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelClose}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmClose}>Discard Changes</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Event Details Dialog */}
-      <Dialog open={showEventDetails} onOpenChange={setShowEventDetails}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Event Details</DialogTitle>
-            <DialogDescription>
-              View and manage your scheduled content.
-            </DialogDescription>
-          </DialogHeader>
-          {selectedEvent && (
-            <EventDetails
-              event={selectedEvent}
-              onEdit={() => handleEditClick(selectedEvent)}
-              onDelete={() => {
-                setShowEventDetails(false);
-                handleDeleteClick(selectedEvent);
-              }}
-              onRefreshAnalytics={handleRefreshAnalytics}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the event
-              "{eventToDelete?.title}".
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmedDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Filters and Search */}
-      <div className="flex flex-wrap gap-4 items-center justify-between mb-4">
-        <div className="flex items-center space-x-2">
+      {/* Filters and Navigation */}
+      <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+        <div className="flex items-center gap-3">
           <div className="relative w-64">
             <Input
               type="search"
               placeholder="Search events..."
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
-              className="pl-8"
+              className="pl-9 h-9 bg-background transition-colors"
             />
-            <span className="absolute left-2.5 top-2.5 text-muted-foreground">
-              <Search className="h-4 w-4" />
-            </span>
+            <Search className="h-4 w-4 absolute left-3 top-2.5 text-muted-foreground" />
           </div>
 
           <Select value={selectedType} onValueChange={setSelectedType}>
-            <SelectTrigger className="w-[120px]">
+            <SelectTrigger className="w-[120px] h-9 bg-background transition-colors">
               <SelectValue placeholder="Type" />
             </SelectTrigger>
             <SelectContent>
@@ -1589,12 +1669,13 @@ export function ContentCalendar({
               <SelectItem value="email">Email</SelectItem>
               <SelectItem value="social">Social</SelectItem>
               <SelectItem value="blog">Blog</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
+              <SelectItem value="article">Article</SelectItem>
+              <SelectItem value="custom">Custom</SelectItem>
             </SelectContent>
           </Select>
 
           <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-[130px] h-9 bg-background transition-colors">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -1607,44 +1688,33 @@ export function ContentCalendar({
           </Select>
         </div>
 
-        {/* View Switcher */}
-        <div className="flex items-center">
-          <Tabs 
-            defaultValue="month"
-            value={calendarView} 
-            onValueChange={(value) => setCalendarView(value as CalendarView)}
-            className="w-[300px]"
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={() => setCurrentDate(subMonths(currentDate, 1))}
+            className="h-9 w-9 hover:bg-muted/80 transition-colors"
           >
-            <TabsList className="grid w-full grid-cols-3 bg-muted">
-              {tabs.map((tab) => (
-                <TabsTrigger
-                  key={tab.value}
-                  value={tab.value}
-                  className="data-[state=active]:bg-background data-[state=active]:text-foreground"
-                >
-                  {tab.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        </div>
-      </div>
-
-      {/* Calendar Navigation */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="icon" onClick={() => setCurrentDate(subMonths(currentDate, 1))}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="icon" onClick={() => setCurrentDate(addMonths(currentDate, 1))}>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={() => setCurrentDate(addMonths(currentDate, 1))}
+            className="h-9 w-9 hover:bg-muted/80 transition-colors"
+          >
             <ChevronRight className="h-4 w-4" />
           </Button>
-          <Button variant="outline" onClick={() => setCurrentDate(toZonedTime(new Date(), userTimezone))}>
+          <Button 
+            variant="outline" 
+            onClick={() => setCurrentDate(toZonedTime(new Date(), userTimezone))}
+            className="h-9 hover:bg-muted/80 transition-colors"
+          >
             Today
           </Button>
-        </div>
-        <div className="text-lg font-medium">
-          {formatDate(currentDate, "MMMM yyyy")}
+          <div className="text-sm font-medium text-muted-foreground">
+            {formatDate(currentDate, "MMMM yyyy")}
+          </div>
         </div>
       </div>
 
@@ -1656,20 +1726,37 @@ export function ContentCalendar({
         modifiers={[restrictToWindowEdges]}
       >
         {/* Calendar Views */}
-        <div className="mt-4">
-          {calendarView === "month" && renderMonthView()}
-          {calendarView === "week" && renderWeekView()}
-          {calendarView === "day" && renderDayView()}
+        <div className="bg-background rounded-lg border">
+          {calendarView === "month" && (
+            <div className="p-4">
+              {renderMonthView()}
+            </div>
+          )}
+          {calendarView === "week" && (
+            <div className="p-4">
+              {renderWeekView()}
+            </div>
+          )}
+          {calendarView === "day" && (
+            <div className="p-4">
+              {renderDayView()}
+            </div>
+          )}
+          {calendarView === "list" && (
+            <div className="p-4">
+              <ListView events={filteredEvents} onEventClick={handleEventClick} />
+            </div>
+          )}
         </div>
 
         <DragOverlay>
           {activeDragEvent && (
             <div
               className={cn(
-                "text-xs p-1.5 px-2 rounded-md truncate flex items-center gap-1.5",
+                "text-xs p-2 rounded-md truncate flex items-center gap-2 shadow-lg border",
                 eventTypeColorMap[activeDragEvent.type]?.bg || "bg-gray-100 dark:bg-gray-700/30",
                 eventTypeColorMap[activeDragEvent.type]?.text || "text-foreground",
-                "shadow-lg"
+                "transform scale-105 transition-transform"
               )}
             >
               {activeDragEvent.time && (
@@ -1683,16 +1770,82 @@ export function ContentCalendar({
         </DragOverlay>
       </DndContext>
 
+      {/* Sync Dialog */}
+      <Dialog open={showSync} onOpenChange={setShowSync}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Content Calendar Sync</DialogTitle>
+            <DialogDescription>
+              Sync your existing content to the calendar to see all your created content on the calendar view.
+            </DialogDescription>
+          </DialogHeader>
+          <ContentCalendarSync onSyncComplete={() => setShowSync(false)} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Settings Dialog */}
+      <Dialog open={showSettings} onOpenChange={setShowSettings}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Calendar Settings</DialogTitle>
+            <DialogDescription>
+              Configure your calendar preferences
+            </DialogDescription>
+          </DialogHeader>
+          <Settings />
+        </DialogContent>
+      </Dialog>
+
       {/* Add these styles to the component's return statement, just before the closing div */}
       <style jsx global>{`
         .dragging {
           opacity: 0.5;
           cursor: grabbing;
+          transform: scale(1.02);
+          transition: all 0.2s ease;
         }
         
         .drop-target {
           background-color: var(--color-primary-100);
           border: 2px dashed var(--color-primary-500);
+          transition: all 0.2s ease;
+        }
+
+        /* Consistent button styles */
+        button {
+          transition: all 0.2s ease;
+        }
+
+        /* Consistent hover states */
+        .hover-card:hover {
+          background-color: var(--color-muted);
+          transition: background-color 0.2s ease;
+        }
+
+        /* Make calendar cells clickable */
+        .calendar-cell {
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .calendar-cell:hover {
+          background-color: var(--color-muted);
+          transform: translateY(-1px);
+        }
+
+        /* Event hover effects */
+        .event-item {
+          transition: all 0.2s ease;
+        }
+
+        .event-item:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Smooth transitions for all interactive elements */
+        * {
+          transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
         }
       `}</style>
     </div>
