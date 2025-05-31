@@ -200,4 +200,110 @@
 - Each commit should include tests and documentation
 - Follow conventional commit format
 - Update this file as tasks are completed
-- Add new tasks as they are identified 
+- Add new tasks as they are identified
+
+# Client Details Page Tasks
+
+## Goals Section Issues
+
+1. **Add Goal Button Functionality**
+   - [x] Create new goal page route
+   - [x] Implement goal creation form
+   - [x] Add API endpoint for goal creation
+   - [ ] Add proper error handling and validation messages
+   - [ ] Add loading states during form submission
+   - [ ] Add success notification after goal creation
+
+2. **Goals List Display**
+   - [ ] Add empty state when no goals exist
+   - [ ] Add pagination for goals list
+   - [ ] Add sorting options (by date, status, progress)
+   - [ ] Add filtering options (by status, date range)
+   - [ ] Add search functionality for goals
+
+3. **Goal Card Improvements**
+   - [ ] Add edit functionality for existing goals
+   - [ ] Add delete functionality with confirmation
+   - [ ] Add ability to add/edit milestones
+   - [ ] Add ability to add/edit success metrics
+   - [ ] Improve progress bar visualization
+   - [ ] Add tooltips for status indicators
+
+4. **Data Management**
+   - [ ] Implement optimistic updates for better UX
+   - [ ] Add proper error boundaries
+   - [ ] Add retry mechanism for failed API calls
+   - [ ] Add data caching for better performance
+   - [ ] Add proper TypeScript types for all components
+
+5. **UI/UX Improvements**
+   - [ ] Add animations for state transitions
+   - [ ] Improve mobile responsiveness
+   - [ ] Add keyboard navigation support
+   - [ ] Add proper focus management
+   - [ ] Add proper ARIA labels and roles
+
+6. **Testing**
+   - [ ] Add unit tests for components
+   - [ ] Add integration tests for API endpoints
+   - [ ] Add end-to-end tests for user flows
+   - [ ] Add performance tests
+   - [ ] Add accessibility tests
+
+## General Page Improvements
+
+1. **Performance**
+   - [ ] Implement proper code splitting
+   - [ ] Add proper loading states for all sections
+   - [ ] Optimize API calls
+   - [ ] Add proper caching strategies
+
+2. **Error Handling**
+   - [ ] Add global error boundary
+   - [ ] Add proper error messages
+   - [ ] Add retry mechanisms
+   - [ ] Add proper logging
+
+3. **Security**
+   - [ ] Add proper input validation
+   - [ ] Add proper authorization checks
+   - [ ] Add rate limiting
+   - [ ] Add proper CSRF protection
+
+4. **Documentation**
+   - [ ] Add proper code documentation
+   - [ ] Add API documentation
+   - [ ] Add user documentation
+   - [ ] Add setup instructions
+
+## Priority Order
+
+1. Critical Issues
+   - [ ] Add proper error handling and validation messages
+   - [ ] Add loading states during form submission
+   - [ ] Add success notification after goal creation
+   - [ ] Add empty state when no goals exist
+
+2. High Priority
+   - [ ] Add edit functionality for existing goals
+   - [ ] Add delete functionality with confirmation
+   - [ ] Implement optimistic updates for better UX
+   - [ ] Add proper error boundaries
+
+3. Medium Priority
+   - [ ] Add pagination for goals list
+   - [ ] Add sorting and filtering options
+   - [ ] Add ability to add/edit milestones
+   - [ ] Add ability to add/edit success metrics
+
+4. Low Priority
+   - [ ] Add animations for state transitions
+   - [ ] Add keyboard navigation support
+   - [ ] Add proper focus management
+   - [ ] Add proper ARIA labels and roles
+
+## Notes
+- All new features should be properly tested before deployment
+- All changes should follow the existing code style and patterns
+- All changes should be properly documented
+- All changes should be properly reviewed before merging 

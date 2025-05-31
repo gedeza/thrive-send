@@ -1,27 +1,26 @@
 'use client';
 
 import React, { useState } from 'react';
-import Image from 'next/image';
 
-type TabId = 'overview' | 'account' | 'organization' | 'first-campaign';
+type TabId = 'overview' | 'setup' | 'features' | 'next-steps';
 
 const GettingStartedGuide: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
 
   const tabs = [
-    { id: 'overview' as TabId, label: 'Platform Overview', icon: '🎯' },
-    { id: 'account' as TabId, label: 'Account Setup', icon: '👤' },
-    { id: 'organization' as TabId, label: 'Organization', icon: '🏢' },
-    { id: 'first-campaign' as TabId, label: 'First Campaign', icon: '📢' },
+    { id: 'overview' as TabId, label: 'Overview', icon: '🎯' },
+    { id: 'setup' as TabId, label: 'Setup', icon: '⚙️' },
+    { id: 'features' as TabId, label: 'Features', icon: '✨' },
+    { id: 'next-steps' as TabId, label: 'Next Steps', icon: '🚀' },
   ];
 
   return (
     <div className="max-w-7xl mx-auto p-8">
-      <h1 className="text-4xl font-bold mb-8">Getting Started with Thrive Send</h1>
+      <h1 className="text-4xl font-bold mb-8">Getting Started Guide</h1>
       
       <div className="mb-10">
         <p className="text-xl text-gray-700">
-          Welcome to Thrive Send! This guide will walk you through setting up your account and creating your first campaign.
+          Welcome to Thrive Send! This guide will help you get started with our platform.
         </p>
       </div>
 
@@ -50,102 +49,86 @@ const GettingStartedGuide: React.FC = () => {
             <div className="space-y-8">
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-3xl font-semibold">Platform Overview</h2>
-                <div className="text-sm text-gray-500">Welcome to Thrive Send</div>
+                <div className="text-sm text-gray-500">Getting Started</div>
               </div>
-              <div className="relative w-full h-[500px] mb-8 rounded-lg overflow-hidden bg-gray-50">
-                <Image
-                  src="/docs/images/analytics-dashboard-screenshot.png"
-                  alt="Analytics Dashboard Screenshot"
-                  fill
-                  className="object-contain p-4"
-                  priority
-                />
-              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="bg-gray-50 p-6 rounded-lg">
                   <h3 className="text-2xl font-semibold mb-4">Key Features</h3>
                   <ul className="space-y-3 text-lg text-gray-700">
-                    <li>• Email campaign management</li>
-                    <li>• Content creation tools</li>
-                    <li>• Analytics dashboard</li>
-                    <li>• Team collaboration</li>
-                    <li>• Audience segmentation</li>
-                    <li>• Automated workflows</li>
+                    <li>• Campaign Management</li>
+                    <li>• Content Creation</li>
+                    <li>• Analytics & Reporting</li>
+                    <li>• User Management</li>
+                    <li>• Team Collaboration</li>
                   </ul>
                 </div>
                 <div className="bg-gray-50 p-6 rounded-lg">
                   <h3 className="text-2xl font-semibold mb-4">Getting Started</h3>
                   <ul className="space-y-3 text-lg text-gray-700">
-                    <li>• Create your account</li>
-                    <li>• Set up your organization</li>
-                    <li>• Invite team members</li>
+                    <li>• Complete your profile</li>
+                    <li>• Set up your team</li>
                     <li>• Create your first campaign</li>
-                    <li>• Explore the dashboard</li>
-                    <li>• Set up your preferences</li>
+                    <li>• Explore features</li>
+                    <li>• View tutorials</li>
                   </ul>
                 </div>
               </div>
             </div>
           )}
 
-          {activeTab === 'account' && (
+          {activeTab === 'setup' && (
             <div className="space-y-8">
               <div className="flex items-center justify-between mb-8">
-                <h2 className="text-3xl font-semibold">Account Setup</h2>
-                <div className="text-sm text-gray-500">Create Your Account</div>
+                <h2 className="text-3xl font-semibold">Initial Setup</h2>
+                <div className="text-sm text-gray-500">Setup Process</div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Sign Up Process */}
-                <div className="bg-gray-50 p-6 rounded-lg">
-                  <h3 className="text-2xl font-semibold mb-4">Sign Up Process</h3>
-                  <div className="space-y-6">
-                    <div className="bg-white p-6 rounded-lg border border-gray-200">
-                      <h4 className="text-xl font-medium mb-4">1. Create Your Account</h4>
-                      <ol className="space-y-4 text-lg text-gray-700">
-                        <li>1. Visit <a href="https://app.thrivesend.com/signup" className="text-blue-600 hover:underline">app.thrivesend.com/signup</a></li>
-                        <li>2. Enter your email address</li>
-                        <li>3. Create a strong password</li>
-                        <li>4. Click "Create Account"</li>
-                        <li>5. Verify your email address</li>
-                      </ol>
+              <div className="bg-gray-50 p-8 rounded-lg mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <div className="flex items-center mb-4">
+                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                        <span className="text-2xl">👤</span>
+                      </div>
+                      <h3 className="text-xl font-semibold">Profile Setup</h3>
                     </div>
-                    <div className="bg-white p-6 rounded-lg border border-gray-200">
-                      <h4 className="text-xl font-medium mb-4">2. Complete Your Profile</h4>
-                      <ol className="space-y-4 text-lg text-gray-700">
-                        <li>1. Add your full name</li>
-                        <li>2. Upload a profile picture</li>
-                        <li>3. Set your timezone</li>
-                        <li>4. Choose your notification preferences</li>
-                        <li>5. Set up two-factor authentication (recommended)</li>
-                      </ol>
+                    <div className="space-y-4">
+                      <div className="flex items-center text-gray-600">
+                        <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                        Complete your profile
+                      </div>
+                      <div className="flex items-center text-gray-600">
+                        <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                        Set preferences
+                      </div>
+                      <div className="flex items-center text-gray-600">
+                        <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                        Configure notifications
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Account Settings */}
-                <div className="bg-gray-50 p-6 rounded-lg">
-                  <h3 className="text-2xl font-semibold mb-4">Account Settings</h3>
-                  <div className="space-y-6">
-                    <div className="bg-white p-6 rounded-lg border border-gray-200">
-                      <h4 className="text-xl font-medium mb-4">Profile Settings</h4>
-                      <ul className="space-y-2 text-lg text-gray-700">
-                        <li>• Update personal information</li>
-                        <li>• Change password</li>
-                        <li>• Manage email preferences</li>
-                        <li>• Set notification preferences</li>
-                        <li>• Configure account settings</li>
-                      </ul>
+                  <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <div className="flex items-center mb-4">
+                      <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                        <span className="text-2xl">👥</span>
+                      </div>
+                      <h3 className="text-xl font-semibold">Team Setup</h3>
                     </div>
-                    <div className="bg-white p-6 rounded-lg border border-gray-200">
-                      <h4 className="text-xl font-medium mb-4">Security Settings</h4>
-                      <ul className="space-y-2 text-lg text-gray-700">
-                        <li>• Two-factor authentication</li>
-                        <li>• Session management</li>
-                        <li>• Connected devices</li>
-                        <li>• Security logs</li>
-                        <li>• Access history</li>
-                      </ul>
+                    <div className="space-y-4">
+                      <div className="flex items-center text-gray-600">
+                        <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                        Invite team members
+                      </div>
+                      <div className="flex items-center text-gray-600">
+                        <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                        Set roles and permissions
+                      </div>
+                      <div className="flex items-center text-gray-600">
+                        <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                        Configure team settings
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -153,158 +136,61 @@ const GettingStartedGuide: React.FC = () => {
             </div>
           )}
 
-          {activeTab === 'organization' && (
+          {activeTab === 'features' && (
             <div className="space-y-8">
               <div className="flex items-center justify-between mb-8">
-                <h2 className="text-3xl font-semibold">Organization Setup</h2>
-                <div className="text-sm text-gray-500">Configure Your Workspace</div>
+                <h2 className="text-3xl font-semibold">Platform Features</h2>
+                <div className="text-sm text-gray-500">Key Features</div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Organization Setup */}
                 <div className="bg-gray-50 p-6 rounded-lg">
-                  <h3 className="text-2xl font-semibold mb-4">Initial Setup</h3>
-                  <div className="space-y-6">
-                    <div className="bg-white p-6 rounded-lg border border-gray-200">
-                      <h4 className="text-xl font-medium mb-4">1. Organization Details</h4>
-                      <ol className="space-y-4 text-lg text-gray-700">
-                        <li>1. Enter organization name</li>
-                        <li>2. Add organization logo</li>
-                        <li>3. Set primary contact information</li>
-                        <li>4. Choose organization type</li>
-                        <li>5. Set business hours</li>
-                      </ol>
-                    </div>
-                    <div className="bg-white p-6 rounded-lg border border-gray-200">
-                      <h4 className="text-xl font-medium mb-4">2. Branding Setup</h4>
-                      <ol className="space-y-4 text-lg text-gray-700">
-                        <li>1. Upload brand assets</li>
-                        <li>2. Set brand colors</li>
-                        <li>3. Configure email templates</li>
-                        <li>4. Set up email signatures</li>
-                        <li>5. Create custom domains</li>
-                      </ol>
-                    </div>
-                  </div>
+                  <h3 className="text-2xl font-semibold mb-4">Campaign Management</h3>
+                  <ul className="space-y-3 text-lg text-gray-700">
+                    <li>• Create and manage campaigns</li>
+                    <li>• Schedule content</li>
+                    <li>• Track performance</li>
+                    <li>• A/B testing</li>
+                  </ul>
                 </div>
-
-                {/* Team Management */}
-                <div className="bg-gray-50 p-6 rounded-lg">
-                  <h3 className="text-2xl font-semibold mb-4">Team Management</h3>
-                  <div className="space-y-6">
-                    <div className="bg-white p-6 rounded-lg border border-gray-200">
-                      <h4 className="text-xl font-medium mb-4">Invite Team Members</h4>
-                      <ol className="space-y-4 text-lg text-gray-700">
-                        <li>1. Go to Team Settings</li>
-                        <li>2. Click "Invite Members"</li>
-                        <li>3. Enter email addresses</li>
-                        <li>4. Assign roles and permissions</li>
-                        <li>5. Send invitations</li>
-                      </ol>
-                    </div>
-                    <div className="bg-white p-6 rounded-lg border border-gray-200">
-                      <h4 className="text-xl font-medium mb-4">Role Types</h4>
-                      <ul className="space-y-2 text-lg text-gray-700">
-                        <li>• Administrator: Full system access</li>
-                        <li>• Manager: Team and campaign management</li>
-                        <li>• Editor: Content creation and editing</li>
-                        <li>• Viewer: Read-only access</li>
-                        <li>• Custom: Tailored permissions</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'first-campaign' && (
-            <div className="space-y-8">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-3xl font-semibold">Create Your First Campaign</h2>
-                <div className="text-sm text-gray-500">Campaign Guide</div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Campaign Creation */}
-                <div className="bg-gray-50 p-6 rounded-lg">
-                  <h3 className="text-2xl font-semibold mb-4">Campaign Setup</h3>
-                  <div className="space-y-6">
-                    <div className="bg-white p-6 rounded-lg border border-gray-200">
-                      <h4 className="text-xl font-medium mb-4">1. Campaign Details</h4>
-                      <ol className="space-y-4 text-lg text-gray-700">
-                        <li>1. Click "New Campaign"</li>
-                        <li>2. Enter campaign name</li>
-                        <li>3. Select campaign type</li>
-                        <li>4. Choose template or start from scratch</li>
-                        <li>5. Set campaign objectives</li>
-                      </ol>
-                    </div>
-                    <div className="bg-white p-6 rounded-lg border border-gray-200">
-                      <h4 className="text-xl font-medium mb-4">2. Audience Selection</h4>
-                      <ol className="space-y-4 text-lg text-gray-700">
-                        <li>1. Choose target audience</li>
-                        <li>2. Apply segmentation filters</li>
-                        <li>3. Set audience size limits</li>
-                        <li>4. Preview audience</li>
-                        <li>5. Save audience segment</li>
-                      </ol>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Content Creation */}
                 <div className="bg-gray-50 p-6 rounded-lg">
                   <h3 className="text-2xl font-semibold mb-4">Content Creation</h3>
-                  <div className="space-y-6">
-                    <div className="bg-white p-6 rounded-lg border border-gray-200">
-                      <h4 className="text-xl font-medium mb-4">Email Content</h4>
-                      <ul className="space-y-2 text-lg text-gray-700">
-                        <li>• Write compelling subject line</li>
-                        <li>• Design email layout</li>
-                        <li>• Add images and media</li>
-                        <li>• Include call-to-action buttons</li>
-                        <li>• Preview on different devices</li>
-                      </ul>
-                    </div>
-                    <div className="bg-white p-6 rounded-lg border border-gray-200">
-                      <h4 className="text-xl font-medium mb-4">Content Best Practices</h4>
-                      <ul className="space-y-2 text-lg text-gray-700">
-                        <li>• Keep subject lines under 50 characters</li>
-                        <li>• Use clear, action-oriented CTAs</li>
-                        <li>• Optimize images for email</li>
-                        <li>• Test all links before sending</li>
-                        <li>• Follow email compliance guidelines</li>
-                      </ul>
-                    </div>
-                  </div>
+                  <ul className="space-y-3 text-lg text-gray-700">
+                    <li>• Rich text editor</li>
+                    <li>• Template system</li>
+                    <li>• Media library</li>
+                    <li>• Version control</li>
+                  </ul>
                 </div>
               </div>
+            </div>
+          )}
 
-              {/* Campaign Scheduling */}
-              <div className="bg-gray-50 p-6 rounded-lg">
-                <h3 className="text-2xl font-semibold mb-4">Schedule & Send</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="bg-white p-6 rounded-lg border border-gray-200">
-                    <h4 className="text-xl font-medium mb-4">Scheduling Options</h4>
-                    <ul className="space-y-2 text-lg text-gray-700">
-                      <li>• Send immediately</li>
-                      <li>• Schedule for later</li>
-                      <li>• Set up recurring campaigns</li>
-                      <li>• Use timezone-based scheduling</li>
-                      <li>• A/B test send times</li>
-                    </ul>
-                  </div>
-                  <div className="bg-white p-6 rounded-lg border border-gray-200">
-                    <h4 className="text-xl font-medium mb-4">Before Sending</h4>
-                    <ul className="space-y-2 text-lg text-gray-700">
-                      <li>• Review campaign settings</li>
-                      <li>• Test email rendering</li>
-                      <li>• Check spam score</li>
-                      <li>• Verify tracking setup</li>
-                      <li>• Get approval if required</li>
-                    </ul>
-                  </div>
+          {activeTab === 'next-steps' && (
+            <div className="space-y-8">
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-3xl font-semibold">Next Steps</h2>
+                <div className="text-sm text-gray-500">Getting Started</div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="bg-gray-50 p-6 rounded-lg">
+                  <h3 className="text-2xl font-semibold mb-4">Recommended Actions</h3>
+                  <ul className="space-y-3 text-lg text-gray-700">
+                    <li>• Create your first campaign</li>
+                    <li>• Set up your team</li>
+                    <li>• Configure integrations</li>
+                    <li>• Explore analytics</li>
+                  </ul>
+                </div>
+                <div className="bg-gray-50 p-6 rounded-lg">
+                  <h3 className="text-2xl font-semibold mb-4">Resources</h3>
+                  <ul className="space-y-3 text-lg text-gray-700">
+                    <li>• Documentation</li>
+                    <li>• Video tutorials</li>
+                    <li>• Community forum</li>
+                    <li>• Support center</li>
+                  </ul>
                 </div>
               </div>
             </div>

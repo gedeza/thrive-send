@@ -4,24 +4,40 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { formatDate } from '@/lib/utils';
-import { Plus, Target, Clock, CheckCircle2, AlertCircle, AlertTriangle } from 'lucide-react';
+import { Plus, Target, Clock, CheckCircle2, AlertCircle, AlertTriangle, RefreshCcw } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface Goal {
   id: string;
-  title: string;
+  name: string;
   description: string | null;
+  targetValue: number | null;
+  currentValue: number | null;
+  startDate: string;
+  endDate: string | null;
   status: string;
-  priority: string;
-  dueDate: string | null;
-  progress: number;
   createdAt: string;
   updatedAt: string;
-  assignedTo: {
+  clientId: string;
+  milestones: {
+    id: string;
     name: string;
-    email: string;
-  } | null;
+    description: string | null;
+    dueDate: string;
+    completedDate: string | null;
+    status: string;
+  }[];
+  metrics: {
+    id: string;
+    name: string;
+    description: string | null;
+    metricType: string;
+    targetValue: number | null;
+    currentValue: number | null;
+    unit: string | null;
+  }[];
 }
 
 interface GoalsResponse {
@@ -44,12 +60,16 @@ async function getGoalsData(clientId: string, limit?: number): Promise<GoalsResp
     const response = await fetch(
       `${baseUrl}/api/clients/${clientId}/goals${limit ? `?limit=${limit}` : ''}`,
       { 
-        credentials: 'include' // Include cookies for auth
+        credentials: 'include', // Include cookies for auth
+        headers: {
+          'Accept': 'application/json',
+        },
       }
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch goals data: ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Failed to fetch goals data: ${response.statusText}`);
     }
 
     return response.json();
@@ -110,12 +130,20 @@ function GoalsLoadingState() {
   );
 }
 
-function GoalsErrorState({ error }: { error: string }) {
+function GoalsErrorState({ error, onRetry }: { error: string; onRetry: () => void }) {
   return (
     <div className="p-6 text-center">
       <AlertTriangle className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
       <h3 className="text-lg font-medium mb-1">Unable to load goals</h3>
-      <p className="text-sm text-gray-500">{error}</p>
+      <p className="text-sm text-gray-500 mb-4">{error}</p>
+      <Button
+        variant="outline"
+        onClick={onRetry}
+        className="flex items-center gap-2"
+      >
+        <RefreshCcw className="h-4 w-4" />
+        Try Again
+      </Button>
     </div>
   );
 }
@@ -127,31 +155,32 @@ export default function GoalsSection({
   clientId: string;
   limit?: number;
 }) {
+  const router = useRouter();
   const [data, setData] = useState<GoalsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const responseData = await getGoalsData(clientId, limit);
-        setData(responseData);
-        setError(null);
-      } catch (err) {
-        console.error('Error in goals component:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load goals data');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const responseData = await getGoalsData(clientId, limit);
+      setData(responseData);
+    } catch (err) {
+      console.error('Error in goals component:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load goals data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchData();
   }, [clientId, limit]);
 
   if (loading) return <GoalsLoadingState />;
-  if (error) return <GoalsErrorState error={error} />;
-  if (!data) return <GoalsErrorState error="No data available" />;
+  if (error) return <GoalsErrorState error={error} onRetry={fetchData} />;
+  if (!data) return <GoalsErrorState error="No data available" onRetry={fetchData} />;
 
   const { goals, stats } = data;
 
@@ -166,7 +195,10 @@ export default function GoalsSection({
             <span>{stats.inProgress} In Progress</span>
           </div>
         </div>
-        <Button size="sm">
+        <Button 
+          size="sm"
+          onClick={() => router.push(`/clients/${clientId}/goals/new`)}
+        >
           <Plus className="mr-2 h-4 w-4" />
           Add Goal
         </Button>
@@ -178,17 +210,23 @@ export default function GoalsSection({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                  <h4 className="font-medium">{goal.title}</h4>
+                  <h4 className="font-medium">{goal.name}</h4>
                   <p className="text-sm text-gray-500">
-                    {goal.assignedTo?.name || 'Unassigned'}
+                    {goal.milestones.length} Milestones
                   </p>
                 </div>
                 <span
-                  className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${getPriorityColor(
-                    goal.priority
-                  )}`}
+                  className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${
+                    goal.status === 'COMPLETED'
+                      ? 'bg-green-100 text-green-700'
+                      : goal.status === 'IN_PROGRESS'
+                      ? 'bg-blue-100 text-blue-700'
+                      : goal.status === 'NOT_STARTED'
+                      ? 'bg-gray-100 text-gray-700'
+                      : 'bg-yellow-100 text-yellow-700'
+                  }`}
                 >
-                  {goal.priority.toLowerCase()}
+                  {goal.status.toLowerCase().replace('_', ' ')}
                 </span>
               </div>
 
@@ -197,9 +235,17 @@ export default function GoalsSection({
                   <p className="text-sm text-gray-600">{goal.description}</p>
                 )}
                 <div className="flex items-center justify-between">
-                  <Progress value={goal.progress} className="h-2 flex-1 mr-4" />
+                  <Progress 
+                    value={goal.targetValue && goal.currentValue 
+                      ? (goal.currentValue / goal.targetValue) * 100 
+                      : 0
+                    } 
+                    className="h-2 flex-1 mr-4" 
+                  />
                   <span className="text-sm font-medium">
-                    {goal.progress}%
+                    {goal.targetValue && goal.currentValue
+                      ? Math.round((goal.currentValue / goal.targetValue) * 100)
+                      : 0}%
                   </span>
                 </div>
               </div>
@@ -211,9 +257,9 @@ export default function GoalsSection({
                     {goal.status.toLowerCase().replace('_', ' ')}
                   </span>
                 </div>
-                {goal.dueDate && (
+                {goal.endDate && (
                   <time className="text-gray-500">
-                    Due {formatDate(goal.dueDate)}
+                    Due {formatDate(goal.endDate)}
                   </time>
                 )}
               </div>
@@ -223,19 +269,6 @@ export default function GoalsSection({
       </div>
     </div>
   );
-}
-
-function getPriorityColor(priority: string) {
-  switch (priority.toLowerCase()) {
-    case 'high':
-      return 'text-red-600 bg-red-50';
-    case 'medium':
-      return 'text-yellow-600 bg-yellow-50';
-    case 'low':
-      return 'text-green-600 bg-green-50';
-    default:
-      return 'text-gray-600 bg-gray-50';
-  }
 }
 
 function getStatusIcon(status: string) {

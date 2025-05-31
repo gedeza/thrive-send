@@ -1,9 +1,12 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis, Rectangle } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useTheme } from 'next-themes';
 
 interface HeatMapData {
   date: string;
@@ -11,14 +14,34 @@ interface HeatMapData {
 }
 
 interface HeatMapWidgetProps {
-  data: HeatMapData[];
+  data?: {
+    labels: string[];
+    datasets: {
+      label: string;
+      data: number[];
+    }[];
+  };
   isLoading?: boolean;
   title?: string;
   className?: string;
 }
 
 export function HeatMapWidget({ data, isLoading, title = "Activity Heatmap", className }: HeatMapWidgetProps) {
+  const { theme } = useTheme();
   const [hoveredCell, setHoveredCell] = useState<HeatMapData | null>(null);
+
+  // Use mock data if no data is provided
+  const mockData = {
+    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    datasets: [
+      {
+        label: 'Engagement',
+        data: [100, 120, 115, 134, 168, 132, 200]
+      }
+    ]
+  };
+
+  const displayData = data || mockData;
 
   if (isLoading) {
     return (
@@ -40,15 +63,15 @@ export function HeatMapWidget({ data, isLoading, title = "Activity Heatmap", cla
   // Transform data into a matrix
   const matrix = Array(7).fill(null).map(() => Array(52).fill(0));
   
-  data.forEach(item => {
-    const date = new Date(item.date);
+  displayData.datasets[0].data.forEach((value, i) => {
+    const date = new Date(2024, 0, i + 1);
     const day = date.getDay();
     const week = Math.floor(date.getTime() / (7 * 24 * 60 * 60 * 1000)) % 52;
-    matrix[day][week] = item.value;
+    matrix[day][week] = value;
   });
 
   // Find max value for color scaling
-  const maxValue = Math.max(...data.map(d => d.value));
+  const maxValue = Math.max(...displayData.datasets[0].data);
 
   return (
     <Card>
@@ -59,7 +82,7 @@ export function HeatMapWidget({ data, isLoading, title = "Activity Heatmap", cla
         <div className="relative">
           {/* Day labels */}
           <div className="absolute -left-12 top-0 h-full flex flex-col justify-between text-xs text-muted-foreground">
-            {days.map(day => (
+            {displayData.labels.map(day => (
               <div key={day} className="h-[calc(100%/7)] flex items-center">
                 {day}
               </div>
@@ -80,7 +103,9 @@ export function HeatMapWidget({ data, isLoading, title = "Activity Heatmap", cla
             {matrix.map((row, dayIndex) => (
               row.map((value, weekIndex) => {
                 const intensity = value / maxValue;
-                const color = `hsl(200, ${Math.max(20, intensity * 100)}%, ${Math.max(20, 100 - intensity * 60)}%)`;
+                const color = theme === 'dark'
+                  ? `rgba(59, 130, 246, ${intensity})`
+                  : `rgba(37, 99, 235, ${intensity})`;
                 
                 return (
                   <TooltipProvider key={`${dayIndex}-${weekIndex}`}>

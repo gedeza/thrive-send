@@ -20,6 +20,7 @@ import { RichTextEditor } from '@/components/rich-text-editor';
 import { ContentType, SocialPlatform, CalendarEvent, SocialMediaContent } from './content-calendar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useTimezone } from "@/hooks/use-timezone";
+import { DialogFooter } from '@/components/ui/dialog';
 
 interface EventFormProps {
   initialData?: Partial<CalendarEvent>;
@@ -275,6 +276,28 @@ interface FormData {
       };
     };
   };
+  blogPost: {
+    title: string;
+    content: string;
+    slug: string;
+    author: string;
+    status: string;
+    tags: string[];
+  };
+  emailCampaign: {
+    subject: string;
+    content: string;
+    recipientList: string;
+    status: string;
+  };
+  articleContent: {
+    content: string;
+    metadata: Record<string, unknown>;
+  };
+  customContent: {
+    type: string;
+    content: Record<string, unknown>;
+  };
 }
 
 interface FormErrors {
@@ -396,22 +419,51 @@ const validateTime = (time: string | undefined): ValidationError | null => {
 };
 
 const validateSocialContent = (content: string, platform: SocialPlatform): ValidationError | null => {
+  // Required check
   if (!content.trim()) {
     return {
-      code: 'CONTENT_REQUIRED',
-      message: `${platform} content is required`,
-      field: 'content',
+      code: 'EMPTY_CONTENT',
+      message: 'Content is required',
+      field: `socialMediaContent.${platform}.text`,
       validationType: 'required'
     };
   }
-  if (content.length > platformContentLimits[platform].maxTextLength) {
+  
+  // Length check
+  const maxLength = platformContentLimits[platform].maxTextLength;
+  if (content.length > maxLength) {
     return {
       code: 'CONTENT_TOO_LONG',
-      message: `${platform} content exceeds maximum length of ${platformContentLimits[platform].maxTextLength} characters`,
-      field: 'content',
+      message: `Content exceeds the maximum length of ${maxLength} characters for ${platform}`,
+      field: `socialMediaContent.${platform}.text`,
       validationType: 'length'
     };
   }
+
+  // Platform-specific validation
+  if (platform === 'TWITTER' && content.includes('#') && content.split('#').length > 11) {
+    return {
+      code: 'TOO_MANY_HASHTAGS',
+      message: 'Twitter allows a maximum of 10 hashtags per tweet',
+      field: `socialMediaContent.${platform}.text`,
+      validationType: 'count'
+    };
+  }
+
+  // URL validation for included links
+  const urlRegex = /https?:\/\/[^\s]+/g;
+  const urls = content.match(urlRegex) || [];
+  if (urls.length > 0) {
+    if (platform === 'TWITTER' && urls.length > 1 && content.length > 240) {
+      return {
+        code: 'URL_CONTENT_TOO_LONG',
+        message: 'Twitter content with multiple URLs should be under 240 characters',
+        field: `socialMediaContent.${platform}.text`,
+        validationType: 'length'
+      };
+    }
+  }
+  
   return null;
 };
 
@@ -428,52 +480,41 @@ export function EventForm({
 }: EventFormProps) {
   const router = useRouter();
   const userTimezone = useTimezone();
-  const [formData, setFormData] = useState<FormData>(() => {
-    if (initialData) {
-      const { socialMediaContent, ...rest } = initialData;
-      return {
-        id: rest.id || crypto.randomUUID(),
-        title: rest.title || '',
-        description: rest.description || '',
-        type: (rest.type as AllowedContentType) || 'social',
-        status: (rest.status as AllowedStatus) || 'draft',
-        date: rest.date || new Date().toISOString(),
-        time: rest.time || '',
-        socialMediaContent: socialMediaContent ? {
-          platforms: socialMediaContent.platforms,
-          mediaUrls: socialMediaContent.mediaUrls,
-          crossPost: socialMediaContent.crossPost,
-          platformSpecificContent: Object.entries(socialMediaContent.platformSpecificContent || {}).reduce((acc, [platform, content]) => ({
-            ...acc,
-            [platform]: {
-              text: content?.text || '',
-              mediaUrls: content?.mediaUrls || [],
-              scheduledTime: content?.scheduledTime
-            }
-          }), {}) as { [key in SocialPlatform]?: PlatformSpecificContent }
-        } : {
-          platforms: [],
-          mediaUrls: [],
-          crossPost: false,
-          platformSpecificContent: {}
-        }
-      };
+  const [formData, setFormData] = useState<Partial<CalendarEvent>>(initialData || {
+    title: "",
+    description: "",
+    type: "social",
+    status: "draft",
+    date: format(new Date(), "yyyy-MM-dd"),
+    time: format(new Date(), "HH:mm"),
+    socialMediaContent: {
+      platforms: [],
+      crossPost: false,
+      mediaUrls: [],
+      platformSpecificContent: {}
+    },
+    blogPost: {
+      title: "",
+      content: "",
+      slug: "",
+      author: "",
+      status: "draft",
+      tags: []
+    },
+    emailCampaign: {
+      subject: "",
+      content: "",
+      recipientList: "",
+      status: "draft"
+    },
+    articleContent: {
+      content: "",
+      metadata: {}
+    },
+    customContent: {
+      type: "",
+      content: {}
     }
-    return {
-      id: crypto.randomUUID(),
-      title: '',
-      description: '',
-      type: 'social',
-      status: 'draft',
-      date: new Date().toISOString(),
-      time: '',
-      socialMediaContent: {
-        platforms: [],
-        mediaUrls: [],
-        crossPost: false,
-        platformSpecificContent: {}
-      }
-    };
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -681,21 +722,21 @@ export function EventForm({
     const validationErrors: ValidationError[] = [];
     
     // Validate title
-    const titleError = validateTitle(formData.title);
+    const titleError = validateTitle(formData.title || '');
     if (titleError) {
       newErrors.title = titleError.message;
       validationErrors.push(titleError);
     }
     
     // Validate date
-    const dateError = validateDate(formData.date);
+    const dateError = validateDate(formData.date || '');
     if (dateError) {
       newErrors.date = dateError.message;
       validationErrors.push(dateError);
     }
     
     // Validate time
-    const timeError = validateTime(formData.time);
+    const timeError = validateTime(formData.time || '');
     if (timeError) {
       newErrors.time = timeError.message;
       validationErrors.push(timeError);
@@ -758,61 +799,70 @@ export function EventForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Clear previous errors
+    setErrors({});
+    
+    // Validate form
+    if (!validateForm()) {
+      // Focus the first input with an error
+      const firstErrorField = document.querySelector('[aria-invalid="true"]') as HTMLElement;
+      if (firstErrorField) {
+        firstErrorField.focus();
+      }
+      
+      // Show toast with validation summary
+      const errorCount = Object.keys(errors).length;
+      if (errorCount > 0) {
+        toast({
+          title: 'Validation Error',
+          description: `Please fix the ${errorCount} ${errorCount === 1 ? 'error' : 'errors'} in the form`,
+          variant: 'destructive',
+        });
+      }
+      
+      return;
+    }
+    
+    // Prepare form data for submission
+    setIsSubmitting(true);
+    
     try {
-      if (!validateForm()) {
-        return;
-      }
-      
-      setIsSubmitting(true);
-      
-      // Validate content type
-      if (!isAllowedContentType(formData.type)) {
-        setErrors(prev => ({
-          ...prev,
-          type: 'Please select a valid content type'
-        }));
-        return;
-      }
-      
-      // Validate status
-      if (!isAllowedStatus(formData.status)) {
-        setErrors(prev => ({
-          ...prev,
-          status: 'Please select a valid status'
-        }));
-        return;
-      }
-      
-      const eventData: CalendarEvent = {
+      // Create a deep copy of form data to avoid mutations
+      const submissionData: CalendarEvent = JSON.parse(JSON.stringify({
         ...formData,
-        type: formData.type,
-        status: formData.status,
-        socialMediaContent: {
-          platforms: formData.socialMediaContent.platforms,
-          mediaUrls: formData.socialMediaContent.mediaUrls,
-          crossPost: formData.socialMediaContent.crossPost,
-          platformSpecificContent: formData.socialMediaContent.platformSpecificContent
-        },
-        analytics: {
-          lastUpdated: new Date().toISOString()
-        }
-      };
+        id: formData.id || crypto.randomUUID()
+      }));
       
-      if (!onSubmit) {
-        setErrors(prev => ({
-          ...prev,
-          submit: 'Unable to submit form. Please try again.'
-        }));
-        return;
+      // Convert date and time to ISO format if both exist
+      if (submissionData.date && submissionData.time) {
+        submissionData.startTime = `${submissionData.date}T${submissionData.time}:00`;
+        
+        // Calculate endTime based on duration or default
+        const duration = submissionData.duration || DEFAULT_DURATIONS[submissionData.type as ContentType] || 60;
+        const startDate = new Date(`${submissionData.date}T${submissionData.time}`);
+        const endDate = new Date(startDate.getTime() + duration * 60000);
+        submissionData.endTime = endDate.toISOString();
       }
       
-      await onSubmit(eventData);
+      // Submit the form
+      await onSubmit?.(submissionData);
+      
+      toast({
+        title: 'Success',
+        description: mode === 'create' ? 'Event created successfully' : 'Event updated successfully',
+      });
+      
+      // Additional cleanup or navigation logic
     } catch (error) {
-      console.error("Error in handleSubmit:", error);
-      setErrors(prev => ({
-        ...prev,
-        submit: 'An error occurred while saving. Please try again.'
-      }));
+      console.error('Form submission error:', error);
+      setErrors({
+        submit: error instanceof Error ? error.message : 'An unknown error occurred'
+      });
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to submit the form',
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }

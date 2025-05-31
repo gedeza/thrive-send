@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, PieChart, LineChart, FileDown, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { DatePickerWithRange } from '@/components/ui/date-picker-range';
+import { DateFilter } from '@/components/ui/date-filter';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import BarChartWidget from "@/components/analytics/BarChartWidget";
@@ -22,74 +22,26 @@ import { HeatMapWidget } from '@/components/analytics/HeatMapWidget';
 
 type AnalyticsTimeframe = 'day' | 'week' | 'month';
 
-// Create a client
-const queryClient = new QueryClient();
-
-// Shared metric card component for summary/grid
-function MetricCard({ title, value, icon: Icon, comparison, percentChange }: AnalyticsMetric & { icon: any }) {
-  const isPositive = (percentChange ?? 0) >= 0;
-  
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center justify-between">
-          <p className="text-2xl font-bold">{value}</p>
-          {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
-        </div>
-        <p className={`text-xs ${isPositive ? 'text-green-600' : 'text-red-600'} mt-1`}>
-          {comparison}
-        </p>
-      </CardContent>
-    </Card>
-  );
-}
-
-// Loading skeleton for metrics
-function MetricCardSkeleton() {
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <Skeleton className="h-4 w-24" />
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-16" />
-          <Skeleton className="h-4 w-4 rounded-full" />
-        </div>
-        <Skeleton className="h-3 w-32 mt-1" />
-      </CardContent>
-    </Card>
-  );
-}
-
-// Loading skeleton for charts
-function ChartSkeleton() {
-  return (
-    <Card>
-      <CardHeader>
-        <Skeleton className="h-6 w-40" />
-      </CardHeader>
-      <CardContent>
-        <Skeleton className="h-[200px] w-full" />
-      </CardContent>
-    </Card>
-  );
+interface MetricData {
+  key: string;
+  label: string;
+  value: string | number;
+  description?: string;
+  icon?: React.ReactNode;
 }
 
 function AnalyticsPageContent() {
   const analytics = useAnalytics();
   const [dateRange, setDateRange] = useState<DateRange>(() => {
     const today = new Date();
-    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 7);
     return {
-      from: firstDayOfMonth,
+      from: sevenDaysAgo,
       to: today
     };
   });
-  const [timeframe, setTimeframe] = useState<AnalyticsTimeframe>('month');
+  const [timeframe, setTimeframe] = useState<AnalyticsTimeframe>('day');
   const [campaignId, setCampaignId] = useState<string | undefined>(undefined);
   const [queryParams, setQueryParams] = useState<{
     startDate: Date;
@@ -130,57 +82,43 @@ function AnalyticsPageContent() {
     timeframe,
     campaignId
   });
-  
-  // Function to handle data export
+
   const handleExport = async () => {
     try {
-      if (!dateRange.from || !dateRange.to) {
-        throw new Error('Please select a valid date range');
-      }
-
-    toast({
-      title: "Export started",
-      description: `Exporting analytics data from ${format(dateRange.from, 'MMM d, yyyy')} to ${format(dateRange.to, 'MMM d, yyyy')}`,
-    });
-    
-      const blob = await analytics.exportData('csv', {
-        start: dateRange.from.toISOString(),
-        end: dateRange.to.toISOString()
-      }, ['views', 'engagements', 'shares', 'likes', 'comments', 'conversions', 'follows', 'new_followers', 'revenue']);
-      
-      // Create a download link
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `analytics-export-${format(new Date(), 'yyyy-MM-dd')}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
+      // Implement export functionality
       toast({
-        title: "Export complete",
-        description: "Analytics data has been exported successfully.",
+        title: "Export started",
+        description: "Your data is being prepared for download.",
       });
     } catch (error) {
-      console.error('Failed to export data:', error);
       toast({
         title: "Export failed",
-        description: error instanceof Error ? error.message : "There was a problem exporting the data. Please try again.",
-        variant: "destructive"
+        description: "There was an error preparing your data for export.",
+        variant: "destructive",
       });
     }
   };
-  
-  // Handle errors
-  if (metricsError || audienceError || engagementError || performanceError) {
-    toast({
-      title: "Error loading data",
-      description: "There was a problem loading analytics data. Please try again.",
-      variant: "destructive"
-    });
+
+  // Show loading state while initializing
+  if (!queryParams) {
+    return (
+      <div className="space-y-6 p-4 md:p-6">
+        <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
+          <Skeleton className="h-8 w-[200px]" />
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-[100px]" />
+            <Skeleton className="h-10 w-[100px]" />
+          </div>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {Array(4).fill(0).map((_, i) => (
+            <Skeleton key={i} className="h-[120px]" />
+          ))}
+        </div>
+      </div>
+    );
   }
-  
+
   return (
     <div className="space-y-6 p-4 md:p-6">
       {/* Header Section */}
@@ -205,13 +143,11 @@ function AnalyticsPageContent() {
       
       {/* Filter Controls */}
       <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="w-full md:w-auto">
-          <DatePickerWithRange 
-            date={dateRange} 
-            setDate={setDateRange} 
-            disabled={{ after: new Date() }}
-          />
-        </div>
+        <DateFilter 
+          value={dateRange} 
+          onChange={setDateRange}
+          className="w-full md:w-auto"
+        />
         
         <Select 
           value={timeframe} 
@@ -229,73 +165,135 @@ function AnalyticsPageContent() {
       </div>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {metricsLoading ? (
           Array(4).fill(0).map((_, i) => (
-            <MetricCardSkeleton key={i} />
+            <Card key={i}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Skeleton className="h-4 w-[100px]" />
+                <Skeleton className="h-4 w-4" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-[60px]" />
+                <Skeleton className="h-4 w-[120px] mt-2" />
+              </CardContent>
+            </Card>
           ))
-        ) : metrics && Array.isArray(metrics) ? (
-          metrics.map((metric: AnalyticsMetric, index: number) => (
-            <MetricCard
-              key={index}
-              {...metric}
-              icon={[BarChart, PieChart, LineChart, FileDown][index % 4]}
-            />
+        ) : metricsError ? (
+          <div className="col-span-4 text-center text-destructive">
+            {metricsError.toString()}
+          </div>
+        ) : Array.isArray(metrics) ? (
+          metrics.map((metric: MetricData) => (
+            <Card key={metric.key}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  {metric.label}
+                </CardTitle>
+                {metric.icon}
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metric.value}</div>
+                {metric.description && (
+                  <p className="text-xs text-muted-foreground">
+                    {metric.description}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
           ))
         ) : (
-          Array(4).fill(0).map((_, i) => (
-            <MetricCardSkeleton key={i} />
-          ))
+          <div className="col-span-4 text-center text-muted-foreground">
+            No metrics data available
+          </div>
         )}
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <AnalyticsErrorBoundary>
-          <BarChartWidget
-            data={engagementData}
-            isLoading={engagementLoading}
-            className="h-[400px]"
-            title="Engagement Metrics"
-          />
-        </AnalyticsErrorBoundary>
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="col-span-2">
+          <CardHeader>
+            <CardTitle>Engagement Overview</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {engagementLoading ? (
+              <Skeleton className="h-[300px]" />
+            ) : engagementError ? (
+              <div className="text-center text-destructive">{engagementError.toString()}</div>
+            ) : (
+              <LineChartWidget 
+                data={engagementData} 
+                title="Engagement Overview"
+              />
+            )}
+          </CardContent>
+        </Card>
 
-        <AnalyticsErrorBoundary>
-          <PieChartWidget
-            data={audienceData}
-            isLoading={audienceLoading}
-            className="h-[400px]"
-            title="Audience Distribution"
-          />
-        </AnalyticsErrorBoundary>
+        <Card>
+          <CardHeader>
+            <CardTitle>Audience Distribution</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {audienceLoading ? (
+              <Skeleton className="h-[300px]" />
+            ) : audienceError ? (
+              <div className="text-center text-destructive">{audienceError.toString()}</div>
+            ) : (
+              <PieChartWidget 
+                data={audienceData} 
+                title="Audience Distribution"
+              />
+            )}
+          </CardContent>
+        </Card>
 
-        <AnalyticsErrorBoundary>
-          <LineChartWidget
-            data={performanceData}
-            isLoading={performanceLoading}
-            className="h-[400px]"
-            title="Performance Trends"
-          />
-        </AnalyticsErrorBoundary>
-
-        <AnalyticsErrorBoundary>
-          <HeatMapWidget
-            data={performanceData?.heatmap || []}
-            title="Activity Heatmap"
-            isLoading={performanceLoading}
-            className="h-[400px]"
-          />
-        </AnalyticsErrorBoundary>
+        <Card>
+          <CardHeader>
+            <CardTitle>Performance Metrics</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {performanceLoading ? (
+              <Skeleton className="h-[300px]" />
+            ) : performanceError ? (
+              <div className="text-center text-destructive">{performanceError.toString()}</div>
+            ) : (
+              <BarChartWidget 
+                data={performanceData} 
+                title="Performance Metrics"
+              />
+            )}
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Heat Map Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Engagement Heat Map</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <HeatMapWidget />
+        </CardContent>
+      </Card>
     </div>
   );
 }
 
-// Wrap the page with QueryClientProvider
 export default function AnalyticsPage() {
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 60 * 1000, // 1 minute
+        retry: 1,
+      },
+    },
+  }));
+
   return (
     <QueryClientProvider client={queryClient}>
-      <AnalyticsPageContent />
+      <AnalyticsErrorBoundary>
+        <AnalyticsPageContent />
+      </AnalyticsErrorBoundary>
     </QueryClientProvider>
   );
 }

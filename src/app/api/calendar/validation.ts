@@ -44,15 +44,37 @@ export const CalendarEventSchema = z.object({
   endTime: z.string().min(1, "End time is required"),
   type: z.enum(["social", "blog", "email", "custom", "article"]),
   status: z.enum(["draft", "scheduled", "published", "sent", "failed"]).default("draft"),
-  contentType: z.string().optional(),
-  socialMediaContent: z.any().optional(),
-  blogPost: z.any().optional(),
-  emailCampaign: z.any().optional(),
+  socialMediaContent: z.object({
+    platform: z.string().optional(),
+    postType: z.string().optional(),
+    content: z.string().optional(),
+    mediaUrls: z.array(z.string()).default([]),
+    scheduledTime: z.string().optional(),
+    status: z.enum(["draft", "scheduled", "published", "failed"]).optional(),
+  }).optional(),
+  blogPost: z.object({
+    title: z.string().optional(),
+    content: z.string().optional(),
+    excerpt: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+    slug: z.string().optional(),
+    publishedAt: z.string().optional(),
+    status: z.string().optional(),
+  }).optional(),
+  emailCampaign: z.object({
+    subject: z.string().optional(),
+    content: z.string().optional(),
+    scheduledAt: z.string().optional(),
+    status: z.string().optional(),
+  }).optional(),
   articleContent: z.object({
     content: z.string(),
     metadata: z.record(z.any()).optional(),
   }).optional(),
-  customContent: CustomContentSchema.optional(),
+  customContent: z.object({
+    type: z.string(),
+    data: z.record(z.any()),
+  }).optional(),
   analytics: z.object({
     views: z.number().optional(),
     engagement: z.object({
@@ -63,6 +85,10 @@ export const CalendarEventSchema = z.object({
     clicks: z.number().optional(),
     lastUpdated: z.string().optional(),
   }).optional(),
+  organizationId: z.string().optional(),
+  createdBy: z.string().optional(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
 });
 
 // Schema for event update

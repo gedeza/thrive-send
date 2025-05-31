@@ -3,7 +3,7 @@
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/utils';
-import { MessageSquare, Star, Plus, AlertTriangle } from 'lucide-react';
+import { MessageSquare, Star, Plus, AlertTriangle, RefreshCcw } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect, useState } from 'react';
 
@@ -37,12 +37,16 @@ async function getFeedbackData(clientId: string, limit?: number): Promise<Feedba
     const response = await fetch(
       `${baseUrl}/api/clients/${clientId}/feedback${limit ? `?limit=${limit}` : ''}`,
       { 
-        credentials: 'include' // Include cookies for auth
+        credentials: 'include', // Include cookies for auth
+        headers: {
+          'Accept': 'application/json',
+        },
       }
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch feedback data: ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Failed to fetch feedback data: ${response.statusText}`);
     }
 
     return response.json();
@@ -59,9 +63,7 @@ function StarRating({ rating }: { rating: number }) {
         <Star
           key={star}
           className={`h-4 w-4 ${
-            star <= rating
-              ? 'fill-yellow-400 text-yellow-400'
-              : 'fill-gray-200 text-gray-200'
+            star <= rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
           }`}
         />
       ))}
@@ -113,12 +115,20 @@ function FeedbackLoadingState() {
   );
 }
 
-function FeedbackErrorState({ error }: { error: string }) {
+function FeedbackErrorState({ error, onRetry }: { error: string; onRetry: () => void }) {
   return (
     <div className="p-6 text-center">
       <AlertTriangle className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
       <h3 className="text-lg font-medium mb-1">Unable to load feedback</h3>
-      <p className="text-sm text-gray-500">{error}</p>
+      <p className="text-sm text-gray-500 mb-4">{error}</p>
+      <Button
+        variant="outline"
+        onClick={onRetry}
+        className="flex items-center gap-2"
+      >
+        <RefreshCcw className="h-4 w-4" />
+        Try Again
+      </Button>
     </div>
   );
 }
@@ -134,27 +144,27 @@ export default function FeedbackSection({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const responseData = await getFeedbackData(clientId, limit);
-        setData(responseData);
-        setError(null);
-      } catch (err) {
-        console.error('Error in feedback component:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load feedback data');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const responseData = await getFeedbackData(clientId, limit);
+      setData(responseData);
+    } catch (err) {
+      console.error('Error in feedback component:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load feedback data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchData();
   }, [clientId, limit]);
 
   if (loading) return <FeedbackLoadingState />;
-  if (error) return <FeedbackErrorState error={error} />;
-  if (!data) return <FeedbackErrorState error="No data available" />;
+  if (error) return <FeedbackErrorState error={error} onRetry={fetchData} />;
+  if (!data) return <FeedbackErrorState error="No data available" onRetry={fetchData} />;
 
   const { feedback, averageRating, totalCount } = data;
 

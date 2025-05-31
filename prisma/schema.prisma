@@ -21,6 +21,7 @@ model User {
   image                   String?
   name                    String?
   role                    UserRole              @default(CONTENT_CREATOR)
+  hasCompletedOnboarding  Boolean               @default(false)
   accounts                Account[]
   activities              Activity[]
   approvalHistory         ApprovalHistory[]     @relation("HistoryCreator")

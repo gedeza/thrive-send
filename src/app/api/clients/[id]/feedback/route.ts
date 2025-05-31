@@ -39,16 +39,16 @@ export async function GET(
         f.comment,
         f.category,
         f.status,
-        f.created_at as "createdAt",
-        f.updated_at as "updatedAt",
+        f."createdAt",
+        f."updatedAt",
         json_build_object(
           'name', u.name,
           'email', u.email
         ) as "createdBy"
       FROM "ClientFeedback" f
-      LEFT JOIN "User" u ON f."createdById" = u.id
+      LEFT JOIN "User" u ON f."uploadedById" = u.id
       WHERE f."clientId" = ${clientId}
-      ORDER BY f.created_at DESC
+      ORDER BY f."createdAt" DESC
       ${limit ? Prisma.sql`LIMIT ${limit}` : Prisma.empty}
     `;
 
@@ -71,6 +71,9 @@ export async function GET(
     });
   } catch (error) {
     console.error('Error fetching feedback data:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    return new NextResponse(
+      error instanceof Error ? error.message : 'Internal Server Error',
+      { status: 500 }
+    );
   }
 } 

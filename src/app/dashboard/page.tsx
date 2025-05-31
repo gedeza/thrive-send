@@ -10,9 +10,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/solid';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
-import { AnalyticsChart } from "@/components/dashboard/analytics-chart"
-import { ActivityFeed, type Activity as ActivityType } from "@/components/dashboard/activity-feed"
+import SafeAnalyticsChart from "@/components/dashboard/analytics-chart"
+import SafeActivityFeed from "@/components/activity/ActivityFeed"
 import { DashboardOverview } from '@/components/dashboard/DashboardOverview';
+import { Activity } from "@/types/activity";
+import { DateFilter } from "@/components/ui/date-filter";
+import { DateRange } from "react-day-picker";
 
 interface AnalyticsData {
   metrics: {
@@ -24,7 +27,6 @@ interface AnalyticsData {
   timestamp: string;
 }
 
-// Default metrics when analytics data is not available
 const defaultMetrics = [
   {
     title: "Total Views",
@@ -52,7 +54,6 @@ const defaultMetrics = [
   },
 ];
 
-// Sample data for the analytics chart
 const chartData = [
   { date: "2024-01", value: 400 },
   { date: "2024-02", value: 300 },
@@ -62,8 +63,7 @@ const chartData = [
   { date: "2024-06", value: 900 },
 ]
 
-// Sample data for the activity feed
-const activities: ActivityType[] = [
+const activities: Activity[] = [
   {
     id: "1",
     type: "campaign",
@@ -71,9 +71,11 @@ const activities: ActivityType[] = [
     description: "Spring Sale Campaign was created",
     timestamp: "2024-06-01T10:00:00Z",
     user: {
+      id: "user1",
       name: "John Doe",
       image: "https://github.com/shadcn.png",
     },
+    status: "published"
   },
   {
     id: "2",
@@ -81,6 +83,8 @@ const activities: ActivityType[] = [
     title: "Email Sent",
     description: "Newsletter was sent to 1,000 subscribers",
     timestamp: "2024-06-01T09:30:00Z",
+    status: "sent",
+    recipientCount: 1000
   },
   {
     id: "3",
@@ -89,8 +93,10 @@ const activities: ActivityType[] = [
     description: "Sarah Smith joined the organization",
     timestamp: "2024-06-01T09:00:00Z",
     user: {
+      id: "user2",
       name: "Sarah Smith",
     },
+    action: "joined"
   },
   {
     id: "4",
@@ -98,14 +104,24 @@ const activities: ActivityType[] = [
     title: "System Update",
     description: "System maintenance completed successfully",
     timestamp: "2024-06-01T08:30:00Z",
+    severity: "info"
   },
-]
+];
 
 export default function DashboardHomePage() {
   const router = useRouter();
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [dateRange, setDateRange] = useState<DateRange>(() => {
+    const today = new Date();
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 7);
+    return {
+      from: sevenDaysAgo,
+      to: today
+    };
+  });
 
   useEffect(() => {
     let eventSource: EventSource | null = null;
@@ -153,12 +169,17 @@ export default function DashboardHomePage() {
 
   return (
     <div className="flex-1 space-y-8 p-8 pt-6 bg-neutral-background">
+      {/* Date Filter Section */}
+      <div className="mb-4">
+        <DateFilter value={dateRange} onChange={setDateRange} />
+      </div>
+
       {/* Dashboard Overview Section */}
       <DashboardOverview dateRange="7d" />
 
       {/* Analytics Chart Section */}
       <div className="mt-8">
-        <AnalyticsChart
+        <SafeAnalyticsChart
           data={chartData}
           title="Monthly Engagement"
           value="900"
@@ -168,7 +189,12 @@ export default function DashboardHomePage() {
 
       {/* Activity Feed Section */}
       <div className="mt-8">
-        <ActivityFeed activities={activities} />
+        <SafeActivityFeed 
+          activities={activities}
+          showFilters={true}
+          realTimeUpdates={true}
+          maxHeight="400px"
+        />
       </div>
     </div>
   );

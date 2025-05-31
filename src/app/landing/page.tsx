@@ -55,17 +55,17 @@ export default function LandingPage() {
               
               <div className="flex gap-4">
                 <Button 
-                  variant="outline" 
-                  className="rounded-lg transition-colors"
-                  onClick={() => handleProtectedRoute('/dashboard')}
+                  className="rounded-lg shadow-sm transition-colors"
+                  onClick={() => router.push('/sign-up')}
                 >
-                  Dashboard
+                  Start 14-Day Free Trial
                 </Button>
                 <Button 
-                  className="rounded-lg shadow-sm transition-colors"
-                  onClick={() => handleProtectedRoute('/content/calendar')}
+                  variant="outline" 
+                  className="rounded-lg transition-colors"
+                  onClick={() => router.push('/sign-up')}
                 >
-                  Calendar
+                  Contact
                 </Button>
               </div>
             </div>

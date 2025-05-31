@@ -1,9 +1,10 @@
 "use client"
 
 import { formatDateTime } from '@/lib/utils';
-import { CalendarDays, CheckCircle2, Circle, Clock, AlertTriangle } from 'lucide-react';
+import { CalendarDays, CheckCircle2, Circle, Clock, AlertTriangle, RefreshCcw } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
 
 interface TimelineItem {
   id: string;
@@ -24,12 +25,16 @@ async function getTimelineData(clientId: string, limit?: number): Promise<Timeli
     const response = await fetch(
       `${baseUrl}/api/clients/${clientId}/timeline${limit ? `?limit=${limit}` : ''}`,
       { 
-        credentials: 'include' // Include cookies for auth
+        credentials: 'include', // Include cookies for auth
+        headers: {
+          'Accept': 'application/json',
+        },
       }
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch timeline data: ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Failed to fetch timeline data: ${response.statusText}`);
     }
 
     const data = await response.json();
@@ -54,15 +59,15 @@ function getStatusIcon(status: string) {
 function getStatusColor(status: string) {
   switch (status.toLowerCase()) {
     case 'completed':
-      return 'bg-green-500';
+      return 'bg-green-200';
     case 'in_progress':
-      return 'bg-blue-500';
+      return 'bg-blue-200';
     case 'delayed':
-      return 'bg-yellow-500';
+      return 'bg-yellow-200';
     case 'cancelled':
-      return 'bg-red-500';
+      return 'bg-red-200';
     default:
-      return 'bg-gray-400';
+      return 'bg-gray-200';
   }
 }
 
@@ -106,12 +111,20 @@ function TimelineLoadingState() {
   );
 }
 
-function TimelineErrorState({ error }: { error: string }) {
+function TimelineErrorState({ error, onRetry }: { error: string; onRetry: () => void }) {
   return (
     <div className="p-6 text-center">
       <AlertTriangle className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
       <h3 className="text-lg font-medium mb-1">Unable to load timeline</h3>
-      <p className="text-sm text-gray-500">{error}</p>
+      <p className="text-sm text-gray-500 mb-4">{error}</p>
+      <Button
+        variant="outline"
+        onClick={onRetry}
+        className="flex items-center gap-2"
+      >
+        <RefreshCcw className="h-4 w-4" />
+        Try Again
+      </Button>
     </div>
   );
 }
@@ -127,26 +140,26 @@ export default function TimelineView({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const data = await getTimelineData(clientId, limit);
-        setItems(data);
-        setError(null);
-      } catch (err) {
-        console.error('Error in timeline component:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load timeline data');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getTimelineData(clientId, limit);
+      setItems(data);
+    } catch (err) {
+      console.error('Error in timeline component:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load timeline data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchData();
   }, [clientId, limit]);
 
   if (loading) return <TimelineLoadingState />;
-  if (error) return <TimelineErrorState error={error} />;
+  if (error) return <TimelineErrorState error={error} onRetry={fetchData} />;
 
   return (
     <div className="space-y-8 p-6">

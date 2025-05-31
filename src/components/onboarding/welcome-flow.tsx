@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,7 +11,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Calendar, Plus, Clock, Share2, BarChart2, Settings, Users, Bell } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useOnboarding } from '@/context/OnboardingContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 
 interface WelcomeFlowProps {
   isOpen: boolean;
@@ -17,20 +21,139 @@ interface WelcomeFlowProps {
 }
 
 export function WelcomeFlow({ isOpen, onClose }: WelcomeFlowProps) {
-  const [step, setStep] = useState(1);
-  const totalSteps = 6;
+  const { currentStep, steps, completeStep, skipStep, setCurrentStep } = useOnboarding();
+  const totalSteps = steps.length;
 
-  const steps = [
-    {
-      title: "Welcome to ThriveSend!",
-      description: "Let's get you started with your content calendar. We'll guide you through the key features.",
-      icon: Calendar,
-      content: (
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            ThriveSend helps you manage and schedule your content across multiple platforms.
-            You can create, schedule, and track all your content from one place.
-          </p>
+  const currentStepData = steps[currentStep];
+  const Icon = getIconForStep(currentStepData.id);
+
+  const handleNext = async () => {
+    try {
+      await completeStep(currentStepData.id);
+      
+      if (currentStep < totalSteps - 1) {
+        setCurrentStep(currentStep + 1);
+      } else {
+        onClose();
+      }
+    } catch (error) {
+      console.error('Error completing step:', error);
+    }
+  };
+
+  const handleSkip = async () => {
+    try {
+      await skipStep(currentStepData.id);
+      
+    if (currentStep < totalSteps - 1) {
+        setCurrentStep(currentStep + 1);
+    } else {
+      onClose();
+      }
+    } catch (error) {
+      console.error('Error skipping step:', error);
+    }
+  };
+
+  const handleClose = async () => {
+    try {
+      // If we're not on the last step, confirm before closing
+      if (currentStep < totalSteps - 1) {
+        const confirmed = window.confirm('Are you sure you want to exit the onboarding? You can always restart it later.');
+        if (!confirmed) return;
+      }
+    onClose();
+    } catch (error) {
+      console.error('Error closing onboarding:', error);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Icon className="h-6 w-6 text-primary" />
+            {currentStepData.title}
+          </DialogTitle>
+          <DialogDescription>
+            {currentStepData.description}
+          </DialogDescription>
+        </DialogHeader>
+        
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentStep}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.2 }}
+            className="py-4"
+          >
+            {getStepContent(currentStepData.id)}
+          </motion.div>
+        </AnimatePresence>
+
+        <div className="flex justify-center my-4">
+          <div className="flex gap-2">
+            {steps.map((step, i) => (
+              <div
+                key={step.id}
+                className={`h-2 w-2 rounded-full transition-colors duration-200 ${
+                  i === currentStep ? 'bg-primary' : 'bg-muted'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+
+        <DialogFooter className="flex justify-between">
+          <Button
+            variant="ghost"
+            onClick={handleSkip}
+          >
+            Skip Tutorial
+          </Button>
+          <Button onClick={handleNext}>
+            {currentStep === totalSteps - 1 ? 'Get Started' : 'Next'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function getIconForStep(stepId: string) {
+  switch (stepId) {
+    case 'welcome':
+      return Calendar;
+    case 'account-setup':
+      return Settings;
+    case 'first-content':
+      return Plus;
+    case 'team-setup':
+      return Users;
+    case 'integrations':
+      return Share2;
+    default:
+      return Calendar;
+  }
+}
+
+function getStepContent(stepId: string) {
+  switch (stepId) {
+    case 'welcome':
+      return (
+        <div className="space-y-8">
+          <div className="relative w-full h-[300px] mb-8 rounded-lg overflow-hidden bg-gray-50">
+            <Image
+              src="/docs/images/analytics-dashboard-screenshot.png"
+              alt="Analytics Dashboard Screenshot"
+              fill
+              className="object-contain p-4"
+              priority
+            />
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 rounded-lg border bg-card">
               <h4 className="font-medium mb-2">Quick Start</h4>
@@ -41,18 +164,97 @@ export function WelcomeFlow({ isOpen, onClose }: WelcomeFlowProps) {
               <p className="text-sm text-muted-foreground">Check our documentation anytime</p>
             </div>
           </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <h3 className="text-2xl font-semibold mb-4">Key Features</h3>
+              <ul className="space-y-3 text-lg text-gray-700">
+                <li>• Email campaign management</li>
+                <li>• Content creation tools</li>
+                <li>• Analytics dashboard</li>
+                <li>• Team collaboration</li>
+                <li>• Audience segmentation</li>
+                <li>• Automated workflows</li>
+              </ul>
+            </div>
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <h3 className="text-2xl font-semibold mb-4">Getting Started</h3>
+              <ul className="space-y-3 text-lg text-gray-700">
+                <li>• Create your account</li>
+                <li>• Set up your organization</li>
+                <li>• Invite team members</li>
+                <li>• Create your first campaign</li>
+                <li>• Explore the dashboard</li>
+                <li>• Set up your preferences</li>
+              </ul>
+            </div>
+          </div>
         </div>
-      ),
-    },
-    {
-      title: "Create Your First Content",
-      description: "Click the + button to create and schedule your content across multiple platforms.",
-      icon: Plus,
-      content: (
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Choose from different content types:
-          </p>
+      );
+
+    case 'account-setup':
+      return (
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <h3 className="text-2xl font-semibold mb-4">Sign Up Process</h3>
+              <div className="space-y-6">
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <h4 className="text-xl font-medium mb-4">1. Create Your Account</h4>
+                  <ol className="space-y-4 text-lg text-gray-700">
+                    <li>1. Visit <a href="https://app.thrivesend.com/signup" className="text-blue-600 hover:underline">app.thrivesend.com/signup</a></li>
+                    <li>2. Enter your email address</li>
+                    <li>3. Create a strong password</li>
+                    <li>4. Click "Create Account"</li>
+                    <li>5. Verify your email address</li>
+                  </ol>
+                </div>
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <h4 className="text-xl font-medium mb-4">2. Complete Your Profile</h4>
+                  <ol className="space-y-4 text-lg text-gray-700">
+                    <li>1. Add your full name</li>
+                    <li>2. Upload a profile picture</li>
+                    <li>3. Set your timezone</li>
+                    <li>4. Choose your notification preferences</li>
+                    <li>5. Set up two-factor authentication (recommended)</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <h3 className="text-2xl font-semibold mb-4">Account Settings</h3>
+              <div className="space-y-6">
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <h4 className="text-xl font-medium mb-4">Profile Settings</h4>
+                  <ul className="space-y-2 text-lg text-gray-700">
+                    <li>• Update personal information</li>
+                    <li>• Change password</li>
+                    <li>• Manage email preferences</li>
+                    <li>• Set notification preferences</li>
+                    <li>• Configure account settings</li>
+                  </ul>
+                </div>
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <h4 className="text-xl font-medium mb-4">Security Settings</h4>
+                  <ul className="space-y-2 text-lg text-gray-700">
+                    <li>• Two-factor authentication</li>
+                    <li>• Session management</li>
+                    <li>• Connected devices</li>
+                    <li>• Security logs</li>
+                    <li>• Access history</li>
+          </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'first-content':
+      return (
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <h3 className="text-2xl font-semibold mb-4">Content Types</h3>
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 rounded-lg border bg-card">
               <h4 className="font-medium mb-2">Social Media</h4>
@@ -69,142 +271,155 @@ export function WelcomeFlow({ isOpen, onClose }: WelcomeFlowProps) {
             <div className="p-4 rounded-lg border bg-card">
               <h4 className="font-medium mb-2">Custom Content</h4>
               <p className="text-sm text-muted-foreground">Other content types</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <h3 className="text-2xl font-semibold mb-4">Content Calendar</h3>
+              <div className="space-y-6">
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <h4 className="text-xl font-medium mb-4">Calendar Features</h4>
+                  <ul className="space-y-2 text-lg text-gray-700">
+                    <li>• Monthly/weekly views</li>
+                    <li>• Drag-and-drop scheduling</li>
+                    <li>• Content type filtering</li>
+                    <li>• Team assignments</li>
+                    <li>• Analytics integration</li>
+                  </ul>
+                </div>
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <h4 className="text-xl font-medium mb-4">Getting Started</h4>
+                  <ol className="space-y-4 text-lg text-gray-700">
+                    <li>1. Navigate to Content Calendar</li>
+                    <li>2. Create your first content</li>
+                    <li>3. Schedule it on the calendar</li>
+                    <li>4. Set up recurring content</li>
+                    <li>5. Monitor performance</li>
+                  </ol>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      ),
-    },
-    {
-      title: "Schedule and Manage",
-      description: "Use the calendar to schedule, reschedule, and manage all your content in one place.",
-      icon: Clock,
-      content: (
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Key calendar features:
-          </p>
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            <li>• Drag and drop to reschedule content</li>
-            <li>• View content by type or status</li>
-            <li>• Set up recurring content</li>
-            <li>• Get notifications for upcoming posts</li>
+      );
+
+    case 'team-setup':
+      return (
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <h3 className="text-2xl font-semibold mb-4">Team Management</h3>
+              <div className="space-y-6">
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <h4 className="text-xl font-medium mb-4">Invite Team Members</h4>
+                  <ol className="space-y-4 text-lg text-gray-700">
+                    <li>1. Go to Team Settings</li>
+                    <li>2. Click "Invite Members"</li>
+                    <li>3. Enter email addresses</li>
+                    <li>4. Assign roles and permissions</li>
+                    <li>5. Send invitations</li>
+                  </ol>
+                </div>
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <h4 className="text-xl font-medium mb-4">Role Types</h4>
+                  <ul className="space-y-2 text-lg text-gray-700">
+                    <li>• Administrator: Full system access</li>
+                    <li>• Manager: Team and campaign management</li>
+                    <li>• Editor: Content creation and editing</li>
+                    <li>• Viewer: Read-only access</li>
+                    <li>• Custom: Tailored permissions</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <h3 className="text-2xl font-semibold mb-4">Collaboration Tools</h3>
+              <div className="space-y-6">
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <h4 className="text-xl font-medium mb-4">Workflow Features</h4>
+                  <ul className="space-y-2 text-lg text-gray-700">
+                    <li>• Content approval workflows</li>
+                    <li>• Team assignments</li>
+                    <li>• Content scheduling</li>
+                    <li>• Performance tracking</li>
+                    <li>• Communication tools</li>
+                  </ul>
+                </div>
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <h4 className="text-xl font-medium mb-4">Best Practices</h4>
+                  <ul className="space-y-2 text-lg text-gray-700">
+                    <li>• Set clear roles and responsibilities</li>
+                    <li>• Establish approval processes</li>
+                    <li>• Use team communication tools</li>
+                    <li>• Monitor team performance</li>
+                    <li>• Regular team sync-ups</li>
           </ul>
-        </div>
-      ),
-    },
-    {
-      title: "Team Collaboration",
-      description: "Invite team members and manage content approval workflows.",
-      icon: Users,
-      content: (
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Work together effectively:
-          </p>
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            <li>• Assign content to team members</li>
-            <li>• Set up approval workflows</li>
-            <li>• Track content status</li>
-            <li>• Manage team permissions</li>
-          </ul>
-        </div>
-      ),
-    },
-    {
-      title: "Track Performance",
-      description: "Monitor your content's performance and engagement across all platforms.",
-      icon: BarChart2,
-      content: (
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Analytics features:
-          </p>
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            <li>• View engagement metrics</li>
-            <li>• Track content performance</li>
-            <li>• Generate reports</li>
-            <li>• Optimize posting times</li>
-          </ul>
-        </div>
-      ),
-    },
-    {
-      title: "Customize Your Experience",
-      description: "Set up your preferences and notifications to stay on top of your content.",
-      icon: Settings,
-      content: (
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Personalize your workspace:
-          </p>
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            <li>• Set your timezone</li>
-            <li>• Configure notifications</li>
-            <li>• Customize your calendar view</li>
-            <li>• Set up integrations</li>
-          </ul>
-        </div>
-      ),
-    },
-  ];
-
-  const currentStep = steps[step - 1];
-  const Icon = currentStep.icon;
-
-  const handleNext = () => {
-    if (step < totalSteps) {
-      setStep(step + 1);
-    } else {
-      onClose();
-    }
-  };
-
-  const handleSkip = () => {
-    onClose();
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Icon className="h-6 w-6 text-primary" />
-            {currentStep.title}
-          </DialogTitle>
-          <DialogDescription>
-            {currentStep.description}
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="py-4">
-          {currentStep.content}
-        </div>
-
-        <div className="flex justify-center my-4">
-          <div className="flex gap-2">
-            {Array.from({ length: totalSteps }).map((_, i) => (
-              <div
-                key={i}
-                className={`h-2 w-2 rounded-full ${
-                  i + 1 === step ? 'bg-primary' : 'bg-muted'
-                }`}
-              />
-            ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+      );
 
-        <DialogFooter className="flex justify-between">
-          <Button
-            variant="ghost"
-            onClick={handleSkip}
-          >
-            Skip Tutorial
-          </Button>
-          <Button onClick={handleNext}>
-            {step === totalSteps ? 'Get Started' : 'Next'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
+    case 'integrations':
+      return (
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <h3 className="text-2xl font-semibold mb-4">Available Integrations</h3>
+              <div className="space-y-6">
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <h4 className="text-xl font-medium mb-4">Social Media</h4>
+                  <ul className="space-y-2 text-lg text-gray-700">
+                    <li>• Facebook</li>
+                    <li>• Twitter</li>
+                    <li>• Instagram</li>
+                    <li>• LinkedIn</li>
+                    <li>• TikTok</li>
+                  </ul>
+                </div>
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <h4 className="text-xl font-medium mb-4">Email Marketing</h4>
+                  <ul className="space-y-2 text-lg text-gray-700">
+                    <li>• Mailchimp</li>
+                    <li>• SendGrid</li>
+                    <li>• HubSpot</li>
+                    <li>• ActiveCampaign</li>
+                    <li>• Custom SMTP</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <h3 className="text-2xl font-semibold mb-4">Analytics & Tools</h3>
+              <div className="space-y-6">
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <h4 className="text-xl font-medium mb-4">Analytics Platforms</h4>
+                  <ul className="space-y-2 text-lg text-gray-700">
+                    <li>• Google Analytics</li>
+                    <li>• Facebook Pixel</li>
+                    <li>• Custom tracking</li>
+                    <li>• Performance metrics</li>
+                    <li>• ROI tracking</li>
+                  </ul>
+                </div>
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <h4 className="text-xl font-medium mb-4">Additional Tools</h4>
+                  <ul className="space-y-2 text-lg text-gray-700">
+                    <li>• CRM integration</li>
+                    <li>• Marketing automation</li>
+                    <li>• Customer support</li>
+                    <li>• Project management</li>
+                    <li>• Custom webhooks</li>
+          </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+
+    default:
+      return null;
+  }
 } 

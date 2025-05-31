@@ -98,3 +98,35 @@ export async function uploadMedia(file: File): Promise<{ url: string, filename: 
   
   return await res.json();
 }
+
+import { handleApiError } from './apiErrorHandler';
+
+export interface CampaignData {
+  name: string;
+  type: string;
+  scheduleDate: Date | null;
+  description: string;
+  subject: string;
+  senderName: string;
+  senderEmail: string;
+  audiences: string[];
+}
+
+export async function createCampaign(data: CampaignData): Promise<{ id: string; name: string }> {
+  try {
+    const response = await fetch('/api/campaigns', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to create campaign');
+    }
+
+    return response.json();
+  } catch (error) {
+    throw handleApiError(error);
+  }
+}

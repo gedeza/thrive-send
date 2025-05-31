@@ -5,18 +5,33 @@ import { Prisma } from '@prisma/client';
 
 interface Goal {
   id: string;
-  title: string;
+  name: string;
   description: string | null;
+  targetValue: number | null;
+  currentValue: number | null;
+  startDate: Date;
+  endDate: Date | null;
   status: string;
-  priority: string;
-  dueDate: Date | null;
-  progress: number;
   createdAt: Date;
   updatedAt: Date;
-  assignedTo: {
+  clientId: string;
+  milestones: {
+    id: string;
     name: string;
-    email: string;
-  } | null;
+    description: string | null;
+    dueDate: Date;
+    completedDate: Date | null;
+    status: string;
+  }[];
+  metrics: {
+    id: string;
+    name: string;
+    description: string | null;
+    metricType: string;
+    targetValue: number | null;
+    currentValue: number | null;
+    unit: string | null;
+  }[];
 }
 
 export async function GET(
@@ -36,61 +51,128 @@ export async function GET(
     // Get client goals data
     const goals = await db.$queryRaw<Goal[]>`
       SELECT 
-        g.id,
-        g.title,
-        g.description,
-        g.status,
-        g.priority,
-        g.due_date as "dueDate",
-        g.progress,
-        g.created_at as "createdAt",
-        g.updated_at as "updatedAt",
-        json_build_object(
-          'name', u.name,
-          'email', u.email
-        ) as "assignedTo"
+        g.*,
+        COALESCE(
+          json_agg(
+            DISTINCT jsonb_build_object(
+              'id', m.id,
+              'name', m.name,
+              'description', m.description,
+              'dueDate', m."dueDate",
+              'completedDate', m."completedDate",
+              'status', m.status
+            )
+          ) FILTER (WHERE m.id IS NOT NULL),
+          '[]'
+        ) as milestones,
+        COALESCE(
+          json_agg(
+            DISTINCT jsonb_build_object(
+              'id', mt.id,
+              'name', mt.name,
+              'description', mt.description,
+              'metricType', mt."metricType",
+              'targetValue', mt."targetValue",
+              'currentValue', mt."currentValue",
+              'unit', mt.unit
+            )
+          ) FILTER (WHERE mt.id IS NOT NULL),
+          '[]'
+        ) as metrics
       FROM "ClientGoal" g
-      LEFT JOIN "User" u ON g."assignedToId" = u.id
+      LEFT JOIN "Milestone" m ON m."goalId" = g.id
+      LEFT JOIN "SuccessMetric" mt ON mt."goalId" = g.id
       WHERE g."clientId" = ${clientId}
-      ORDER BY 
-        CASE g.status 
-          WHEN 'IN_PROGRESS' THEN 1
-          WHEN 'NOT_STARTED' THEN 2
-          WHEN 'COMPLETED' THEN 3
-          ELSE 4
-        END,
-        g.priority DESC,
-        g.due_date ASC NULLS LAST
+      GROUP BY g.id
+      ORDER BY g.status ASC, g."startDate" DESC
       ${limit ? Prisma.sql`LIMIT ${limit}` : Prisma.empty}
     `;
-
-    // Transform dates to ISO strings
-    const transformedGoals = goals.map(goal => ({
-      ...goal,
-      dueDate: goal.dueDate?.toISOString() || null,
-      createdAt: goal.createdAt.toISOString(),
-      updatedAt: goal.updatedAt.toISOString(),
-    }));
 
     // Calculate completion statistics
     const totalGoals = goals.length;
     const completedGoals = goals.filter(g => g.status === 'COMPLETED').length;
     const inProgressGoals = goals.filter(g => g.status === 'IN_PROGRESS').length;
-    const averageProgress = goals.length > 0 
-      ? goals.reduce((sum, g) => sum + g.progress, 0) / totalGoals
+    const averageProgress = goals.length > 0
+      ? goals.reduce((sum, g) => {
+          if (g.targetValue && g.currentValue) {
+            return sum + (g.currentValue / g.targetValue) * 100;
+          }
+          return sum;
+        }, 0) / totalGoals
       : 0;
 
     return NextResponse.json({
-      goals: transformedGoals,
+      goals,
       stats: {
         total: totalGoals,
         completed: completedGoals,
         inProgress: inProgressGoals,
-        averageProgress,
-      },
+        averageProgress: Math.round(averageProgress)
+      }
     });
   } catch (error) {
-    console.error('Error fetching goals data:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    console.error('Error fetching client goals:', error);
+    return new NextResponse(
+      error instanceof Error ? error.message : 'Internal Server Error',
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { userId, orgId } = await auth();
+    if (!userId || !orgId) {
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
+
+    const clientId = params.id;
+    const body = await request.json();
+
+    // Validate required fields
+    if (!body.name) {
+      return new NextResponse('Name is required', { status: 400 });
+    }
+
+    // Create the goal
+    const goals = await db.$queryRaw<Goal[]>`
+      INSERT INTO "ClientGoal" (
+        "id",
+        "name",
+        "description",
+        "targetValue",
+        "currentValue",
+        "startDate",
+        "endDate",
+        "status",
+        "createdAt",
+        "updatedAt",
+        "clientId"
+      ) VALUES (
+        gen_random_uuid(),
+        ${body.name},
+        ${body.description || null},
+        ${body.targetValue || null},
+        ${body.currentValue || null},
+        ${new Date(body.startDate)},
+        ${body.endDate ? new Date(body.endDate) : null},
+        ${body.status || 'NOT_STARTED'},
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP,
+        ${clientId}
+      )
+      RETURNING *
+    `;
+
+    return NextResponse.json(goals[0]);
+  } catch (error) {
+    console.error('Error creating client goal:', error);
+    return new NextResponse(
+      error instanceof Error ? error.message : 'Internal Server Error',
+      { status: 500 }
+    );
   }
 } 

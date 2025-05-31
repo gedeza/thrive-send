@@ -17,7 +17,7 @@ interface Milestone {
   title: string;
   description: string | null;
   status: string;
-  date: Date;
+  dueDate: Date;
 }
 
 interface Goal {
@@ -60,28 +60,48 @@ export async function GET(
     // Get client timeline data
     const [milestones, goals, feedback, projects] = await Promise.all([
       db.$queryRaw<Milestone[]>`
-        SELECT id, title, description, status, date
-        FROM "Milestone"
-        WHERE "clientId" = ${clientId}
-        ORDER BY date DESC
+        SELECT 
+          m.id,
+          m.title,
+          m.description,
+          m.status,
+          m."dueDate"
+        FROM "Milestone" m
+        INNER JOIN "ClientGoal" g ON m."goalId" = g.id
+        WHERE g."clientId" = ${clientId}
+        ORDER BY m."dueDate" DESC
         ${limit ? Prisma.sql`LIMIT ${limit}` : Prisma.empty}
       `,
       db.$queryRaw<Goal[]>`
-        SELECT id, title, description, status, "createdAt"
-        FROM "Goal"
+        SELECT 
+          id,
+          title,
+          description,
+          status,
+          "createdAt"
+        FROM "ClientGoal"
         WHERE "clientId" = ${clientId}
         ORDER BY "createdAt" DESC
         ${limit ? Prisma.sql`LIMIT ${limit}` : Prisma.empty}
       `,
       db.$queryRaw<Feedback[]>`
-        SELECT id, comment, status, "createdAt"
-        FROM "Feedback"
+        SELECT 
+          id,
+          comment,
+          status,
+          "createdAt"
+        FROM "ClientFeedback"
         WHERE "clientId" = ${clientId}
         ORDER BY "createdAt" DESC
         ${limit ? Prisma.sql`LIMIT ${limit}` : Prisma.empty}
       `,
       db.$queryRaw<Project[]>`
-        SELECT id, name as title, description, status, "startDate"
+        SELECT 
+          id,
+          title,
+          description,
+          status,
+          "startDate"
         FROM "Project"
         WHERE "clientId" = ${clientId}
         ORDER BY "startDate" DESC
@@ -97,7 +117,7 @@ export async function GET(
         title: m.title,
         description: m.description,
         status: m.status,
-        date: m.date.toISOString(),
+        date: m.dueDate.toISOString(),
       })),
       ...goals.map((g: Goal) => ({
         id: g.id,
@@ -131,6 +151,9 @@ export async function GET(
     return NextResponse.json({ items: limitedItems });
   } catch (error) {
     console.error('Error fetching timeline data:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    return new NextResponse(
+      error instanceof Error ? error.message : 'Internal Server Error',
+      { status: 500 }
+    );
   }
 } 

@@ -312,27 +312,37 @@ export function useAnalytics() {
 
   // Analytics Dashboard Data
   const fetchAnalyticsMetrics = async (params: AnalyticsParams) => {
-  try {
+    try {
       const headers = await getAuthHeaders();
-    const queryParams = new URLSearchParams();
-    if (params.startDate) queryParams.append('startDate', params.startDate.toISOString());
-    if (params.endDate) queryParams.append('endDate', params.endDate.toISOString());
-    if (params.timeframe) queryParams.append('timeframe', params.timeframe);
-    if (params.campaignId) queryParams.append('campaignId', params.campaignId);
-
-      const response = await fetch(`/api/analytics?${queryParams.toString()}`, {
+      const response = await fetch(`${baseUrl}/analytics/metrics`, {
+        method: 'POST',
         headers,
+        body: JSON.stringify({
+          startDate: params.startDate?.toISOString(),
+          endDate: params.endDate?.toISOString(),
+          timeframe: params.timeframe,
+          campaignId: params.campaignId
+        })
       });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch analytics data');
+      if (!response.ok) {
+        throw new Error('Failed to fetch analytics metrics');
+      }
+
+      const data = await response.json();
+      
+      // Transform the data into the expected MetricData format
+      return Array.isArray(data) ? data.map(metric => ({
+        key: metric.id || metric.key,
+        label: metric.title || metric.label,
+        value: metric.value,
+        description: metric.description,
+        icon: metric.icon
+      })) : [];
+    } catch (error) {
+      console.error('Error fetching analytics metrics:', error);
+      return [];
     }
-    return response.json();
-  } catch (error) {
-    console.error('Error fetching analytics metrics:', error);
-    throw error;
-  }
   };
 
   const fetchAudienceGrowthData = async (params: AnalyticsParams) => {

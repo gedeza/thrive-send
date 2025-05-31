@@ -59,13 +59,14 @@ import { ContentCalendarSync } from "@/components/content/ContentCalendarSync";
 import { getMockCalendarEvents } from "@/lib/mock/calendar-mock";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-// import { MonthView } from "./MonthView";
-// import { WeekView } from "./WeekView";
-// import { DayView } from "./DayView";
-// import { ListView } from "./ListView";
-// import { CalendarHeader } from "./CalendarHeader";
-// import { CalendarFilters } from "./CalendarFilters";
-// import { CalendarEvent, CalendarView } from "./types";
+import { MonthView } from "./MonthView";
+import { WeekView } from "./WeekView";
+import { DayView } from "./DayView";
+import { ListView } from "./ListView";
+import { CalendarHeader } from "./CalendarHeader";
+import { CalendarFilters } from "./CalendarFilters";
+import { CalendarEvent, CalendarView } from "./types";
+import { LazyMonthView } from "./MonthView";
 
 // Enhanced content type definitions
 export type SocialPlatform = 'FACEBOOK' | 'TWITTER' | 'INSTAGRAM' | 'LINKEDIN';
@@ -499,6 +500,10 @@ export function ContentCalendar({
       try {
         setLoading(true);
         console.log("Fetching calendar events...");
+        if (!fetchEvents) {
+          console.log("No fetchEvents function provided, trying direct fetch");
+          return await fetchCalendarEventsDirectly();
+        }
         const fetchedEvents = await fetchEvents();
         console.log(`Fetched ${fetchedEvents.length} events:`, fetchedEvents);
         setEvents(fetchedEvents);
@@ -730,8 +735,8 @@ export function ContentCalendar({
     };
   };
 
-  // Filtered events
-  const filteredEvents = React.useMemo(() => {
+  // Memoize the filteredEvents calculation to prevent unnecessary recalculations
+  const filteredEvents = useMemo(() => {
     if (!events) return [];
     
     return events.filter(event => {
@@ -751,47 +756,38 @@ export function ContentCalendar({
     });
   }, [events, searchTerm, selectedType, selectedStatus]);
 
-  // Configure drag sensors
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    })
-  );
-
-  // Utility functions
-  const formatDate = (date: Date, format: string) => {
+  // Memoize utility functions to prevent recreating them on each render
+  const formatDate = useCallback((date: Date, format: string) => {
     return formatInTimeZone(date, userTimezone, format);
-  };
+  }, [userTimezone]);
 
-  const getEventsForDay = (day: Date) => {
+  const getEventsForDay = useCallback((day: Date) => {
     const dayStr = formatInTimeZone(day, userTimezone, "yyyy-MM-dd");
     return filteredEvents.filter(event => {
       const eventDate = parseISO(event.date);
       const eventDateStr = formatInTimeZone(eventDate, userTimezone, "yyyy-MM-dd");
       return eventDateStr === dayStr;
     });
-  };
+  }, [filteredEvents, userTimezone]);
 
-  // Event handlers
-  const handleEventClick = (event: CalendarEvent) => {
+  // Event handlers as callbacks to prevent recreation on each render
+  const handleEventClick = useCallback((event: CalendarEvent) => {
     setSelectedEvent(event);
     setShowEventDetails(true);
-  };
+  }, []);
 
-  const handleEditClick = (event: CalendarEvent) => {
+  const handleEditClick = useCallback((event: CalendarEvent) => {
     setSelectedEvent(event);
     setShowEventDetails(false);
     setIsEditDialogOpen(true);
-  };
+  }, []);
 
-  const handleDeleteClick = (event: CalendarEvent) => {
+  const handleDeleteClick = useCallback((event: CalendarEvent) => {
     setEventToDelete(event);
     setShowDeleteConfirm(true);
-  };
+  }, []);
 
-  const handleDateClick = (day: Date) => {
+  const handleDateClick = useCallback((day: Date) => {
     const selectedDate = formatInTimeZone(day, userTimezone, "yyyy-MM-dd");
     setNewEvent(prev => ({ ...prev, start: day }));
     setIsCreateDialogOpen(true);
@@ -812,13 +808,13 @@ export function ContentCalendar({
       organizationId: "",
       createdBy: ""
     });
-  };
+  }, [userTimezone]);
 
-  const handleSearch = (value: string) => {
+  const handleSearch = useCallback((value: string) => {
     setSearchTerm(value);
-  };
+  }, []);
 
-  const handleDragStart = (event: DragStartEvent) => {
+  const handleDragStart = useCallback((event: DragStartEvent) => {
     const { active } = event;
     const dragData = active.data.current as DragData;
     if (dragData?.event) {
@@ -831,9 +827,9 @@ export function ContentCalendar({
         draggedElement.classList.add('dragging');
       }
     }
-  };
+  }, []);
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     const { active, over } = event;
     
     // Remove the dragging class
@@ -892,7 +888,16 @@ export function ContentCalendar({
       setActiveDragEvent(null);
       setDragSourceDate(null);
     }
-  };
+  }, [activeDragEvent, onEventUpdate, toast]);
+
+  // Configure drag sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
 
   // View components
   const MonthViewDay = ({ 
@@ -920,6 +925,7 @@ export function ContentCalendar({
     const isToday = isSameDay(day, toZonedTime(new Date(), userTimezone));
     const eventsByType = groupEventsByType(events);
     const hasMoreEvents = events.length > MAX_VISIBLE_EVENTS;
+    const dateString = formatInTimeZone(day, userTimezone, 'EEEE, MMMM d, yyyy');
 
     return (
       <div
@@ -932,6 +938,15 @@ export function ContentCalendar({
           "flex flex-col h-full"
         )}
         onClick={onClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClick();
+          }
+        }}
+        tabIndex={0}
+        role="button"
+        aria-label={`${dateString}${events.length > 0 ? `, ${events.length} ${events.length === 1 ? 'event' : 'events'}` : ', no events'}`}
       >
         {/* Day number */}
         <div className="flex justify-between items-center mb-1">
@@ -966,6 +981,16 @@ export function ContentCalendar({
                     e.stopPropagation();
                     onEventClick(event);
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onEventClick(event);
+                    }
+                  }}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`${event.title}, ${event.type} event${event.time ? ` at ${event.time}` : ''}`}
                 >
                   {event.time && (
                     <span className="text-[10px] font-medium opacity-70 whitespace-nowrap">
@@ -973,7 +998,7 @@ export function ContentCalendar({
                     </span>
                   )}
                   {event.type === 'social' && event.socialMediaContent?.platforms?.length === 1 && (
-                    <span className="text-[10px] flex-shrink-0">
+                    <span className="text-[10px] flex-shrink-0" aria-hidden="true">
                       {platformColorMap[event.socialMediaContent.platforms[0] as SocialPlatform].icon}
                     </span>
                   )}
@@ -994,6 +1019,7 @@ export function ContentCalendar({
                 // You can implement a modal or expand the cell to show all events
                 console.log('Show all events for', formatInTimeZone(day, userTimezone, 'yyyy-MM-dd'), dayEvents);
               }}
+              aria-label={`Show all ${events.length} events for ${dateString}`}
             >
               +{events.length - MAX_VISIBLE_EVENTS} more
             </button>
@@ -1007,6 +1033,7 @@ export function ContentCalendar({
             e.stopPropagation();
             onClick();
           }}
+          aria-label={`Add event on ${dateString}`}
         >
           <Plus className="h-4 w-4 text-muted-foreground" />
         </button>
@@ -1425,6 +1452,23 @@ export function ContentCalendar({
     );
   };
 
+  // Lazy load the MonthView component
+  const LazyMonthView = React.lazy(() => import('./MonthView').then(module => ({ default: module.MonthView })));
+
+  // Prevent re-renders by wrapping with memo
+  const MemoizedMonthView = React.memo(({ currentDate, daysInMonth, getEventsForDay, handleEventClick, handleDateClick, userTimezone }) => (
+  <React.Suspense fallback={<div className="flex items-center justify-center h-[400px]"><p>Loading month view...</p></div>}>
+    <LazyMonthView 
+      currentDate={currentDate}
+      daysInMonth={daysInMonth}
+      getEventsForDay={getEventsForDay}
+      handleEventClick={handleEventClick}
+      handleDateClick={handleDateClick}
+      userTimezone={userTimezone}
+    />
+  </React.Suspense>
+));
+
   return (
     <div className="space-y-4 border rounded-xl p-4 bg-card shadow-sm">
       {/* Calendar Header with Actions */}
@@ -1504,12 +1548,13 @@ export function ContentCalendar({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9 h-9 bg-background transition-colors"
+              aria-label="Search events"
             />
-            <Search className="h-4 w-4 absolute left-3 top-2.5 text-muted-foreground" />
+            <Search className="h-4 w-4 absolute left-3 top-2.5 text-muted-foreground" aria-hidden="true" />
           </div>
 
           <Select value={selectedType} onValueChange={setSelectedType}>
-            <SelectTrigger className="w-[120px] h-9 bg-background transition-colors">
+            <SelectTrigger className="w-[120px] h-9 bg-background transition-colors" aria-label="Filter by content type">
               <SelectValue placeholder="Type" />
             </SelectTrigger>
             <SelectContent>
@@ -1523,7 +1568,7 @@ export function ContentCalendar({
           </Select>
 
           <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-            <SelectTrigger className="w-[130px] h-9 bg-background transition-colors">
+            <SelectTrigger className="w-[130px] h-9 bg-background transition-colors" aria-label="Filter by status">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -1542,6 +1587,7 @@ export function ContentCalendar({
             size="icon" 
             onClick={() => setCurrentDate(subMonths(currentDate, 1))}
             className="h-9 w-9 hover:bg-muted/80 transition-colors"
+            aria-label="Previous month"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -1550,6 +1596,7 @@ export function ContentCalendar({
             size="icon" 
             onClick={() => setCurrentDate(addMonths(currentDate, 1))}
             className="h-9 w-9 hover:bg-muted/80 transition-colors"
+            aria-label="Next month"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -1557,10 +1604,11 @@ export function ContentCalendar({
             variant="outline" 
             onClick={() => setCurrentDate(toZonedTime(new Date(), userTimezone))}
             className="h-9 hover:bg-muted/80 transition-colors"
+            aria-label="Go to today"
           >
             Today
           </Button>
-          <div className="text-sm font-medium text-muted-foreground">
+          <div className="text-sm font-medium text-muted-foreground" aria-live="polite" role="status">
             {formatInTimeZone(currentDate, userTimezone, "MMMM yyyy")}
           </div>
         </div>
@@ -1610,7 +1658,14 @@ export function ContentCalendar({
             <>
           {calendarView === "month" && (
             <div className="p-4">
-              {renderMonthView(currentDate, daysInMonth, getEventsForDay, handleEventClick, handleDateClick, userTimezone)}
+              <MemoizedMonthView 
+                currentDate={currentDate}
+                daysInMonth={daysInMonth}
+                getEventsForDay={getEventsForDay}
+                handleEventClick={handleEventClick}
+                handleDateClick={handleDateClick}
+                userTimezone={userTimezone}
+              />
             </div>
           )}
           {calendarView === "week" && (

@@ -18,13 +18,17 @@ describe('Button Component', () => {
   });
 
   it('applies variant classes correctly', () => {
-    render(<Button variant="primary">Primary Button</Button>);
-    const button = screen.getByRole('button');
-    expect(button).toHaveClass('bg-primary');
+    const { container } = render(<Button variant="primary">Primary Button</Button>);
+    expect(container.firstChild).toHaveClass('bg-primary');
   });
 
   it('can be disabled', () => {
     render(<Button disabled>Disabled</Button>);
     expect(screen.getByRole('button')).toBeDisabled();
+  });
+
+  it('applies size classes correctly', () => {
+    const { container } = render(<Button size="lg">Large Button</Button>);
+    expect(container.firstChild).toHaveClass('h-11');
   });
 });

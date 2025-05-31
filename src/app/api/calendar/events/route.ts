@@ -9,6 +9,8 @@ import {
   AnalyticsQuerySchema 
 } from "../validation";
 
+export const dynamic = 'force-dynamic'; // Force dynamic evaluation, prevent caching
+
 // Helper function to handle validation errors
 function handleValidationError(error: any) {
   if (error.name === 'ZodError') {
@@ -84,6 +86,17 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    console.log(`[CALENDAR_EVENTS_GET] Found ${events.length} events for organizationId: ${organizationId}`);
+    if (events.length === 0) {
+      console.log("[CALENDAR_EVENTS_GET] No events found, showing all events regardless of date range");
+      // If no events found with date filters, try getting all events for debugging
+      const allEvents = await db.calendarEvent.findMany({
+        where: { organizationId },
+        orderBy: { startTime: "asc" },
+      });
+      console.log(`[CALENDAR_EVENTS_GET] Total events in database for this organization: ${allEvents.length}`);
+    }
+
     // Transform dates to ISO strings for JSON serialization
     const transformedEvents = events.map(event => ({
       ...event,
@@ -93,7 +106,13 @@ export async function GET(req: NextRequest) {
       updatedAt: event.updatedAt.toISOString(),
     }));
 
-    return NextResponse.json({ events: transformedEvents });
+    return NextResponse.json({ events: transformedEvents }, {
+      headers: {
+        'Cache-Control': 'no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
   } catch (error) {
     console.error("[CALENDAR_EVENTS_GET]", error);
     return new NextResponse("Internal Error", { status: 500 });
@@ -133,9 +152,11 @@ export async function POST(req: NextRequest) {
     try {
       CalendarEventSchema.parse(validationBody);
     } catch (error) {
+      console.error("[CALENDAR_EVENTS_POST] Validation error:", error);
       return handleValidationError(error);
     }
 
+    // Create the event with required fields
     const event = await db.calendarEvent.create({
       data: {
         ...validationBody,
@@ -143,14 +164,18 @@ export async function POST(req: NextRequest) {
         endTime: new Date(validationBody.endTime),
         createdAt: new Date(),
         updatedAt: new Date(),
-        userId: user.id,
+        createdBy: user.id,
         organizationId,
+        status: validationBody.status || 'draft',
+        type: validationBody.type,
       },
     });
 
     // Transform dates to ISO strings for JSON serialization
     const transformedEvent = {
       ...event,
+      startTime: event.startTime.toISOString(),
+      endTime: event.endTime.toISOString(),
       createdAt: event.createdAt.toISOString(),
       updatedAt: event.updatedAt.toISOString(),
     };
