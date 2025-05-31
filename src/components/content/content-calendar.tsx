@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useState, useEffect, useCallback } from "react";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Search, Filter, LayoutGrid, LayoutList, Clock, Facebook, Twitter, Instagram, Linkedin, Upload, X, Settings as SettingsIcon } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Search, Filter, LayoutGrid, LayoutList, Clock, Facebook, Twitter, Instagram, Linkedin, Upload, X, Settings as SettingsIcon, RefreshCw, Bug } from "lucide-react";
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useSensor, useSensors, PointerSensor, closestCenter } from "@dnd-kit/core";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import { Button } from "@/components/ui/button";
@@ -56,6 +56,16 @@ import { useTimezone } from "@/hooks/use-timezone";
 import { CSS } from '@dnd-kit/utilities';
 import { useDroppable } from '@dnd-kit/core';
 import { ContentCalendarSync } from "@/components/content/ContentCalendarSync";
+import { getMockCalendarEvents } from "@/lib/mock/calendar-mock";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+// import { MonthView } from "./MonthView";
+// import { WeekView } from "./WeekView";
+// import { DayView } from "./DayView";
+// import { ListView } from "./ListView";
+// import { CalendarHeader } from "./CalendarHeader";
+// import { CalendarFilters } from "./CalendarFilters";
+// import { CalendarEvent, CalendarView } from "./types";
 
 // Enhanced content type definitions
 export type SocialPlatform = 'FACEBOOK' | 'TWITTER' | 'INSTAGRAM' | 'LINKEDIN';
@@ -333,6 +343,49 @@ async function fetchEventAnalytics(eventId: string): Promise<void> {
   });
 }
 
+export interface ContentCalendarProps {
+  events?: CalendarEvent[];
+  onEventCreate?: (event: Omit<CalendarEvent, "id">) => Promise<CalendarEvent>;
+  onEventUpdate?: (event: CalendarEvent) => Promise<CalendarEvent>;
+  onEventDelete?: (eventId: string) => Promise<boolean>;
+  onDateSelect?: (day: string) => void;
+  fetchEvents?: () => Promise<CalendarEvent[]>;
+  defaultView?: CalendarView;
+  onViewChange?: (view: CalendarView) => void;
+  onSyncClick?: () => void;
+  onSettingsClick?: () => void;
+}
+
+// Add these utility functions before the ContentCalendar component
+function groupEventsByHour(events: CalendarEvent[]): { [key: number]: CalendarEvent[] } {
+  const grouped: { [key: number]: CalendarEvent[] } = {};
+  events.forEach(event => {
+    if (!event.time) return;
+    const [hours] = event.time.split(':').map(Number);
+    if (!grouped[hours]) {
+      grouped[hours] = [];
+    }
+    grouped[hours].push(event);
+  });
+  return grouped;
+}
+
+function groupEventsByType(events: CalendarEvent[]): { [key: string]: CalendarEvent[] } {
+  const grouped: { [key: string]: CalendarEvent[] } = {};
+  events.forEach(event => {
+    if (!grouped[event.type]) {
+      grouped[event.type] = [];
+    }
+    grouped[event.type].push(event);
+  });
+  return grouped;
+}
+
+// Add this type guard function
+function isValidContentType(type: any): type is ContentType {
+  return ['social', 'blog', 'email', 'custom', 'article'].includes(type);
+}
+
 export interface CalendarEvent {
   id: string;
   title: string;
@@ -341,9 +394,9 @@ export interface CalendarEvent {
   status: 'draft' | 'scheduled' | 'sent' | 'failed';
   date: string;
   time?: string;
-  duration?: number; // Duration in minutes
-  startTime?: string; // ISO string for backend
-  endTime?: string;   // ISO string for backend
+  duration?: number;
+  startTime?: string;
+  endTime?: string;
   scheduledDate?: string;
   scheduledTime?: string;
   socialMediaContent: SocialMediaContent;
@@ -369,173 +422,10 @@ export interface CalendarEvent {
   };
   organizationId: string;
   createdBy: string;
-  tags?: string[]; // Add tags property to match main app interface
+  tags?: string[];
 }
 
-export interface ContentCalendarProps {
-  events?: CalendarEvent[];
-  onEventCreate?: (event: Omit<CalendarEvent, "id">) => Promise<CalendarEvent>;
-  onEventUpdate?: (event: CalendarEvent) => Promise<CalendarEvent>;
-  onEventDelete?: (eventId: string) => Promise<boolean>;
-  onDateSelect?: (day: string) => void;
-  fetchEvents?: () => Promise<CalendarEvent[]>;
-  defaultView?: CalendarView;
-  onViewChange?: (view: CalendarView) => void;
-}
-
-// Calendar views
-type CalendarView = "month" | "week" | "day" | "list";
-
-// Add this component before the ContentCalendar component
-function TimeSlot({ hour, date }: { hour: number; date: string }) {
-  const { setNodeRef, isOver } = useDroppable({
-    id: `time-${date}-${hour}`,
-    data: {
-      date,
-      time: `${hour.toString().padStart(2, '0')}:00`
-    } as DropData
-  });
-
-  return (
-    <div
-      ref={setNodeRef}
-      className={cn(
-        "h-20 border-b relative",
-        isOver && "bg-primary/5"
-      )}
-    />
-  );
-}
-
-// List View Component
-function ListView({ events, onEventClick }: { 
-  events: CalendarEvent[];
-  onEventClick: (event: CalendarEvent) => void;
-}) {
-  const userTimezone = useTimezone();
-  const { toast } = useToast();
-
-  // Sort events by date and time
-  const sortedEvents = React.useMemo(() => {
-    return [...events].sort((a, b) => {
-      const dateA = new Date(`${a.date}T${a.time || '00:00'}`);
-      const dateB = new Date(`${b.date}T${b.time || '00:00'}`);
-      return dateA.getTime() - dateB.getTime();
-    });
-  }, [events]);
-
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-12 gap-4 p-4 bg-muted/50 rounded-md font-medium text-sm">
-        <div className="col-span-3">Title</div>
-        <div className="col-span-2">Type</div>
-        <div className="col-span-2">Date & Time</div>
-        <div className="col-span-2">Status</div>
-        <div className="col-span-3">Platforms</div>
-      </div>
-      
-      {sortedEvents.map((event) => (
-        <div 
-          key={event.id} 
-          className="grid grid-cols-12 gap-4 p-4 border rounded-md hover:bg-muted/50 transition-colors cursor-pointer"
-          onClick={() => onEventClick(event)}
-        >
-          <div className="col-span-3">
-            <div className="font-medium">{event.title}</div>
-            {event.description && (
-              <div className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                {event.description}
-              </div>
-            )}
-          </div>
-          
-          <div className="col-span-2">
-            <span className={cn(
-              "px-2 py-1 rounded-full text-xs font-medium",
-              eventTypeColorMap[event.type]?.bg,
-              eventTypeColorMap[event.type]?.text
-            )}>
-              {event.type}
-            </span>
-          </div>
-          
-          <div className="col-span-2">
-            <div className="text-sm">
-              {formatInTimeZone(new Date(event.date), userTimezone, "MMM d, yyyy")}
-            </div>
-            {event.time && (
-              <div className="text-sm text-muted-foreground">
-                {event.time.substring(0, 5)}
-              </div>
-            )}
-          </div>
-          
-          <div className="col-span-2">
-            <span className={cn(
-              "px-2 py-1 rounded-full text-xs font-medium",
-              event.status === 'draft' && "bg-yellow-100 text-yellow-800",
-              event.status === 'scheduled' && "bg-blue-100 text-blue-800",
-              event.status === 'sent' && "bg-green-100 text-green-800",
-              event.status === 'failed' && "bg-red-100 text-red-800"
-            )}>
-              {event.status}
-            </span>
-          </div>
-          
-          <div className="col-span-3">
-            {event.type === 'social' && event.socialMediaContent?.platforms?.length > 0 ? (
-              <div className="flex flex-wrap gap-1">
-                {event.socialMediaContent.platforms.map(platform => (
-                  <span
-                    key={platform}
-                    className={cn(
-                      "px-2 py-1 rounded-full text-xs font-medium",
-                      platformColorMap[platform].bg,
-                      platformColorMap[platform].text
-                    )}
-                  >
-                    {platform}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <span className="text-sm text-muted-foreground">-</span>
-            )}
-          </div>
-        </div>
-      ))}
-
-      {sortedEvents.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          No events found
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Settings Component
-function Settings() {
-  return (
-    <div className="space-y-4">
-      <h3 className="font-bold">Settings</h3>
-      <div>
-        <label>Default View:</label>
-        <select>
-          <option value="month">Month</option>
-          <option value="week">Week</option>
-          <option value="day">Day</option>
-          <option value="list">List</option>
-        </select>
-      </div>
-      <div>
-        <label>Notifications:</label>
-        <input type="checkbox" />
-      </div>
-      {/* Add more settings as needed */}
-    </div>
-  );
-}
+export type CalendarView = "month" | "week" | "day" | "list";
 
 export function ContentCalendar({
   events: initialEvents = [],
@@ -545,7 +435,9 @@ export function ContentCalendar({
   onDateSelect,
   fetchEvents,
   defaultView = "month",
-  onViewChange
+  onViewChange,
+  onSyncClick,
+  onSettingsClick
 }: ContentCalendarProps) {
   const { toast } = useToast();
   const userTimezone = useTimezone();
@@ -585,18 +477,7 @@ export function ContentCalendar({
   const [showEventDetails, setShowEventDetails] = useState(false);
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
   const [pendingDialogClose, setPendingDialogClose] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showSync, setShowSync] = useState(false);
-
-  // Update calendar view when defaultView prop changes
-  useEffect(() => {
-    setCalendarView(defaultView);
-  }, [defaultView]);
-
-  // Notify parent component when view changes
-  useEffect(() => {
-    onViewChange?.(calendarView);
-  }, [calendarView, onViewChange]);
+  const [useMockData, setUseMockData] = useState(false);
 
   // Calculate days to display based on current month
   const daysInMonth = React.useMemo(() => {
@@ -608,156 +489,248 @@ export function ContentCalendar({
     return days.map(day => toZonedTime(day, userTimezone));
   }, [currentDate, userTimezone]);
 
-  // Load events
-  const loadEvents = async () => {
-    if (!fetchEvents) {
-      console.log("No fetchEvents handler provided");
-      setLoading(false);
-      return;
-    }
-    
-    console.log("Starting to load events...");
-    setLoading(true);
-    setError(null);
-    
-    try {
-      console.log("Calling fetchEvents...");
-      const events = await fetchEvents();
-      console.log("Events fetched successfully:", events);
-      setEvents(events);
-    } catch (error) {
-      console.error("Failed to load calendar data:", error);
+  // Add useEffect to fetch events on component mount
+  useEffect(() => {
+    const loadEvents = async () => {
+      if (useMockData) {
+        return getMockCalendarEvents();
+      }
       
-      // Handle database connection errors
-      if (error instanceof Error && 
-          (error.message.includes('Database connection') || 
-           error.message.includes('Failed to fetch'))) {
-        setError("Database connection error. Please try again in a few moments.");
-        toast({
-          title: "Connection Error",
-          description: "Unable to connect to the database. Please try again in a few moments.",
-          variant: "destructive",
-        });
-      } else {
-        setError("Failed to load calendar data");
+      try {
+        setLoading(true);
+        console.log("Fetching calendar events...");
+        const fetchedEvents = await fetchEvents();
+        console.log(`Fetched ${fetchedEvents.length} events:`, fetchedEvents);
+        setEvents(fetchedEvents);
+        setError(null);
+        return fetchedEvents;
+      } catch (err) {
+        console.error("Error fetching calendar events:", err);
+        setError(err instanceof Error ? err.message : "Failed to load calendar events");
         toast({
           title: "Error",
-          description: "Failed to load calendar data",
+          description: err instanceof Error ? err.message : "Failed to load calendar events",
           variant: "destructive",
         });
+        
+        // If fetchEvents fails, try fetching directly
+        try {
+          console.log("Attempting direct fetch as fallback...");
+          await fetchCalendarEventsDirectly();
+        } catch (directErr) {
+          console.error("Direct fetch also failed:", directErr);
+        }
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      console.log("Setting loading to false");
-      setLoading(false);
-    }
-  };
+    };
 
-  useEffect(() => {
-    console.log("Calendar component mounted, calling loadEvents");
     loadEvents();
-  }, [fetchEvents]);
+  }, [fetchEvents, toast, useMockData]);
 
-  // Reset form when dialog opens/closes
-  useEffect(() => {
-    if (!isCreateDialogOpen && !isEditDialogOpen && !pendingDialogClose) {
-      setSelectedEvent(null);
-      setNewEvent({
-        title: "",
-        description: "",
-        start: new Date(),
-        end: new Date(),
-        type: "email",
-        socialMediaContent: {
-          platforms: [],
-          crossPost: false,
-          mediaUrls: [],
-          platformSpecificContent: {}
-        }
-      });
-    }
-  }, [isCreateDialogOpen, isEditDialogOpen, pendingDialogClose]);
-
-  // Update the handleCreateEvent function
-  const handleCreateEvent = async (eventData: Omit<CalendarEvent, 'id'>) => {
+  // Direct fetch function
+  const fetchCalendarEventsDirectly = async () => {
     try {
-      console.log("Creating event:", eventData);
-      if (!onEventCreate) {
-        throw new Error("onEventCreate handler is not provided");
-      }
-
-      // Get the default duration in minutes for this content type
-      const defaultDurationMinutes = DEFAULT_DURATIONS[eventData.type];
-
-      // Validate date and time
-      if (!eventData.date) {
-        throw new Error("Date is required");
-      }
-
-      // Parse the date
-      const dateObj = new Date(eventData.date);
-      if (isNaN(dateObj.getTime())) {
-        throw new Error("Invalid date format");
-      }
-
-      // If time is provided, validate it
-      let startTime: string;
-      if (eventData.time) {
-        const [hours, minutes] = eventData.time.split(':').map(Number);
-        if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
-          throw new Error("Invalid time format");
+      console.log("==== DEBUGGING CALENDAR DATA ISSUES ====");
+      // Try the debug endpoint first to check if data exists
+      const debugResponse = await fetch('/api/calendar/debug', {
+        credentials: 'include'
+      });
+      
+      if (debugResponse.ok) {
+        const debugData = await debugResponse.json();
+        console.log("Debug API response:", debugData);
+        console.log("Calendar events count:", debugData.calendarEvents?.count);
+        console.log("Calendar events sample:", debugData.calendarEvents?.sample);
+        
+        // If debug shows events exist but we're not getting them, try direct fetch
+        if (debugData.calendarEvents?.count > 0) {
+          const response = await fetch('/api/calendar/events', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-cache'
+            },
+            credentials: 'include'
+          });
+          
+          if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
+          
+          const data = await response.json();
+          console.log(`Direct fetch found ${data.events?.length || 0} events`);
+          console.log("Raw API events sample:", data.events?.slice(0, 2));
+          
+          if (data.events && Array.isArray(data.events)) {
+            try {
+              const calendarEvents = data.events.map((event: any, index: number) => {
+                console.log(`Converting event ${index}:`, event);
+                try {
+                  const convertedEvent = convertApiEventToCalendarEvent(event);
+                  console.log(`Successfully converted event ${index}:`, convertedEvent);
+                  return convertedEvent;
+                } catch (convErr: unknown) {
+                  console.error(`Error converting event ${index}:`, convErr);
+                  console.error("Problematic event:", event);
+                  // Return a minimal valid event to prevent the whole array from failing
+                  return {
+                    id: event.id || `error-${index}`,
+                    title: event.title || "Conversion Error",
+                    description: `Error converting event: ${convErr instanceof Error ? convErr.message : String(convErr)}`,
+                    type: 'custom',
+                    status: 'draft',
+                    date: event.startTime?.split('T')[0] || new Date().toISOString().split('T')[0],
+                    socialMediaContent: {
+                      platforms: [],
+                      mediaUrls: [],
+                      crossPost: false,
+                      platformSpecificContent: {}
+                    },
+                    organizationId: event.organizationId || '',
+                    createdBy: event.createdBy || ''
+                  };
+                }
+              });
+              console.log(`Converted ${calendarEvents.length} events successfully`);
+              setEvents(calendarEvents);
+              setError(null);
+              return calendarEvents;
+            } catch (mapErr) {
+              console.error("Error mapping API events to calendar events:", mapErr);
+              throw mapErr;
+            }
+          } else {
+            console.warn("No events array found in API response:", data);
+          }
+        } else {
+          console.log("Debug API shows no events exist in database");
         }
-        // Create date with time
-        const dateTime = new Date(dateObj);
-        dateTime.setHours(hours, minutes, 0, 0);
-        startTime = dateTime.toISOString();
       } else {
-        // If no time provided, use start of day
-        const dateTime = new Date(dateObj);
-        dateTime.setHours(0, 0, 0, 0);
-        startTime = dateTime.toISOString();
+        console.error("Debug API failed:", await debugResponse.text());
       }
-
-      // Calculate endTime based on content type and any custom duration
-      const endTime = new Date(
-        new Date(startTime).getTime() + 
-        (eventData.duration || defaultDurationMinutes) * 60 * 1000
-      ).toISOString();
-
-      // Transform the event data to match the backend requirements
-      const eventToSend: Omit<CalendarEvent, 'id'> = {
-        ...eventData,
-        startTime,
-        endTime,
-        // Remove date and time fields as they're now in startTime/endTime
-        date: eventData.date, // Keep the original date for display purposes
-        time: eventData.time, // Keep the original time for display purposes
-        // Ensure required fields are present
-        type: eventData.type,
-        status: eventData.status || 'draft',
-        organizationId: eventData.organizationId,
-        createdBy: eventData.createdBy
-      };
-
-      const newEvent = await onEventCreate(eventToSend);
-      console.log("Event created successfully:", newEvent);
-      setEvents(prev => [...prev, newEvent]);
-      setIsCreateDialogOpen(false);
-      toast({
-        title: "Success",
-        description: "Event created successfully",
-      });
-    } catch (error) {
-      console.error('Failed to create event:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create event",
-        variant: "destructive",
-      });
-      throw error;
+      
+      return [];
+    } catch (err) {
+      console.error("Error in direct fetch:", err);
+      setError(err instanceof Error ? err.message : "Failed to directly load calendar events");
+      return [];
     }
   };
+  
+  // Helper function to convert API event to calendar event
+  const convertApiEventToCalendarEvent = (event: any): CalendarEvent => {
+    console.log("Converting event with structure:", Object.keys(event));
+    
+    // Extract platforms from socialMediaContent if available
+    const platforms: SocialPlatform[] = [];
+    
+    // Handle different formats of socialMediaContent
+    if (event.socialMediaContent) {
+      if (typeof event.socialMediaContent === 'object') {
+        // Handle v2 format (object with platform property)
+        if (event.socialMediaContent.platform) {
+          try {
+            platforms.push(event.socialMediaContent.platform as SocialPlatform);
+          } catch (err) {
+            console.error("Error adding platform:", err);
+          }
+        } 
+        // Handle v1 format (array of platforms)
+        else if (Array.isArray(event.socialMediaContent)) {
+          try {
+            event.socialMediaContent.forEach((platform: string) => {
+              if (platform && typeof platform === 'string') {
+                platforms.push(platform as SocialPlatform);
+              }
+            });
+          } catch (err) {
+            console.error("Error processing platforms array:", err);
+          }
+        }
+      }
+    }
+    
+    // Create socialMediaContent structure
+    const socialMediaContent: SocialMediaContent = {
+      platforms,
+      mediaUrls: event.socialMediaContent?.mediaUrls || [],
+      crossPost: Boolean(event.socialMediaContent?.crossPost),
+      platformSpecificContent: {}
+    };
+    
+    // Add platform-specific content if available
+    if (event.socialMediaContent?.platform && event.socialMediaContent?.content) {
+      try {
+        const platform = event.socialMediaContent.platform as SocialPlatform;
+        socialMediaContent.platformSpecificContent[platform] = {
+          text: event.socialMediaContent.content,
+          mediaUrls: event.socialMediaContent.mediaUrls || [],
+          scheduledTime: event.socialMediaContent.scheduledTime
+        };
+      } catch (err) {
+        console.error("Error adding platform-specific content:", err);
+      }
+    }
+    
+    // Extract date and time from various possible formats
+    let date = '';
+    let time = '';
+    try {
+      if (event.startTime) {
+        const startDate = new Date(event.startTime);
+        date = startDate.toISOString().split('T')[0];
+        time = startDate.toTimeString().split(' ')[0].substring(0, 5);
+      } else if (event.date) {
+        date = event.date;
+        time = event.time || '';
+      } else if (event.scheduledAt) {
+        const scheduledDate = new Date(event.scheduledAt);
+        date = scheduledDate.toISOString().split('T')[0];
+        time = scheduledDate.toTimeString().split(' ')[0].substring(0, 5);
+      } else {
+        console.warn("No date information found in event:", event);
+        // Default to today's date if no date info is available
+        date = new Date().toISOString().split('T')[0];
+      }
+    } catch (err) {
+      console.error("Error extracting date/time:", err);
+      date = new Date().toISOString().split('T')[0];
+    }
+    
+    // Ensure type is valid
+    const eventType = isValidContentType(event.type) ? event.type : 'custom';
+    
+    // Map status values
+    let status: 'draft' | 'scheduled' | 'sent' | 'failed' = 'draft';
+    if (event.status) {
+      if (event.status === 'published' || event.status === 'PUBLISHED') {
+        status = 'sent';
+      } else if (event.status === 'scheduled' || event.status === 'SCHEDULED') {
+        status = 'scheduled';
+      } else if (event.status === 'failed' || event.status === 'FAILED') {
+        status = 'failed';
+      } else if (typeof event.status === 'string') {
+        status = event.status.toLowerCase() as any;
+      }
+    }
+    
+    return {
+      id: event.id || `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      title: event.title || 'Untitled Event',
+      description: event.description || '',
+      type: eventType,
+      status,
+      date,
+      time,
+      startTime: event.startTime,
+      endTime: event.endTime,
+      socialMediaContent,
+      analytics: event.analytics,
+      organizationId: event.organizationId || '',
+      createdBy: event.createdBy || ''
+    };
+  };
 
-  // Update the filteredEvents memo to properly handle search
+  // Filtered events
   const filteredEvents = React.useMemo(() => {
     if (!events) return [];
     
@@ -778,473 +751,6 @@ export function ContentCalendar({
     });
   }, [events, searchTerm, selectedType, selectedStatus]);
 
-  // Update getEventsForDay to use timezone-aware comparison
-  const getEventsForDay = (day: Date) => {
-    const dayStr = formatInTimeZone(day, userTimezone, "yyyy-MM-dd");
-    return filteredEvents.filter(event => {
-      const eventDate = parseISO(event.date);
-      const eventDateStr = formatInTimeZone(eventDate, userTimezone, "yyyy-MM-dd");
-      return eventDateStr === dayStr;
-    });
-  };
-
-  // Update getEventsForTimeRange to use timezone-aware comparison
-  const getEventsForTimeRange = (start: Date, end: Date) => {
-    try {
-      const startStr = formatInTimeZone(start, userTimezone, "yyyy-MM-dd'T'HH:mm:ss");
-      const endStr = formatInTimeZone(end, userTimezone, "yyyy-MM-dd'T'HH:mm:ss");
-      
-      return filteredEvents.filter(event => {
-        try {
-          const eventDate = parseISO(event.date);
-          if (isNaN(eventDate.getTime())) {
-            console.error('Invalid event date:', event.date);
-            return false;
-          }
-
-          // Format the time string properly if it exists
-          let eventTime;
-          if (event.time) {
-            try {
-              // Parse the time string and ensure it's in HH:mm format
-              const [hours, minutes] = event.time.split(':').map(Number);
-              if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
-                console.error('Invalid time values:', event.time);
-                return false;
-              }
-              const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-              eventTime = parseISO(`${event.date}T${formattedTime}:00`);
-            } catch (timeError) {
-              console.error('Error parsing time:', timeError);
-              return false;
-            }
-          } else {
-            eventTime = eventDate;
-          }
-
-          if (isNaN(eventTime.getTime())) {
-            console.error('Invalid event time:', event.time);
-            return false;
-          }
-
-          const eventStr = formatInTimeZone(eventTime, userTimezone, "yyyy-MM-dd'T'HH:mm:ss");
-          return eventStr >= startStr && eventStr <= endStr;
-        } catch (error) {
-          console.error('Error processing event:', error);
-          return false;
-        }
-      });
-    } catch (error) {
-      console.error('Error in getEventsForTimeRange:', error);
-      return [];
-    }
-  };
-
-  // Add a search handler to ensure immediate updates
-  const handleSearch = (value: string) => {
-    setSearchTerm(value);
-  };
-
-  // Update date formatting to use user's timezone
-  const formatDate = (date: Date, format: string) => {
-    return formatInTimeZone(date, userTimezone, format);
-  };
-
-  // Add this component for the day view timeline
-  function DayViewTimeline({ date, events, onEventClick }: { 
-    date: Date; 
-    events: CalendarEvent[];
-    onEventClick: (event: CalendarEvent) => void;
-  }) {
-    const { toast } = useToast();
-    const userTimezone = useTimezone();
-
-    // Group events by hour for better organization
-    const eventsByHour = React.useMemo(() => {
-      const grouped: { [key: number]: CalendarEvent[] } = {};
-      DAY_VIEW_HOURS.forEach(hour => {
-        grouped[hour] = events.filter(event => {
-          if (!event.time) return false;
-          const [eventHour] = event.time.split(':').map(Number);
-          return eventHour === hour;
-        });
-      });
-      return grouped;
-    }, [events]);
-
-    return (
-      <div className="flex flex-col border rounded-md overflow-hidden">
-        {/* Timeline header */}
-        <div className="grid grid-cols-2 border-b bg-muted/50">
-          <div className="p-2 font-medium">Time</div>
-          <div className="p-2 font-medium">Events</div>
-        </div>
-
-        {/* Timeline content */}
-        <div className="flex flex-col divide-y">
-          {DAY_VIEW_HOURS.map((hour) => {
-            const { setNodeRef, isOver } = useDroppable({
-              id: `day-time-${formatInTimeZone(date, userTimezone, 'yyyy-MM-dd')}-${hour}`,
-              data: {
-                date: formatInTimeZone(date, userTimezone, 'yyyy-MM-dd'),
-                time: `${hour.toString().padStart(2, '0')}:00`
-              } as DropData
-            });
-
-            const hourEvents = eventsByHour[hour] || [];
-
-            return (
-              <div
-                key={hour}
-                ref={setNodeRef}
-                className={cn(
-                  "grid grid-cols-2 min-h-[60px]",
-                  isOver && "bg-primary/5"
-                )}
-              >
-                {/* Time column */}
-                <div className="p-2 text-sm text-muted-foreground border-r">
-                  {formatInTimeZone(setHours(date, hour), userTimezone, "h:mm a")}
-                </div>
-
-                {/* Events column */}
-                <div className="relative p-2">
-                  {hourEvents.map((event) => {
-                    const [hours, minutes] = event.time?.split(':').map(Number) || [0, 0];
-                    const duration = event.duration || DEFAULT_DURATIONS[event.type] || 60;
-                    const height = Math.max(
-                      (duration / 60) * DAY_VIEW_SLOT_HEIGHT,
-                      DAY_VIEW_EVENT_MIN_HEIGHT
-                    );
-
-                    return (
-                      <div
-                        key={event.id}
-                        className={cn(
-                          "absolute left-2 right-2 p-2 rounded-md text-sm cursor-pointer",
-                          eventTypeColorMap[event.type]?.bg || "bg-gray-100 dark:bg-gray-700/30",
-                          eventTypeColorMap[event.type]?.text || "text-foreground",
-                          "hover:opacity-80 shadow-sm"
-                        )}
-                        style={{
-                          top: `${(minutes / 60) * DAY_VIEW_SLOT_HEIGHT}px`,
-                          height: `${height}px`,
-                          zIndex: 1
-                        }}
-                        onClick={() => onEventClick(event)}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium truncate">{event.title}</div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {event.time?.substring(0, 5)} - {formatInTimeZone(
-                                addMinutes(
-                                  parseISO(`${event.date}T${event.time}`),
-                                  duration
-                                ),
-                                userTimezone,
-                                "h:mm a"
-                              )}
-                            </div>
-                          </div>
-                          {event.type === 'social' && event.socialMediaContent?.platforms?.length > 0 && (
-                            <div className="flex gap-1 ml-2">
-                              {event.socialMediaContent.platforms.map(platform => (
-                                <span
-                                  key={platform}
-                                  className={cn(
-                                    "px-1.5 py-0.5 rounded-full text-[10px]",
-                                    platformColorMap[platform].bg,
-                                    platformColorMap[platform].text
-                                  )}
-                                >
-                                  {platform}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                        {event.description && (
-                          <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                            {event.description}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  // Update the renderDayView function
-  const renderDayView = () => {
-    const dayEvents = getEventsForTimeRange(
-      setHours(currentDate, 0),
-      setHours(currentDate, 23)
-    );
-
-    return (
-      <div className="space-y-4">
-        {/* Day header */}
-        <div className="flex items-center justify-between p-4 bg-card rounded-lg border">
-          <div className="space-y-1">
-            <h2 className="text-2xl font-bold">
-              {formatInTimeZone(currentDate, userTimezone, "EEEE, MMMM d")}
-            </h2>
-            <p className="text-muted-foreground">
-              {dayEvents.length} {dayEvents.length === 1 ? 'event' : 'events'} scheduled
-            </p>
-          </div>
-          <Button
-            onClick={() => {
-              setNewEvent(prev => ({ ...prev, start: currentDate }));
-              setIsCreateDialogOpen(true);
-            }}
-          >
-            <Plus className="h-4 w-4 mr-2" /> Add Event
-          </Button>
-        </div>
-
-        {/* Timeline */}
-        <DayViewTimeline
-          date={currentDate}
-          events={dayEvents}
-          onEventClick={handleEventClick}
-        />
-      </div>
-    );
-  };
-
-  // Render week view
-  const renderWeekView = () => {
-    const weekStart = startOfWeek(currentDate);
-    const weekEnd = endOfWeek(currentDate);
-    const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
-    const hours = Array.from({ length: HOURS_TO_SHOW }, (_, i) => i + START_HOUR);
-
-    return (
-      <div className="mt-4 border rounded-md overflow-hidden">
-        <div className="grid grid-cols-8 divide-x divide-border">
-          {/* Time column */}
-          <div className="text-center">
-            <div className="h-12 border-b bg-muted/50">
-              <span className="sr-only">Time</span>
-            </div>
-            {hours.map((hour) => (
-              <div key={hour} className="h-20 border-b p-1 text-xs text-muted-foreground">
-                {formatDate(setHours(currentDate, hour), "h:mm a")}
-              </div>
-            ))}
-          </div>
-          
-          {/* Days of the week */}
-          {days.map((day) => {
-            const dayEvents = getEventsForDay(day);
-            const isToday = isSameDay(day, new Date());
-            
-            return (
-              <div key={day.toISOString()} className="relative">
-                {/* Day header */}
-                <div className={cn(
-                  "h-12 border-b p-2 text-center",
-                  isToday && "bg-primary/5"
-                )}>
-                  <div className="font-medium">{formatDate(day, "EEE")}</div>
-                  <div className={cn(
-                    "text-sm",
-                    isToday ? "text-primary font-bold" : "text-muted-foreground"
-                  )}>
-                    {formatDate(day, "MMM d")}
-                  </div>
-                </div>
-                
-                {/* Hour cells with droppable areas */}
-                <div className="relative">
-                  {hours.map((hour) => (
-                    <TimeSlot
-                      key={hour}
-                      hour={hour}
-                      date={formatDate(day, 'yyyy-MM-dd')}
-                    />
-                  ))}
-                </div>
-                
-                {/* Positioned events */}
-                <div className="absolute top-12 left-0 right-0 bottom-0 pointer-events-none">
-                  {dayEvents.map((event) => {
-                    if (!event.time) return null;
-                    
-                    const [hours, minutes] = event.time.split(':').map(Number);
-                    if (isNaN(hours) || isNaN(minutes) || hours < START_HOUR || hours >= START_HOUR + HOURS_TO_SHOW) {
-                      return null;
-                    }
-
-                    const topPosition = ((hours - START_HOUR) * 60 + minutes) * (TIME_SLOT_HEIGHT / 60);
-                    const duration = event.duration || DEFAULT_DURATIONS[event.type] || 60;
-                    const height = (duration / 60) * TIME_SLOT_HEIGHT;
-                    
-                    return (
-                      <div
-                        key={event.id}
-                        className={cn(
-                          "absolute left-1 right-1 p-2 rounded text-xs pointer-events-auto cursor-pointer",
-                          eventTypeColorMap[event.type]?.bg || "bg-gray-100 dark:bg-gray-700/30",
-                          eventTypeColorMap[event.type]?.text || "text-foreground",
-                          "hover:opacity-80 shadow-sm"
-                        )}
-                        style={{
-                          top: `${topPosition}px`,
-                          height: `${height}px`,
-                          zIndex: 1
-                        }}
-                        onClick={() => handleEventClick(event)}
-                      >
-                        <div className="font-medium truncate">{event.title}</div>
-                        <div className="text-muted-foreground text-[10px]">
-                          {event.time.substring(0, 5)}
-                        </div>
-                        {event.type === 'social' && event.socialMediaContent?.platforms?.length > 0 && (
-                          <div className="flex gap-1 mt-1">
-                            {event.socialMediaContent.platforms.map(platform => (
-                              <span
-                                key={platform}
-                                className={cn(
-                                  "px-1.5 py-0.5 rounded-full text-[10px]",
-                                  platformColorMap[platform].bg,
-                                  platformColorMap[platform].text
-                                )}
-                              >
-                                {platform}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
-  // Handle editing an event
-  const handleEditEvent = (event: CalendarEvent) => {
-    setSelectedEvent(event);
-    setIsEditDialogOpen(true);
-  };
-
-  // Handle updating an event
-  const handleUpdateEvent = async (eventData: Omit<CalendarEvent, 'id'>) => {
-    if (!selectedEvent) {
-      throw new Error("No event selected for update");
-    }
-
-    try {
-      console.log("Updating event:", { ...eventData, id: selectedEvent.id });
-      if (!onEventUpdate) {
-        throw new Error("onEventUpdate handler is not provided");
-      }
-      const updatedEvent = await onEventUpdate({
-        ...eventData,
-        id: selectedEvent.id
-      });
-      console.log("Event updated successfully:", updatedEvent);
-      setEvents(prev => prev.map(event => 
-        event.id === updatedEvent.id ? updatedEvent : event
-      ));
-      setIsEditDialogOpen(false);
-      setSelectedEvent(null);
-      toast({
-        title: "Success",
-        description: "Event updated successfully",
-      });
-    } catch (error) {
-      console.error('Failed to update event:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update event",
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
-
-  // Handle event click to show details
-  const handleEventClick = (event: CalendarEvent) => {
-    setSelectedEvent(event);
-    setShowEventDetails(true);
-  };
-
-  // Handle edit button click from event details
-  const handleEditClick = (event: CalendarEvent) => {
-    setSelectedEvent(event);
-    setShowEventDetails(false);  // Close the details dialog
-    setIsEditDialogOpen(true);   // Open the edit dialog
-  };
-
-  // Handle delete confirmation
-  const handleDeleteClick = (event: CalendarEvent) => {
-    setEventToDelete(event);
-    setShowDeleteConfirm(true);
-  };
-
-  // Handle confirmed deletion
-  const handleConfirmedDelete = async () => {
-    if (!eventToDelete || !onEventDelete) return;
-    
-    try {
-      await onEventDelete(eventToDelete.id);
-      setEvents(prev => prev.filter(event => event.id !== eventToDelete.id));
-      setShowDeleteConfirm(false);
-      setEventToDelete(null);
-      toast({
-        title: "Success",
-        description: "Event deleted successfully",
-      });
-    } catch (error) {
-      console.error("Failed to delete event:", error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete event",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Add this function after handleEventClick
-  const handleRefreshAnalytics = async () => {
-    if (!selectedEvent) return;
-    
-    try {
-      await fetchEventAnalytics(selectedEvent.id);
-      // In a real application, you would update the event with new analytics data
-      // For now, we'll just simulate a refresh
-      setEvents(prev => prev.map(event => 
-        event.id === selectedEvent.id
-          ? {
-              ...event,
-              analytics: {
-                ...event.analytics,
-                lastUpdated: new Date().toISOString()
-              }
-            }
-          : event
-      ));
-    } catch (error) {
-      console.error('Failed to refresh analytics:', error);
-      throw error;
-    }
-  };
-
   // Configure drag sensors
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -1254,7 +760,64 @@ export function ContentCalendar({
     })
   );
 
-  // Update the drag handlers
+  // Utility functions
+  const formatDate = (date: Date, format: string) => {
+    return formatInTimeZone(date, userTimezone, format);
+  };
+
+  const getEventsForDay = (day: Date) => {
+    const dayStr = formatInTimeZone(day, userTimezone, "yyyy-MM-dd");
+    return filteredEvents.filter(event => {
+      const eventDate = parseISO(event.date);
+      const eventDateStr = formatInTimeZone(eventDate, userTimezone, "yyyy-MM-dd");
+      return eventDateStr === dayStr;
+    });
+  };
+
+  // Event handlers
+  const handleEventClick = (event: CalendarEvent) => {
+    setSelectedEvent(event);
+    setShowEventDetails(true);
+  };
+
+  const handleEditClick = (event: CalendarEvent) => {
+    setSelectedEvent(event);
+    setShowEventDetails(false);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteClick = (event: CalendarEvent) => {
+    setEventToDelete(event);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDateClick = (day: Date) => {
+    const selectedDate = formatInTimeZone(day, userTimezone, "yyyy-MM-dd");
+    setNewEvent(prev => ({ ...prev, start: day }));
+    setIsCreateDialogOpen(true);
+    setSelectedEvent({
+      id: crypto.randomUUID(),
+      title: "",
+      description: "",
+      type: "email",
+      status: "draft",
+      date: selectedDate,
+      time: "",
+      socialMediaContent: {
+        platforms: [],
+        crossPost: false,
+        mediaUrls: [],
+        platformSpecificContent: {}
+      },
+      organizationId: "",
+      createdBy: ""
+    });
+  };
+
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+  };
+
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     const dragData = active.data.current as DragData;
@@ -1331,57 +894,22 @@ export function ContentCalendar({
     }
   };
 
-  // Update the platform selection handler
-  const handlePlatformSelection = (platform: SocialPlatform) => {
-    const currentPlatforms = newEvent.socialMediaContent.platforms;
-    const updatedPlatforms = currentPlatforms.includes(platform)
-      ? currentPlatforms.filter(p => p !== platform)
-      : [...currentPlatforms, platform];
-    
-    setNewEvent(prev => ({
-      ...prev,
-      socialMediaContent: {
-        ...prev.socialMediaContent,
-        platforms: updatedPlatforms,
-        crossPost: updatedPlatforms.length > 1,
-        mediaUrls: prev.socialMediaContent.mediaUrls,
-        platformSpecificContent: prev.socialMediaContent.platformSpecificContent
-      }
-    }));
-  };
-
-  const handleDialogClose = () => {
-    setPendingDialogClose(true);
-    setShowUnsavedChangesDialog(true);
-  };
-
-  const handleConfirmClose = () => {
-    setShowUnsavedChangesDialog(false);
-    setPendingDialogClose(false);
-    setIsCreateDialogOpen(false);
-    setIsEditDialogOpen(false);
-  };
-
-  const handleCancelClose = () => {
-    setShowUnsavedChangesDialog(false);
-    setPendingDialogClose(false);
-  };
-
-  // Add this component for the month view day cell
-  function MonthViewDay({ 
+  // View components
+  const MonthViewDay = ({ 
     day, 
     events, 
     isCurrentMonth, 
     onEventClick, 
-    onClick 
+    onClick,
+    userTimezone 
   }: { 
     day: Date; 
     events: CalendarEvent[];
     isCurrentMonth: boolean;
     onEventClick: (event: CalendarEvent) => void;
     onClick: () => void;
-  }) {
-    const userTimezone = useTimezone();
+    userTimezone: string;
+  }) => {
     const { setNodeRef, isOver } = useDroppable({
       id: formatInTimeZone(day, userTimezone, 'yyyy-MM-dd'),
       data: {
@@ -1389,30 +917,19 @@ export function ContentCalendar({
       } as DropData
     });
 
-    const isToday = isSameDay(day, new Date());
-    const visibleEvents = events.slice(0, MAX_VISIBLE_EVENTS);
+    const isToday = isSameDay(day, toZonedTime(new Date(), userTimezone));
+    const eventsByType = groupEventsByType(events);
     const hasMoreEvents = events.length > MAX_VISIBLE_EVENTS;
-
-    // Group events by type for better organization
-    const eventsByType = React.useMemo(() => {
-      const grouped: { [key in ContentType]?: CalendarEvent[] } = {};
-      events.forEach(event => {
-        if (!grouped[event.type]) {
-          grouped[event.type] = [];
-        }
-        grouped[event.type]?.push(event);
-      });
-      return grouped;
-    }, [events]);
 
     return (
       <div
         ref={setNodeRef}
         className={cn(
-          "relative min-h-[120px] p-2 border rounded-md",
+          "relative min-h-[120px] p-2 border rounded-md hover:bg-muted/50 transition-colors",
           isToday && "bg-primary/5",
           !isCurrentMonth && "opacity-50",
-          isOver && "drop-target"
+          isOver && "bg-muted/80",
+          "flex flex-col h-full"
         )}
         onClick={onClick}
       >
@@ -1432,37 +949,35 @@ export function ContentCalendar({
         </div>
 
         {/* Events list */}
-        <div className="space-y-1">
+        <div className="space-y-1 flex-1 overflow-y-auto">
           {Object.entries(eventsByType).map(([type, typeEvents]) => (
             <div key={type} className="space-y-1">
-              {typeEvents.slice(0, MAX_VISIBLE_EVENTS).map((event) => (
+              {(typeEvents as CalendarEvent[]).slice(0, MAX_VISIBLE_EVENTS).map((event: CalendarEvent) => (
                 <div
                   key={event.id}
                   id={`event-${event.id}`}
                   className={cn(
-                    "text-xs p-1.5 px-2 rounded-md truncate cursor-move",
-                    eventTypeColorMap[event.type as ContentType]?.bg || "bg-gray-100 dark:bg-gray-700/30",
-                    eventTypeColorMap[event.type as ContentType]?.text || "text-foreground",
-                    "hover:opacity-80"
+                    "text-xs p-1.5 px-2 rounded-md truncate cursor-pointer hover:opacity-80 transition-opacity",
+                    isValidContentType(event.type) ? eventTypeColorMap[event.type].bg : "bg-gray-100 dark:bg-gray-700/30",
+                    isValidContentType(event.type) ? eventTypeColorMap[event.type].text : "text-foreground",
+                    "flex items-center gap-1.5"
                   )}
                   onClick={(e) => {
                     e.stopPropagation();
                     onEventClick(event);
                   }}
                 >
-                  <div className="flex items-center gap-1.5">
-                    {event.time && (
-                      <span className="text-[10px] font-medium opacity-70">
-                        {event.time.substring(0, 5)}
-                      </span>
-                    )}
-                    {event.type === 'social' && event.socialMediaContent?.platforms?.length === 1 && (
-                      <span className="text-[10px]">
-                        {platformColorMap[event.socialMediaContent.platforms[0]].icon}
-                      </span>
-                    )}
-                    <span className="truncate">{event.title}</span>
-                  </div>
+                  {event.time && (
+                    <span className="text-[10px] font-medium opacity-70 whitespace-nowrap">
+                      {event.time.substring(0, 5)}
+                    </span>
+                  )}
+                  {event.type === 'social' && event.socialMediaContent?.platforms?.length === 1 && (
+                    <span className="text-[10px] flex-shrink-0">
+                      {platformColorMap[event.socialMediaContent.platforms[0] as SocialPlatform].icon}
+                    </span>
+                  )}
+                  <span className="truncate flex-1">{event.title}</span>
                 </div>
               ))}
             </div>
@@ -1471,7 +986,7 @@ export function ContentCalendar({
           {/* More events button */}
           {hasMoreEvents && (
             <button
-              className="text-xs text-primary hover:underline w-full text-left"
+              className="text-xs text-primary hover:underline w-full text-left mt-1"
               onClick={(e) => {
                 e.stopPropagation();
                 // Show all events for this day
@@ -1497,23 +1012,252 @@ export function ContentCalendar({
         </button>
       </div>
     );
-  }
+  };
 
-  // Update the month view rendering in the main component
-  const renderMonthView = () => {
+  const TimeSlot = ({ 
+    hour, 
+    date,
+    userTimezone 
+  }: { 
+    hour: number; 
+    date: string;
+    userTimezone: string;
+  }) => {
+    const { setNodeRef, isOver } = useDroppable({
+      id: `time-${date}-${hour}`,
+      data: {
+        date,
+        time: `${hour.toString().padStart(2, '0')}:00`
+      } as DropData
+    });
+
     return (
-      <div className="mt-6">
+      <div
+        ref={setNodeRef}
+        className={cn(
+          "h-20 border-b relative min-h-[80px]",
+          isOver && "bg-primary/5"
+        )}
+      />
+    );
+  };
+
+  const DayViewTimeSlot = ({ 
+    hour, 
+    date, 
+    events, 
+    onEventClick,
+    userTimezone 
+  }: { 
+    hour: number; 
+    date: Date; 
+    events: CalendarEvent[];
+    onEventClick: (event: CalendarEvent) => void;
+    userTimezone: string;
+  }) => {
+    const { setNodeRef, isOver } = useDroppable({
+      id: `day-time-${formatInTimeZone(date, userTimezone, 'yyyy-MM-dd')}-${hour}`,
+      data: {
+        date: formatInTimeZone(date, userTimezone, 'yyyy-MM-dd'),
+        time: `${hour.toString().padStart(2, '0')}:00`
+      } as DropData
+    });
+
+    return (
+      <div
+        ref={setNodeRef}
+        className={cn(
+          "grid grid-cols-2 min-h-[60px]",
+          isOver && "bg-muted/80"
+        )}
+      >
+        {/* Time column */}
+        <div className="p-2 text-sm text-muted-foreground border-r">
+          {formatInTimeZone(setHours(date, hour), userTimezone, "h:mm a")}
+        </div>
+
+        {/* Events column */}
+        <div className="relative p-2">
+          {events.map((event: CalendarEvent) => {
+            const [hours, minutes] = event.time?.split(':').map(Number) || [0, 0];
+            const duration = event.duration || DEFAULT_DURATIONS[event.type] || 60;
+            const height = Math.max(
+              (duration / 60) * DAY_VIEW_SLOT_HEIGHT,
+              DAY_VIEW_EVENT_MIN_HEIGHT
+            );
+
+            return (
+              <div
+                key={event.id}
+                className={cn(
+                  "absolute left-2 right-2 p-2 rounded-md text-sm cursor-pointer hover:opacity-80 transition-opacity",
+                  isValidContentType(event.type) ? eventTypeColorMap[event.type].bg : "bg-gray-100 dark:bg-gray-700/30",
+                  isValidContentType(event.type) ? eventTypeColorMap[event.type].text : "text-foreground",
+                  "shadow-sm"
+                )}
+                style={{
+                  top: `${(minutes / 60) * DAY_VIEW_SLOT_HEIGHT}px`,
+                  height: `${height}px`,
+                  zIndex: 1
+                }}
+                onClick={() => onEventClick(event)}
+              >
+                <div className="flex items-start justify-between h-full">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium truncate">{event.title}</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {event.time?.substring(0, 5)} - {formatInTimeZone(
+                        addMinutes(
+                          parseISO(`${event.date}T${event.time}`),
+                          duration
+                        ),
+                        userTimezone,
+                        "h:mm a"
+                      )}
+                    </div>
+                  </div>
+                  {event.type === 'social' && event.socialMediaContent?.platforms?.length > 0 && (
+                    <div className="flex gap-1 ml-2">
+                      {event.socialMediaContent.platforms.map(platform => (
+                        <span key={platform} className="text-[10px]">
+                          {platformColorMap[platform].icon}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const ListView = ({ 
+    events, 
+    onEventClick,
+  }: { 
+    events: CalendarEvent[];
+    onEventClick: (event: CalendarEvent) => void;
+  }) => {
+    const userTimezone = useTimezone();
+    
+    // Sort events by date and time
+    const sortedEvents = useMemo(() => {
+      return [...events].sort((a, b) => {
+        const dateA = new Date(`${a.date}T${a.time || '00:00'}`);
+        const dateB = new Date(`${b.date}T${b.time || '00:00'}`);
+        return dateA.getTime() - dateB.getTime();
+      });
+    }, [events]);
+
+    return (
+      <div className="space-y-4">
+        {/* Header row - responsive */}
+        <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 bg-muted/50 rounded-md font-medium text-sm">
+          <div className="col-span-3">Title</div>
+          <div className="col-span-2">Type</div>
+          <div className="col-span-2">Date & Time</div>
+          <div className="col-span-2">Status</div>
+          <div className="col-span-3">Platforms</div>
+        </div>
+        
+        {/* Mobile header */}
+        <div className="md:hidden flex justify-between p-4 bg-muted/50 rounded-md font-medium text-sm">
+          <div>Content</div>
+          <div>Details</div>
+        </div>
+        
+        {/* Event list */}
+        <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+          {sortedEvents.map((event) => (
+            <div 
+              key={event.id} 
+              className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 border rounded-md hover:bg-muted/50 transition-colors cursor-pointer"
+              onClick={() => onEventClick(event)}
+            >
+              {/* Mobile view */}
+              <div className="md:hidden space-y-2">
+                <div className="font-medium">{event.title}</div>
+                <div className="text-sm text-muted-foreground">{event.description}</div>
+                <div className="flex flex-wrap gap-2 mt-2">
+                <span className={cn(
+                  "px-2 py-1 rounded-full text-xs font-medium",
+                    isValidContentType(event.type) ? eventTypeColorMap[event.type].bg : "bg-gray-100",
+                    isValidContentType(event.type) ? eventTypeColorMap[event.type].text : "text-gray-700"
+                )}>
+                  {event.type}
+                </span>
+                <span className={cn(
+                  "px-2 py-1 rounded-full text-xs font-medium",
+                  event.status === 'draft' && "bg-yellow-100 text-yellow-800",
+                  event.status === 'scheduled' && "bg-blue-100 text-blue-800",
+                  event.status === 'sent' && "bg-green-100 text-green-800",
+                  event.status === 'failed' && "bg-red-100 text-red-800"
+                )}>
+                  {event.status}
+                </span>
+                </div>
+              </div>
+              
+              {/* Desktop view */}
+              <div className="hidden md:block md:col-span-3">
+                <div className="font-medium truncate">{event.title}</div>
+                {event.description && (
+                  <div className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                    {event.description}
+                  </div>
+                )}
+              </div>
+              
+              <div className="hidden md:block md:col-span-2">
+                <span className={cn(
+                  "px-2 py-1 rounded-full text-xs font-medium",
+                  isValidContentType(event.type) ? eventTypeColorMap[event.type].bg : "bg-gray-100",
+                  isValidContentType(event.type) ? eventTypeColorMap[event.type].text : "text-gray-700"
+                )}>
+                  {event.type}
+                </span>
+              </div>
+              
+              {/* Continue with other columns for desktop */}
+            </div>
+          ))}
+
+          {sortedEvents.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              No events found
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // View render functions
+  const renderMonthView = (
+    currentDate: Date,
+    daysInMonth: Date[],
+    getEventsForDay: (day: Date) => CalendarEvent[],
+    handleEventClick: (event: CalendarEvent) => void,
+    handleDateClick: (day: Date) => void,
+    userTimezone: string
+  ) => {
+    return (
+      <div className="p-4">
         {/* Day headers */}
         <div className="grid grid-cols-7 gap-1 mb-2">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
             <div key={day} className="text-center font-medium py-1 text-muted-foreground">
-              {day}
+              <span className="hidden sm:inline">{day}</span>
+              <span className="sm:hidden">{day.charAt(0)}</span>
             </div>
           ))}
         </div>
 
-        {/* Calendar grid */}
-        <div className="grid grid-cols-7 gap-1 auto-rows-fr" style={{ minHeight: "600px" }}>
+        {/* Calendar grid - use min-height with aspect ratio */}
+        <div className="grid grid-cols-7 gap-1 auto-rows-fr" style={{ minHeight: "calc(50vh)" }}>
           {daysInMonth.map((day) => {
             const dayEvents = getEventsForDay(day);
             const isCurrentMonth = isSameMonth(day, currentDate);
@@ -1521,9 +1265,8 @@ export function ContentCalendar({
             return (
               <div
                 key={formatInTimeZone(day, userTimezone, "yyyy-MM-dd")}
-                id={formatInTimeZone(day, userTimezone, "yyyy-MM-dd")}
                 className={cn(
-                  "relative group",
+                  "relative group h-full",
                   !isCurrentMonth && "opacity-50"
                 )}
               >
@@ -1532,28 +1275,8 @@ export function ContentCalendar({
                   events={dayEvents}
                   isCurrentMonth={isCurrentMonth}
                   onEventClick={handleEventClick}
-                  onClick={() => {
-                    const selectedDate = formatInTimeZone(day, userTimezone, "yyyy-MM-dd");
-                    setNewEvent(prev => ({ ...prev, start: day }));
-                    setIsCreateDialogOpen(true);
-                    setSelectedEvent({
-                      id: crypto.randomUUID(),
-                      title: "",
-                      description: "",
-                      type: "email",
-                      status: "draft",
-                      date: selectedDate,
-                      time: "",
-                      socialMediaContent: {
-                        platforms: [],
-                        crossPost: false,
-                        mediaUrls: [],
-                        platformSpecificContent: {}
-                      },
-                      organizationId: "",
-                      createdBy: ""
-                    });
-                  }}
+                  onClick={() => handleDateClick(day)}
+                  userTimezone={userTimezone}
                 />
               </div>
             );
@@ -1563,30 +1286,145 @@ export function ContentCalendar({
     );
   };
 
-  // Render loading state
-  if (loading) {
+  const renderWeekView = (
+    currentDate: Date,
+    getEventsForDay: (day: Date) => CalendarEvent[],
+    handleEventClick: (event: CalendarEvent) => void,
+    userTimezone: string
+  ) => {
+    const weekStart = startOfWeek(currentDate);
+    const weekEnd = endOfWeek(currentDate);
+    const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
+    const hours = Array.from({ length: HOURS_TO_SHOW }, (_, i) => i + START_HOUR);
+
     return (
-      <div className="p-8 text-center rounded-lg border border-border bg-card">
-        <div className="animate-spin w-8 h-8 border-4 border-[var(--color-chart-blue)] border-t-transparent rounded-full mx-auto mb-4" />
-        <p className="text-lg text-muted-foreground">Loading your content calendar...</p>
+      <div className="mt-4 border rounded-md overflow-hidden">
+        <div className="grid grid-cols-8 divide-x divide-border">
+          {/* Time column */}
+          <div className="text-center">
+            <div className="h-12 border-b bg-muted/50">
+              <span className="sr-only">Time</span>
+            </div>
+            {hours.map((hour) => (
+              <div key={hour} className="h-20 border-b p-1 text-xs text-muted-foreground">
+                {formatInTimeZone(setHours(currentDate, hour), userTimezone, "h:mm a")}
+              </div>
+            ))}
+          </div>
+          
+          {/* Days of the week */}
+          {days.map((day) => {
+            const dayEvents = getEventsForDay(day);
+            const isToday = isSameDay(day, toZonedTime(new Date(), userTimezone));
+            
+            return (
+              <div key={day.toISOString()} className="relative">
+                {/* Day header */}
+                <div className={cn(
+                  "h-12 border-b p-2 text-center",
+                  isToday && "bg-primary/5"
+                )}>
+                  <div className="font-medium">{formatInTimeZone(day, userTimezone, "EEE")}</div>
+                  <div className={cn(
+                    "text-sm",
+                    isToday ? "text-primary font-bold" : "text-muted-foreground"
+                  )}>
+                    {formatInTimeZone(day, userTimezone, "MMM d")}
+                  </div>
+                </div>
+                
+                {/* Hour cells with droppable areas */}
+                <div className="relative">
+                  {hours.map((hour) => (
+                    <TimeSlot
+                      key={hour}
+                      hour={hour}
+                      date={formatInTimeZone(day, userTimezone, 'yyyy-MM-dd')}
+                      userTimezone={userTimezone}
+                    />
+                  ))}
+                </div>
+                
+                {/* Positioned events */}
+                <div className="absolute top-12 left-0 right-0 bottom-0 pointer-events-none">
+                  {dayEvents.map((event) => {
+                    if (!event.time) return null;
+                    
+                    const [hours, minutes] = event.time.split(':').map(Number);
+                    if (isNaN(hours) || isNaN(minutes) || hours < START_HOUR || hours >= START_HOUR + HOURS_TO_SHOW) {
+                      return null;
+                    }
+
+                    const topPosition = ((hours - START_HOUR) * 60 + minutes) * (TIME_SLOT_HEIGHT / 60);
+                    const duration = event.duration || DEFAULT_DURATIONS[event.type] || 60;
+                    const height = (duration / 60) * TIME_SLOT_HEIGHT;
+                    
+                    return (
+                      <div
+                        key={event.id}
+                        className={cn(
+                          "absolute left-1 right-1 p-2 rounded text-xs pointer-events-auto cursor-pointer hover:opacity-80 transition-opacity",
+                          isValidContentType(event.type) ? eventTypeColorMap[event.type].bg : "bg-gray-100 dark:bg-gray-700/30",
+                          isValidContentType(event.type) ? eventTypeColorMap[event.type].text : "text-foreground",
+                          "shadow-sm"
+                        )}
+                        style={{
+                          top: `${topPosition}px`,
+                          height: `${height}px`,
+                          zIndex: 1
+                        }}
+                        onClick={() => handleEventClick(event)}
+                      >
+                        <div className="font-medium truncate">{event.title}</div>
+                        <div className="text-muted-foreground text-[10px]">
+                          {event.time.substring(0, 5)}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
-  }
+  };
 
-  // Render error state
-  if (error) {
+  const renderDayView = (
+    currentDate: Date,
+    getEventsForDay: (day: Date) => CalendarEvent[],
+    handleEventClick: (event: CalendarEvent) => void,
+    userTimezone: string
+  ) => {
+    const date = currentDate;
+    const eventsByHour = groupEventsByHour(getEventsForDay(date));
+
     return (
-      <div className="p-8 text-center rounded-lg border border-destructive bg-destructive/10">
-        <p className="text-lg font-medium text-destructive mb-2">❌ Failed to load calendar</p>
-        <p className="text-muted-foreground">{error}</p>
-        <Button onClick={loadEvents} variant="outline" className="mt-4">
-          Try Again
-        </Button>
+      <div className="flex flex-col border rounded-md overflow-hidden">
+        {/* Timeline header */}
+        <div className="grid grid-cols-2 border-b bg-muted/50">
+          <div className="p-2 font-medium">Time</div>
+          <div className="p-2 font-medium">Events</div>
+        </div>
+
+        {/* Timeline content */}
+        <div className="flex flex-col divide-y overflow-y-auto max-h-[600px]">
+          {DAY_VIEW_HOURS.map((hour) => (
+            <DayViewTimeSlot
+              key={hour}
+              hour={hour}
+              date={date}
+              events={eventsByHour[hour] || []}
+              onEventClick={handleEventClick}
+              userTimezone={userTimezone}
+            />
+          ))}
+        </div>
       </div>
     );
-  }
+  };
 
-  // Update the calendar view rendering in the main component's return statement
   return (
     <div className="space-y-4 border rounded-xl p-4 bg-card shadow-sm">
       {/* Calendar Header with Actions */}
@@ -1597,7 +1435,7 @@ export function ContentCalendar({
           </h1>
           <div className="h-6 w-px bg-border" />
           <Tabs 
-            defaultValue="month"
+            defaultValue={calendarView}
             value={calendarView} 
             onValueChange={(value) => {
               const newView = value as CalendarView;
@@ -1606,14 +1444,14 @@ export function ContentCalendar({
             }}
             className="w-[280px]"
           >
-            <TabsList className="grid w-full grid-cols-4 bg-muted p-1">
-              {tabs.map((tab) => (
+            <TabsList className="grid w-full grid-cols-4 bg-muted/50 p-1">
+              {['month', 'week', 'day', 'list'].map((tab) => (
                 <TabsTrigger
-                  key={tab.value}
-                  value={tab.value}
+                  key={tab}
+                  value={tab}
                   className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm cursor-pointer transition-all duration-200"
                 >
-                  {tab.label}
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
                 </TabsTrigger>
               ))}
             </TabsList>
@@ -1621,27 +1459,37 @@ export function ContentCalendar({
         </div>
         <div className="flex items-center gap-2">
           <Button 
-            variant="outline"
-            onClick={() => setShowSync(true)}
-            className="h-9 hover:bg-muted/80 transition-colors"
-          >
-            <Upload className="h-4 w-4 mr-2" /> Sync Content
-          </Button>
-          <Button 
-            variant="outline"
-            onClick={() => setShowSettings(true)}
-            className="h-9 hover:bg-muted/80 transition-colors"
-          >
-            <SettingsIcon className="h-4 w-4 mr-2" /> Settings
-          </Button>
-          <Button 
             onClick={() => {
               setNewEvent(prev => ({ ...prev, start: currentDate }));
               setIsCreateDialogOpen(true);
             }}
-            className="h-9 bg-[var(--color-chart-blue)] hover:bg-[var(--color-chart-blue)]/90 text-white transition-colors"
+            className="h-9"
           >
             <Plus className="h-4 w-4 mr-2" /> Add Event
+          </Button>
+          <Button
+            variant="outline"
+            onClick={async () => {
+              try {
+                setLoading(true);
+                await fetchCalendarEventsDirectly();
+                toast({
+                  title: "Debug",
+                  description: `Attempted direct data fetch. Check console for details.`,
+                });
+              } catch (err) {
+                toast({
+                  title: "Debug Error",
+                  description: err instanceof Error ? err.message : "Error during debug fetch",
+                  variant: "destructive",
+                });
+              } finally {
+                setLoading(false);
+              }
+            }}
+            className="h-9"
+          >
+            <Bug className="h-4 w-4 mr-2" /> Debug
           </Button>
         </div>
       </div>
@@ -1654,7 +1502,7 @@ export function ContentCalendar({
               type="search"
               placeholder="Search events..."
               value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9 h-9 bg-background transition-colors"
             />
             <Search className="h-4 w-4 absolute left-3 top-2.5 text-muted-foreground" />
@@ -1713,9 +1561,17 @@ export function ContentCalendar({
             Today
           </Button>
           <div className="text-sm font-medium text-muted-foreground">
-            {formatDate(currentDate, "MMMM yyyy")}
+            {formatInTimeZone(currentDate, userTimezone, "MMMM yyyy")}
           </div>
         </div>
+      </div>
+
+      <div className="flex items-center gap-2 mb-4">
+        <Switch
+          checked={useMockData}
+          onCheckedChange={setUseMockData}
+        />
+        <Label>Use mock data</Label>
       </div>
 
       <DndContext
@@ -1727,25 +1583,52 @@ export function ContentCalendar({
       >
         {/* Calendar Views */}
         <div className="bg-background rounded-lg border">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center h-[50vh] p-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mb-4"></div>
+              <p className="text-muted-foreground">Loading calendar events...</p>
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center h-[50vh] p-8">
+              <div className="text-destructive text-center mb-4">
+                <X className="h-8 w-8 mx-auto mb-2" />
+                <p className="font-medium">Database connection error</p>
+              </div>
+              <p className="text-muted-foreground text-center">
+                Unable to connect to the database. Your Neon database has reached its compute allowance limit.
+              </p>
+              <div className="mt-4 flex gap-4">
+                <Button variant="outline" onClick={() => fetchEvents && fetchEvents()}>
+                  <RefreshCw className="h-4 w-4 mr-2" /> Retry
+                </Button>
+                <Button variant="default" onClick={() => window.open('https://console.neon.tech', '_blank')}>
+                  Upgrade Neon Plan
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <>
           {calendarView === "month" && (
             <div className="p-4">
-              {renderMonthView()}
+              {renderMonthView(currentDate, daysInMonth, getEventsForDay, handleEventClick, handleDateClick, userTimezone)}
             </div>
           )}
           {calendarView === "week" && (
             <div className="p-4">
-              {renderWeekView()}
+              {renderWeekView(currentDate, getEventsForDay, handleEventClick, userTimezone)}
             </div>
           )}
           {calendarView === "day" && (
             <div className="p-4">
-              {renderDayView()}
+              {renderDayView(currentDate, getEventsForDay, handleEventClick, userTimezone)}
             </div>
           )}
           {calendarView === "list" && (
             <div className="p-4">
-              <ListView events={filteredEvents} onEventClick={handleEventClick} />
+                  <ListView events={filteredEvents} onEventClick={handleEventClick} />
             </div>
+              )}
+            </>
           )}
         </div>
 
@@ -1754,8 +1637,8 @@ export function ContentCalendar({
             <div
               className={cn(
                 "text-xs p-2 rounded-md truncate flex items-center gap-2 shadow-lg border",
-                eventTypeColorMap[activeDragEvent.type]?.bg || "bg-gray-100 dark:bg-gray-700/30",
-                eventTypeColorMap[activeDragEvent.type]?.text || "text-foreground",
+                isValidContentType(activeDragEvent.type) ? eventTypeColorMap[activeDragEvent.type].bg : "bg-gray-100",
+                isValidContentType(activeDragEvent.type) ? eventTypeColorMap[activeDragEvent.type].text : "text-foreground",
                 "transform scale-105 transition-transform"
               )}
             >
@@ -1770,84 +1653,178 @@ export function ContentCalendar({
         </DragOverlay>
       </DndContext>
 
-      {/* Sync Dialog */}
-      <Dialog open={showSync} onOpenChange={setShowSync}>
-        <DialogContent className="max-w-md">
+      {/* Dialogs */}
+      {/* Create Event Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Content Calendar Sync</DialogTitle>
+            <DialogTitle>Create New Event</DialogTitle>
             <DialogDescription>
-              Sync your existing content to the calendar to see all your created content on the calendar view.
+              Add a new event to your content calendar.
             </DialogDescription>
           </DialogHeader>
-          <ContentCalendarSync onSyncComplete={() => setShowSync(false)} />
+          <EventForm
+            mode="create"
+            initialData={{
+              date: format(newEvent.start, "yyyy-MM-dd"),
+              time: format(newEvent.start, "HH:mm"),
+              status: "draft",
+              type: "email"
+            }}
+            onSubmit={async (event) => {
+              if (onEventCreate) {
+                try {
+                  const created = await onEventCreate(event);
+                  setEvents(prev => [...prev, created]);
+                  setIsCreateDialogOpen(false);
+                  toast({
+                    title: "Success",
+                    description: "Event created successfully",
+                  });
+                } catch (error) {
+                  toast({
+                    title: "Error",
+                    description: error instanceof Error ? error.message : "Failed to create event",
+                    variant: "destructive",
+                  });
+                }
+              }
+            }}
+            onCancel={() => setIsCreateDialogOpen(false)}
+          />
         </DialogContent>
       </Dialog>
 
-      {/* Settings Dialog */}
-      <Dialog open={showSettings} onOpenChange={setShowSettings}>
-        <DialogContent>
+      {/* Edit Event Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Calendar Settings</DialogTitle>
+            <DialogTitle>Edit Event</DialogTitle>
             <DialogDescription>
-              Configure your calendar preferences
+              Make changes to your event details.
             </DialogDescription>
           </DialogHeader>
-          <Settings />
+          {selectedEvent && (
+            <EventForm
+              mode="edit"
+              initialData={selectedEvent}
+              onSubmit={async (event) => {
+                if (onEventUpdate) {
+                  try {
+                    const updated = await onEventUpdate(event);
+                    setEvents(prev => prev.map(e => e.id === updated.id ? updated : e));
+                    setIsEditDialogOpen(false);
+                    toast({
+                      title: "Success",
+                      description: "Event updated successfully",
+                    });
+                  } catch (error) {
+                    toast({
+                      title: "Error",
+                      description: error instanceof Error ? error.message : "Failed to update event",
+                      variant: "destructive",
+                    });
+                  }
+                }
+              }}
+              onCancel={() => setIsEditDialogOpen(false)}
+            />
+          )}
         </DialogContent>
       </Dialog>
 
-      {/* Add these styles to the component's return statement, just before the closing div */}
-      <style jsx global>{`
-        .dragging {
-          opacity: 0.5;
-          cursor: grabbing;
-          transform: scale(1.02);
-          transition: all 0.2s ease;
-        }
-        
-        .drop-target {
-          background-color: var(--color-primary-100);
-          border: 2px dashed var(--color-primary-500);
-          transition: all 0.2s ease;
-        }
+      {/* Event Details Dialog */}
+      <Dialog open={showEventDetails} onOpenChange={setShowEventDetails}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Event Details</DialogTitle>
+          </DialogHeader>
+          {selectedEvent && (
+            <EventDetails
+              event={selectedEvent}
+              onEdit={() => {
+                setShowEventDetails(false);
+                setIsEditDialogOpen(true);
+              }}
+              onDelete={() => {
+                setShowEventDetails(false);
+                setEventToDelete(selectedEvent);
+                setShowDeleteConfirm(true);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
-        /* Consistent button styles */
-        button {
-          transition: all 0.2s ease;
-        }
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the event
+              "{eventToDelete?.title}" from your calendar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowDeleteConfirm(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={async () => {
+                if (eventToDelete && onEventDelete) {
+                  try {
+                    await onEventDelete(eventToDelete.id);
+                    setEvents(prev => prev.filter(e => e.id !== eventToDelete.id));
+                    setShowDeleteConfirm(false);
+                    setEventToDelete(null);
+                    toast({
+                      title: "Success",
+                      description: "Event deleted successfully",
+                    });
+                  } catch (error) {
+                    toast({
+                      title: "Error",
+                      description: error instanceof Error ? error.message : "Failed to delete event",
+                      variant: "destructive",
+                    });
+                  }
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-        /* Consistent hover states */
-        .hover-card:hover {
-          background-color: var(--color-muted);
-          transition: background-color 0.2s ease;
-        }
-
-        /* Make calendar cells clickable */
-        .calendar-cell {
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .calendar-cell:hover {
-          background-color: var(--color-muted);
-          transform: translateY(-1px);
-        }
-
-        /* Event hover effects */
-        .event-item {
-          transition: all 0.2s ease;
-        }
-
-        .event-item:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Smooth transitions for all interactive elements */
-        * {
-          transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
-        }
-      `}</style>
+      {/* Unsaved Changes Dialog */}
+      <AlertDialog open={showUnsavedChangesDialog} onOpenChange={setShowUnsavedChangesDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes. Are you sure you want to discard them?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>
+              Continue Editing
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                setPendingDialogClose(false);
+                if (isCreateDialogOpen) setIsCreateDialogOpen(false);
+                if (isEditDialogOpen) setIsEditDialogOpen(false);
+                setShowUnsavedChangesDialog(false);
+              }}
+            >
+              Discard Changes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
