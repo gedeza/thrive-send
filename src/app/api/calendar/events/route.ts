@@ -8,6 +8,8 @@ import {
   EventRescheduleSchema,
   AnalyticsQuerySchema 
 } from "../validation";
+import { getMockCalendarEvents } from "@/lib/mock/calendar-service";
+import { PrismaClientInitializationError, PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 export const dynamic = 'force-dynamic'; // Force dynamic evaluation, prevent caching
 
@@ -29,6 +31,17 @@ function handleValidationError(error: any) {
   return new NextResponse("Internal Error", { status: 500 });
 }
 
+// Helper function to convert calendar event for JSON response
+function prepareEventForResponse(event: any) {
+  return {
+    ...event,
+    startTime: event.startTime.toISOString(),
+    endTime: event.endTime.toISOString(),
+    createdAt: event.createdAt.toISOString(),
+    updatedAt: event.updatedAt.toISOString(),
+  };
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { userId } = getAuth(req);
@@ -37,29 +50,13 @@ export async function GET(req: NextRequest) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // Get the user and their organization membership
-    const user = await db.user.findUnique({
-      where: { clerkId: userId },
-      include: { organizationMemberships: true },
-    });
-
-    if (!user) {
-      return new NextResponse("User not found", { status: 404 });
-    }
-
-    if (user.organizationMemberships.length === 0) {
-      return new NextResponse("User is not a member of any organization", { status: 403 });
-    }
-
-    // Use the first organization membership
-    const organizationId = user.organizationMemberships[0].organizationId;
-
     // Parse and validate query parameters
     const { searchParams } = new URL(req.url);
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     const type = searchParams.get('type');
     const status = searchParams.get('status');
+    const useMockData = searchParams.get('useMockData') === 'true';
 
     if (startDate && endDate) {
       try {
@@ -69,52 +66,121 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const events = await db.calendarEvent.findMany({
-      where: {
-        organizationId,
-        ...(startDate && endDate ? {
-          startTime: {
-            gte: new Date(startDate),
-            lte: new Date(endDate),
-          }
-        } : {}),
-        ...(type ? { type } : {}),
-        ...(status ? { status } : {}),
-      },
-      orderBy: {
-        startTime: "asc",
-      },
-    });
-
-    console.log(`[CALENDAR_EVENTS_GET] Found ${events.length} events for organizationId: ${organizationId}`);
-    if (events.length === 0) {
-      console.log("[CALENDAR_EVENTS_GET] No events found, showing all events regardless of date range");
-      // If no events found with date filters, try getting all events for debugging
-      const allEvents = await db.calendarEvent.findMany({
-        where: { organizationId },
-        orderBy: { startTime: "asc" },
+    // If mock data is requested, return mock events
+    if (useMockData) {
+      console.log("[CALENDAR_EVENTS_GET] Using mock data");
+      const mockEvents = getMockCalendarEvents().map(event => ({
+        ...event,
+        startTime: new Date(event.startTime || event.date).toISOString(),
+        endTime: new Date(event.endTime || new Date(event.date).setHours(new Date(event.date).getHours() + 1)).toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }));
+      
+      return NextResponse.json({ events: mockEvents }, {
+        headers: {
+          'Cache-Control': 'no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
       });
-      console.log(`[CALENDAR_EVENTS_GET] Total events in database for this organization: ${allEvents.length}`);
     }
 
-    // Transform dates to ISO strings for JSON serialization
-    const transformedEvents = events.map(event => ({
-      ...event,
-      startTime: event.startTime.toISOString(),
-      endTime: event.endTime.toISOString(),
-      createdAt: event.createdAt.toISOString(),
-      updatedAt: event.updatedAt.toISOString(),
-    }));
+    try {
+      // Get the user and their organization membership
+      const user = await db.user.findUnique({
+        where: { clerkId: userId },
+        include: { organizationMemberships: true },
+      });
 
-    return NextResponse.json({ events: transformedEvents }, {
-      headers: {
-        'Cache-Control': 'no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
+      if (!user) {
+        return new NextResponse("User not found", { status: 404 });
       }
-    });
+
+      if (user.organizationMemberships.length === 0) {
+        return new NextResponse("User is not a member of any organization", { status: 403 });
+      }
+
+      // Use the first organization membership
+      const organizationId = user.organizationMemberships[0].organizationId;
+
+      const events = await db.calendarEvent.findMany({
+        where: {
+          organizationId,
+          ...(startDate && endDate ? {
+            startTime: {
+              gte: new Date(startDate),
+              lte: new Date(endDate),
+            }
+          } : {}),
+          ...(type ? { type } : {}),
+          ...(status ? { status } : {}),
+        },
+        orderBy: {
+          startTime: "asc",
+        },
+      });
+
+      console.log(`[CALENDAR_EVENTS_GET] Found ${events.length} events for organizationId: ${organizationId}`);
+      
+      // Transform dates to ISO strings for JSON serialization
+      const transformedEvents = events.map(prepareEventForResponse);
+
+      return NextResponse.json({ events: transformedEvents }, {
+        headers: {
+          'Cache-Control': 'no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+    } catch (error) {
+      console.error("[CALENDAR_EVENTS_GET] Database error:", error);
+      
+      // If database error, return mock data with error status
+      const mockEvents = getMockCalendarEvents().map(event => ({
+        ...event,
+        startTime: new Date(event.startTime || event.date).toISOString(),
+        endTime: new Date(event.endTime || new Date(event.date).setHours(new Date(event.date).getHours() + 1)).toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }));
+      
+      return NextResponse.json({ 
+        events: mockEvents,
+        error: "Database connection issue, using mock data",
+        databaseAvailable: false
+      }, {
+        status: 200,
+        headers: {
+          'Cache-Control': 'no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+    }
   } catch (error) {
     console.error("[CALENDAR_EVENTS_GET]", error);
+    
+    if (error instanceof PrismaClientInitializationError || 
+        error instanceof PrismaClientKnownRequestError) {
+      // Database connection issues
+      const mockEvents = getMockCalendarEvents().map(event => ({
+        ...event,
+        startTime: new Date(event.startTime || event.date).toISOString(),
+        endTime: new Date(event.endTime || new Date(event.date).setHours(new Date(event.date).getHours() + 1)).toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }));
+      
+      return NextResponse.json({ 
+        events: mockEvents,
+        error: "Database connection issue, using mock data",
+        databaseAvailable: false
+      }, {
+        status: 200
+      });
+    }
+    
     return new NextResponse("Internal Error", { status: 500 });
   }
 }
