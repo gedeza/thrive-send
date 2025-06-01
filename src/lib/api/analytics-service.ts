@@ -1,7 +1,10 @@
+'use client';
+
 import type { AnalyticsTimeframe } from '@/types';
 import { DateRange } from 'react-day-picker';
 import { AnalyticMetric, AnalyticsFilter } from '@/components/analytics/analytics-dashboard';
 import { useAuth } from '@clerk/nextjs';
+import { useState } from 'react';
 
 export type AnalyticsDateRange = {
   start: string;
@@ -47,10 +50,38 @@ export interface CampaignMetrics {
 }
 
 export interface AudienceSegment {
-  id: string;
-  name: string;
-  size: number;
-  metrics: AnalyticMetric[];
+  demographics: {
+    ageRange: string;
+    region: string;
+    segment: string;
+    gender?: string;
+    language?: string;
+    interests: string[];
+  };
+  behavioral: {
+    timeSlot: string;
+    device: string;
+    contentType: string;
+    opens: number;
+    clicks: number;
+    conversions: number;
+    bounceRate: number;
+    timeOnSite: number;
+  };
+  engagement: {
+    score: number;
+    metrics: {
+      total: number;
+      percentage: number;
+    }[];
+    trends: {
+      date: string;
+      value: number;
+    }[];
+  };
+  totalAudienceSize: number;
+  averageEngagementScore: number;
+  mostActiveSegment: string;
 }
 
 export interface ABTestResult {
@@ -105,6 +136,26 @@ export interface AnalyticsEvent {
   userId?: string;
   organizationId?: string;
   metadata: Record<string, any>;
+}
+
+export interface CampaignPerformanceMetrics {
+  metrics: {
+    title: string;
+    value: number | string;
+    percentChange: number;
+  }[];
+  timeSeriesData: {
+    datasets: {
+      data: {
+        date: string;
+        value: number;
+        engagement?: number;
+        conversionRate?: number;
+        roi?: number;
+        channel?: string;
+      }[];
+    }[];
+  };
 }
 
 // Analytics service class
@@ -181,6 +232,8 @@ export const trackAnalyticsEvent = async (
 export function useAnalytics() {
   const { getToken } = useAuth();
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const getAuthHeaders = async () => {
     const token = await getToken();
@@ -221,43 +274,72 @@ export function useAnalytics() {
 
   // Campaign Filtering
   const getCampaignMetrics = async (
-    campaignId?: string,
-    dateRange?: AnalyticsDateRange
-  ): Promise<CampaignMetrics[]> => {
-    const headers = await getAuthHeaders();
-    const params = new URLSearchParams();
-    if (campaignId) params.append('campaignId', campaignId);
-    if (dateRange) {
-      params.append('start', dateRange.start);
-      params.append('end', dateRange.end);
+    campaignId: string,
+    dateRange: AnalyticsDateRange
+  ): Promise<CampaignPerformanceMetrics[]> => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(
+        `${baseUrl}/analytics/campaign-performance?campaignId=${campaignId}&start=${dateRange.start}&end=${dateRange.end}`,
+        { headers }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch campaign metrics');
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Error fetching campaign metrics:', error);
+      return [];
     }
-    
-    const response = await fetch(`${baseUrl}/analytics/campaigns?${params}`, { headers });
-    return response.json();
   };
 
   // Audience Segmentation
-  const getAudienceSegments = async (
-    dateRange: AnalyticsDateRange
-  ): Promise<AudienceSegment[]> => {
-    const headers = await getAuthHeaders();
-    const response = await fetch(
-      `${baseUrl}/analytics/audience-segments?start=${dateRange.start}&end=${dateRange.end}`,
-      { headers }
-    );
-    return response.json();
+  const getAudienceSegments = async (campaignId: string, dateRange: { start: Date; end: Date }): Promise<AudienceSegment> => {
+    try {
+      const response = await fetch('/api/analytics/audience-segments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          campaignId,
+          dateRange,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch audience segments');
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Error fetching audience segments:', error);
+      throw error;
+    }
   };
 
   // A/B Testing
-  const getABTestResults = async (
-    testId?: string
-  ): Promise<ABTestResult[]> => {
-    const headers = await getAuthHeaders();
-    const params = new URLSearchParams();
-    if (testId) params.append('testId', testId);
+  const getABTestResults = async (testId: string) => {
+    setIsLoading(true);
+    setError(null);
     
-    const response = await fetch(`${baseUrl}/analytics/ab-tests?${params}`, { headers });
-    return response.json();
+    try {
+      // In a real implementation, you would fetch from an API endpoint
+      // For now, return mock data
+      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
+      
+      // Generate mock A/B test results
+      const mockResults = generateMockABTestResults(testId);
+      return mockResults;
+    } catch (err) {
+      console.error('Error fetching A/B test results:', err);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Conversion Tracking
@@ -420,7 +502,66 @@ export function useAnalytics() {
   }
   };
 
+  const getCampaignPerformance = async (campaignId: string, startDate: Date, endDate: Date) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const url = `/api/analytics/campaign-performance?campaignId=${campaignId}&start=${startDate.toISOString()}&end=${endDate.toISOString()}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch campaign performance: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (err) {
+      console.error('Error fetching campaign performance:', err);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getAudienceInsights = async (campaignId: string, dateRange: { start: Date, end: Date }) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch('/api/analytics/audience-segments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          campaignId,
+          dateRange: {
+            start: dateRange.start.toISOString(),
+            end: dateRange.end.toISOString(),
+          },
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch audience insights: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (err) {
+      console.error('Error fetching audience insights:', err);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
+    isLoading,
+    error,
     getTimeSeriesData,
     getComparisonData,
     getCampaignMetrics,
@@ -433,6 +574,8 @@ export function useAnalytics() {
     fetchAudienceGrowthData,
     fetchEngagementBreakdownData,
     fetchPerformanceTrendData,
+    getCampaignPerformance,
+    getAudienceInsights,
   };
 }
 
@@ -477,3 +620,87 @@ const performanceLineMockData = {
     },
   ],
 };
+
+function generateMockABTestResults(testId: string) {
+  // Create mock metrics for variants A and B
+  const variantA = {
+    metrics: [
+      { name: 'Open Rate', value: '24.8%' },
+      { name: 'Click Rate', value: '4.2%' },
+      { name: 'Conversion Rate', value: '1.8%' },
+      { name: 'Revenue', value: '$3,245' },
+    ],
+  };
+  
+  const variantB = {
+    metrics: [
+      { name: 'Open Rate', value: '28.3%' },
+      { name: 'Click Rate', value: '5.7%' },
+      { name: 'Conversion Rate', value: '2.3%' },
+      { name: 'Revenue', value: '$4,120' },
+    ],
+  };
+  
+  // Determine winner
+  const winner = Math.random() > 0.3 ? 'B' : (Math.random() > 0.5 ? 'A' : 'none');
+  
+  // Generate time series data for 30 days
+  const timeSeriesData = [];
+  const startDate = new Date('2023-11-01');
+  
+  for (let i = 0; i < 30; i++) {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + i);
+    
+    // Generate random metrics with variant B performing slightly better
+    const variantA_base = 0.2 + (Math.random() * 0.1);
+    const variantB_base = 0.23 + (Math.random() * 0.12);
+    
+    timeSeriesData.push({
+      date: date.toISOString().split('T')[0],
+      variantA_open_rate: (variantA_base + Math.random() * 0.05).toFixed(3),
+      variantB_open_rate: (variantB_base + Math.random() * 0.05).toFixed(3),
+      variantA_click_rate: (variantA_base * 0.2 + Math.random() * 0.02).toFixed(3),
+      variantB_click_rate: (variantB_base * 0.22 + Math.random() * 0.02).toFixed(3),
+      variantA_conversion_rate: (variantA_base * 0.1 + Math.random() * 0.01).toFixed(3),
+      variantB_conversion_rate: (variantB_base * 0.11 + Math.random() * 0.01).toFixed(3),
+    });
+  }
+  
+  // Create a timeline of test events
+  const timeline = [
+    {
+      date: '2023-11-01',
+      title: 'Test Started',
+      description: 'A/B test initiated with equal traffic distribution.'
+    },
+    {
+      date: '2023-11-10',
+      title: 'First Significant Results',
+      description: 'Initial data indicates Variant B is performing better for open rates.'
+    },
+    {
+      date: '2023-11-20',
+      title: 'Traffic Adjustment',
+      description: 'Increased traffic to Variant B to 65% based on performance.'
+    },
+    {
+      date: '2023-11-30',
+      title: 'Test Concluded',
+      description: winner === 'none' 
+        ? 'No clear winner determined. Further testing recommended.' 
+        : `Variant ${winner} declared winner with statistical significance.`
+    },
+  ];
+  
+  return {
+    testId,
+    variantA,
+    variantB,
+    winner,
+    confidence: winner === 'none' ? 85 : 95,
+    sampleSize: 12500,
+    timeSeriesData,
+    timeline,
+  };
+}

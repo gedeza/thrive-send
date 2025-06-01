@@ -5,7 +5,8 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BarChart2, Mail, Smartphone, Globe2, PauseCircle, Archive, RefreshCcw, AlertCircle } from "lucide-react";
+import { BarChart2, Mail, Smartphone, Globe2, PauseCircle, Archive, RefreshCcw, AlertCircle, Edit, Eye } from "lucide-react";
+import DeleteCampaign from '@/components/Campaign/DeleteCampaign';
 
 // Campaign type definition
 type CampaignStatus = "Scheduled" | "Sent" | "Draft" | "Paused" | "Archived";
@@ -51,13 +52,13 @@ function prettyDate(d: string | null) {
 }
 
 // Helper function to map status to badge variant
-function getStatusVariant(status: CampaignStatus): "primary" | "secondary" | "tertiary" | "muted" | "success" | "error" {
-  const statusMap: Record<CampaignStatus, "primary" | "secondary" | "tertiary" | "muted" | "success" | "error"> = {
-    'Draft': 'muted',
+function getStatusVariant(status: CampaignStatus): "default" | "secondary" | "destructive" | "outline" {
+  const statusMap: Record<CampaignStatus, "default" | "secondary" | "destructive" | "outline"> = {
+    'Draft': 'outline',
     'Scheduled': 'secondary',
-    'Sent': 'success',
-    'Paused': 'tertiary',
-    'Archived': 'muted'
+    'Sent': 'default',
+    'Paused': 'outline',
+    'Archived': 'outline'
   };
   return statusMap[status];
 }
@@ -300,17 +301,23 @@ export default function CampaignsPage() {
                   {/* Sent Date */}
                   <div className="col-span-2">{prettyDate(campaign.sentDate)}</div>
                   {/* Analytics Link */}
-                  <div className="col-span-1">
+                  <div className="col-span-1 flex items-center space-x-2">
                     {campaign.status !== "Draft" && (
-                      <Link href={`/campaigns/analytics/${campaign.id}`} className="inline-block text-blue-600 hover:underline text-xs">
-                        View
+                      <Link href={`/campaigns/analytics/${campaign.id}`} className="text-blue-600 hover:text-blue-800">
+                        <Eye className="h-4 w-4" />
                       </Link>
                     )}
                     {campaign.status === "Draft" && (
-                      <Link href={`/campaigns/edit/${campaign.id}`} className="inline-block text-yellow-800 hover:underline text-xs">
-                        Edit
+                      <Link href={`/campaigns/edit/${campaign.id}`} className="text-yellow-600 hover:text-yellow-800">
+                        <Edit className="h-4 w-4" />
                       </Link>
                     )}
+                    <DeleteCampaign 
+                      campaignId={campaign.id}
+                      campaignName={campaign.name}
+                      onDeleteSuccess={fetchCampaigns}
+                      buttonLabel=""
+                    />
                   </div>
                 </div>
               ))}

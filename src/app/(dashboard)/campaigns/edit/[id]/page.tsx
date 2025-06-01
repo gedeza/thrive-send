@@ -1,12 +1,104 @@
 "use client";
 
-import { useRouter, notFound } from "next/navigation";
-import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
+import { Box, CircularProgress } from '@mui/material';
+import Link from 'next/link';
+import { ChevronLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
+import EditCampaign from '@/components/Campaign/EditCampaign';
+import DeleteCampaign from '@/components/Campaign/DeleteCampaign';
 
-// This page previously used CampaignForm and campaigns.mock-data, which are now removed.
-// You should implement your own form or API integration here.
-
+// For now, let's implement a simple placeholder that doesn't return 404
 export default function CampaignEditPage({ params }: { params: { id: string } }) {
-  // Placeholder: always show notFound for now
-  return notFound();
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [campaign, setCampaign] = useState<any>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    async function fetchCampaign() {
+      try {
+        // Fetch campaign data
+        const response = await fetch(`/api/campaigns/${params.id}`);
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            toast({
+              title: "Campaign Not Found",
+              description: "The campaign you're trying to edit doesn't exist.",
+              variant: "destructive",
+            });
+            router.push('/campaigns');
+            return;
+          }
+          
+          toast({
+            title: "Error",
+            description: "Failed to load campaign data. Please try again later.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        const data = await response.json();
+        setCampaign(data);
+      } catch (error) {
+        console.error("Error fetching campaign:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load campaign data. Please try again later.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchCampaign();
+  }, [params.id, router, toast]);
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Breadcrumb */}
+      <div className="flex items-center justify-between mb-4">
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/campaigns">
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Back to Campaigns
+          </Link>
+        </Button>
+        
+        {campaign && (
+          <DeleteCampaign
+            campaignId={params.id}
+            campaignName={campaign.name}
+            buttonVariant="destructive"
+            buttonSize="sm"
+            onDeleteSuccess={() => router.push('/campaigns')}
+          />
+        )}
+      </div>
+      
+      {campaign ? (
+        <EditCampaign campaignId={params.id} initialData={campaign} />
+      ) : (
+        <div className="text-center p-8">
+          <p className="text-lg text-muted-foreground">Campaign not found or you don't have permission to edit it.</p>
+          <Button onClick={() => router.push('/campaigns')} className="mt-4">
+            Return to Campaigns
+          </Button>
+        </div>
+      )}
+    </div>
+  );
 }
