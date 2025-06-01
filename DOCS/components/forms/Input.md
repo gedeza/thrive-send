@@ -1,21 +1,40 @@
 # Input Component
 
 ## Overview
-The Input component provides a flexible and accessible text input field with support for various types, validation, and styling options. It follows ThriveSend's design system and includes comprehensive accessibility features.
+The Input component is a versatile form control that allows users to enter text, numbers, and other data types. It supports various input types, validation states, and accessibility features while maintaining consistent styling and behavior across the application.
 
 ## Screenshots
-![Input Variants](./images/forms/input-variants.png)
-*Different input variants and states*
+![Input Main View](../../images/components/forms/input-main-view.png)
+*Main view showing different input variants*
+
+![Input States](../../images/components/forms/input-states.png)
+*Different states: default, focus, error, and disabled*
+
+![Input Types](../../images/components/forms/input-types.png)
+*Available input types: text, number, email, password*
+
+![Input with Icons](../../images/components/forms/input-icons.png)
+*Inputs with icons and validation states*
 
 ## Component Architecture
 ```mermaid
 graph TD
     A[Input Component] --> B[Base Input]
-    B --> C[InputWrapper]
-    B --> D[InputLabel]
-    B --> E[InputError]
-    B --> F[InputHelper]
-    B --> G[InputIcon]
+    B --> C[Text Input]
+    B --> D[Number Input]
+    B --> E[Email Input]
+    B --> F[Password Input]
+    B --> G[Search Input]
+    
+    C --> H[State Management]
+    D --> H
+    E --> H
+    F --> H
+    G --> H
+    
+    H --> I[Validation]
+    H --> J[Accessibility]
+    H --> K[Styling]
 ```
 
 ## Data Flow
@@ -23,77 +42,97 @@ graph TD
 sequenceDiagram
     participant U as User
     participant I as Input
-    participant V as Validator
     participant S as State
+    participant V as Validator
+    participant H as Handler
     
     U->>I: Type/Change
-    I->>V: Validate
-    V->>S: Update State
+    I->>S: Update Value
+    S->>V: Validate
+    V->>H: Trigger Handler
+    H-->>S: Update State
     S-->>I: Update UI
     I-->>U: Visual Feedback
 ```
 
 ## Features
-- Multiple variants (default, outlined, filled)
-- Support for all HTML input types
-- Form validation integration
-- Error state handling
-- Helper text support
-- Icon integration
+- Multiple input types (text, number, email, password)
+- Validation states (error, success, warning)
+- Icon support (prefix and suffix)
+- Disabled state
+- Read-only state
 - Full accessibility support
 - TypeScript type safety
 - Performance optimized
+- Dark mode support
+- Custom theme support
+- RTL support
+- Focus management
+- Keyboard navigation
+- Form integration
+- Auto-complete support
+- Character counter
+- Clear button
+- Custom validation
 
 ## Props
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| type | string | 'text' | Input type (text, email, password, etc.) |
-| variant | 'default' \| 'outlined' \| 'filled' | 'default' | Input style variant |
-| label | string | undefined | Input label |
-| error | string | undefined | Error message |
-| helperText | string | undefined | Helper text |
-| icon | ReactNode | undefined | Input icon |
-| iconPosition | 'left' \| 'right' | 'left' | Icon position |
-| disabled | boolean | false | Disable input |
-| required | boolean | false | Mark as required |
-| className | string | undefined | Additional CSS classes |
-| value | string | undefined | Controlled value |
-| onChange | (value: string) => void | undefined | Change handler |
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| type | 'text' \| 'number' \| 'email' \| 'password' \| 'search' | No | 'text' | Input type |
+| value | string \| number | No | '' | Input value |
+| onChange | (value: string \| number) => void | No | undefined | Change handler |
+| placeholder | string | No | undefined | Placeholder text |
+| disabled | boolean | No | false | Disables the input |
+| readOnly | boolean | No | false | Makes input read-only |
+| error | string | No | undefined | Error message |
+| success | string | No | undefined | Success message |
+| warning | string | No | undefined | Warning message |
+| prefix | ReactNode | No | undefined | Prefix icon/element |
+| suffix | ReactNode | No | undefined | Suffix icon/element |
+| maxLength | number | No | undefined | Maximum length |
+| minLength | number | No | undefined | Minimum length |
+| required | boolean | No | false | Makes input required |
+| name | string | No | undefined | Input name |
+| id | string | No | undefined | Input ID |
+| className | string | No | undefined | Additional CSS classes |
+| ariaLabel | string | No | undefined | ARIA label |
+| testId | string | No | undefined | Test ID |
 
 ## Usage
-```typescript
+```tsx
 import { Input } from '@/components/forms/Input';
 
-// Basic input
+// Basic usage
 <Input
-  label="Email"
+  type="text"
+  placeholder="Enter your name"
+  ariaLabel="Name input"
+/>
+
+// With validation
+<Input
   type="email"
-  placeholder="Enter your email"
+  value={email}
+  onChange={handleEmailChange}
+  error={emailError}
+  ariaLabel="Email input"
 />
 
-// Input with validation
+// With icons
 <Input
-  label="Password"
-  type="password"
-  required
-  error={errors.password}
-  helperText="Must be at least 8 characters"
-/>
-
-// Input with icon
-<Input
-  label="Search"
-  icon={<SearchIcon />}
-  iconPosition="right"
+  type="search"
+  prefix={<SearchIcon />}
+  suffix={<ClearIcon />}
   placeholder="Search..."
+  ariaLabel="Search input"
 />
 
-// Controlled input
+// With character counter
 <Input
-  label="Username"
-  value={username}
-  onChange={setUsername}
-  variant="outlined"
+  type="text"
+  maxLength={100}
+  showCounter
+  ariaLabel="Description input"
 />
 ```
 
@@ -101,68 +140,85 @@ import { Input } from '@/components/forms/Input';
 ```mermaid
 graph LR
     A[User Action] --> B{Input State}
-    B -->|Focus| C[Show Label]
-    B -->|Type| D[Update Value]
+    B -->|Type| C[Update Value]
+    B -->|Focus| D[Focus State]
     B -->|Blur| E[Validate]
-    C --> F[Update UI]
-    D --> F
-    E --> F
+    B -->|Clear| F[Reset Value]
+    
+    C --> G[Validation]
+    D --> G
+    E --> G
+    F --> G
+    
+    G --> H[Visual Feedback]
 ```
 
 ## Components
-1. **Base Input**
-   - Manages input state
-   - Handles user interactions
-   - Implements accessibility features
 
-2. **InputWrapper**
-   - Manages input layout
-   - Handles styling
-   - Manages focus states
+### Base Input
+- Handles core input functionality
+- Manages state transitions
+- Implements accessibility features
+- Handles event propagation
+- Manages focus states
 
-3. **InputLabel**
-   - Displays input label
-   - Manages required state
-   - Handles animations
+### Text Input
+- Extends base input
+- Handles text validation
+- Manages character limits
+- Supports auto-complete
+- Handles copy/paste
 
-4. **InputError**
-   - Displays error messages
-   - Manages error states
-   - Handles animations
+### Number Input
+- Extends base input
+- Handles number validation
+- Manages min/max values
+- Supports step increments
+- Handles decimal places
 
-5. **InputHelper**
-   - Displays helper text
-   - Manages visibility
-   - Handles styling
-
-6. **InputIcon**
-   - Manages icon display
-   - Handles positioning
-   - Manages interactions
+### Password Input
+- Extends base input
+- Manages password visibility
+- Handles password strength
+- Supports show/hide toggle
+- Implements security features
 
 ## Data Models
 ```typescript
 interface InputProps {
-  type?: string;
-  variant?: 'default' | 'outlined' | 'filled';
-  label?: string;
-  error?: string;
-  helperText?: string;
-  icon?: ReactNode;
-  iconPosition?: 'left' | 'right';
+  type?: 'text' | 'number' | 'email' | 'password' | 'search';
+  value?: string | number;
+  onChange?: (value: string | number) => void;
+  placeholder?: string;
   disabled?: boolean;
+  readOnly?: boolean;
+  error?: string;
+  success?: string;
+  warning?: string;
+  prefix?: ReactNode;
+  suffix?: ReactNode;
+  maxLength?: number;
+  minLength?: number;
   required?: boolean;
+  name?: string;
+  id?: string;
   className?: string;
-  value?: string;
-  onChange?: (value: string) => void;
+  ariaLabel?: string;
+  testId?: string;
 }
 
 interface InputState {
-  value: string;
+  value: string | number;
   isFocused: boolean;
   isDirty: boolean;
   isValid: boolean;
-  error: string | null;
+  error?: string;
+}
+
+interface InputEvent {
+  type: 'change' | 'focus' | 'blur' | 'clear';
+  timestamp: number;
+  target: HTMLInputElement;
 }
 ```
 
@@ -172,199 +228,247 @@ interface InputState {
 - Implements consistent spacing
 - Supports dark mode
 - Maintains accessibility contrast ratios
-- Responsive design patterns
-- Smooth transitions
+- Uses CSS variables for theming
+- Implements responsive design
+- Supports custom animations
+- Uses CSS Grid for layout
+- Implements proper transitions
 
 ## Accessibility
-- ARIA labels and roles
-- Keyboard navigation
+- ARIA labels for screen readers
+- Keyboard navigation support
 - Focus management
 - Color contrast compliance
-- Screen reader support
-- Error announcements
-- Required field indicators
+- Error state announcements
+- RTL support
+- Screen reader announcements
+- Focus visible states
+- Proper role attributes
+- Keyboard event handling
+- Error message association
+- Required field indication
 
 ## Error Handling
-- Form validation integration
+- Input validation
+- Error state management
 - Error message display
-- Visual error states
-- Error boundary implementation
-- Disabled state management
-- Required field validation
+- Recovery strategies
+- User feedback
+- Form integration
+- Validation rules
+- Error boundaries
+- Error logging
+- Recovery options
 
 ## Performance Optimizations
-- Debounced change handlers
+- Debounced change handler
+- Memoized callbacks
 - Optimized re-renders
 - CSS-in-JS optimization
-- Transition optimizations
-- Event handler optimization
+- Event handling optimization
+- State batching
+- Code splitting
+- Bundle optimization
+- Memory management
+- Render optimization
 
 ## Dependencies
 - React
 - TypeScript
 - Tailwind CSS
 - React Icons (optional)
-- Form validation library (optional)
+- @testing-library/react
+- @testing-library/jest-dom
+- @testing-library/user-event
+- Form validation library
 
 ## Related Components
-- [Select](./Select.md)
-- [Checkbox](./Checkbox.md)
-- [Button](../ui/Button.md)
+- [Form](./Form.md)
+- [Label](./Label.md)
+- [Error](./Error.md)
+- [Icon](./Icon.md)
+- [Tooltip](./Tooltip.md)
 
 ## Examples
-### Form Integration
-```typescript
+
+### Basic Example
+```tsx
 import { Input } from '@/components/forms/Input';
-import { useForm } from 'react-hook-form';
 
-function LoginForm() {
-  const { register, handleSubmit, errors } = useForm();
-
-  return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <Input
-        label="Email"
-        type="email"
-        error={errors.email?.message}
-        {...register('email', {
-          required: 'Email is required',
-          pattern: {
-            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-            message: 'Invalid email address'
-          }
-        })}
-      />
-      <Input
-        label="Password"
-        type="password"
-        error={errors.password?.message}
-        {...register('password', {
-          required: 'Password is required',
-          minLength: {
-            value: 8,
-            message: 'Password must be at least 8 characters'
-          }
-        })}
-      />
-    </form>
-  );
-}
-```
-
-### Search Input
-```typescript
-import { Input } from '@/components/forms/Input';
-import { SearchIcon } from '@/components/icons';
-
-function SearchBar() {
-  const [searchTerm, setSearchTerm] = useState('');
-
+export function BasicExample() {
   return (
     <Input
-      label="Search"
-      value={searchTerm}
-      onChange={setSearchTerm}
-      icon={<SearchIcon />}
-      iconPosition="right"
-      placeholder="Search..."
-      className="w-full max-w-md"
+      type="text"
+      placeholder="Enter your name"
+      ariaLabel="Name input"
     />
   );
 }
 ```
 
-### Filter Input
-```typescript
+### Advanced Example
+```tsx
 import { Input } from '@/components/forms/Input';
-import { FilterIcon } from '@/components/icons';
+import { useCallback, useState } from 'react';
 
-function FilterInput() {
+export function AdvancedExample() {
+  const [value, setValue] = useState('');
+  const [error, setError] = useState('');
+  
+  const handleChange = useCallback((newValue: string) => {
+    setValue(newValue);
+    if (newValue.length < 3) {
+      setError('Name must be at least 3 characters');
+    } else {
+      setError('');
+    }
+  }, []);
+
   return (
     <Input
-      label="Filter"
-      icon={<FilterIcon />}
-      placeholder="Filter results..."
-      variant="outlined"
-      className="w-64"
+      type="text"
+      value={value}
+      onChange={handleChange}
+      error={error}
+      placeholder="Enter your name"
+      ariaLabel="Name input"
+      required
     />
   );
 }
 ```
 
 ## Best Practices
-1. Always provide a label
-2. Use appropriate input types
-3. Include error handling
-4. Add helper text when needed
-5. Implement proper validation
+
+### Usage Guidelines
+1. Always provide proper labels
+2. Include appropriate ARIA attributes
+3. Handle validation properly
+4. Use appropriate input types
+5. Implement proper error handling
 6. Follow accessibility guidelines
-7. Use TypeScript for type safety
-8. Optimize performance
+7. Optimize for performance
+8. Use TypeScript for type safety
+9. Add proper test IDs
+10. Handle edge cases
+
+### Performance Tips
+1. Debounce change handlers
+2. Use proper state management
+3. Optimize re-renders
+4. Implement proper validation
+5. Use proper error boundaries
+6. Optimize bundle size
+7. Use proper code splitting
+8. Implement proper caching
+9. Use proper lazy loading
+10. Monitor performance metrics
+
+### Security Considerations
+1. Validate user input
+2. Prevent XSS attacks
+3. Handle sensitive data
+4. Implement proper authentication
+5. Use proper authorization
+6. Handle errors securely
+7. Implement proper logging
+8. Use proper encryption
+9. Follow security best practices
+10. Regular security audits
 
 ## Troubleshooting
+
 ### Common Issues
-1. **Input not updating**
-   - Check value and onChange props
-   - Verify form integration
-   - Check for event propagation
+| Issue | Solution |
+|-------|----------|
+| Input not updating | Check onChange handler and value prop |
+| Validation not working | Verify validation rules and error handling |
+| Styling issues | Check Tailwind classes and theme |
+| Accessibility issues | Verify ARIA labels and keyboard navigation |
+| Performance issues | Check debouncing and state management |
 
-2. **Validation not working**
-   - Verify validation rules
-   - Check error handling
-   - Validate form integration
-
-3. **Styling issues**
-   - Check variant prop
-   - Verify className usage
-   - Check for style conflicts
-
-### Solutions
-1. **Update Issues**
-   ```typescript
-   // Proper controlled implementation
-   const [value, setValue] = useState('');
-   
-   <Input
-     value={value}
-     onChange={(e) => setValue(e.target.value)}
-     label="Controlled Input"
-   />
-   ```
-
-2. **Validation Issues**
-   ```typescript
-   // Proper validation implementation
-   <Input
-     label="Email"
-     type="email"
-     error={errors.email}
-     {...register('email', {
-       required: 'Email is required',
-       pattern: {
-         value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-         message: 'Invalid email address'
-       }
-     })}
-   />
-   ```
-
-3. **Styling Issues**
-   ```typescript
-   // Proper styling implementation
-   <Input
-     label="Styled Input"
-     variant="outlined"
-     className="w-full max-w-md"
-   />
-   ```
+### Error Messages
+| Error Code | Description | Resolution |
+|------------|-------------|------------|
+| ERR001 | Invalid input type | Use valid input type |
+| ERR002 | Invalid value | Check value format |
+| ERR003 | Validation failed | Fix validation rules |
+| ERR004 | Required field | Provide required value |
+| ERR005 | Invalid state | Check state management |
 
 ## Contributing
-When contributing to the Input component:
-1. Follow TypeScript best practices
-2. Maintain accessibility standards
-3. Add appropriate tests
-4. Update documentation
-5. Follow component guidelines
 
-*Last Updated: 2025-06-04*
-*Version: 1.0.0* 
+### Development Setup
+1. Clone the repository
+2. Install dependencies
+3. Run development server
+4. Make changes
+5. Run tests
+6. Submit PR
+
+### Testing
+```typescript
+import { render, screen, fireEvent } from '@testing-library/react';
+import { Input } from './Input';
+
+describe('Input', () => {
+  it('renders correctly', () => {
+    render(<Input type="text" placeholder="Enter text" />);
+    expect(screen.getByPlaceholderText('Enter text')).toBeInTheDocument();
+  });
+
+  it('handles change events', () => {
+    const handleChange = jest.fn();
+    render(<Input type="text" onChange={handleChange} />);
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'test' } });
+    expect(handleChange).toHaveBeenCalledWith('test');
+  });
+});
+```
+
+### Code Style
+- Follow TypeScript best practices
+- Use ESLint rules
+- Follow Prettier configuration
+- Write meaningful comments
+- Use proper naming conventions
+- Follow component patterns
+- Use proper documentation
+- Follow testing practices
+- Use proper error handling
+- Follow security guidelines
+
+## Changelog
+
+### Version 1.0.0
+- Initial release
+- Basic input functionality
+- Multiple input types
+- Validation support
+- Icon support
+
+### Version 1.1.0
+- Added character counter
+- Improved accessibility
+- Enhanced performance
+- Added dark mode
+- Added RTL support
+
+## Appendix
+
+### Glossary
+- **Type**: Input field type
+- **Value**: Current input value
+- **Validation**: Input validation rules
+- **State**: Input interaction state
+- **Error**: Validation error message
+
+### FAQ
+#### How do I add validation to an input?
+Use the error prop and implement validation logic in the onChange handler.
+
+#### How do I handle different input types?
+Use the type prop to specify the input type (text, number, email, etc.).
+
+#### How do I make the input accessible?
+Include proper ARIA labels and ensure keyboard navigation works. 

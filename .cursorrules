@@ -406,3 +406,6 @@ All component documentation must follow this standardized structure:
 - Validate Markdown using markdownlint
 
 By following these guidelines, we ensure that our component documentation remains comprehensive, consistent, and valuable for all developers working with the Thrive Send application.
+
+# Package Manager Rule
+Always use `pnpm` for package management commands (e.g., `pnpm install`, `pnpm add`, `pnpm update`) in all project-related tasks, as this is the designated package manager for the project. Do not use `npm` or other package managers unless explicitly instructed.

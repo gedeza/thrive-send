@@ -1,24 +1,38 @@
 # Alert Component
 
 ## Overview
-The Alert component in ThriveSend provides a flexible and accessible way to display important messages to users. It supports different intent levels (info, success, warning, error) with appropriate styling and semantic meaning.
+The Alert component is a versatile notification component that displays important messages to users. It supports multiple variants (success, error, warning, info), dismissible states, and custom actions. The component is designed to be accessible, responsive, and consistent with ThriveSend's design system.
 
 ## Screenshots
-![Alert Variants](./images/feedback/alert-variants.png)
-*Different alert variants: info, success, warning, and error*
+![Alert Main View](../../images/components/feedback/alert-main-view.png)
+*Main view showing different alert variants*
+
+![Alert Dismissible](../../images/components/feedback/alert-dismissible.png)
+*Dismissible alert with close button*
+
+![Alert With Actions](../../images/components/feedback/alert-actions.png)
+*Alert with custom action buttons*
+
+![Alert Mobile](../../images/components/feedback/alert-mobile.png)
+*Mobile view with responsive layout*
 
 ## Component Architecture
 ```mermaid
 graph TD
-    A[Alert Component] --> B[Intent Styles]
-    B --> C[Info]
-    B --> D[Success]
-    B --> E[Warning]
-    B --> F[Error]
-    A --> G[Styling]
-    G --> H[Colors]
-    G --> I[Layout]
-    G --> J[Typography]
+    A[Alert Component] --> B[Base Alert]
+    B --> C[Alert Icon]
+    B --> D[Alert Content]
+    B --> E[Alert Actions]
+    B --> F[Close Button]
+    
+    D --> G[Title]
+    D --> H[Description]
+    E --> I[Primary Action]
+    E --> J[Secondary Action]
+    
+    B --> K[State Management]
+    B --> L[Animation]
+    B --> M[Accessibility]
 ```
 
 ## Data Flow
@@ -26,269 +40,454 @@ graph TD
 sequenceDiagram
     participant U as User
     participant A as Alert
-    participant S as System
+    participant S as State
+    participant E as Event
     
-    S->>A: Display Alert
-    A->>U: Show Message
-    U->>A: Read/Interact
+    U->>A: Interaction
     A->>S: Update State
+    S->>E: Trigger Event
+    E->>A: Update UI
+    A-->>U: Visual Feedback
 ```
 
 ## Features
-- Multiple intent levels (info, success, warning, error)
-- Semantic color coding
-- Accessible design
-- Customizable styling
-- Responsive layout
+- Multiple variants (success, error, warning, info)
+- Dismissible alerts
+- Custom actions
+- Icon support
+- Responsive design
+- Keyboard navigation
+- Animation support
+- State persistence
+- Custom themes
+- Dark mode support
+- RTL support
+- Performance optimized
 - TypeScript support
-- Theme integration
-- Shadow effects
-- Border radius
-- Margin control
+- Accessibility support
+- Internationalization
+- Auto-dismiss
+- Custom timing
+- Event handling
+- State management
 
 ## Props
-```typescript
-interface AlertProps {
-  children: React.ReactNode;
-  intent?: AlertIntent;  // "info" | "success" | "warning" | "error"
-  style?: React.CSSProperties;
-}
-```
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| variant | 'success' \| 'error' \| 'warning' \| 'info' | No | 'info' | Alert variant |
+| title | string | No | undefined | Alert title |
+| description | string | No | undefined | Alert description |
+| dismissible | boolean | No | false | Whether alert can be dismissed |
+| onDismiss | () => void | No | undefined | Dismiss handler |
+| actions | AlertAction[] | No | undefined | Custom actions |
+| icon | ReactNode | No | undefined | Custom icon |
+| className | string | No | undefined | Additional CSS classes |
+| ariaLabel | string | No | undefined | ARIA label |
+| testId | string | No | undefined | Test ID |
+| autoDismiss | boolean | No | false | Auto-dismiss after timeout |
+| dismissTimeout | number | No | 5000 | Auto-dismiss timeout in ms |
 
 ## Usage
+```tsx
+import { Alert } from '@/components/feedback/Alert';
 
-### Basic Usage
-```typescript
-import { Alert } from "@/components/ui/Alert"
+// Basic usage
+<Alert
+  variant="success"
+  title="Success!"
+  description="Your changes have been saved."
+  ariaLabel="Success alert"
+/>
 
-function MyComponent() {
-  return (
-    <Alert intent="info">
-      This is an informational message.
-    </Alert>
-  );
-}
-```
-
-### Different Intents
-```typescript
-function Alerts() {
-  return (
-    <>
-      <Alert intent="info">Information message</Alert>
-      <Alert intent="success">Success message</Alert>
-      <Alert intent="warning">Warning message</Alert>
-      <Alert intent="error">Error message</Alert>
-    </>
-  );
-}
-```
-
-### Custom Styling
-```typescript
-function CustomAlert() {
-  return (
-    <Alert 
-      intent="warning"
-      style={{ marginTop: '2rem', fontSize: '1.1em' }}
-    >
-      Custom styled alert message
-    </Alert>
-  );
-}
+// Advanced usage
+<Alert
+  variant="error"
+  title="Error"
+  description="Something went wrong. Please try again."
+  dismissible
+  onDismiss={() => console.log('Alert dismissed')}
+  actions={[
+    {
+      label: 'Try Again',
+      onClick: () => console.log('Retry clicked'),
+      variant: 'primary'
+    },
+    {
+      label: 'Cancel',
+      onClick: () => console.log('Cancel clicked'),
+      variant: 'secondary'
+    }
+  ]}
+  autoDismiss
+  dismissTimeout={3000}
+  ariaLabel="Error alert with actions"
+/>
 ```
 
 ## User Interaction Workflow
 ```mermaid
 graph LR
-    A[System Event] --> B{Alert Type}
-    B -->|Info| C[Display Info Alert]
-    B -->|Success| D[Display Success Alert]
-    B -->|Warning| E[Display Warning Alert]
-    B -->|Error| F[Display Error Alert]
-    C --> G[User Reads]
-    D --> G
-    E --> G
-    F --> G
+    A[User Action] --> B{Alert State}
+    B -->|Dismiss| C[Close Alert]
+    B -->|Action| D[Handle Action]
+    B -->|Auto-dismiss| E[Close Timer]
+    
+    C --> F[State Management]
+    D --> F
+    E --> F
+    
+    F --> G[Visual Feedback]
 ```
 
 ## Components
 
-### Alert
-- Main container component
-- Handles intent-based styling
-- Manages layout and spacing
-- Provides accessibility attributes
+### Base Alert
+- Handles core alert functionality
+- Manages state
+- Implements animations
+- Handles accessibility
+- Manages theme
+
+### Alert Icon
+- Renders variant icon
+- Handles custom icons
+- Manages animations
+- Implements accessibility
+- Handles theme
+
+### Alert Content
+- Renders title and description
+- Manages layout
+- Handles truncation
+- Implements accessibility
+- Manages theme
+
+### Alert Actions
+- Renders action buttons
+- Handles click events
+- Manages layout
+- Implements accessibility
+- Handles theme
+
+### Close Button
+- Renders close button
+- Handles click events
+- Manages animations
+- Implements accessibility
+- Handles theme
 
 ## Data Models
 ```typescript
-type AlertIntent = "info" | "success" | "warning" | "error";
-
-interface IntentColors {
-  border: string;
-  background: string;
-  color: string;
+interface AlertProps {
+  variant: 'success' | 'error' | 'warning' | 'info';
+  title?: string;
+  description?: string;
+  dismissible?: boolean;
+  onDismiss?: () => void;
+  actions?: AlertAction[];
+  icon?: ReactNode;
+  className?: string;
+  ariaLabel?: string;
+  testId?: string;
+  autoDismiss?: boolean;
+  dismissTimeout?: number;
 }
 
-const intentColors: Record<AlertIntent, IntentColors> = {
-  info: {
-    border: "var(--primary-500)",
-    background: "var(--primary-50)",
-    color: "var(--primary-700)"
-  },
-  success: {
-    border: "var(--secondary-500)",
-    background: "var(--secondary-50)",
-    color: "var(--secondary-700)"
-  },
-  warning: {
-    border: "var(--accent-500)",
-    background: "var(--accent-50)",
-    color: "var(--accent-700)"
-  },
-  error: {
-    border: "var(--accent-500)",
-    background: "var(--accent-50)",
-    color: "var(--accent-700)"
-  }
-};
+interface AlertAction {
+  label: string;
+  onClick: () => void;
+  variant?: 'primary' | 'secondary';
+  disabled?: boolean;
+}
+
+interface AlertState {
+  isVisible: boolean;
+  isDismissing: boolean;
+  timeoutId?: number;
+}
+
+interface AlertEvent {
+  type: 'show' | 'hide' | 'action' | 'dismiss';
+  timestamp: number;
+  data?: {
+    action?: string;
+    variant?: string;
+  };
+}
 ```
 
 ## Styling
+- Uses Tailwind CSS for styling
+- Follows design system color tokens
+- Implements consistent spacing
+- Supports dark mode
+- Maintains accessibility contrast ratios
 - Uses CSS variables for theming
-- Responsive design
-- Consistent spacing
-- Shadow effects
-- Border radius
-- Typography scale
-- Color system integration
+- Implements responsive design
+- Supports custom animations
+- Uses CSS Grid for layout
+- Implements proper transitions
 
 ## Accessibility
-- Semantic HTML
+- ARIA labels for screen readers
+- Keyboard navigation support
+- Focus management
 - Color contrast compliance
-- Clear visual hierarchy
-- Screen reader support
-- Keyboard navigation
-- ARIA attributes
+- State announcements
+- RTL support
+- Screen reader announcements
+- Focus visible states
+- Proper role attributes
+- Keyboard event handling
+- Error message association
+- Alert announcements
 
 ## Error Handling
-- Type checking for intent
-- Default fallback to info
-- Style prop validation
-- Children prop validation
+- State validation
+- Event handling
+- Error boundaries
+- Fallback content
+- Recovery strategies
+- User feedback
+- Error logging
+- State recovery
+- Animation fallbacks
+- Timeout handling
 
 ## Performance Optimizations
-- Minimal re-renders
-- Efficient style application
-- Theme variable usage
-- CSS optimization
+- Component memoization
+- Render optimization
+- Animation optimization
+- State batching
+- Code splitting
+- Bundle optimization
+- Memory management
+- Event debouncing
+- Lazy loading
+- Virtual scrolling
 
 ## Dependencies
 - React
 - TypeScript
-- Theme system
-- CSS variables
+- Tailwind CSS
+- @testing-library/react
+- @testing-library/jest-dom
+- @testing-library/user-event
 
 ## Related Components
-- [Toast](./Toast.md)
-- [Modal](./Modal.md)
-- [ErrorBoundary](../error/ErrorBoundary.md)
+- [Toast](../feedback/Toast.md)
+- [Modal](../feedback/Modal.md)
+- [Button](../ui/Button.md)
+- [Icon](../ui/Icon.md)
+- [Typography](../ui/Typography.md)
 
 ## Examples
 
-### Form Validation Alert
-```typescript
-function FormAlert() {
-  const [error, setError] = useState<string | null>(null);
+### Basic Example
+```tsx
+import { Alert } from '@/components/feedback/Alert';
 
+export function BasicExample() {
   return (
-    <form onSubmit={handleSubmit}>
-      {error && (
-        <Alert intent="error">
-          {error}
-        </Alert>
-      )}
-      {/* Form fields */}
-    </form>
+    <Alert
+      variant="success"
+      title="Success!"
+      description="Your changes have been saved."
+      ariaLabel="Success alert"
+    />
   );
 }
 ```
 
-### Success Message
-```typescript
-function SuccessAlert() {
+### Advanced Example
+```tsx
+import { Alert } from '@/components/feedback/Alert';
+import { useCallback, useState } from 'react';
+
+export function AdvancedExample() {
+  const [isVisible, setIsVisible] = useState(true);
+
+  const handleDismiss = useCallback(() => {
+    setIsVisible(false);
+  }, []);
+
+  const handleRetry = useCallback(() => {
+    console.log('Retrying...');
+  }, []);
+
+  if (!isVisible) return null;
+
   return (
-    <Alert intent="success">
-      Your changes have been saved successfully!
-    </Alert>
+    <Alert
+      variant="error"
+      title="Error"
+      description="Something went wrong. Please try again."
+      dismissible
+      onDismiss={handleDismiss}
+      actions={[
+        {
+          label: 'Try Again',
+          onClick: handleRetry,
+          variant: 'primary'
+        },
+        {
+          label: 'Cancel',
+          onClick: handleDismiss,
+          variant: 'secondary'
+        }
+      ]}
+      autoDismiss
+      dismissTimeout={3000}
+      ariaLabel="Error alert with actions"
+    />
   );
 }
 ```
 
 ## Best Practices
-1. Use appropriate intent levels
+
+### Usage Guidelines
+1. Use appropriate variants
 2. Keep messages concise
-3. Include actionable information
-4. Maintain consistent styling
-5. Ensure accessibility
-6. Test all variants
-7. Follow theme guidelines
-8. Use semantic meaning
+3. Include clear actions
+4. Handle dismiss events
+5. Follow accessibility guidelines
+6. Optimize for performance
+7. Use TypeScript for type safety
+8. Add proper test IDs
+9. Handle edge cases
+10. Implement proper state
+
+### Performance Tips
+1. Memoize components
+2. Use proper state management
+3. Optimize re-renders
+4. Implement proper loading
+5. Use proper error boundaries
+6. Optimize bundle size
+7. Use proper code splitting
+8. Implement proper caching
+9. Use proper lazy loading
+10. Monitor performance metrics
+
+### Security Considerations
+1. Validate user input
+2. Prevent XSS attacks
+3. Handle sensitive data
+4. Implement proper authentication
+5. Use proper authorization
+6. Handle errors securely
+7. Implement proper logging
+8. Use proper encryption
+9. Follow security best practices
+10. Regular security audits
 
 ## Troubleshooting
 
 ### Common Issues
-1. **Alert not displaying**
-   - Check intent prop
-   - Verify children content
-   - Check style overrides
+| Issue | Solution |
+|-------|----------|
+| Alert not showing | Check visibility state |
+| Dismiss not working | Verify onDismiss handler |
+| Actions not working | Check action handlers |
+| Styling issues | Verify Tailwind classes |
+| Accessibility issues | Check ARIA labels |
 
-2. **Styling issues**
-   - Verify theme variables
-   - Check style prop
-   - Inspect CSS cascade
-
-3. **Accessibility problems**
-   - Check color contrast
-   - Verify ARIA attributes
-   - Test screen readers
-
-### Solutions
-1. **Intent Issues**
-   ```typescript
-   // Proper intent usage
-   <Alert intent="info">Message</Alert>
-   ```
-
-2. **Styling**
-   ```typescript
-   // Proper styling
-   <Alert 
-     intent="warning"
-     style={{ margin: '1rem 0' }}
-   >
-     Message
-   </Alert>
-   ```
-
-3. **Accessibility**
-   ```typescript
-   // Proper accessibility
-   <Alert 
-     intent="error"
-     role="alert"
-   >
-     Error message
-   </Alert>
-   ```
+### Error Messages
+| Error Code | Description | Resolution |
+|------------|-------------|------------|
+| ERR001 | Invalid variant | Check variant prop |
+| ERR002 | Missing handler | Add required handler |
+| ERR003 | Invalid action | Check action config |
+| ERR004 | Theme error | Verify theme settings |
+| ERR005 | Event error | Check event handlers |
 
 ## Contributing
-When contributing to the Alert component:
-1. Follow TypeScript best practices
-2. Maintain accessibility standards
-3. Add appropriate tests
-4. Update documentation
-5. Follow component guidelines
 
-*Last Updated: 2025-06-04*
-*Version: 1.0.0* 
+### Development Setup
+1. Clone the repository
+2. Install dependencies
+3. Run development server
+4. Make changes
+5. Run tests
+6. Submit PR
+
+### Testing
+```typescript
+import { render, screen, fireEvent } from '@testing-library/react';
+import { Alert } from './Alert';
+
+describe('Alert', () => {
+  it('renders correctly', () => {
+    render(
+      <Alert
+        variant="success"
+        title="Success!"
+        description="Test description"
+      />
+    );
+    expect(screen.getByText('Success!')).toBeInTheDocument();
+    expect(screen.getByText('Test description')).toBeInTheDocument();
+  });
+
+  it('handles dismiss', () => {
+    const handleDismiss = jest.fn();
+    render(
+      <Alert
+        variant="info"
+        dismissible
+        onDismiss={handleDismiss}
+      />
+    );
+    fireEvent.click(screen.getByRole('button'));
+    expect(handleDismiss).toHaveBeenCalled();
+  });
+});
+```
+
+### Code Style
+- Follow TypeScript best practices
+- Use ESLint rules
+- Follow Prettier configuration
+- Write meaningful comments
+- Use proper naming conventions
+- Follow component patterns
+- Use proper documentation
+- Follow testing practices
+- Use proper error handling
+- Follow security guidelines
+
+## Changelog
+
+### Version 1.0.0
+- Initial release
+- Basic variants
+- Dismissible alerts
+- Custom actions
+- Mobile support
+
+### Version 1.1.0
+- Added auto-dismiss
+- Improved performance
+- Enhanced accessibility
+- Added dark mode
+- Added RTL support
+
+## Appendix
+
+### Glossary
+- **Alert**: Notification component
+- **Variant**: Alert type/style
+- **Dismissible**: Can be closed
+- **Actions**: Custom buttons
+- **Auto-dismiss**: Automatic closing
+
+### FAQ
+#### How do I make an alert dismissible?
+Set the `dismissible` prop to true and provide an `onDismiss` handler.
+
+#### How do I add custom actions?
+Use the `actions` prop to provide an array of action buttons.
+
+#### How do I implement auto-dismiss?
+Set `autoDismiss` to true and optionally configure `dismissTimeout`. 

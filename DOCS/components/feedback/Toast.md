@@ -1,26 +1,39 @@
 # Toast Component
 
 ## Overview
-The Toast component in ThriveSend provides a non-intrusive way to display notifications to users. Built on top of Radix UI's toast primitive, it offers a customizable and accessible notification system with various variants and animations.
+The Toast component is a non-intrusive notification system that displays temporary messages to users. It supports multiple variants (success, error, warning, info), customizable positioning, and automatic dismissal. The component is designed to be accessible, responsive, and consistent with ThriveSend's design system.
 
 ## Screenshots
-![Toast Variants](./images/feedback/toast-variants.png)
-*Different toast variants: default, destructive, success, warning, and info*
+![Toast Main View](../../images/components/feedback/toast-main-view.png)
+*Main view showing different toast variants*
+
+![Toast Stack](../../images/components/feedback/toast-stack.png)
+*Multiple toasts stacked with proper spacing*
+
+![Toast Mobile](../../images/components/feedback/toast-mobile.png)
+*Mobile view with responsive layout*
+
+![Toast Custom](../../images/components/feedback/toast-custom.png)
+*Custom toast with action buttons*
 
 ## Component Architecture
 ```mermaid
 graph TD
-    A[Toast System] --> B[ToastProvider]
-    A --> C[ToastViewport]
-    A --> D[Toast Components]
-    D --> E[Toast]
-    D --> F[ToastTitle]
-    D --> G[ToastDescription]
-    D --> H[ToastAction]
-    D --> I[ToastClose]
-    A --> J[Toast Hook]
-    J --> K[useToast]
-    J --> L[toast]
+    A[Toast Component] --> B[Toast Container]
+    B --> C[Toast Item]
+    C --> D[Toast Icon]
+    C --> E[Toast Content]
+    C --> F[Toast Actions]
+    C --> G[Close Button]
+    
+    E --> H[Title]
+    E --> I[Description]
+    F --> J[Primary Action]
+    F --> K[Secondary Action]
+    
+    B --> L[Position Manager]
+    B --> M[Animation Manager]
+    B --> N[Queue Manager]
 ```
 
 ## Data Flow
@@ -28,384 +41,485 @@ graph TD
 sequenceDiagram
     participant U as User
     participant T as Toast
-    participant S as System
+    participant Q as Queue
+    participant A as Animation
     
-    S->>T: Trigger Toast
-    T->>U: Display Notification
-    U->>T: Interact/Acknowledge
-    T->>S: Update State
-    T->>U: Auto-dismiss
+    U->>T: Show Toast
+    T->>Q: Add to Queue
+    Q->>A: Start Animation
+    A->>T: Update Position
+    T-->>U: Display Toast
+    T->>Q: Remove from Queue
 ```
 
 ## Features
-- Multiple variants (default, destructive, success, warning, info)
-- Customizable duration
-- Auto-dismiss functionality
-- Action buttons support
-- Keyboard navigation
-- Screen reader support
-- Animation effects
+- Multiple variants (success, error, warning, info)
+- Custom positioning
+- Auto-dismiss
+- Custom timing
+- Action buttons
+- Icon support
 - Responsive design
+- Keyboard navigation
+- Animation support
+- Queue management
+- Custom themes
+- Dark mode support
+- RTL support
+- Performance optimized
 - TypeScript support
-- Theme integration
+- Accessibility support
+- Internationalization
+- Stack management
+- Progress indicator
+- Event handling
+- State management
 
 ## Props
-
-### Toast Props
-```typescript
-interface ToastProps {
-  variant?: "default" | "destructive" | "success" | "warning" | "info";
-  title?: React.ReactNode;
-  description?: React.ReactNode;
-  action?: ToastActionElement;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  className?: string;
-}
-```
-
-### Toast Hook Props
-```typescript
-interface Toast {
-  title?: React.ReactNode;
-  description?: React.ReactNode;
-  action?: ToastActionElement;
-  variant?: ToastProps["variant"];
-  className?: string;
-}
-```
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| variant | 'success' \| 'error' \| 'warning' \| 'info' | No | 'info' | Toast variant |
+| title | string | No | undefined | Toast title |
+| description | string | No | undefined | Toast description |
+| duration | number | No | 5000 | Display duration in ms |
+| position | 'top-right' \| 'top-left' \| 'bottom-right' \| 'bottom-left' | No | 'top-right' | Toast position |
+| actions | ToastAction[] | No | undefined | Custom actions |
+| icon | ReactNode | No | undefined | Custom icon |
+| className | string | No | undefined | Additional CSS classes |
+| ariaLabel | string | No | undefined | ARIA label |
+| testId | string | No | undefined | Test ID |
+| showProgress | boolean | No | true | Show progress bar |
+| onClose | () => void | No | undefined | Close handler |
 
 ## Usage
+```tsx
+import { Toast } from '@/components/feedback/Toast';
+import { useToast } from '@/hooks/useToast';
 
-### Basic Usage
-```typescript
-import { useToast } from "@/components/ui/use-toast"
+// Basic usage
+const { showToast } = useToast();
 
-function MyComponent() {
-  const { toast } = useToast();
+showToast({
+  variant: 'success',
+  title: 'Success!',
+  description: 'Your changes have been saved.',
+  ariaLabel: 'Success toast'
+});
 
-  return (
-    <button onClick={() => {
-      toast({
-        title: "Success",
-        description: "Operation completed successfully",
-        variant: "success"
-      });
-    }}>
-      Show Toast
-    </button>
-  );
-}
-```
-
-### With Action
-```typescript
-import { useToast } from "@/components/ui/use-toast"
-import { ToastAction } from "@/components/ui/toast"
-
-function ToastWithAction() {
-  const { toast } = useToast();
-
-  return (
-    <button onClick={() => {
-      toast({
-        title: "Update Available",
-        description: "A new version is available",
-        action: (
-          <ToastAction altText="Update now">
-            Update
-          </ToastAction>
-        )
-      });
-    }}>
-      Show Toast with Action
-    </button>
-  );
-}
-```
-
-### Different Variants
-```typescript
-function ToastVariants() {
-  const { toast } = useToast();
-
-  return (
-    <>
-      <button onClick={() => toast({ variant: "default", title: "Default" })}>
-        Default
-      </button>
-      <button onClick={() => toast({ variant: "destructive", title: "Error" })}>
-        Error
-      </button>
-      <button onClick={() => toast({ variant: "success", title: "Success" })}>
-        Success
-      </button>
-      <button onClick={() => toast({ variant: "warning", title: "Warning" })}>
-        Warning
-      </button>
-      <button onClick={() => toast({ variant: "info", title: "Info" })}>
-        Info
-      </button>
-    </>
-  );
-}
+// Advanced usage
+showToast({
+  variant: 'error',
+  title: 'Error',
+  description: 'Something went wrong. Please try again.',
+  duration: 3000,
+  position: 'top-right',
+  actions: [
+    {
+      label: 'Try Again',
+      onClick: () => console.log('Retry clicked'),
+      variant: 'primary'
+    },
+    {
+      label: 'Cancel',
+      onClick: () => console.log('Cancel clicked'),
+      variant: 'secondary'
+    }
+  ],
+  showProgress: true,
+  onClose: () => console.log('Toast closed'),
+  ariaLabel: 'Error toast with actions'
+});
 ```
 
 ## User Interaction Workflow
 ```mermaid
 graph LR
-    A[System Event] --> B{Toast Type}
-    B -->|Default| C[Display Default Toast]
-    B -->|Destructive| D[Display Error Toast]
-    B -->|Success| E[Display Success Toast]
-    B -->|Warning| F[Display Warning Toast]
-    B -->|Info| G[Display Info Toast]
-    C --> H[User Acknowledges]
-    D --> H
-    E --> H
-    F --> H
-    G --> H
-    H --> I[Auto-dismiss]
+    A[User Action] --> B{Toast State}
+    B -->|Show| C[Add to Queue]
+    B -->|Close| D[Remove from Queue]
+    B -->|Action| E[Handle Action]
+    
+    C --> F[Position Manager]
+    D --> F
+    E --> F
+    
+    F --> G[Visual Feedback]
 ```
 
 ## Components
 
-### 1. ToastProvider
-- Context provider for toast system
-- Manages toast state
-- Handles toast lifecycle
+### Toast Container
+- Manages toast queue
+- Handles positioning
+- Implements animations
+- Manages state
+- Handles theme
 
-### 2. ToastViewport
-- Container for toast notifications
-- Manages positioning
-- Handles animations
+### Toast Item
+- Renders individual toast
+- Manages lifecycle
+- Handles interactions
+- Implements accessibility
+- Manages theme
 
-### 3. Toast
-- Main toast component
-- Handles variants
+### Toast Icon
+- Renders variant icon
+- Handles custom icons
+- Manages animations
+- Implements accessibility
+- Handles theme
+
+### Toast Content
+- Renders title and description
 - Manages layout
+- Handles truncation
+- Implements accessibility
+- Manages theme
 
-### 4. ToastTitle
-- Toast header
-- Bold text
-- Optional component
+### Toast Actions
+- Renders action buttons
+- Handles click events
+- Manages layout
+- Implements accessibility
+- Handles theme
 
-### 5. ToastDescription
-- Toast content
-- Regular text
-- Optional component
-
-### 6. ToastAction
-- Action button
-- Customizable
-- Optional component
-
-### 7. ToastClose
-- Close button
-- Auto-included
-- Customizable
+### Close Button
+- Renders close button
+- Handles click events
+- Manages animations
+- Implements accessibility
+- Handles theme
 
 ## Data Models
 ```typescript
-type ToasterToast = ToastProps & {
-  id: string;
-  title?: React.ReactNode;
-  description?: React.ReactNode;
-  action?: ToastActionElement;
-};
-
-interface State {
-  toasts: ToasterToast[];
+interface ToastProps {
+  variant: 'success' | 'error' | 'warning' | 'info';
+  title?: string;
+  description?: string;
+  duration?: number;
+  position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
+  actions?: ToastAction[];
+  icon?: ReactNode;
+  className?: string;
+  ariaLabel?: string;
+  testId?: string;
+  showProgress?: boolean;
+  onClose?: () => void;
 }
 
-const toastVariants = {
-  default: "bg-background border",
-  destructive: "bg-blue-50 border-blue-200 text-blue-900",
-  success: "bg-green-50 border-green-200 text-green-900",
-  warning: "bg-yellow-50 border-yellow-200 text-yellow-900",
-  info: "bg-blue-50 border-blue-200 text-blue-900"
-};
+interface ToastAction {
+  label: string;
+  onClick: () => void;
+  variant?: 'primary' | 'secondary';
+  disabled?: boolean;
+}
+
+interface ToastState {
+  isVisible: boolean;
+  isExiting: boolean;
+  progress: number;
+  timeoutId?: number;
+}
+
+interface ToastEvent {
+  type: 'show' | 'hide' | 'action' | 'close';
+  timestamp: number;
+  data?: {
+    action?: string;
+    variant?: string;
+    position?: string;
+  };
+}
+
+interface ToastQueue {
+  toasts: ToastProps[];
+  add: (toast: ToastProps) => void;
+  remove: (id: string) => void;
+  clear: () => void;
+}
 ```
 
 ## Styling
-- Tailwind CSS
-- CSS variables
-- Responsive design
-- Animation classes
-- Theme integration
-- Custom variants
-- Consistent spacing
+- Uses Tailwind CSS for styling
+- Follows design system color tokens
+- Implements consistent spacing
+- Supports dark mode
+- Maintains accessibility contrast ratios
+- Uses CSS variables for theming
+- Implements responsive design
+- Supports custom animations
+- Uses CSS Grid for layout
+- Implements proper transitions
 
 ## Accessibility
-- ARIA attributes
-- Keyboard navigation
+- ARIA labels for screen readers
+- Keyboard navigation support
 - Focus management
-- Screen reader support
-- Color contrast
-- Semantic HTML
-- Touch targets
+- Color contrast compliance
+- State announcements
+- RTL support
+- Screen reader announcements
+- Focus visible states
+- Proper role attributes
+- Keyboard event handling
+- Error message association
+- Toast announcements
 
 ## Error Handling
-- Type checking
-- State management
 - Queue management
-- Timeout handling
+- State validation
 - Event handling
 - Error boundaries
+- Fallback content
+- Recovery strategies
+- User feedback
+- Error logging
+- State recovery
+- Animation fallbacks
+- Timeout handling
 
 ## Performance Optimizations
-- Queue limiting
-- Auto-dismiss
+- Component memoization
+- Render optimization
+- Animation optimization
+- State batching
+- Code splitting
+- Bundle optimization
 - Memory management
-- Event delegation
-- Animation performance
-- State updates
+- Event debouncing
+- Lazy loading
+- Virtual scrolling
 
 ## Dependencies
 - React
 - TypeScript
-- Radix UI
 - Tailwind CSS
-- class-variance-authority
-- Lucide Icons
+- @testing-library/react
+- @testing-library/jest-dom
+- @testing-library/user-event
 
 ## Related Components
-- [Alert](./Alert.md)
-- [Modal](./Modal.md)
-- [ErrorBoundary](../error/ErrorBoundary.md)
+- [Alert](../feedback/Alert.md)
+- [Modal](../feedback/Modal.md)
+- [Button](../ui/Button.md)
+- [Icon](../ui/Icon.md)
+- [Typography](../ui/Typography.md)
 
 ## Examples
 
-### Form Submission
-```typescript
-function FormWithToast() {
-  const { toast } = useToast();
+### Basic Example
+```tsx
+import { useToast } from '@/hooks/useToast';
 
-  const handleSubmit = async (data: FormData) => {
-    try {
-      await submitForm(data);
-      toast({
-        title: "Success",
-        description: "Form submitted successfully",
-        variant: "success"
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to submit form",
-        variant: "destructive"
-      });
-    }
-  };
+export function BasicExample() {
+  const { showToast } = useToast();
 
-  return (
-    <form onSubmit={handleSubmit}>
-      {/* Form fields */}
-    </form>
-  );
-}
-```
-
-### Action Confirmation
-```typescript
-function ActionWithToast() {
-  const { toast } = useToast();
-
-  const handleAction = () => {
-    toast({
-      title: "Confirm Action",
-      description: "Are you sure you want to proceed?",
-      action: (
-        <ToastAction altText="Confirm">
-          Confirm
-        </ToastAction>
-      )
+  const handleSuccess = () => {
+    showToast({
+      variant: 'success',
+      title: 'Success!',
+      description: 'Your changes have been saved.',
+      ariaLabel: 'Success toast'
     });
   };
 
   return (
-    <button onClick={handleAction}>
-      Perform Action
+    <button onClick={handleSuccess}>
+      Show Success Toast
+    </button>
+  );
+}
+```
+
+### Advanced Example
+```tsx
+import { useToast } from '@/hooks/useToast';
+import { useCallback } from 'react';
+
+export function AdvancedExample() {
+  const { showToast } = useToast();
+
+  const handleError = useCallback(() => {
+    showToast({
+      variant: 'error',
+      title: 'Error',
+      description: 'Something went wrong. Please try again.',
+      duration: 3000,
+      position: 'top-right',
+      actions: [
+        {
+          label: 'Try Again',
+          onClick: () => console.log('Retry clicked'),
+          variant: 'primary'
+        },
+        {
+          label: 'Cancel',
+          onClick: () => console.log('Cancel clicked'),
+          variant: 'secondary'
+        }
+      ],
+      showProgress: true,
+      onClose: () => console.log('Toast closed'),
+      ariaLabel: 'Error toast with actions'
+    });
+  }, [showToast]);
+
+  return (
+    <button onClick={handleError}>
+      Show Error Toast
     </button>
   );
 }
 ```
 
 ## Best Practices
+
+### Usage Guidelines
 1. Use appropriate variants
 2. Keep messages concise
-3. Include actionable information
-4. Set reasonable timeouts
-5. Ensure accessibility
-6. Test all variants
-7. Follow theme guidelines
-8. Use semantic meaning
+3. Include clear actions
+4. Handle close events
+5. Follow accessibility guidelines
+6. Optimize for performance
+7. Use TypeScript for type safety
+8. Add proper test IDs
+9. Handle edge cases
+10. Implement proper state
+
+### Performance Tips
+1. Memoize components
+2. Use proper state management
+3. Optimize re-renders
+4. Implement proper loading
+5. Use proper error boundaries
+6. Optimize bundle size
+7. Use proper code splitting
+8. Implement proper caching
+9. Use proper lazy loading
+10. Monitor performance metrics
+
+### Security Considerations
+1. Validate user input
+2. Prevent XSS attacks
+3. Handle sensitive data
+4. Implement proper authentication
+5. Use proper authorization
+6. Handle errors securely
+7. Implement proper logging
+8. Use proper encryption
+9. Follow security best practices
+10. Regular security audits
 
 ## Troubleshooting
 
 ### Common Issues
-1. **Toast not showing**
-   - Check ToastProvider
-   - Verify hook usage
-   - Check variant
+| Issue | Solution |
+|-------|----------|
+| Toast not showing | Check queue management |
+| Close not working | Verify onClose handler |
+| Actions not working | Check action handlers |
+| Styling issues | Verify Tailwind classes |
+| Accessibility issues | Check ARIA labels |
 
-2. **Styling issues**
-   - Verify theme variables
-   - Check className
-   - Inspect CSS cascade
-
-3. **Accessibility problems**
-   - Check ARIA attributes
-   - Test keyboard navigation
-   - Verify screen reader
-
-### Solutions
-1. **Provider Setup**
-   ```typescript
-   // Proper provider setup
-   function App() {
-     return (
-       <ToastProvider>
-         <YourApp />
-       </ToastProvider>
-     );
-   }
-   ```
-
-2. **Hook Usage**
-   ```typescript
-   // Proper hook usage
-   function Component() {
-     const { toast } = useToast();
-     return (
-       <button onClick={() => toast({ title: "Hello" })}>
-         Show Toast
-       </button>
-     );
-   }
-   ```
-
-3. **Accessibility**
-   ```typescript
-   // Proper accessibility
-   toast({
-     title: "Update Available",
-     description: "A new version is available",
-     action: (
-       <ToastAction altText="Update now">
-         Update
-       </ToastAction>
-     )
-   });
-   ```
+### Error Messages
+| Error Code | Description | Resolution |
+|------------|-------------|------------|
+| ERR001 | Invalid variant | Check variant prop |
+| ERR002 | Missing handler | Add required handler |
+| ERR003 | Invalid action | Check action config |
+| ERR004 | Theme error | Verify theme settings |
+| ERR005 | Event error | Check event handlers |
 
 ## Contributing
-When contributing to the Toast component:
-1. Follow TypeScript best practices
-2. Maintain accessibility standards
-3. Add appropriate tests
-4. Update documentation
-5. Follow component guidelines
 
-*Last Updated: 2025-06-04*
-*Version: 1.0.0* 
+### Development Setup
+1. Clone the repository
+2. Install dependencies
+3. Run development server
+4. Make changes
+5. Run tests
+6. Submit PR
+
+### Testing
+```typescript
+import { render, screen, fireEvent } from '@testing-library/react';
+import { Toast } from './Toast';
+import { ToastProvider } from './ToastProvider';
+
+describe('Toast', () => {
+  it('renders correctly', () => {
+    render(
+      <ToastProvider>
+        <Toast
+          variant="success"
+          title="Success!"
+          description="Test description"
+        />
+      </ToastProvider>
+    );
+    expect(screen.getByText('Success!')).toBeInTheDocument();
+    expect(screen.getByText('Test description')).toBeInTheDocument();
+  });
+
+  it('handles close', () => {
+    const handleClose = jest.fn();
+    render(
+      <ToastProvider>
+        <Toast
+          variant="info"
+          onClose={handleClose}
+        />
+      </ToastProvider>
+    );
+    fireEvent.click(screen.getByRole('button'));
+    expect(handleClose).toHaveBeenCalled();
+  });
+});
+```
+
+### Code Style
+- Follow TypeScript best practices
+- Use ESLint rules
+- Follow Prettier configuration
+- Write meaningful comments
+- Use proper naming conventions
+- Follow component patterns
+- Use proper documentation
+- Follow testing practices
+- Use proper error handling
+- Follow security guidelines
+
+## Changelog
+
+### Version 1.0.0
+- Initial release
+- Basic variants
+- Queue management
+- Custom actions
+- Mobile support
+
+### Version 1.1.0
+- Added progress bar
+- Improved performance
+- Enhanced accessibility
+- Added dark mode
+- Added RTL support
+
+## Appendix
+
+### Glossary
+- **Toast**: Notification component
+- **Variant**: Toast type/style
+- **Queue**: Toast management
+- **Actions**: Custom buttons
+- **Progress**: Time indicator
+
+### FAQ
+#### How do I show a toast?
+Use the `useToast` hook and call `showToast` with your configuration.
+
+#### How do I customize the position?
+Use the `position` prop to set the toast position.
+
+#### How do I add custom actions?
+Use the `actions` prop to provide an array of action buttons. 

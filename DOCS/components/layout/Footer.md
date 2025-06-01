@@ -1,22 +1,37 @@
 # Footer Component
 
 ## Overview
-The Footer component provides a responsive application footer with navigation links, social media links, copyright information, and customizable styling. It follows ThriveSend's design system and includes comprehensive accessibility features.
+The Footer component is a responsive application footer that provides navigation links, social media links, and additional information. It supports dynamic content, responsive behavior, and maintains consistent styling across the application.
 
 ## Screenshots
-![Footer Variants](./images/layout/footer-variants.png)
-*Different footer states and configurations*
+![Footer Main View](../../images/components/layout/footer-main-view.png)
+*Main view showing navigation links and social media*
+
+![Footer Mobile](../../images/components/layout/footer-mobile.png)
+*Mobile view with stacked layout*
+
+![Footer Dark Mode](../../images/components/layout/footer-dark-mode.png)
+*Dark mode with adjusted contrast*
+
+![Footer Newsletter](../../images/components/layout/footer-newsletter.png)
+*Newsletter subscription section*
 
 ## Component Architecture
 ```mermaid
 graph TD
     A[Footer Component] --> B[Base Footer]
-    B --> C[Navigation Section]
-    B --> D[Social Section]
-    B --> E[Copyright Section]
-    C --> F[Navigation Links]
-    D --> G[Social Links]
-    E --> H[Copyright Text]
+    B --> C[Navigation]
+    B --> D[Social Links]
+    B --> E[Newsletter]
+    B --> F[Copyright]
+    
+    C --> G[Link Groups]
+    D --> H[Social Icons]
+    E --> I[Form]
+    
+    B --> J[State Management]
+    B --> K[Responsive Logic]
+    B --> L[Animation]
 ```
 
 ## Data Flow
@@ -25,54 +40,85 @@ sequenceDiagram
     participant U as User
     participant F as Footer
     participant N as Navigation
+    participant S as Social
+    participant E as Email
     
-    U->>F: Click Link
-    F->>N: Handle Navigation
-    N-->>F: Update State
+    U->>F: Interaction
+    F->>N: Update Navigation
+    F->>S: Update Social
+    F->>E: Update Email
+    E-->>F: Visual Update
     F-->>U: Visual Feedback
 ```
 
 ## Features
 - Responsive design
-- Navigation links
-- Social media integration
+- Dynamic navigation
+- Social media links
+- Newsletter subscription
 - Copyright information
-- Custom theming
+- Mobile support
 - Keyboard navigation
-- Full accessibility support
-- TypeScript type safety
+- Animation support
+- State persistence
+- Custom themes
+- Dark mode support
+- RTL support
 - Performance optimized
+- TypeScript support
+- Accessibility support
+- Internationalization
+- Link groups
+- Quick links
+- Contact information
+- Legal links
 
 ## Props
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| navigation | FooterNavigation[] | [] | Navigation links |
-| socialLinks | SocialLink[] | [] | Social media links |
-| copyright | string | "© 2025 ThriveSend" | Copyright text |
-| className | string | undefined | Additional CSS classes |
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| navigation | FooterNav[] | No | [] | Navigation links |
+| social | SocialLink[] | No | [] | Social media links |
+| newsletter | NewsletterConfig | No | undefined | Newsletter configuration |
+| copyright | string | No | undefined | Copyright text |
+| className | string | No | undefined | Additional CSS classes |
+| ariaLabel | string | No | undefined | ARIA label |
+| testId | string | No | undefined | Test ID |
 
 ## Usage
-```typescript
+```tsx
 import { Footer } from '@/components/layout/Footer';
 
-// Basic footer
-<Footer />
-
-// Footer with navigation
+// Basic usage
 <Footer
   navigation={[
-    { label: 'About', href: '/about' },
-    { label: 'Contact', href: '/contact' },
-    { label: 'Privacy', href: '/privacy' }
+    {
+      title: 'Product',
+      links: [
+        { label: 'Features', href: '/features' },
+        { label: 'Pricing', href: '/pricing' }
+      ]
+    }
   ]}
+  ariaLabel="Main footer"
 />
 
-// Footer with all features
+// Advanced usage
 <Footer
-  navigation={navigationLinks}
-  socialLinks={socialMediaLinks}
+  navigation={complexNavigation}
+  social={[
+    {
+      platform: 'twitter',
+      url: 'https://twitter.com/thrivesend',
+      label: 'Twitter'
+    }
+  ]}
+  newsletter={{
+    title: 'Subscribe to our newsletter',
+    placeholder: 'Enter your email',
+    onSubmit: (email) => {/* Handle subscription */}
+  }}
   copyright="© 2025 ThriveSend. All rights reserved."
-  className="custom-footer"
+  ariaLabel="Advanced footer with newsletter"
 />
 ```
 
@@ -81,55 +127,96 @@ import { Footer } from '@/components/layout/Footer';
 graph LR
     A[User Action] --> B{Footer State}
     B -->|Click Link| C[Navigate]
-    B -->|Hover| D[Show Tooltip]
-    C --> E[Update UI]
-    D --> E
+    B -->|Social| D[Open Social]
+    B -->|Subscribe| E[Submit Email]
+    B -->|Expand| F[Show More]
+    
+    C --> G[State Management]
+    D --> G
+    E --> G
+    F --> G
+    
+    G --> H[Visual Feedback]
 ```
 
 ## Components
-1. **Base Footer**
-   - Manages footer state
-   - Handles responsive behavior
-   - Implements accessibility features
 
-2. **Navigation Section**
-   - Displays navigation links
-   - Handles link interactions
-   - Manages layout
+### Base Footer
+- Handles core footer functionality
+- Manages responsive behavior
+- Implements animations
+- Handles state
+- Manages theme
 
-3. **Social Section**
-   - Displays social media links
-   - Handles external links
-   - Manages icons
+### Navigation
+- Renders navigation links
+- Handles routing
+- Manages groups
+- Implements keyboard nav
+- Handles mobile layout
 
-4. **Copyright Section**
-   - Displays copyright text
-   - Handles dynamic year
-   - Manages styling
+### Social Links
+- Renders social icons
+- Handles external links
+- Manages tooltips
+- Implements animations
+- Handles accessibility
+
+### Newsletter
+- Manages subscription form
+- Handles validation
+- Implements success states
+- Manages state
+- Handles accessibility
+
+### Copyright
+- Displays copyright info
+- Handles dynamic year
+- Manages legal links
+- Implements animations
+- Handles accessibility
 
 ## Data Models
 ```typescript
-interface FooterProps {
-  navigation?: FooterNavigation[];
-  socialLinks?: SocialLink[];
-  copyright?: string;
-  className?: string;
-}
-
-interface FooterNavigation {
-  label: string;
-  href: string;
-  external?: boolean;
+interface FooterNav {
+  title: string;
+  links: {
+    label: string;
+    href: string;
+    external?: boolean;
+  }[];
 }
 
 interface SocialLink {
-  platform: 'twitter' | 'linkedin' | 'facebook' | 'instagram';
+  platform: 'twitter' | 'facebook' | 'linkedin' | 'instagram' | 'youtube';
   url: string;
   label: string;
 }
 
+interface NewsletterConfig {
+  title?: string;
+  placeholder?: string;
+  onSubmit: (email: string) => void;
+  successMessage?: string;
+  errorMessage?: string;
+}
+
 interface FooterState {
-  hoveredLink: string | null;
+  isMobile: boolean;
+  expandedGroups: string[];
+  newsletterState: 'idle' | 'loading' | 'success' | 'error';
+  email: string;
+}
+
+interface FooterEvent {
+  type: 'navigate' | 'social' | 'newsletter' | 'expand';
+  timestamp: number;
+  data?: {
+    link?: string;
+    platform?: string;
+    email?: string;
+    group?: string;
+  };
 }
 ```
 
@@ -139,172 +226,289 @@ interface FooterState {
 - Implements consistent spacing
 - Supports dark mode
 - Maintains accessibility contrast ratios
-- Responsive design patterns
-- Smooth transitions
+- Uses CSS variables for theming
+- Implements responsive design
+- Supports custom animations
+- Uses CSS Grid for layout
+- Implements proper transitions
 
 ## Accessibility
-- ARIA roles and attributes
-- Keyboard navigation
+- ARIA labels for screen readers
+- Keyboard navigation support
 - Focus management
 - Color contrast compliance
-- Screen reader support
-- Link accessibility
-- Semantic HTML structure
+- State announcements
+- RTL support
+- Screen reader announcements
+- Focus visible states
+- Proper role attributes
+- Keyboard event handling
+- Error message association
+- Navigation announcements
 
 ## Error Handling
-- Invalid link handling
-- External link handling
-- Error boundary implementation
+- Navigation validation
+- State management
+- Error boundaries
 - Fallback content
-- Loading states
-- Error states
+- Recovery strategies
+- User feedback
+- Error logging
+- State recovery
+- Navigation recovery
+- Animation fallbacks
 
 ## Performance Optimizations
-- Memoized callbacks
-- CSS-in-JS optimization
-- Event handler optimization
-- State management optimization
+- Component memoization
 - Render optimization
+- Animation optimization
+- State batching
+- Code splitting
+- Bundle optimization
+- Memory management
+- Event debouncing
+- Lazy loading
+- Virtual scrolling
 
 ## Dependencies
 - React
 - TypeScript
 - Tailwind CSS
-- Lucide React (icons)
-- Custom UI components
+- React Router
+- @testing-library/react
+- @testing-library/jest-dom
+- @testing-library/user-event
 
 ## Related Components
 - [Header](./Header.md)
-- [Sidebar](./Sidebar.md)
-- [Button](../ui/Button.md)
+- [Navigation](../navigation/Navigation.md)
+- [SocialIcons](../ui/SocialIcons.md)
+- [NewsletterForm](../forms/NewsletterForm.md)
 - [Link](../ui/Link.md)
 
 ## Examples
-### Basic Footer
-```typescript
+
+### Basic Example
+```tsx
 import { Footer } from '@/components/layout/Footer';
 
-function AppFooter() {
-  return <Footer />;
-}
-```
-
-### Footer with Navigation
-```typescript
-import { Footer } from '@/components/layout/Footer';
-
-function AppFooter() {
+export function BasicExample() {
   const navigation = [
-    { label: 'About', href: '/about' },
-    { label: 'Contact', href: '/contact' },
-    { label: 'Privacy', href: '/privacy' }
-  ];
-
-  return (
-    <Footer
-      navigation={navigation}
-    />
-  );
-}
-```
-
-### Footer with Social Links
-```typescript
-import { Footer } from '@/components/layout/Footer';
-
-function AppFooter() {
-  const socialLinks = [
     {
-      platform: 'twitter',
-      url: 'https://twitter.com/thrivesend',
-      label: 'Follow us on Twitter'
-    },
-    {
-      platform: 'linkedin',
-      url: 'https://linkedin.com/company/thrivesend',
-      label: 'Connect on LinkedIn'
+      title: 'Product',
+      links: [
+        { label: 'Features', href: '/features' },
+        { label: 'Pricing', href: '/pricing' }
+      ]
     }
   ];
 
   return (
     <Footer
-      socialLinks={socialLinks}
+      navigation={navigation}
+      copyright="© 2025 ThriveSend"
+      ariaLabel="Basic footer"
+    />
+  );
+}
+```
+
+### Advanced Example
+```tsx
+import { Footer } from '@/components/layout/Footer';
+import { useCallback, useState } from 'react';
+
+export function AdvancedExample() {
+  const [email, setEmail] = useState('');
+  const [newsletterState, setNewsletterState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
+  const handleNewsletter = useCallback(async (email: string) => {
+    setNewsletterState('loading');
+    try {
+      // Handle subscription
+      setNewsletterState('success');
+    } catch (error) {
+      setNewsletterState('error');
+    }
+  }, []);
+
+  return (
+    <Footer
+      navigation={complexNavigation}
+      social={[
+        {
+          platform: 'twitter',
+          url: 'https://twitter.com/thrivesend',
+          label: 'Twitter'
+        },
+        {
+          platform: 'linkedin',
+          url: 'https://linkedin.com/company/thrivesend',
+          label: 'LinkedIn'
+        }
+      ]}
+      newsletter={{
+        title: 'Subscribe to our newsletter',
+        placeholder: 'Enter your email',
+        onSubmit: handleNewsletter,
+        successMessage: 'Thanks for subscribing!',
+        errorMessage: 'Something went wrong. Please try again.'
+      }}
+      copyright="© 2025 ThriveSend. All rights reserved."
+      ariaLabel="Advanced footer with newsletter"
     />
   );
 }
 ```
 
 ## Best Practices
-1. Keep footer content organized
-2. Use clear, descriptive link labels
-3. Implement proper external link handling
-4. Handle responsive behavior
+
+### Usage Guidelines
+1. Implement proper navigation
+2. Handle responsive states
+3. Use appropriate icons
+4. Implement keyboard nav
 5. Follow accessibility guidelines
-6. Use TypeScript for type safety
-7. Optimize performance
-8. Maintain consistent styling
+6. Optimize for performance
+7. Use TypeScript for type safety
+8. Add proper test IDs
+9. Handle edge cases
+10. Implement proper state
+
+### Performance Tips
+1. Memoize components
+2. Use proper state management
+3. Optimize re-renders
+4. Implement proper loading
+5. Use proper error boundaries
+6. Optimize bundle size
+7. Use proper code splitting
+8. Implement proper caching
+9. Use proper lazy loading
+10. Monitor performance metrics
+
+### Security Considerations
+1. Validate navigation
+2. Prevent XSS attacks
+3. Handle sensitive data
+4. Implement proper authentication
+5. Use proper authorization
+6. Handle errors securely
+7. Implement proper logging
+8. Use proper encryption
+9. Follow security best practices
+10. Regular security audits
 
 ## Troubleshooting
+
 ### Common Issues
-1. **Links not working**
-   - Check href values
-   - Verify link handling
-   - Check event handling
+| Issue | Solution |
+|-------|----------|
+| Navigation not working | Check href and router setup |
+| Newsletter not working | Verify form configuration |
+| Mobile issues | Check responsive breakpoints |
+| Accessibility issues | Verify ARIA labels and keyboard nav |
+| Styling issues | Check Tailwind classes and theme |
 
-2. **Social icons not displaying**
-   - Verify icon imports
-   - Check platform names
-   - Validate URLs
-
-3. **Styling issues**
-   - Check className usage
-   - Verify Tailwind classes
-   - Check for style conflicts
-
-### Solutions
-1. **Link Issues**
-   ```typescript
-   // Proper link implementation
-   <Footer
-     navigation={[
-       {
-         label: 'About',
-         href: '/about',
-         external: false
-       }
-     ]}
-   />
-   ```
-
-2. **Social Link Issues**
-   ```typescript
-   // Proper social link implementation
-   <Footer
-     socialLinks={[
-       {
-         platform: 'twitter',
-         url: 'https://twitter.com/thrivesend',
-         label: 'Twitter'
-       }
-     ]}
-   />
-   ```
-
-3. **Styling Issues**
-   ```typescript
-   // Proper styling implementation
-   <Footer
-     className="custom-footer bg-primary"
-   />
-   ```
+### Error Messages
+| Error Code | Description | Resolution |
+|------------|-------------|------------|
+| ERR001 | Invalid navigation | Check menu items |
+| ERR002 | Newsletter error | Verify form config |
+| ERR003 | Social link error | Check social links |
+| ERR004 | Theme error | Verify theme settings |
+| ERR005 | Event error | Check event handlers |
 
 ## Contributing
-When contributing to the Footer component:
-1. Follow TypeScript best practices
-2. Maintain accessibility standards
-3. Add appropriate tests
-4. Update documentation
-5. Follow component guidelines
 
-*Last Updated: 2025-06-04*
-*Version: 1.0.0* 
+### Development Setup
+1. Clone the repository
+2. Install dependencies
+3. Run development server
+4. Make changes
+5. Run tests
+6. Submit PR
+
+### Testing
+```typescript
+import { render, screen, fireEvent } from '@testing-library/react';
+import { Footer } from './Footer';
+
+describe('Footer', () => {
+  it('renders correctly', () => {
+    const navigation = [
+      {
+        title: 'Product',
+        links: [
+          { label: 'Features', href: '/features' }
+        ]
+      }
+    ];
+    render(<Footer navigation={navigation} />);
+    expect(screen.getByText('Features')).toBeInTheDocument();
+  });
+
+  it('handles newsletter subscription', () => {
+    const handleNewsletter = jest.fn();
+    render(
+      <Footer
+        newsletter={{
+          onSubmit: handleNewsletter
+        }}
+      />
+    );
+    fireEvent.change(screen.getByRole('textbox'), {
+      target: { value: 'test@example.com' }
+    });
+    fireEvent.click(screen.getByRole('button'));
+    expect(handleNewsletter).toHaveBeenCalledWith('test@example.com');
+  });
+});
+```
+
+### Code Style
+- Follow TypeScript best practices
+- Use ESLint rules
+- Follow Prettier configuration
+- Write meaningful comments
+- Use proper naming conventions
+- Follow component patterns
+- Use proper documentation
+- Follow testing practices
+- Use proper error handling
+- Follow security guidelines
+
+## Changelog
+
+### Version 1.0.0
+- Initial release
+- Basic navigation
+- Social links
+- Newsletter
+- Mobile support
+
+### Version 1.1.0
+- Added advanced newsletter
+- Improved performance
+- Enhanced accessibility
+- Added dark mode
+- Added RTL support
+
+## Appendix
+
+### Glossary
+- **Footer**: Main application footer
+- **Navigation**: Link groups
+- **Social Links**: Social media links
+- **Newsletter**: Email subscription
+- **Copyright**: Legal information
+
+### FAQ
+#### How do I implement newsletter subscription?
+Use the newsletter prop to configure subscription behavior.
+
+#### How do I handle mobile responsiveness?
+The footer automatically handles mobile views with a stacked layout.
+
+#### How do I make the footer accessible?
+Include proper ARIA labels and ensure keyboard navigation works. 

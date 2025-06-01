@@ -1,23 +1,38 @@
 # Sidebar Component
 
 ## Overview
-The Sidebar component provides a responsive navigation sidebar with collapsible sections, nested menus, and customizable styling. It follows ThriveSend's design system and includes comprehensive accessibility features.
+The Sidebar component is a responsive navigation sidebar that provides main navigation and secondary actions. It supports collapsible sections, nested navigation, and dynamic content while maintaining consistent styling and behavior across the application.
 
 ## Screenshots
-![Sidebar Variants](./images/layout/sidebar-variants.png)
-*Different sidebar states and configurations*
+![Sidebar Main View](../../images/components/layout/sidebar-main-view.png)
+*Main view showing expanded sidebar with navigation items*
+
+![Sidebar Collapsed](../../images/components/layout/sidebar-collapsed.png)
+*Collapsed state showing icons only*
+
+![Sidebar Mobile](../../images/components/layout/sidebar-mobile.png)
+*Mobile view with overlay and backdrop*
+
+![Sidebar Interactions](../../images/components/layout/sidebar-interactions.png)
+*Interactive features: hover states, active items, and nested menus*
 
 ## Component Architecture
 ```mermaid
 graph TD
     A[Sidebar Component] --> B[Base Sidebar]
-    B --> C[SidebarHeader]
-    B --> D[SidebarContent]
-    B --> E[SidebarFooter]
-    D --> F[SidebarSection]
-    F --> G[SidebarItem]
-    F --> H[SidebarSubmenu]
-    H --> I[SidebarSubItem]
+    B --> C[Navigation Menu]
+    B --> D[Collapse Button]
+    B --> E[User Section]
+    
+    C --> F[Menu Items]
+    F --> G[Nested Items]
+    
+    B --> H[State Management]
+    B --> I[Responsive Logic]
+    B --> J[Animation]
+    
+    E --> K[User Info]
+    E --> L[Actions]
 ```
 
 ## Data Flow
@@ -26,12 +41,14 @@ sequenceDiagram
     participant U as User
     participant S as Sidebar
     participant N as Navigation
-    participant R as Router
+    participant M as Menu
+    participant R as Renderer
     
-    U->>S: Interact with Item
+    U->>S: Interaction
     S->>N: Update Navigation
-    N->>R: Route Change
-    R-->>S: Update Active State
+    N->>M: Update Menu State
+    M->>R: Render Update
+    R-->>S: Visual Update
     S-->>U: Visual Feedback
 ```
 
@@ -39,59 +56,80 @@ sequenceDiagram
 - Responsive design
 - Collapsible sections
 - Nested navigation
-- Active state tracking
-- Custom theming
+- Dynamic content
+- User section
+- Custom themes
+- Mobile support
 - Keyboard navigation
-- Full accessibility support
-- TypeScript type safety
+- Animation support
+- State persistence
+- Custom branding
+- Search integration
+- Notification badges
+- Accessibility support
+- Dark mode support
+- RTL support
 - Performance optimized
+- TypeScript support
 
 ## Props
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| variant | 'default' \| 'compact' \| 'expanded' | 'default' | Sidebar style variant |
-| collapsed | boolean | false | Collapsed state |
-| onCollapse | (collapsed: boolean) => void | undefined | Collapse handler |
-| items | SidebarItem[] | [] | Navigation items |
-| activeItem | string | undefined | Active item ID |
-| className | string | undefined | Additional CSS classes |
-| logo | ReactNode | undefined | Logo component |
-| footer | ReactNode | undefined | Footer content |
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| items | MenuItem[] | Yes | undefined | Navigation items |
+| collapsed | boolean | No | false | Collapsed state |
+| onCollapse | () => void | No | undefined | Collapse handler |
+| user | UserInfo | No | undefined | User information |
+| logo | string | No | undefined | Logo URL |
+| className | string | No | undefined | Additional CSS classes |
+| ariaLabel | string | No | undefined | ARIA label |
+| testId | string | No | undefined | Test ID |
 
 ## Usage
-```typescript
+```tsx
 import { Sidebar } from '@/components/layout/Sidebar';
 
-// Basic sidebar
-<Sidebar
-  items={[
-    { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon /> },
-    { id: 'content', label: 'Content', icon: <ContentIcon /> },
-    { id: 'analytics', label: 'Analytics', icon: <AnalyticsIcon /> }
-  ]}
-/>
-
-// Collapsible sidebar
-<Sidebar
-  variant="compact"
-  collapsed={isCollapsed}
-  onCollapse={setCollapsed}
-  items={navigationItems}
-/>
-
-// Nested navigation
+// Basic usage
 <Sidebar
   items={[
     {
+      id: 'dashboard',
+      label: 'Dashboard',
+      icon: 'dashboard',
+      href: '/dashboard'
+    },
+    {
       id: 'content',
       label: 'Content',
-      icon: <ContentIcon />,
+      icon: 'content',
       items: [
-        { id: 'posts', label: 'Posts' },
-        { id: 'pages', label: 'Pages' }
+        {
+          id: 'posts',
+          label: 'Posts',
+          href: '/content/posts'
+        },
+        {
+          id: 'media',
+          label: 'Media',
+          href: '/content/media'
+        }
       ]
     }
   ]}
+  ariaLabel="Main navigation"
+/>
+
+// Advanced usage
+<Sidebar
+  items={complexNavigation}
+  collapsed={isCollapsed}
+  onCollapse={handleCollapse}
+  user={{
+    name: 'John Doe',
+    avatar: '/avatars/john.jpg',
+    role: 'Admin'
+  }}
+  logo="/logo.svg"
+  ariaLabel="Advanced navigation sidebar"
 />
 ```
 
@@ -99,79 +137,91 @@ import { Sidebar } from '@/components/layout/Sidebar';
 ```mermaid
 graph LR
     A[User Action] --> B{Sidebar State}
-    B -->|Click Item| C[Navigate]
-    B -->|Toggle| D[Collapse/Expand]
+    B -->|Collapse| C[Toggle Width]
+    B -->|Click| D[Navigate]
     B -->|Hover| E[Show Tooltip]
-    C --> F[Update UI]
-    D --> F
-    E --> F
+    B -->|Expand| F[Show Nested]
+    
+    C --> G[State Management]
+    D --> G
+    E --> G
+    F --> G
+    
+    G --> H[Visual Feedback]
 ```
 
 ## Components
-1. **Base Sidebar**
-   - Manages sidebar state
-   - Handles responsive behavior
-   - Implements accessibility features
 
-2. **SidebarHeader**
-   - Displays logo
-   - Manages collapse button
-   - Handles branding
+### Base Sidebar
+- Handles core sidebar functionality
+- Manages responsive behavior
+- Implements animations
+- Handles state
+- Manages theme
 
-3. **SidebarContent**
-   - Manages navigation items
-   - Handles scrolling
-   - Implements section management
+### Navigation Menu
+- Renders menu items
+- Handles navigation
+- Manages nested items
+- Implements keyboard nav
+- Handles active states
 
-4. **SidebarFooter**
-   - Displays footer content
-   - Manages user profile
-   - Handles actions
+### Collapse Button
+- Toggles sidebar state
+- Manages animations
+- Handles accessibility
+- Provides visual feedback
+- Manages state
 
-5. **SidebarSection**
-   - Groups related items
-   - Manages section state
-   - Handles animations
-
-6. **SidebarItem**
-   - Displays navigation item
-   - Handles interactions
-   - Manages active state
-
-7. **SidebarSubmenu**
-   - Manages nested items
-   - Handles expansion
-   - Implements animations
+### User Section
+- Displays user info
+- Shows user actions
+- Handles user menu
+- Manages state
+- Implements animations
 
 ## Data Models
 ```typescript
-interface SidebarProps {
-  variant?: 'default' | 'compact' | 'expanded';
-  collapsed?: boolean;
-  onCollapse?: (collapsed: boolean) => void;
-  items: SidebarItem[];
-  activeItem?: string;
-  className?: string;
-  logo?: ReactNode;
-  footer?: ReactNode;
-}
-
-interface SidebarItem {
+interface MenuItem {
   id: string;
   label: string;
-  icon?: ReactNode;
-  items?: SidebarItem[];
+  icon?: string;
   href?: string;
-  onClick?: () => void;
-  badge?: string | number;
-  disabled?: boolean;
+  items?: MenuItem[];
+  badge?: {
+    count: number;
+    variant: 'primary' | 'secondary' | 'success' | 'warning' | 'error';
+  };
+}
+
+interface UserInfo {
+  name: string;
+  avatar: string;
+  role: string;
+  actions?: {
+    id: string;
+    label: string;
+    icon?: string;
+    onClick: () => void;
+  }[];
 }
 
 interface SidebarState {
-  collapsed: boolean;
-  activeItem: string | null;
-  expandedSections: string[];
-  hoveredItem: string | null;
+  isCollapsed: boolean;
+  isMobile: boolean;
+  activeItem?: string;
+  expandedItems: string[];
+  isUserMenuOpen: boolean;
+}
+
+interface SidebarEvent {
+  type: 'collapse' | 'navigate' | 'expand' | 'user';
+  timestamp: number;
+  data?: {
+    itemId?: string;
+    path?: string;
+    action?: string;
+  };
 }
 ```
 
@@ -181,181 +231,290 @@ interface SidebarState {
 - Implements consistent spacing
 - Supports dark mode
 - Maintains accessibility contrast ratios
-- Responsive design patterns
-- Smooth transitions
+- Uses CSS variables for theming
+- Implements responsive design
+- Supports custom animations
+- Uses CSS Grid for layout
+- Implements proper transitions
 
 ## Accessibility
-- ARIA roles and attributes
-- Keyboard navigation
+- ARIA labels for screen readers
+- Keyboard navigation support
 - Focus management
 - Color contrast compliance
-- Screen reader support
-- Collapse/expand announcements
-- Active state indicators
+- State announcements
+- RTL support
+- Screen reader announcements
+- Focus visible states
+- Proper role attributes
+- Keyboard event handling
+- Error message association
+- Navigation announcements
 
 ## Error Handling
-- Invalid route handling
-- Missing item handling
-- Error boundary implementation
+- Navigation validation
+- State management
+- Error boundaries
 - Fallback content
-- Loading states
-- Error states
+- Recovery strategies
+- User feedback
+- Error logging
+- State recovery
+- Navigation recovery
+- Animation fallbacks
 
 ## Performance Optimizations
-- Virtualized item list
+- Component memoization
+- Render optimization
+- Animation optimization
+- State batching
+- Code splitting
+- Bundle optimization
+- Memory management
+- Event debouncing
 - Lazy loading
-- Memoized callbacks
-- CSS-in-JS optimization
-- Transition optimizations
-- Event handler optimization
+- Virtual scrolling
 
 ## Dependencies
 - React
 - TypeScript
 - Tailwind CSS
 - React Router
-- React Icons
-- Framer Motion (optional)
+- @testing-library/react
+- @testing-library/jest-dom
+- @testing-library/user-event
 
 ## Related Components
 - [Header](./Header.md)
-- [Footer](./Footer.md)
 - [Menu](../navigation/Menu.md)
+- [Navigation](../navigation/Navigation.md)
+- [UserMenu](../navigation/UserMenu.md)
+- [Logo](../ui/Logo.md)
 
 ## Examples
-### Basic Navigation
-```typescript
+
+### Basic Example
+```tsx
 import { Sidebar } from '@/components/layout/Sidebar';
 
-function AppSidebar() {
+export function BasicExample() {
   const items = [
-    { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon /> },
-    { id: 'content', label: 'Content', icon: <ContentIcon /> },
-    { id: 'analytics', label: 'Analytics', icon: <AnalyticsIcon /> }
-  ];
-
-  return <Sidebar items={items} />;
-}
-```
-
-### Nested Navigation
-```typescript
-import { Sidebar } from '@/components/layout/Sidebar';
-
-function AppSidebar() {
-  const items = [
+    {
+      id: 'dashboard',
+      label: 'Dashboard',
+      icon: 'dashboard',
+      href: '/dashboard'
+    },
     {
       id: 'content',
       label: 'Content',
-      icon: <ContentIcon />,
+      icon: 'content',
       items: [
-        { id: 'posts', label: 'Posts' },
-        { id: 'pages', label: 'Pages' },
-        { id: 'media', label: 'Media' }
-      ]
-    },
-    {
-      id: 'settings',
-      label: 'Settings',
-      icon: <SettingsIcon />,
-      items: [
-        { id: 'profile', label: 'Profile' },
-        { id: 'security', label: 'Security' }
+        {
+          id: 'posts',
+          label: 'Posts',
+          href: '/content/posts'
+        }
       ]
     }
   ];
 
-  return <Sidebar items={items} />;
+  return (
+    <Sidebar
+      items={items}
+      ariaLabel="Basic navigation sidebar"
+    />
+  );
 }
 ```
 
-### Custom Styling
-```typescript
+### Advanced Example
+```tsx
 import { Sidebar } from '@/components/layout/Sidebar';
+import { useCallback, useState } from 'react';
 
-function AppSidebar() {
+export function AdvancedExample() {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [activeItem, setActiveItem] = useState<string>();
+
+  const handleCollapse = useCallback(() => {
+    setIsCollapsed(prev => !prev);
+  }, []);
+
+  const handleNavigation = useCallback((itemId: string) => {
+    setActiveItem(itemId);
+    // Additional navigation logic
+  }, []);
+
   return (
     <Sidebar
-      variant="expanded"
-      className="bg-primary-900 text-white"
-      logo={<CustomLogo />}
-      footer={<UserProfile />}
+      items={complexNavigation}
+      collapsed={isCollapsed}
+      onCollapse={handleCollapse}
+      onNavigation={handleNavigation}
+      user={{
+        name: 'John Doe',
+        avatar: '/avatars/john.jpg',
+        role: 'Admin',
+        actions: [
+          {
+            id: 'profile',
+            label: 'Profile',
+            icon: 'user',
+            onClick: () => {/* Handle click */}
+          }
+        ]
+      }}
+      logo="/logo.svg"
+      ariaLabel="Advanced navigation sidebar"
     />
   );
 }
 ```
 
 ## Best Practices
-1. Keep navigation items organized
-2. Use clear, concise labels
-3. Include appropriate icons
-4. Implement proper routing
-5. Handle responsive behavior
-6. Follow accessibility guidelines
+
+### Usage Guidelines
+1. Implement proper navigation
+2. Handle responsive states
+3. Use appropriate icons
+4. Implement keyboard nav
+5. Follow accessibility guidelines
+6. Optimize for performance
 7. Use TypeScript for type safety
-8. Optimize performance
+8. Add proper test IDs
+9. Handle edge cases
+10. Implement proper state
+
+### Performance Tips
+1. Memoize components
+2. Use proper state management
+3. Optimize re-renders
+4. Implement proper loading
+5. Use proper error boundaries
+6. Optimize bundle size
+7. Use proper code splitting
+8. Implement proper caching
+9. Use proper lazy loading
+10. Monitor performance metrics
+
+### Security Considerations
+1. Validate navigation
+2. Prevent XSS attacks
+3. Handle sensitive data
+4. Implement proper authentication
+5. Use proper authorization
+6. Handle errors securely
+7. Implement proper logging
+8. Use proper encryption
+9. Follow security best practices
+10. Regular security audits
 
 ## Troubleshooting
+
 ### Common Issues
-1. **Navigation not working**
-   - Check route configuration
-   - Verify item structure
-   - Check event handlers
+| Issue | Solution |
+|-------|----------|
+| Navigation not working | Check href and router setup |
+| Collapse not working | Verify state management |
+| Mobile issues | Check responsive breakpoints |
+| Accessibility issues | Verify ARIA labels and keyboard nav |
+| Styling issues | Check Tailwind classes and theme |
 
-2. **Collapse not working**
-   - Verify collapsed prop
-   - Check onCollapse handler
-   - Validate state management
-
-3. **Styling issues**
-   - Check variant prop
-   - Verify className usage
-   - Check for style conflicts
-
-### Solutions
-1. **Navigation Issues**
-   ```typescript
-   // Proper navigation setup
-   <Sidebar
-     items={[
-       {
-         id: 'dashboard',
-         label: 'Dashboard',
-         href: '/dashboard'
-       }
-     ]}
-   />
-   ```
-
-2. **Collapse Issues**
-   ```typescript
-   // Proper collapse implementation
-   const [collapsed, setCollapsed] = useState(false);
-   
-   <Sidebar
-     collapsed={collapsed}
-     onCollapse={setCollapsed}
-     items={items}
-   />
-   ```
-
-3. **Styling Issues**
-   ```typescript
-   // Proper styling implementation
-   <Sidebar
-     variant="expanded"
-     className="custom-sidebar"
-     items={items}
-   />
-   ```
+### Error Messages
+| Error Code | Description | Resolution |
+|------------|-------------|------------|
+| ERR001 | Invalid navigation | Check menu items |
+| ERR002 | State error | Verify state management |
+| ERR003 | Router error | Check router setup |
+| ERR004 | Theme error | Verify theme settings |
+| ERR005 | Event error | Check event handlers |
 
 ## Contributing
-When contributing to the Sidebar component:
-1. Follow TypeScript best practices
-2. Maintain accessibility standards
-3. Add appropriate tests
-4. Update documentation
-5. Follow component guidelines
 
-*Last Updated: 2025-06-04*
-*Version: 1.0.0* 
+### Development Setup
+1. Clone the repository
+2. Install dependencies
+3. Run development server
+4. Make changes
+5. Run tests
+6. Submit PR
+
+### Testing
+```typescript
+import { render, screen, fireEvent } from '@testing-library/react';
+import { Sidebar } from './Sidebar';
+
+describe('Sidebar', () => {
+  it('renders correctly', () => {
+    const items = [
+      {
+        id: 'dashboard',
+        label: 'Dashboard',
+        href: '/dashboard'
+      }
+    ];
+    render(<Sidebar items={items} />);
+    expect(screen.getByText('Dashboard')).toBeInTheDocument();
+  });
+
+  it('handles collapse', () => {
+    const handleCollapse = jest.fn();
+    render(
+      <Sidebar
+        items={[]}
+        onCollapse={handleCollapse}
+      />
+    );
+    fireEvent.click(screen.getByRole('button'));
+    expect(handleCollapse).toHaveBeenCalled();
+  });
+});
+```
+
+### Code Style
+- Follow TypeScript best practices
+- Use ESLint rules
+- Follow Prettier configuration
+- Write meaningful comments
+- Use proper naming conventions
+- Follow component patterns
+- Use proper documentation
+- Follow testing practices
+- Use proper error handling
+- Follow security guidelines
+
+## Changelog
+
+### Version 1.0.0
+- Initial release
+- Basic navigation
+- Collapsible sidebar
+- Mobile support
+- Accessibility support
+
+### Version 1.1.0
+- Added user section
+- Improved performance
+- Enhanced accessibility
+- Added dark mode
+- Added RTL support
+
+## Appendix
+
+### Glossary
+- **Sidebar**: Main navigation component
+- **MenuItem**: Navigation item
+- **Collapse**: Toggle sidebar width
+- **Nested**: Hierarchical navigation
+- **User Section**: User information area
+
+### FAQ
+#### How do I implement nested navigation?
+Use the items prop to provide nested menu items.
+
+#### How do I handle mobile responsiveness?
+The sidebar automatically handles mobile views with overlay.
+
+#### How do I make the sidebar accessible?
+Include proper ARIA labels and ensure keyboard navigation works. 
