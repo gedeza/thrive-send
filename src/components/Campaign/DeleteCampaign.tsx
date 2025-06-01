@@ -80,9 +80,12 @@ const DeleteCampaign: React.FC<DeleteCampaignProps> = ({
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
       <AlertDialogTrigger asChild>
         <Button 
-          variant={buttonVariant} 
+          variant={buttonVariant === 'destructive' ? 'destructive' : buttonVariant} 
           size={buttonSize}
-          className="text-red-600 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
+          className={buttonVariant !== 'destructive' ? 
+            "text-red-600 hover:text-red-700 hover:bg-red-50 flex items-center gap-1" : 
+            "flex items-center gap-1"
+          }
         >
           <Trash2 className="h-4 w-4" />
           {buttonLabel}
@@ -106,7 +109,7 @@ const DeleteCampaign: React.FC<DeleteCampaignProps> = ({
               e.preventDefault();
               handleDelete();
             }}
-            className="bg-red-600 hover:bg-red-700 text-custom-white"
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
             {isDeleting ? 'Deleting...' : 'Delete Campaign'}
           </AlertDialogAction>

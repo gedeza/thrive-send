@@ -300,22 +300,28 @@ export default function CampaignsPage() {
                   </div>
                   {/* Sent Date */}
                   <div className="col-span-2">{prettyDate(campaign.sentDate)}</div>
-                  {/* Analytics Link */}
-                  <div className="col-span-1 flex items-center space-x-2">
+                  {/* Actions */}
+                  <div className="col-span-1 flex items-center justify-start gap-1">
                     {campaign.status !== "Draft" && (
-                      <Link href={`/campaigns/analytics/${campaign.id}`} className="text-blue-600 hover:text-blue-800">
-                        <Eye className="h-4 w-4" />
-                      </Link>
+                      <Button variant="ghost" size="icon" asChild className="h-8 w-8 text-blue-600 hover:text-blue-800 hover:bg-blue-50">
+                        <Link href={`/campaigns/analytics/${campaign.id}`}>
+                          <Eye className="h-4 w-4" />
+                        </Link>
+                      </Button>
                     )}
                     {campaign.status === "Draft" && (
-                      <Link href={`/campaigns/edit/${campaign.id}`} className="text-yellow-600 hover:text-yellow-800">
-                        <Edit className="h-4 w-4" />
-                      </Link>
+                      <Button variant="ghost" size="icon" asChild className="h-8 w-8 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50">
+                        <Link href={`/campaigns/edit/${campaign.id}`}>
+                          <Edit className="h-4 w-4" />
+                        </Link>
+                      </Button>
                     )}
                     <DeleteCampaign 
                       campaignId={campaign.id}
                       campaignName={campaign.name}
                       onDeleteSuccess={fetchCampaigns}
+                      buttonVariant="ghost"
+                      buttonSize="sm"
                       buttonLabel=""
                     />
                   </div>

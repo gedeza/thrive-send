@@ -10,7 +10,9 @@ export async function POST(req: NextRequest) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const { campaignId, dateRange } = await req.json();
+    const body = await req.json();
+    const campaignId = body.campaignId;
+    const dateRange = body.dateRange;
     
     if (!campaignId) {
       return new NextResponse('Campaign ID is required', { status: 400 });
