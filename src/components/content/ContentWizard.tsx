@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CalendarEvent, SocialPlatform, SocialMediaContent } from '@/components/content/content-calendar';
+import type { CalendarEvent, SocialPlatform, SocialMediaContent } from '@/components/content/content-calendar';
 import { EventForm } from './EventForm';
 import { EventDetails } from './EventDetails';
 import { format } from 'date-fns';
@@ -15,6 +15,7 @@ import { toast } from '@/components/ui/use-toast';
 import { Alert } from '@/components/ui/Alert';
 import { InfoIcon, AlertCircleIcon, CheckCircleIcon, Loader2 } from 'lucide-react';
 import { trackAnalyticsEvent } from '@/lib/api/analytics-service';
+import { ContentGuidance } from './ContentGuidance';
 
 interface ContentWizardProps {
   onComplete?: (event: CalendarEvent) => void;
@@ -169,6 +170,63 @@ const trackEvent = async (event: AnalyticsEvent) => {
       ...event.metadata
     }
   );
+};
+
+/**
+ * Properly formats date and time inputs into a valid ISO date string
+ * Handles multiple input formats and ensures the output is always a valid date
+ */
+const formatScheduledDate = (dateInput: string | Date, timeInput: string): string => {
+  try {
+    console.log('Formatting date inputs:', { dateInput, timeInput });
+    
+    // If dateInput is already a complete ISO string with time (and it's valid), return it
+    if (typeof dateInput === 'string' && 
+        dateInput.includes('T') && 
+        dateInput.includes('Z') && 
+        !isNaN(new Date(dateInput).getTime())) {
+      console.log('Input is already a valid ISO string:', dateInput);
+      return dateInput;
+    }
+    
+    // Convert Date object to string if needed
+    let dateStr = typeof dateInput === 'string' 
+      ? dateInput 
+      : format(dateInput, 'yyyy-MM-dd');
+    
+    // If dateStr contains a 'T', extract just the date portion
+    if (dateStr.includes('T')) {
+      dateStr = dateStr.split('T')[0];
+    }
+    
+    // Validate date format (YYYY-MM-DD)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      console.error('Invalid date string format:', dateStr);
+      throw new Error(`Invalid date format: expected YYYY-MM-DD, got ${dateStr}`);
+    }
+    
+    // Validate time format (HH:MM)
+    if (!/^\d{2}:\d{2}$/.test(timeInput)) {
+      console.error('Invalid time format:', timeInput);
+      throw new Error(`Invalid time format: expected HH:MM, got ${timeInput}`);
+    }
+    
+    // Combine date and time
+    const isoString = `${dateStr}T${timeInput}:00.000Z`;
+    
+    // Validate the resulting date
+    const resultDate = new Date(isoString);
+    if (isNaN(resultDate.getTime())) {
+      console.error('Invalid date created:', isoString);
+      throw new Error('The resulting date is invalid');
+    }
+    
+    console.log('Successfully formatted date:', isoString);
+    return isoString;
+  } catch (error) {
+    console.error('Date formatting error:', error);
+    throw new Error(`Failed to format date: ${error instanceof Error ? error.message : 'unknown error'}`);
+  }
 };
 
 export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
@@ -485,9 +543,12 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
       return;
     }
 
+    // Format date as YYYY-MM-DD string for consistent storage
+    const formattedDate = format(date, "yyyy-MM-dd");
+
     setEvent(prev => ({
       ...prev,
-      date: date.toISOString(),
+      date: formattedDate,
       time: prev.time || '12:00', // Set default time if not provided
       status: "scheduled"
     }));
@@ -524,125 +585,122 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
   };
 
   const handleComplete = async () => {
-    try {
+    if (isSubmitting) return;
       setIsSubmitting(true);
-      setFeedback(null);
-
-      // Validate all steps
-      const stepErrors = steps
-        .map(step => {
-          if (!validateStep(step.id)) {
-            return {
-              step: step.id,
-              type: 'required' as ValidationErrorType,
-              message: `Please complete the ${step.label.toLowerCase()} step`
-            };
-          }
-          return null;
-        })
-        .filter((error): error is ValidationError => error !== null);
-
-      if (stepErrors.length > 0) {
-        setValidationErrors(stepErrors);
-        setFeedback({
-          type: 'error',
-          message: 'Please complete all required fields before submitting'
-        });
-        return;
-      }
-
-      // Helper function to safely convert date to ISO string
-      const formatScheduledDate = (dateString: string | undefined): string | undefined => {
-        if (!dateString || dateString === '') return undefined;
-        
-        try {
-          const date = new Date(dateString);
-          if (isNaN(date.getTime())) {
-            console.error('Invalid date provided:', dateString);
-            return undefined;
-          }
-          return date.toISOString();
-        } catch (error) {
-          console.error('Error converting date:', error, 'Original date:', dateString);
-          return undefined;
-        }
-      };
-
-      // Helper function to map ContentWizard status to Prisma ContentStatus
-      const mapStatusToPrisma = (status: string | undefined, hasScheduledDate: boolean): string => {
-        if (!status) {
-          return hasScheduledDate ? 'APPROVED' : 'DRAFT';
-        }
-        
-        switch (status.toLowerCase()) {
-          case 'draft':
-            return 'DRAFT';
-          case 'scheduled':
-            return hasScheduledDate ? 'APPROVED' : 'DRAFT';
-          case 'sent':
-            return 'PUBLISHED';
-          case 'failed':
-            return 'REJECTED';
-          default:
-            return hasScheduledDate ? 'APPROVED' : 'DRAFT';
-        }
-      };
-
-      const hasScheduledDate = !!(event.date && event.date !== '');
+    
+    try {
+      // Validate and format the scheduled date if provided
+      let scheduledDateTime: string | undefined = undefined;
       
-      // Transform the event to match the API's expected format
-      const contentData = {
+      if (event.date && event.time) {
+        try {
+          console.log('Content scheduling data:', { 
+            date: event.date, 
+            time: event.time,
+            dateType: typeof event.date
+          });
+          
+          // Format the date using our improved function
+          scheduledDateTime = formatScheduledDate(event.date, event.time);
+          console.log('Formatted scheduled date:', scheduledDateTime);
+        } catch (error) {
+          console.error('Date formatting failed:', error);
+          toast({
+            title: 'Invalid Date Format',
+            description: error instanceof Error 
+              ? error.message 
+              : 'Please enter a valid date and time (YYYY-MM-DD and HH:MM)',
+            variant: 'destructive',
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      }
+      
+      // Create content in API
+      const contentResponse = await fetch('/api/content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
         title: event.title || '',
-        type: event.type?.toUpperCase() as 'BLOG' | 'SOCIAL' | 'EMAIL' | 'ARTICLE',
+          type: (event.type || 'social').toUpperCase(),
         content: event.description || '',
         tags: [],
-        status: mapStatusToPrisma(event.status, hasScheduledDate) as 'DRAFT' | 'IN_REVIEW' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'APPROVED' | 'REJECTED' | 'PUBLISHED' | 'ARCHIVED',
-        scheduledAt: formatScheduledDate(event.date),
-        media: event.socialMediaContent?.mediaUrls || []
-      };
-
-      console.log('Content data being saved:', contentData);
-      console.log('Original event data:', event);
-      console.log('Status mapping details:', {
-        originalStatus: event.status,
-        hasScheduledDate,
-        mappedStatus: mapStatusToPrisma(event.status, hasScheduledDate)
+          status: 'APPROVED',
+          scheduledAt: scheduledDateTime,
+          media: event.socialMediaContent?.mediaUrls || [],
+          slug: (event.title || 'untitled').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        }),
       });
 
-      // Save the content
-      const savedContent = await saveContent(contentData);
-      console.log('Content saved, response:', savedContent);
+      if (!contentResponse.ok) {
+        const errorData = await contentResponse.json();
+        throw new Error(errorData.error || 'Failed to create content');
+      }
 
-      // Transform the response back to match CalendarEvent type
-      const calendarEvent: CalendarEvent = {
-        id: savedContent.id,
-        title: savedContent.title,
-        description: savedContent.content,
-        type: savedContent.type.toLowerCase() as ContentType,
-        status: savedContent.status.toLowerCase() as ContentStatus,
-        date: savedContent.scheduledAt || event.date || new Date().toISOString(),
-        time: event.time || (savedContent.scheduledAt ? new Date(savedContent.scheduledAt).toLocaleTimeString() : ''),
-        scheduledDate: savedContent.scheduledAt || event.date,
-        scheduledTime: event.time || (savedContent.scheduledAt ? new Date(savedContent.scheduledAt).toLocaleTimeString() : ''),
-        socialMediaContent: {
-          platforms: event.socialMediaContent?.platforms || [],
-          mediaUrls: savedContent.media || [],
-          crossPost: event.socialMediaContent?.crossPost || false,
-          platformSpecificContent: event.socialMediaContent?.platformSpecificContent || {}
+      const contentData = await contentResponse.json();
+      
+      // Create calendar event with same scheduled date
+      const calendarResponse = await fetch('/api/calendar/events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        organizationId: '', // TODO: Get from user context
-        createdBy: '' // TODO: Get from user context
-      };
+        body: JSON.stringify({
+          title: event.title || '',
+          description: event.description || '',
+          type: event.type || 'social',
+          status: 'scheduled',
+          // Use the exact same scheduledAt time to ensure consistency
+          startTime: contentData.scheduledAt || new Date().toISOString(),
+          endTime: contentData.scheduledAt 
+            ? new Date(new Date(contentData.scheduledAt).getTime() + 3600000).toISOString() // Add 1 hour
+            : new Date(new Date().getTime() + 3600000).toISOString(),
+          scheduledAt: contentData.scheduledAt,
+          contentId: contentData.id,
+          socialMediaContent: event.socialMediaContent,
+        }),
+      });
 
-      handleSuccess('Content saved successfully!');
-      onComplete?.(calendarEvent);
-      router.push('/content/calendar');
+      if (!calendarResponse.ok) {
+        const errorData = await calendarResponse.json();
+        throw new Error(errorData.error || 'Failed to create calendar event');
+      }
+
+      const calendarData = await calendarResponse.json();
+      
+      // Show success message
+      handleSuccess("Content scheduled successfully");
+      
+      // Call the onComplete callback with the created event
+      if (onComplete) {
+        onComplete({
+          id: calendarData.id,
+          title: event.title || 'Untitled',
+          description: event.description || '',
+          type: (event.type || 'social') as ContentType,
+          status: 'scheduled',
+          date: event.date || format(new Date(), 'yyyy-MM-dd'),
+          time: event.time || format(new Date(), 'HH:mm'),
+          socialMediaContent: event.socialMediaContent || {
+            platforms: [],
+            crossPost: false,
+            mediaUrls: [],
+            platformSpecificContent: {}
+          },
+          organizationId: calendarData.organizationId || '',
+          createdBy: calendarData.createdBy || ''
+        });
+      }
     } catch (error) {
-      console.error('Error saving content:', error);
+      console.error("Error creating content:", error);
       handleError({
-        step: 'preview',
-        type: 'required',
-        message: error instanceof Error ? error.message : 'Failed to save content'
+        step: currentStep,
+        type: 'content-type',
+        message: error instanceof Error ? error.message : 'An unknown error occurred',
+        field: 'submit',
       });
     } finally {
       setIsSubmitting(false);
@@ -789,6 +847,13 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
                   <p className="text-sm text-muted-foreground">
                     Write your content and add any media you'd like to include.
                   </p>
+                  {event.type && (
+                    <ContentGuidance 
+                      contentType={event.type} 
+                      currentLength={event.description?.length || 0}
+                      expanded={false}
+                    />
+                  )}
                   <EventForm
                     initialData={event}
                     onContentChange={handleContentUpdate}
