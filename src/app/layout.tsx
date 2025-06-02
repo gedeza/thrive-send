@@ -4,6 +4,11 @@ import React from 'react';
 import { Inter } from "next/font/google";
 import { ClientLayout } from '@/components/layout/client-layout';
 import { Metadata } from 'next';
+import { ThemeProvider } from '@/components/theme-provider';
+import { Toaster } from '@/components/ui/toaster';
+import { ClerkProvider } from '@clerk/nextjs';
+import { OnboardingProvider } from '@/context/OnboardingContext';
+import { cn } from '@/lib/utils';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -34,7 +39,14 @@ export default function RootLayout({
         />
       </head>
       <body className={inter.className}>
-        <ClientLayout>{children}</ClientLayout>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <ClerkProvider>
+            <OnboardingProvider>
+              <ClientLayout>{children}</ClientLayout>
+            </OnboardingProvider>
+          </ClerkProvider>
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

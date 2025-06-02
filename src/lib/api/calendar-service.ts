@@ -115,8 +115,25 @@ const CACHE_EXPIRATION_MS = 5 * 60 * 1000; // 5 minutes
 // Check if we're in development mode
 const isDevelopment = process.env.NODE_ENV === 'development';
 
-// Try to detect if we're in a browser environment
+// Try to detect if we're in a browser environment safely
 const isBrowser = typeof window !== 'undefined';
+
+/**
+ * Safely check if localStorage is available
+ * This handles cases where localStorage is not available or throws errors
+ */
+function isLocalStorageAvailable() {
+  if (!isBrowser) return false;
+  
+  try {
+    const testKey = "__test__";
+    localStorage.setItem(testKey, testKey);
+    localStorage.removeItem(testKey);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
 
 /**
  * Fetch all calendar events for the authenticated user
@@ -128,10 +145,12 @@ export async function fetchCalendarEvents(params?: {
   type?: string;
   status?: string;
   forceMockData?: boolean;
-  bypassCache?: boolean; // Add parameter to bypass cache when needed
-  cacheEnabled?: boolean; // Add parameter to override global cache setting
-  lastCacheInvalidation?: number; // Add timestamp from context for cache invalidation
+  bypassCache?: boolean;
+  cacheEnabled?: boolean;
+  lastCacheInvalidation?: number;
 }): Promise<ContentCalendarEvent[]> {
+  console.log('[fetchCalendarEvents] Called with params:', params);
+  
   // Skip cache if explicitly requested, if not in development mode, or if not in browser
   const shouldUseCache = isBrowser && 
     isDevelopment && 
@@ -148,31 +167,33 @@ export async function fetchCalendarEvents(params?: {
     }
     
     // Try localStorage cache next
-    try {
-      const cachedData = localStorage.getItem('calendarEventsCache');
-      const cacheTimestamp = localStorage.getItem('calendarEventsCacheTimestamp');
-      
-      if (cachedData && cacheTimestamp) {
-        const parsedTimestamp = parseInt(cacheTimestamp, 10);
+    if (isLocalStorageAvailable()) {
+      try {
+        const cachedData = localStorage.getItem('calendarEventsCache');
+        const cacheTimestamp = localStorage.getItem('calendarEventsCacheTimestamp');
         
-        if (!isNaN(parsedTimestamp) && 
-            Date.now() - parsedTimestamp < CACHE_EXPIRATION_MS &&
-            (!params?.lastCacheInvalidation || parsedTimestamp > params.lastCacheInvalidation)) {
-          console.log('[fetchCalendarEvents] Using localStorage cache');
-          const events = JSON.parse(cachedData);
+        if (cachedData && cacheTimestamp) {
+          const parsedTimestamp = parseInt(cacheTimestamp, 10);
           
-          // Update memory cache too
-          eventsCache = {
-            data: events,
-            timestamp: parsedTimestamp
-          };
-          
-          return events;
+          if (!isNaN(parsedTimestamp) && 
+              Date.now() - parsedTimestamp < CACHE_EXPIRATION_MS &&
+              (!params?.lastCacheInvalidation || parsedTimestamp > params.lastCacheInvalidation)) {
+            console.log('[fetchCalendarEvents] Using localStorage cache');
+            const events = JSON.parse(cachedData);
+            
+            // Update memory cache too
+            eventsCache = {
+              data: events,
+              timestamp: parsedTimestamp
+            };
+            
+            return events;
+          }
         }
+      } catch (error) {
+        console.warn('[fetchCalendarEvents] Error reading from localStorage cache:', error);
+        // Continue with API request if cache read fails
       }
-    } catch (error) {
-      console.warn('[fetchCalendarEvents] Error reading from localStorage cache:', error);
-      // Continue with API request if cache read fails
     }
   }
 
@@ -221,11 +242,13 @@ export async function fetchCalendarEvents(params?: {
       };
       
       // Update localStorage cache
-      try {
-        localStorage.setItem('calendarEventsCache', JSON.stringify(events));
-        localStorage.setItem('calendarEventsCacheTimestamp', Date.now().toString());
-      } catch (error) {
-        console.warn('[fetchCalendarEvents] Error writing to localStorage cache:', error);
+      if (isLocalStorageAvailable()) {
+        try {
+          localStorage.setItem('calendarEventsCache', JSON.stringify(events));
+          localStorage.setItem('calendarEventsCacheTimestamp', Date.now().toString());
+        } catch (error) {
+          console.warn('[fetchCalendarEvents] Error writing to localStorage cache:', error);
+        }
       }
     }
     

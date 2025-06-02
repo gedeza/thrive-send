@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { useState, useEffect } from "react";
 import { OnboardingProvider } from "@/context/OnboardingContext";
+import { CalendarCacheProvider } from "@/context/CalendarCacheContext";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient, setQueryClient] = useState<QueryClient | null>(null);
@@ -51,7 +52,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         disableTransitionOnChange
       >
         <OnboardingProvider>
-          {children}
+          <CalendarCacheProvider>
+            {children}
+          </CalendarCacheProvider>
         </OnboardingProvider>
       </ThemeProvider>
     </QueryClientProvider>
