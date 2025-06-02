@@ -136,18 +136,20 @@ export function ContentCalendarSync({ onSyncComplete }: ContentCalendarSyncProps
             </div>
             <div className="space-y-2 max-h-40 overflow-y-auto">
               {syncErrors.map((error, index) => (
-                <Alert key={index} variant="destructive" className="py-2">
-                  <AlertCircle className="h-4 w-4" />
-                  <div className="text-sm">
-                    <p className="font-medium">{error.message}</p>
-                    {error.details && (
-                      <p className="text-xs mt-1 opacity-75">{error.details}</p>
-                    )}
-                    <p className="text-xs mt-1 opacity-50">
-                      {error.timestamp.toLocaleTimeString()}
-                    </p>
+                <div key={index} className="bg-destructive/15 text-destructive rounded-md py-2 px-3">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <div className="text-sm">
+                      <p className="font-medium">{error.message}</p>
+                      {error.details && (
+                        <p className="text-xs mt-1 opacity-75">{error.details}</p>
+                      )}
+                      <p className="text-xs mt-1 opacity-50">
+                        {error.timestamp.toLocaleTimeString()}
+                      </p>
+                    </div>
                   </div>
-                </Alert>
+                </div>
               ))}
             </div>
           </div>
