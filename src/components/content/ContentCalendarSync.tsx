@@ -6,6 +6,7 @@ import { Alert } from '@/components/ui/Alert';
 import { Badge } from '@/components/ui/badge';
 import { syncContentToCalendar } from '@/lib/api/content-service';
 import { RefreshCw, CheckCircle, AlertCircle, Info, XCircle } from 'lucide-react';
+import { useCalendarCache } from '@/context/CalendarCacheContext';
 
 interface ContentCalendarSyncProps {
   onSyncComplete?: () => void;
@@ -22,6 +23,7 @@ export function ContentCalendarSync({ onSyncComplete }: ContentCalendarSyncProps
   const [syncResult, setSyncResult] = useState<{ synced: number; errors: number } | null>(null);
   const [syncErrors, setSyncErrors] = useState<SyncError[]>([]);
   const { toast } = useToast();
+  const { clearAllCaches } = useCalendarCache();
 
   const handleSync = async () => {
     setIsLoading(true);
@@ -51,6 +53,7 @@ export function ContentCalendarSync({ onSyncComplete }: ContentCalendarSyncProps
         });
       }
 
+      clearAllCaches();
       onSyncComplete?.();
     } catch (error) {
       console.error('Sync failed:', error);

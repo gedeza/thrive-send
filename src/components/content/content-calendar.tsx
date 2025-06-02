@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Search, Filter, LayoutGrid, LayoutList, Clock, Facebook, Twitter, Instagram, Linkedin, Upload, X, Settings as SettingsIcon, RefreshCw, Bug } from "lucide-react";
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useSensor, useSensors, PointerSensor, closestCenter } from "@dnd-kit/core";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
@@ -56,17 +56,13 @@ import { useTimezone } from "@/hooks/use-timezone";
 import { CSS } from '@dnd-kit/utilities';
 import { useDroppable } from '@dnd-kit/core';
 import { ContentCalendarSync } from "@/components/content/ContentCalendarSync";
-import { getMockCalendarEvents } from "@/lib/mock/calendar-mock";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { MonthView } from "./MonthView";
-import { WeekView } from "./WeekView";
-import { DayView } from "./DayView";
-import { ListView } from "./ListView";
-import { CalendarHeader } from "./CalendarHeader";
-import { CalendarFilters } from "./CalendarFilters";
-import { CalendarEvent, CalendarView } from "./types";
-import { LazyMonthView } from "./MonthView";
+import debounce from 'lodash/debounce';
+
+// NOTE: This file contains inline definitions for components that were originally defined in separate files.
+// The MonthView, WeekView, DayView, ListView, CalendarHeader, and CalendarFilters components are defined inline
+// rather than imported from separate files.
 
 // Enhanced content type definitions
 export type SocialPlatform = 'FACEBOOK' | 'TWITTER' | 'INSTAGRAM' | 'LINKEDIN';
@@ -86,6 +82,9 @@ export interface SocialMediaContent {
 
 // Update the content type to match the backend expectations
 export type ContentType = 'social' | 'blog' | 'email' | 'custom' | 'article';
+
+// Define CalendarView type here since we can't import it
+export type CalendarView = "month" | "week" | "day" | "list";
 
 // Update the event type color map to include all content types
 export const eventTypeColorMap: Record<ContentType, { bg: string; text: string }> = {
@@ -112,7 +111,7 @@ export const eventTypeColorMap: Record<ContentType, { bg: string; text: string }
 };
 
 // Platform-specific color mapping
-const platformColorMap = {
+const platformColorMap: Record<SocialPlatform, { bg: string; text: string; icon: React.ReactNode }> = {
   FACEBOOK: {
     bg: "bg-[#1877F2]/10",
     text: "text-[#1877F2]",
@@ -387,6 +386,7 @@ function isValidContentType(type: any): type is ContentType {
   return ['social', 'blog', 'email', 'custom', 'article'].includes(type);
 }
 
+// Define CalendarEvent interface
 export interface CalendarEvent {
   id: string;
   title: string;
@@ -426,8 +426,6 @@ export interface CalendarEvent {
   tags?: string[];
 }
 
-export type CalendarView = "month" | "week" | "day" | "list";
-
 export function ContentCalendar({
   events: initialEvents = [],
   onEventCreate,
@@ -449,7 +447,7 @@ export function ContentCalendar({
     const now = new Date();
     return toZonedTime(now, userTimezone);
   });
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [calendarView, setCalendarView] = useState<CalendarView>(defaultView);
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -478,62 +476,13 @@ export function ContentCalendar({
   const [showEventDetails, setShowEventDetails] = useState(false);
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
   const [pendingDialogClose, setPendingDialogClose] = useState(false);
-  const [useMockData, setUseMockData] = useState(false);
+  const isFetchingRef = useRef<boolean>(false);
+  const initialEventsRef = useRef<boolean>(false);
 
-  // Calculate days to display based on current month
-  const daysInMonth = React.useMemo(() => {
-    const monthStart = startOfMonth(currentDate);
-    const monthEnd = endOfMonth(currentDate);
-    const startDate = startOfWeek(monthStart);
-    const endDate = endOfWeek(monthEnd);
-    const days = eachDayOfInterval({ start: startDate, end: endDate });
-    return days.map(day => toZonedTime(day, userTimezone));
-  }, [currentDate, userTimezone]);
-
-  // Add useEffect to fetch events on component mount
-  useEffect(() => {
-    const loadEvents = async () => {
-      if (useMockData) {
-        return getMockCalendarEvents();
-      }
-      
-      try {
-        setLoading(true);
-        console.log("Fetching calendar events...");
-        if (!fetchEvents) {
-          console.log("No fetchEvents function provided, trying direct fetch");
-          return await fetchCalendarEventsDirectly();
-        }
-        const fetchedEvents = await fetchEvents();
-        console.log(`Fetched ${fetchedEvents.length} events:`, fetchedEvents);
-        setEvents(fetchedEvents);
-        setError(null);
-        return fetchedEvents;
-      } catch (err) {
-        console.error("Error fetching calendar events:", err);
-        setError(err instanceof Error ? err.message : "Failed to load calendar events");
-        toast({
-          title: "Error",
-          description: err instanceof Error ? err.message : "Failed to load calendar events",
-          variant: "destructive",
-        });
-        
-        // If fetchEvents fails, try fetching directly
-        try {
-          console.log("Attempting direct fetch as fallback...");
-          await fetchCalendarEventsDirectly();
-        } catch (directErr) {
-          console.error("Direct fetch also failed:", directErr);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadEvents();
-  }, [fetchEvents, toast, useMockData]);
-
-  // Direct fetch function
+  // Add a ref to track if we're already fetching
+  const lastFetchTime = useRef(0);
+  
+  // Direct fetch function - moved up before it's used
   const fetchCalendarEventsDirectly = async () => {
     try {
       console.log("==== DEBUGGING CALENDAR DATA ISSUES ====");
@@ -596,8 +545,6 @@ export function ContentCalendar({
                 }
               });
               console.log(`Converted ${calendarEvents.length} events successfully`);
-              setEvents(calendarEvents);
-              setError(null);
               return calendarEvents;
             } catch (mapErr) {
               console.error("Error mapping API events to calendar events:", mapErr);
@@ -621,6 +568,104 @@ export function ContentCalendar({
     }
   };
   
+  // Define the loadEvents function
+  const loadEvents = useCallback(async () => {
+    try {
+      console.log("Fetching calendar events...");
+      if (!fetchEvents) {
+        console.log("No fetchEvents function provided, trying direct fetch");
+        return await fetchCalendarEventsDirectly();
+      }
+      const fetchedEvents = await fetchEvents();
+      console.log(`Fetched ${fetchedEvents.length} events:`, fetchedEvents);
+      setError(null);
+      return fetchedEvents;
+    } catch (err) {
+      console.error("Error fetching calendar events:", err);
+      setError(err instanceof Error ? err.message : "Failed to load calendar events");
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "Failed to load calendar events",
+        variant: "destructive",
+      });
+      return [];
+    }
+  }, [fetchEvents, toast, fetchCalendarEventsDirectly]);
+  
+  // Debounce the loadEvents function to prevent rapid refetching
+  const debouncedLoadEvents = useCallback(
+    debounce(async () => {
+      if (isFetchingRef.current) return;
+      
+      // Rate limiting: don't fetch more than once every 2 seconds
+      const now = Date.now();
+      if (now - lastFetchTime.current < 2000) return;
+      
+      isFetchingRef.current = true;
+      lastFetchTime.current = now;
+      
+      try {
+        setLoading(true);
+        const newEvents = await loadEvents();
+        
+        // Only update events if there are actual changes to prevent unnecessary re-renders
+        if (JSON.stringify(newEvents) !== JSON.stringify(events)) {
+          setEvents(newEvents);
+        }
+      } catch (err) {
+        console.error("Error loading events:", err);
+        setError(err instanceof Error ? err.message : "Failed to load events");
+      } finally {
+        setLoading(false);
+        isFetchingRef.current = false;
+      }
+    }, 500),
+    [loadEvents, events]
+  );
+
+  // Replace the useEffect that loads events
+  useEffect(() => {
+    // Skip loading on initial render if we already have events
+    if (events.length > 0 && initialEventsRef.current) {
+      console.log('[ContentCalendar] Skipping initial load as events are already provided');
+      return;
+    }
+    
+    // Track that we've now seen the initial events
+    initialEventsRef.current = true;
+    
+    // Only load events when relevant filters change or when explicitly requested
+    debouncedLoadEvents();
+    
+    // Clean up the debounced function on unmount
+    return () => {
+      debouncedLoadEvents.cancel();
+    };
+  }, [debouncedLoadEvents]); // Only depend on debouncedLoadEvents
+
+  // Add a separate effect for filter changes
+  useEffect(() => {
+    // Don't run on initial render
+    if (!initialEventsRef.current) return;
+    
+    // When filters change, load with a longer delay
+    const timeoutId = setTimeout(() => {
+      debouncedLoadEvents();
+    }, 300);
+    
+    return () => clearTimeout(timeoutId);
+  }, [currentDate, selectedType, selectedStatus, searchTerm]);
+
+  // Calculate days to display based on current month
+  const daysInMonth = React.useMemo(() => {
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(currentDate);
+    const startDate = startOfWeek(monthStart);
+    const endDate = endOfWeek(monthEnd);
+    const days = eachDayOfInterval({ start: startDate, end: endDate });
+    return days.map(day => toZonedTime(day, userTimezone));
+  }, [currentDate, userTimezone]);
+
   // Helper function to convert API event to calendar event
   const convertApiEventToCalendarEvent = (event: any): CalendarEvent => {
     console.log("Converting event with structure:", Object.keys(event));
@@ -999,7 +1044,7 @@ export function ContentCalendar({
                   )}
                   {event.type === 'social' && event.socialMediaContent?.platforms?.length === 1 && (
                     <span className="text-[10px] flex-shrink-0" aria-hidden="true">
-                      {platformColorMap[event.socialMediaContent.platforms[0] as SocialPlatform].icon}
+                      {platformColorMap[event.socialMediaContent.platforms[0] as SocialPlatform]?.icon}
                     </span>
                   )}
                   <span className="truncate flex-1">{event.title}</span>
@@ -1145,9 +1190,9 @@ export function ContentCalendar({
                   </div>
                   {event.type === 'social' && event.socialMediaContent?.platforms?.length > 0 && (
                     <div className="flex gap-1 ml-2">
-                      {event.socialMediaContent.platforms.map(platform => (
+                      {event.socialMediaContent.platforms.map((platform: SocialPlatform) => (
                         <span key={platform} className="text-[10px]">
-                          {platformColorMap[platform].icon}
+                          {platformColorMap[platform]?.icon}
                         </span>
                       ))}
                     </div>
@@ -1248,7 +1293,45 @@ export function ContentCalendar({
                 </span>
               </div>
               
-              {/* Continue with other columns for desktop */}
+              {/* Date & Time column */}
+              <div className="hidden md:block md:col-span-2">
+                <div className="text-sm">
+                  {formatInTimeZone(new Date(`${event.date}T${event.time || '00:00'}`), userTimezone, "MMM d, yyyy")}
+                </div>
+                {event.time && (
+                  <div className="text-sm text-muted-foreground">
+                    {formatInTimeZone(new Date(`${event.date}T${event.time}`), userTimezone, "h:mm a")}
+                  </div>
+                )}
+              </div>
+
+              {/* Status column */}
+              <div className="hidden md:block md:col-span-2">
+                <span className={cn(
+                  "px-2 py-1 rounded-full text-xs font-medium",
+                  event.status === 'draft' && "bg-yellow-100 text-yellow-800",
+                  event.status === 'scheduled' && "bg-blue-100 text-blue-800",
+                  event.status === 'sent' && "bg-green-100 text-green-800",
+                  event.status === 'failed' && "bg-red-100 text-red-800"
+                )}>
+                  {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
+                </span>
+              </div>
+
+              {/* Platforms column */}
+              <div className="hidden md:block md:col-span-3">
+                {event.type === 'social' && event.socialMediaContent?.platforms?.length > 0 ? (
+                  <div className="flex gap-2">
+                    {event.socialMediaContent.platforms.map((platform: SocialPlatform) => (
+                      <span key={platform} className="text-sm">
+                        {platformColorMap[platform]?.icon}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-sm text-muted-foreground">-</span>
+                )}
+              </div>
             </div>
           ))}
 
@@ -1452,22 +1535,35 @@ export function ContentCalendar({
     );
   };
 
-  // Lazy load the MonthView component
-  const LazyMonthView = React.lazy(() => import('./MonthView').then(module => ({ default: module.MonthView })));
+  // Fix the MemoizedMonthView component
+  const MemoizedMonthView = React.memo(({ 
+    currentDate, 
+    daysInMonth, 
+    getEventsForDay, 
+    handleEventClick, 
+    handleDateClick, 
+    userTimezone 
+  }: {
+    currentDate: Date; 
+    daysInMonth: Date[]; 
+    getEventsForDay: (day: Date) => CalendarEvent[]; 
+    handleEventClick: (event: CalendarEvent) => void; 
+    handleDateClick: (day: Date) => void; 
+    userTimezone: string;
+  }) => {
+    // Implement the MonthView functionality directly here
+    return renderMonthView(
+      currentDate,
+      daysInMonth,
+      getEventsForDay,
+      handleEventClick,
+      handleDateClick,
+      userTimezone
+    );
+  });
 
-  // Prevent re-renders by wrapping with memo
-  const MemoizedMonthView = React.memo(({ currentDate, daysInMonth, getEventsForDay, handleEventClick, handleDateClick, userTimezone }) => (
-  <React.Suspense fallback={<div className="flex items-center justify-center h-[400px]"><p>Loading month view...</p></div>}>
-    <LazyMonthView 
-      currentDate={currentDate}
-      daysInMonth={daysInMonth}
-      getEventsForDay={getEventsForDay}
-      handleEventClick={handleEventClick}
-      handleDateClick={handleDateClick}
-      userTimezone={userTimezone}
-    />
-  </React.Suspense>
-));
+  // Add a display name to the memoized component
+  MemoizedMonthView.displayName = 'MemoizedMonthView';
 
   return (
     <div className="space-y-4 border rounded-xl p-4 bg-card shadow-sm">
@@ -1614,14 +1710,6 @@ export function ContentCalendar({
         </div>
       </div>
 
-      <div className="flex items-center gap-2 mb-4">
-        <Switch
-          checked={useMockData}
-          onCheckedChange={setUseMockData}
-        />
-        <Label>Use mock data</Label>
-      </div>
-
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -1658,14 +1746,14 @@ export function ContentCalendar({
             <>
           {calendarView === "month" && (
             <div className="p-4">
-              <MemoizedMonthView 
-                currentDate={currentDate}
-                daysInMonth={daysInMonth}
-                getEventsForDay={getEventsForDay}
-                handleEventClick={handleEventClick}
-                handleDateClick={handleDateClick}
-                userTimezone={userTimezone}
-              />
+              {renderMonthView(
+                currentDate,
+                daysInMonth,
+                getEventsForDay,
+                handleEventClick,
+                handleDateClick,
+                userTimezone
+              )}
             </div>
           )}
           {calendarView === "week" && (
