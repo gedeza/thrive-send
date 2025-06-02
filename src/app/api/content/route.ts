@@ -32,6 +32,7 @@ const contentSchema = z.object({
   status: z.enum(['DRAFT', 'IN_REVIEW', 'PENDING_REVIEW', 'CHANGES_REQUESTED', 'APPROVED', 'REJECTED', 'PUBLISHED', 'ARCHIVED'] as const).default('DRAFT'),
   scheduledAt: z.string().datetime().optional(),
   slug: z.string().min(1, 'Please enter a slug').optional(),
+  contentListId: z.string().optional(),
 }).catchall(z.any());
 
 const querySchema = z.object({
@@ -171,20 +172,46 @@ export async function POST(request: Request) {
 
         const finalSlug = existingContent ? `${slug}-${Date.now()}` : slug;
 
-        const content = await prisma.content.create({
-          data: {
-            title: validatedData.title,
-            slug: finalSlug,
-            type: validatedData.type,
-            status: validatedData.status,
-            content: validatedData.content,
-            excerpt: validatedData.excerpt,
-            media: validatedData.media ? JSON.stringify(validatedData.media) : undefined,
-            tags: validatedData.tags,
-            authorId: user.id,
-            scheduledAt: validatedData.scheduledAt ? new Date(validatedData.scheduledAt) : null,
-          },
+        // Extract contentListId from validated data
+        const { contentListId, ...contentData } = validatedData;
+
+        // Create content transaction
+        const content = await prisma.$transaction(async (tx) => {
+          // First create the content
+          const newContent = await tx.content.create({
+            data: {
+              title: contentData.title,
+              slug: finalSlug,
+              type: contentData.type,
+              status: contentData.status,
+              content: contentData.content,
+              excerpt: contentData.excerpt,
+              media: contentData.media ? JSON.stringify(contentData.media) : undefined,
+              tags: contentData.tags,
+              authorId: user.id,
+              scheduledAt: contentData.scheduledAt ? new Date(contentData.scheduledAt) : null,
+            },
+          });
+
+          // If contentListId is provided, associate content with list
+          if (contentListId) {
+            try {
+              await tx.contentListItem.create({
+                data: {
+                  contentId: newContent.id,
+                  contentListId: contentListId,
+                }
+              });
+              console.log(`Content ${newContent.id} associated with list ${contentListId}`);
+            } catch (listError) {
+              console.error('Error associating content with list:', listError);
+              // Continue with content creation even if list association fails
+            }
+          }
+
+          return newContent;
         });
+
         console.log('Content created successfully:', content);
         return NextResponse.json(content);
       } catch (prismaError) {

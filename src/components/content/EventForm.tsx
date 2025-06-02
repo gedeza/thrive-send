@@ -535,9 +535,12 @@ export function EventForm({
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
+      const formattedDate = format(date, "yyyy-MM-dd");
+      console.log('Date selected:', { date, formattedDate });
+      
       setFormData(prev => ({
         ...prev,
-        date: formatDate(date, "yyyy-MM-dd")
+        date: formattedDate
       }));
     }
   };
@@ -709,10 +712,14 @@ export function EventForm({
 
   const handleSchedule = (date: Date | undefined) => {
     if (date) {
+      const formattedDate = format(date, "yyyy-MM-dd");
+      console.log('Schedule date selected:', { date, formattedDate });
+      
       setFormData(prev => ({
         ...prev,
-        date: date.toISOString(),
+        date: formattedDate,
       }));
+      
       onSchedule?.(date);
     }
   };
@@ -1034,7 +1041,7 @@ export function EventForm({
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {formData.date ? (
-                  formatDate(new Date(formData.date), 'PPP')
+                  format(new Date(formData.date), 'PPP')
                 ) : (
                   <span>Pick a date</span>
                 )}
@@ -1046,12 +1053,76 @@ export function EventForm({
                 selected={formData.date ? new Date(formData.date) : undefined}
                 onSelect={(date) => {
                   console.log('Date selected in schedule mode:', date);
-                  handleSchedule(date);
+                  handleDateSelect(date);
                 }}
                 initialFocus
               />
             </PopoverContent>
           </Popover>
+          {errors.date && (
+            <p className="text-sm text-destructive">{errors.date}</p>
+          )}
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="schedule-time">Publish Time</Label>
+          <Input
+            id="schedule-time"
+            name="time"
+            type="time"
+            value={formData.time || ''}
+            onChange={handleTimeChange}
+            required
+          />
+          {errors.time && (
+            <p className="text-sm text-destructive">{errors.time}</p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Please select both a date and time for publishing.
+          </p>
+        </div>
+        
+        <div className="flex gap-4 mt-6">
+          <Button 
+            type="button" 
+            className="flex-1"
+            onClick={() => {
+              if (!formData.date) {
+                setErrors(prev => ({
+                  ...prev,
+                  date: 'Please select a date'
+                }));
+                return;
+              }
+              
+              if (!formData.time) {
+                setErrors(prev => ({
+                  ...prev,
+                  time: 'Please select a time'
+                }));
+                return;
+              }
+              
+              // Create a combined date from the selected date and time
+              const dateStr = formData.date;
+              const timeStr = formData.time;
+              const scheduledDate = new Date(`${dateStr}T${timeStr}:00`);
+              
+              // Check if the date is valid
+              if (isNaN(scheduledDate.getTime())) {
+                setErrors(prev => ({
+                  ...prev,
+                  date: 'Invalid date or time format'
+                }));
+                return;
+              }
+              
+              // If valid, call the onSchedule callback
+              onSchedule?.(scheduledDate);
+            }}
+          >
+            Schedule Content
+          </Button>
         </div>
       </div>
     );

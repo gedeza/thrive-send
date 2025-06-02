@@ -30,6 +30,7 @@ export interface ContentFormData {
   excerpt?: string;
   scheduledAt?: string;
   status: 'DRAFT' | 'IN_REVIEW' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'APPROVED' | 'REJECTED' | 'PUBLISHED' | 'ARCHIVED';
+  contentListId?: string;
 }
 
 export async function saveContent(data: ContentFormData): Promise<ContentData> {
@@ -60,6 +61,16 @@ export async function saveContent(data: ContentFormData): Promise<ContentData> {
     const savedContent = await response.json();
     console.log('Content saved successfully:', savedContent);
 
+    // If content list ID is provided, associate content with the list
+    if (data.contentListId && savedContent.id) {
+      try {
+        await associateContentWithList(savedContent.id, data.contentListId);
+      } catch (associationError) {
+        console.error('Failed to associate content with list:', associationError);
+        // Don't fail the content creation if association fails
+      }
+    }
+
     // Create corresponding calendar event if content is scheduled or published
     // Include draft content that has a scheduled date
     if (savedContent.scheduledAt || savedContent.status === 'PUBLISHED' || savedContent.status === 'APPROVED') {
@@ -88,6 +99,33 @@ export async function saveContent(data: ContentFormData): Promise<ContentData> {
     return savedContent;
   } catch (error) {
     console.error('Error saving content:', error);
+    throw error;
+  }
+}
+
+/**
+ * Associate a content item with a content list
+ */
+export async function associateContentWithList(contentId: string, contentListId: string): Promise<void> {
+  try {
+    console.log('Associating content with list:', { contentId, contentListId });
+    const response = await fetch(`/api/content-lists/${contentListId}/contents`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ contentId }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to associate content with list');
+    }
+
+    console.log('Content associated with list successfully');
+  } catch (error) {
+    console.error('Error associating content with list:', error);
     throw error;
   }
 }

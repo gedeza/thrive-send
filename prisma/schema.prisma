@@ -3,9 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider          = "postgresql"
-  url               = env("DATABASE_URL")
-  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -30,9 +29,11 @@ model User {
   audienceSegments        AudienceSegment[]     @relation("AudienceSegmentCreator")
   calendarEvents          CalendarEvent[]
   campaignTemplates       CampaignTemplate[]
+  uploadedDocuments       ClientDocument[]      @relation("DocumentUploader")
   comments                Comment[]             @relation("CommentCreator")
   contactLists            ContactList[]         @relation("ContactListCreator")
   content                 Content[]
+  contentLists            ContentList[]
   assignedApprovals       ContentApproval[]     @relation("AssignedApprovals")
   createdApprovals        ContentApproval[]     @relation("CreatedApprovals")
   contentItems            ContentItem[]
@@ -50,7 +51,6 @@ model User {
   targetingRules          TargetingRule[]
   Template                Template[]
   workflows               Workflow[]
-  uploadedDocuments       ClientDocument[]      @relation("DocumentUploader")
 
   @@index([clerkId])
   @@index([email])
@@ -63,10 +63,10 @@ model Organization {
   logoUrl                String?
   website                String?
   primaryColor           String?                  @default("#000000")
-  settings               Json?                    @default("{}")
   createdAt              DateTime                 @default(now())
   updatedAt              DateTime                 @updatedAt
   clerkOrganizationId    String?                  @unique
+  settings               Json?                    @default("{}")
   assets                 Asset[]
   audiences              Audience[]
   audienceSegments       AudienceSegment[]
@@ -76,6 +76,7 @@ model Organization {
   clients                Client[]
   contactLists           ContactList[]
   contentItems           ContentItem[]
+  contentLists           ContentList[]
   contentPieces          ContentPiece[]
   crossCampaignAnalytics CrossCampaignAnalytics[]
   integrations           Integration[]
@@ -98,8 +99,8 @@ model OrganizationMember {
   updatedAt      DateTime     @updatedAt
   userId         String
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict)
 
   @@unique([userId, organizationId])
 }
@@ -107,24 +108,24 @@ model OrganizationMember {
 model Client {
   id             String           @id @default(cuid())
   name           String
-  type           String
-  industry       String?
-  website        String?
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
   organizationId String
   address        String?
   email          String
   phone          String?
+  industry       String?
+  type           String
+  website        String?
   analytics      Analytics[]
+  budgets        Budget[]
   campaigns      Campaign[]
   organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  projects       Project[]
-  socialAccounts SocialAccount[]
-  goals          ClientGoal[]
   documents      ClientDocument[]
   feedback       ClientFeedback[]
-  budgets        Budget[]
+  goals          ClientGoal[]
+  projects       Project[]
+  socialAccounts SocialAccount[]
 
   @@index([organizationId])
 }
@@ -141,14 +142,14 @@ model Project {
   clientId       String?
   organizationId String
   managerId      String?
+  budgets        Budget[]
   campaigns      Campaign[]
+  feedback       ClientFeedback[]
   contentItems   ContentItem[]
   contentPieces  ContentPiece[]
   client         Client?          @relation(fields: [clientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   manager        User?            @relation(fields: [managerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  feedback       ClientFeedback[]
-  budgets        Budget[]
 
   @@index([clientId])
   @@index([organizationId])
@@ -218,23 +219,22 @@ model SocialPost {
 }
 
 model Engagement {
-  id             String        @id @default(cuid())
-  type           String
-  text           String
-  externalId     String?
-  sentiment      String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  contentPieceId String?
-  contentPiece   ContentPiece? @relation(fields: [contentPieceId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                String             @id @default(cuid())
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  contentPieceId    String?
+  clicks            Int                @default(0)
+  conversions       Int                @default(0)
+  lastEngagement    DateTime?
+  opens             Int                @default(0)
+  score             Float              @default(0)
+  audienceAnalytics AudienceAnalytics?
+  contentPiece      ContentPiece?      @relation(fields: [contentPieceId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model Analytics {
   id                String    @id @default(cuid())
   clientId          String
-  campaignId        String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
   projectCount      Int       @default(0)
   activeProjects    Int       @default(0)
   completedProjects Int       @default(0)
@@ -247,8 +247,11 @@ model Analytics {
   conversionRate    Float     @default(0)
   roi               Float     @default(0)
   lastActivity      DateTime  @default(now())
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  campaignId        String?
+  campaign          Campaign? @relation(fields: [campaignId], references: [id])
   client            Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  campaign          Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
 
   @@index([clientId])
   @@index([campaignId])
@@ -277,9 +280,9 @@ model Subscription {
   taxInfo              Json?
   trialEndsAt          DateTime?
   usage                Json?
+  aiFeatures           Json?        @default("{\"limit\": 0, \"usage\": 0, \"enabled\": false}")
   payments             Payment[]
   organization         Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  aiFeatures           Json?        @default("{\"enabled\": false, \"usage\": 0, \"limit\": 0}")
 }
 
 model ContentItem {
@@ -337,15 +340,17 @@ model Campaign {
   timezone               String?
   abTests                ABTest[]
   analytics              Analytics[]
+  audienceAnalytics      AudienceAnalytics[]
   audience               Audience?                @relation(fields: [audienceId], references: [id])
   client                 Client?                  @relation(fields: [clientId], references: [id], onUpdate: NoAction)
   organization           Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   project                Project?                 @relation(fields: [projectId], references: [id], onUpdate: NoAction)
   template               CampaignTemplate?        @relation(fields: [templateId], references: [id])
   contentPieces          ContentPiece[]
-  conversionFunnels      ConversionFunnel[]
+  conversionFunnels        ConversionFunnel[]
   crossCampaignAnalytics CrossCampaignAnalytics[]
   roiTracking            ROITracking[]
+  reports                Report[]
 
   @@index([clientId])
   @@index([projectId])
@@ -432,6 +437,7 @@ model Content {
   mediaItems  MediaItem[]
   seo         SEO?
   schedule    Schedule?
+  contentListItems ContentListItem[]
 
   @@index([authorId])
   @@index([type])
@@ -622,12 +628,12 @@ model CampaignTemplate {
   id             String       @id @default(cuid())
   name           String
   description    String?
-  content        String?      @db.Text
+  content        String?
   status         String       @default("DRAFT")
   createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
   organizationId String
-  userId         String // Foreign key for User
+  updatedAt      DateTime     @updatedAt
+  userId         String
   campaigns      Campaign[]
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -736,18 +742,46 @@ model AudienceSegment {
 }
 
 model AudienceAnalytics {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   audienceId     String
-  metrics        Json?
-  timestamp      DateTime @default(now())
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  segmentMetrics Json?
-  growthRate     Float?
-  engagementRate Float?
-  audience       Audience @relation(fields: [audienceId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  behavioralId   String       @unique
+  campaignId     String
+  demographicsId String       @unique
+  engagementId   String?      @unique
+  audience       Audience     @relation(fields: [audienceId], references: [id])
+  behavioral     Behavioral   @relation(fields: [behavioralId], references: [id])
+  campaign       Campaign     @relation(fields: [campaignId], references: [id])
+  demographics   Demographics @relation(fields: [demographicsId], references: [id])
+  engagement     Engagement?  @relation(fields: [engagementId], references: [id])
 
+  @@index([campaignId])
   @@index([audienceId])
+}
+
+model Demographics {
+  id        String             @id @default(cuid())
+  ageRange  String
+  region    String
+  segment   String
+  gender    String?
+  language  String?
+  interests String[]
+  analytics AudienceAnalytics?
+}
+
+model Behavioral {
+  id          String             @id @default(cuid())
+  timeSlot    String
+  device      String
+  contentType String
+  opens       Int                @default(0)
+  clicks      Int                @default(0)
+  conversions Int                @default(0)
+  bounceRate  Float              @default(0)
+  timeOnSite  Int                @default(0)
+  analytics   AudienceAnalytics?
 }
 
 model AudienceChangeLog {
@@ -977,45 +1011,44 @@ model APIKey {
 }
 
 model Report {
-  id             String         @id @default(cuid())
-  name           String
-  type           String
-  template       Json
-  schedule       Json?
-  status         String         @default("ACTIVE")
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  name      String
+  sections  Json     // Store report sections as JSON
+  campaign  Campaign @relation(fields: [campaignId], references: [id])
+  campaignId String
+  createdBy User     @relation(fields: [createdById], references: [id])
+  createdById String
+  organization Organization @relation(fields: [organizationId], references: [id])
   organizationId String
-  createdById    String
-  createdBy      User           @relation(fields: [createdById], references: [id])
-  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  exports        ReportExport[]
-  shares         ReportShare[]
+  exports   ReportExport[]
+  shares    ReportShare[]
 
-  @@index([organizationId])
+  @@index([campaignId])
   @@index([createdById])
+  @@index([organizationId])
 }
 
 model ReportExport {
   id        String   @id @default(cuid())
-  reportId  String
-  format    String
-  status    String
-  url       String?
   createdAt DateTime @default(now())
+  format    String
+  url       String
+  status    String   @default("COMPLETED")
   report    Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  reportId  String
 
   @@index([reportId])
 }
 
 model ReportShare {
-  id          String   @id @default(cuid())
-  reportId    String
-  userId      String
-  permissions String[]
-  createdAt   DateTime @default(now())
-  report      Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
-  user        User     @relation(fields: [userId], references: [id])
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  report    Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  reportId  String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
 
   @@index([reportId])
   @@index([userId])
@@ -1310,6 +1343,35 @@ model Expense {
   budget      Budget          @relation(fields: [budgetId], references: [id], onDelete: Cascade)
 
   @@index([budgetId])
+}
+
+model ContentList {
+  id             String           @id @default(cuid())
+  name           String
+  description    String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  ownerId        String
+  organizationId String
+  owner          User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  items          ContentListItem[]
+
+  @@index([ownerId])
+  @@index([organizationId])
+}
+
+model ContentListItem {
+  id            String      @id @default(cuid())
+  contentId     String
+  contentListId String
+  createdAt     DateTime    @default(now())
+  content       Content     @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  contentList   ContentList @relation(fields: [contentListId], references: [id], onDelete: Cascade)
+
+  @@unique([contentId, contentListId])
+  @@index([contentListId])
+  @@index([contentId])
 }
 
 enum UserRole {

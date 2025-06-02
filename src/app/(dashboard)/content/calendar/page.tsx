@@ -53,9 +53,9 @@ import {
 } from "@/components/ui/popover";
 import { format, formatDistanceToNow } from "date-fns";
 import { useOnboarding } from "@/context/OnboardingContext";
-import { getMockCalendarEvents } from "@/lib/mock/calendar-mock";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { useCalendarCache } from '@/context/CalendarCacheContext';
+import { Switch } from "@/components/ui/switch";
 
 // Use the CalendarEvent type from the content calendar component
 // type CalendarEvent = ContentCalendarEvent;
@@ -64,47 +64,40 @@ export default function CalendarPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { showWelcomeFlow, closeWelcomeFlow } = useOnboarding();
+  const { 
+    lastCacheInvalidation, 
+    invalidateCache, 
+    isCachingEnabled, 
+    setCachingEnabled,
+    clearAllCaches 
+  } = useCalendarCache();
   const [events, setEvents] = useState<ContentCalendarEvent[]>([]);
   const [showSync, setShowSync] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [calendarView, setCalendarView] = useState<"month" | "week" | "day" | "list">("month");
-  const [useMockData, setUseMockData] = useState(false);
   const [isDbUnavailable, setIsDbUnavailable] = useState(false);
 
   // Fetch events
   const loadEvents = useCallback(async () => {
-    if (useMockData) {
-      const mockEvents = getMockCalendarEvents();
-      setEvents(mockEvents);
-      return mockEvents;
-    }
-    
     try {
-      const fetchedEvents = await fetchCalendarEvents();
+      const fetchedEvents = await fetchCalendarEvents({
+        cacheEnabled: isCachingEnabled,
+        lastCacheInvalidation: lastCacheInvalidation
+      });
       setEvents(fetchedEvents);
       setIsDbUnavailable(false);
       return fetchedEvents;
     } catch (error) {
       console.error("Error loading events:", error);
       setIsDbUnavailable(true);
-      
-      // If database is unavailable, switch to mock data
-      if (!useMockData) {
-        setUseMockData(true);
-        toast({
-          title: "Using mock data",
-          description: "Database is unavailable. Using mock data for development.",
-          variant: "default",
-        });
-        
-        const mockEvents = getMockCalendarEvents();
-        setEvents(mockEvents);
-        return mockEvents;
-      }
-      
+      toast({
+        title: "Database Error",
+        description: "Could not connect to the database. Please try again later.",
+        variant: "destructive",
+      });
       return [];
     }
-  }, [toast, useMockData]);
+  }, [toast, isCachingEnabled, lastCacheInvalidation]);
 
   useEffect(() => {
     loadEvents();
@@ -112,18 +105,6 @@ export default function CalendarPage() {
 
   // Event handlers
   const handleEventCreate = async (event: Omit<ContentCalendarEvent, "id">) => {
-    if (useMockData) {
-      // Generate a mock ID for the new event
-      const mockId = `mock-${Date.now()}`;
-      const created = {
-        ...event,
-        id: mockId,
-      } as ContentCalendarEvent;
-      
-      setEvents(prev => [...prev, created]);
-      return created;
-    }
-    
     try {
       const created = await createCalendarEvent(event);
       setEvents(prev => [...prev, created]);
@@ -131,28 +112,14 @@ export default function CalendarPage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to create event. Using mock data instead.",
+        description: "Failed to create event.",
         variant: "destructive",
       });
-      
-      // Fall back to mock handling if API fails
-      const mockId = `mock-${Date.now()}`;
-      const created = {
-        ...event,
-        id: mockId,
-      } as ContentCalendarEvent;
-      
-      setEvents(prev => [...prev, created]);
-      return created;
+      throw error;
     }
   };
   
   const handleEventUpdate = async (event: ContentCalendarEvent) => {
-    if (useMockData) {
-      setEvents(prev => prev.map(e => e.id === event.id ? event : e));
-      return event;
-    }
-    
     try {
       const updated = await updateCalendarEvent(event);
       setEvents(prev => prev.map(e => e.id === updated.id ? updated : e));
@@ -160,22 +127,14 @@ export default function CalendarPage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to update event. Using mock data instead.",
+        description: "Failed to update event.",
         variant: "destructive",
       });
-      
-      // Fall back to mock handling
-      setEvents(prev => prev.map(e => e.id === event.id ? event : e));
-      return event;
+      throw error;
     }
   };
   
   const handleEventDelete = async (eventId: string) => {
-    if (useMockData) {
-      setEvents(prev => prev.filter(e => e.id !== eventId));
-      return true;
-    }
-    
     try {
       await deleteCalendarEvent(eventId);
       setEvents(prev => prev.filter(e => e.id !== eventId));
@@ -183,13 +142,10 @@ export default function CalendarPage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to delete event. Using mock data instead.",
+        description: "Failed to delete event.",
         variant: "destructive",
       });
-      
-      // Fall back to mock handling
-      setEvents(prev => prev.filter(e => e.id !== eventId));
-      return true;
+      throw error;
     }
   };
 
@@ -203,6 +159,16 @@ export default function CalendarPage() {
   const handleViewChange = (view: "month" | "week" | "day" | "list") => {
     setCalendarView(view);
   };
+
+  // Add a handler for refreshing with cache bypass
+  const handleForceRefresh = useCallback(() => {
+    clearAllCaches();
+    loadEvents();
+    toast({
+      title: "Cache Cleared",
+      description: "Calendar data has been refreshed from the server",
+    });
+  }, [clearAllCaches, loadEvents, toast]);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -218,11 +184,28 @@ export default function CalendarPage() {
               variant="outline"
               onClick={() => setShowSync(true)}
               className="flex items-center gap-2 hover:bg-muted/80 transition-colors"
-              disabled={useMockData}
             >
               <RefreshCw className="h-4 w-4" />
               Sync Content
             </Button>
+            <Button
+              variant="outline"
+              onClick={handleForceRefresh}
+              className="flex items-center gap-2 hover:bg-muted/80 transition-colors"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Force Refresh
+            </Button>
+            <div className="flex items-center gap-2 ml-2">
+              <Label htmlFor="cache-toggle" className="text-sm font-medium">
+                Caching {isCachingEnabled ? 'On' : 'Off'}
+              </Label>
+              <Switch 
+                id="cache-toggle" 
+                checked={isCachingEnabled} 
+                onCheckedChange={setCachingEnabled} 
+              />
+            </div>
             <Button
               variant="outline"
               onClick={() => setShowSettings(true)}
@@ -233,29 +216,9 @@ export default function CalendarPage() {
             </Button>
           </div>
         </div>
-        
-        {/* Mock data toggle */}
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="mock-mode"
-            checked={useMockData}
-            onCheckedChange={(checked) => {
-              setUseMockData(checked);
-              if (checked) {
-                const mockEvents = getMockCalendarEvents();
-                setEvents(mockEvents);
-              } else {
-                loadEvents();
-              }
-            }}
-          />
-          <Label htmlFor="mock-mode" className="text-sm">
-            {useMockData ? "Using mock data" : "Use real data"}
-          </Label>
-        </div>
       </div>
 
-      {isDbUnavailable && !useMockData && (
+      {isDbUnavailable && (
         <div className="bg-amber-50 border border-amber-200 rounded-md p-4 mb-4">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -266,7 +229,7 @@ export default function CalendarPage() {
             <div className="ml-3">
               <h3 className="text-sm font-medium text-amber-800">Database unavailable</h3>
               <div className="mt-2 text-sm text-amber-700">
-                <p>The database is currently unavailable. To continue development, you can switch to mock data using the toggle above.</p>
+                <p>The database is currently unavailable. Please try again later or contact support if the problem persists.</p>
               </div>
             </div>
           </div>
@@ -327,29 +290,6 @@ export default function CalendarPage() {
                   <SelectItem value="list">List</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            
-            {/* Mock data settings */}
-            <div className="border-t pt-4">
-              <h3 className="font-medium mb-2">Development Settings</h3>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Use Mock Data</p>
-                  <p className="text-xs text-muted-foreground">Use sample data for development when database is unavailable</p>
-                </div>
-                <Switch
-                  checked={useMockData}
-                  onCheckedChange={(checked) => {
-                    setUseMockData(checked);
-                    if (checked) {
-                      const mockEvents = getMockCalendarEvents();
-                      setEvents(mockEvents);
-                    } else {
-                      loadEvents();
-                    }
-                  }}
-                />
-              </div>
             </div>
             
             <div>

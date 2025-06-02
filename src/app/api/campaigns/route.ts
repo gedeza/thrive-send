@@ -3,11 +3,13 @@ import { db } from "@/lib/db";
 import { auth } from "@clerk/nextjs/server";
 import { CampaignsQuerySchema, CampaignCreateSchema } from "./validation";
 import { handleApiError } from "./errorHandler";
-import { Prisma, CampaignStatus } from "@prisma/client";
+import { Prisma, CampaignStatus, CampaignGoalType } from "@prisma/client";
 import { 
   type CampaignResponse,
   type CampaignCreateInput
 } from "@/types/campaign";
+import { withOrganization } from "@/middleware/auth";
+import { z } from "zod";
 
 // Define the campaign with relations type
 type CampaignWithRelations = Prisma.CampaignGetPayload<{
@@ -145,72 +147,94 @@ export async function GET(req: NextRequest) {
  * POST: Create a new campaign with validation
  */
 export async function POST(req: NextRequest) {
-  try {
-    // Authenticate
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Parse and validate input data
-    const data = await req.json();
-    const validatedData = CampaignCreateSchema.parse(data);
-    
-    // If no organizationId provided, get user's primary organization
-    if (!validatedData.organizationId) {
-      const membership = await db.organizationMember.findFirst({
-        where: { user: { clerkId: userId } },
-        select: { organizationId: true },
-      });
-      
-      if (!membership) {
-        return NextResponse.json({ error: "No organization found" }, { status: 400 });
+  // Need to clone the request before it's consumed by withOrganization
+  const reqClone = req.clone();
+  
+  return withOrganization(req, async (authedRequest) => {
+    try {
+      // Parse and validate input data
+      let data;
+      try {
+        // Try to use the original request first
+        data = await reqClone.json();
+      } catch (error) {
+        // If the original request body was already consumed, use the data from authedRequest
+        console.error('Error parsing request body, using middleware data:', error);
+        return NextResponse.json(
+          { error: "Request body could not be read", details: "Try again or contact support" },
+          { status: 400 }
+        );
       }
       
-      validatedData.organizationId = membership.organizationId;
-    }
-    
-    // Create campaign in database
-    const campaign = await db.campaign.create({
-      data: {
-        name: validatedData.name,
-        description: validatedData.description || null,
-        status: validatedData.status,
-        organizationId: validatedData.organizationId,
-        clientId: validatedData.clientId || null,
-        projectId: validatedData.projectId || null,
-        startDate: validatedData.startDate ? new Date(validatedData.startDate) : null,
-        endDate: validatedData.endDate ? new Date(validatedData.endDate) : null,
-        budget: validatedData.budget || null,
-        goals: validatedData.goals || null
-      },
-      include: {
-        organization: { select: { id: true, name: true } },
-        client: { select: { id: true, name: true } },
-        project: { select: { id: true, name: true } },
+      console.log('Raw campaign data received:', data);
+      console.log('Organization ID from middleware:', authedRequest.auth.organizationId);
+      
+      try {
+        const validatedData = CampaignCreateSchema.parse(data);
+        console.log('Validated campaign data:', validatedData);
+        
+        // Create campaign in database
+        const campaign = await db.campaign.create({
+          data: {
+            name: validatedData.name,
+            description: validatedData.description || null,
+            status: validatedData.status || CampaignStatus.draft,
+            organizationId: authedRequest.auth.organizationId!,
+            clientId: validatedData.clientId || null,
+            projectId: validatedData.projectId || null,
+            startDate: validatedData.startDate ? new Date(validatedData.startDate) : null,
+            endDate: validatedData.endDate ? new Date(validatedData.endDate) : null,
+            budget: validatedData.budget || null,
+            goalType: validatedData.goalType || CampaignGoalType.ENGAGEMENT,
+            customGoal: validatedData.customGoal || null,
+            scheduleFrequency: validatedData.scheduleFrequency || "ONCE",
+            timezone: validatedData.timezone || "UTC"
+          },
+          include: {
+            organization: { select: { id: true, name: true } },
+            client: { select: { id: true, name: true } },
+            project: { select: { id: true, name: true } },
+          }
+        }) as CampaignWithRelations;
+
+        // Format response for frontend
+        const formattedCampaign: CampaignResponse = {
+          id: campaign.id,
+          name: campaign.name,
+          status: campaign.status,
+          channel: "Email",
+          audience: "All Subscribers",
+          sentDate: null,
+          openRate: null,
+          createdAt: campaign.createdAt.toISOString(),
+          clientName: campaign.client?.name || null,
+          clientId: campaign.clientId,
+          organizationId: campaign.organizationId,
+          organizationName: campaign.organization?.name || null,
+          projectId: campaign.projectId,
+          projectName: campaign.project?.name || null
+        };
+
+        return NextResponse.json(formattedCampaign, { status: 201 });
+      } catch (validationError) {
+        console.error('Validation error:', validationError);
+        if (validationError instanceof z.ZodError) {
+          return NextResponse.json(
+            { 
+              error: "Validation failed",
+              details: validationError.errors.map(err => ({
+                path: err.path.join('.'),
+                message: err.message
+              }))
+            },
+            { status: 400 }
+          );
+        }
+        throw validationError;
       }
-    }) as CampaignWithRelations;
-
-    // Format response for frontend
-    const formattedCampaign: CampaignResponse = {
-      id: campaign.id,
-      name: campaign.name,
-      status: campaign.status,
-      channel: "Email",
-      audience: "All Subscribers",
-      sentDate: null,
-      openRate: null,
-      createdAt: campaign.createdAt.toISOString(),
-      clientName: campaign.client?.name || null,
-      clientId: campaign.clientId,
-      organizationId: campaign.organizationId,
-      organizationName: campaign.organization?.name || null,
-      projectId: campaign.projectId,
-      projectName: campaign.project?.name || null
-    };
-
-    return NextResponse.json(formattedCampaign, { status: 201 });
-  } catch (error) {
-    return handleApiError(error);
-  }
+    } catch (error) {
+      console.error('Error creating campaign:', error);
+      return handleApiError(error);
+    }
+  });
 }

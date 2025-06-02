@@ -7,6 +7,10 @@ import { ArrowLeft, RefreshCw, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import AnalyticsDashboard, { AnalyticMetric } from '@/components/analytics/analytics-dashboard';
+import { ABTestAnalytics } from '@/components/analytics/ABTestAnalytics';
+import { MultiChannelAttribution } from '@/components/analytics/MultiChannelAttribution';
+import { AudienceInsights } from '@/components/analytics/AudienceInsights';
+import { CampaignPerformance } from '@/components/analytics/CampaignPerformance';
 
 // --- MOCK DATA, replace with real API calls as needed ---
 const mockDateRange = {
@@ -92,12 +96,24 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
         />
       </div>
 
+      {/* Campaign Performance */}
+      <CampaignPerformance
+        campaignId={params.id}
+        dateRange={{
+          start: new Date(mockDateRange.start),
+          end: new Date(mockDateRange.end)
+        }}
+      />
+
       {/* Detailed Metrics & Tabs */}
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList className="flex flex-wrap gap-2">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="devices">Device Stats</TabsTrigger>
           <TabsTrigger value="links">Links Clicked</TabsTrigger>
+          <TabsTrigger value="ab_testing">A/B Testing</TabsTrigger>
+          <TabsTrigger value="attribution">Attribution</TabsTrigger>
+          <TabsTrigger value="audience">Audience Insights</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -158,47 +174,83 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
         </TabsContent>
         
         {/* Devices Tab */}
-        <TabsContent value="devices">
+        <TabsContent value="devices" className="space-y-4">
           <div className="border rounded-lg p-6 bg-slate-50 dark:bg-card shadow-sm">
             <h2 className="text-lg font-semibold mb-4 text-gray-800">Devices Opened From</h2>
-            <ul className="flex flex-col gap-3">
-              {mockDeviceData.map(device => (
-                <li key={device.device} className="flex items-center justify-between">
-                  <span className="text-gray-700 font-medium">{device.device}</span>
-                  <span className={`font-mono font-extrabold text-lg ${device.color}`}>
-                    {device.count.toLocaleString()}
-                  </span>
-                </li>
+            <div className="space-y-4">
+              {mockDeviceData.map((device) => (
+                <div key={device.device} className="flex items-center justify-between">
+                  <span className="font-medium">{device.device}</span>
+                  <div className="flex items-center gap-2">
+                    <span className={`${device.color} font-semibold`}>
+                      {device.count.toLocaleString()}
+                    </span>
+                    <span className="text-sm text-gray-500">
+                      ({((device.count / 7410) * 100).toFixed(1)}%)
+                    </span>
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         </TabsContent>
 
         {/* Links Tab */}
-        <TabsContent value="links">
+        <TabsContent value="links" className="space-y-4">
           <div className="border rounded-lg p-6 bg-white dark:bg-card shadow-sm">
             <h2 className="text-lg font-semibold mb-4 text-gray-800">Top Clicked Links</h2>
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="text-left">
-                  <th className="pr-4 text-gray-700 font-semibold">Label</th>
-                  <th className="pr-4 text-gray-700 font-semibold">URL</th>
-                  <th className="text-gray-700 font-semibold">Clicks</th>
-                </tr>
-              </thead>
-              <tbody>
-                {mockLinksClicked.map(link => (
-                  <tr key={link.label}>
-                    <td className="pr-4 text-gray-800">{link.label}</td>
-                    <td className="pr-4 text-blue-600 underline">
-                      <a href={link.url} target="_blank" rel="noopener noreferrer">{link.url}</a>
-                    </td>
-                    <td className="font-mono font-bold text-blue-700">{link.clicks.toLocaleString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="space-y-4">
+              {mockLinksClicked.map((link) => (
+                <div key={link.url} className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">{link.label}</div>
+                    <div className="text-sm text-gray-500">{link.url}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-semibold text-blue-600">
+                      {link.clicks.toLocaleString()}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      ({((link.clicks / 3580) * 100).toFixed(1)}%)
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
+        </TabsContent>
+
+        {/* A/B Testing Tab */}
+        <TabsContent value="ab_testing" className="space-y-4">
+          <ABTestAnalytics
+            testId={params.id}
+            dateRange={{
+              start: new Date(mockDateRange.start),
+              end: new Date(mockDateRange.end)
+            }}
+          />
+        </TabsContent>
+
+        {/* Attribution Tab */}
+        <TabsContent value="attribution" className="space-y-4">
+          <MultiChannelAttribution
+            campaignId={params.id}
+            dateRange={{
+              start: new Date(mockDateRange.start),
+              end: new Date(mockDateRange.end)
+            }}
+          />
+        </TabsContent>
+
+        {/* Audience Insights Tab */}
+        <TabsContent value="audience" className="space-y-4">
+          <AudienceInsights
+            campaignId={params.id}
+            dateRange={{
+              start: new Date(mockDateRange.start),
+              end: new Date(mockDateRange.end)
+            }}
+          />
         </TabsContent>
       </Tabs>
     </div>

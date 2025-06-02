@@ -1,45 +1,54 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Button, TextField, Typography, Paper, MenuItem,
-  FormControl, InputLabel, Select, Divider, CircularProgress, Alert,
+  FormControl as MuiFormControl,
+  InputLabel, Select, Divider, CircularProgress, Alert,
   FormHelperText
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { styled } from '@mui/material/styles';
-import { createCampaign, type CampaignData } from '@/lib/api';
+import { createCampaign } from '@/lib/api';
 import type { SelectChangeEvent } from '@mui/material/Select';
+import { CampaignStatus, CampaignGoalType, ScheduleFrequency } from '@prisma/client';
+import { useOrganization } from '@clerk/nextjs';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/use-toast';
+import { useRouter } from 'next/navigation';
 
 // --- Types ---
-interface FormErrors {
-  [key: string]: string;
-}
+const campaignFormSchema = z.object({
+  name: z.string().min(1, 'Campaign name is required'),
+  description: z.string().nullable(),
+  startDate: z.string().min(1, 'Start Date is required'),
+  endDate: z.string().min(1, 'End Date is required'),
+  budget: z.string().optional(),
+  goalType: z.nativeEnum(CampaignGoalType),
+  customGoal: z.string().nullable(),
+  status: z.nativeEnum(CampaignStatus),
+  organizationId: z.string(),
+  clientId: z.string().optional(),
+  projectId: z.string().optional(),
+  scheduleFrequency: z.nativeEnum(ScheduleFrequency),
+  timezone: z.string()
+});
 
-const initialFormData: CampaignData = {
-  name: '',
-  type: '',
-  scheduleDate: null,
-  description: '',
-  subject: '',
-  senderName: '',
-  senderEmail: '',
-  audiences: []
-};
-
-const CAMPAIGN_TYPES = [
-  { value: 'newsletter', label: 'Newsletter' },
-  { value: 'promotional', label: 'Promotional' },
-  { value: 'announcement', label: 'Announcement' }
-];
-
-const AUDIENCE_SEGMENTS = [
-  { value: 'all-subscribers', label: 'All Subscribers' },
-  { value: 'active-users', label: 'Active Users' },
-  { value: 'inactive-users', label: 'Inactive Users' }
-];
+type CampaignFormData = z.infer<typeof campaignFormSchema>;
 
 // --- Styled Components ---
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -61,70 +70,114 @@ const SectionTitle = styled(Typography)(({ theme }) => ({
 }));
 
 const CreateCampaign: React.FC = () => {
-  const [formData, setFormData] = useState<CampaignData>(initialFormData);
-  const [errors, setErrors] = useState<FormErrors>({});
+  const { organization } = useOrganization();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const { toast } = useToast();
+  const router = useRouter();
 
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-    if (!formData.name.trim()) newErrors.name = 'Campaign name is required';
-    if (!formData.type) newErrors.type = 'Campaign type is required';
-    if (!formData.subject.trim()) newErrors.subject = 'Subject line is required';
-    if (!formData.senderName.trim()) newErrors.senderName = 'Sender name is required';
-    if (!formData.senderEmail.trim()) newErrors.senderEmail = 'Sender email is required';
-    if (formData.audiences.length === 0) newErrors.audiences = 'Please select at least one audience segment';
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  // Add debug logging for organization
+  useEffect(() => {
+    console.log('Current organization context:', organization);
+  }, [organization]);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent<string>
-  ) => {
-    const { name, value } = e.target;
-    if (name) {
-      setFormData(prev => ({ ...prev, [name]: value }));
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
+  const form = useForm<CampaignFormData>({
+    resolver: zodResolver(campaignFormSchema),
+    defaultValues: {
+      name: '',
+      description: null,
+      startDate: '',
+      endDate: '',
+      budget: '',
+      goalType: CampaignGoalType.ENGAGEMENT,
+      customGoal: null,
+      status: CampaignStatus.draft,
+      organizationId: organization?.id || '',
+      clientId: '',
+      projectId: '',
+      scheduleFrequency: ScheduleFrequency.ONCE,
+      timezone: 'UTC'
     }
-  };
+  });
 
-  const handleDateChange = (date: Date | null) => {
-    setFormData(prev => ({ ...prev, scheduleDate: date }));
-    setErrors(prev => {
-      const newErrors = { ...prev };
-      delete newErrors.scheduleDate;
-      return newErrors;
-    });
-  };
+  useEffect(() => {
+    if (organization?.id) {
+      form.setValue('organizationId', organization.id);
+    }
+  }, [organization?.id, form]);
 
-  const handleAudienceChange = (event: SelectChangeEvent<string[]>) => {
-    const value = event.target.value as string[];
-    setFormData(prev => ({ ...prev, audiences: value }));
-    setErrors(prev => {
-      const newErrors = { ...prev };
-      delete newErrors.audiences;
-      return newErrors;
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-
+  const onSubmit = async (data: CampaignFormData) => {
     setIsSubmitting(true);
     setSubmitError('');
 
     try {
-      await createCampaign(formData);
-      // Reset form on success
-      setFormData(initialFormData);
-      // Show success message (you might want to add a success state)
+      console.log('Organization ID from form:', data.organizationId);
+      console.log('Current organization context:', organization);
+
+      if (!organization?.id) {
+        setSubmitError('No organization selected. Please join or create an organization first.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      const campaignData = {
+        name: data.name,
+        description: data.description || null,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        budget: data.budget ? Number(data.budget) : null,
+        goalType: data.goalType || CampaignGoalType.ENGAGEMENT,
+        customGoal: data.customGoal || null,
+        status: data.status || CampaignStatus.draft,
+        organizationId: organization.id,
+        clientId: data.clientId || null,
+        projectId: data.projectId || null,
+        scheduleFrequency: data.scheduleFrequency || ScheduleFrequency.ONCE,
+        timezone: data.timezone || 'UTC'
+      };
+
+      console.log('Sending campaign data:', campaignData);
+
+      const response = await createCampaign(campaignData);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.log('Campaign creation error details:', errorData);
+        
+        // Handle different error formats
+        if (Array.isArray(errorData.details)) {
+          // Handle validation errors as an array
+          const errorMessages = errorData.details.map((err: any) => 
+            `${err.path}: ${err.message}`
+          ).join('\n');
+          setSubmitError(errorMessages);
+        } else {
+          // Handle string details or generic error
+          setSubmitError(errorData.error + (errorData.details ? `: ${errorData.details}` : ''));
+        }
+        return;
+      }
+
+      // Campaign created successfully
+      const campaign = await response.json();
+      
+      // Show success toast
+      toast({
+        title: "Campaign Created",
+        description: `${campaign.name} has been created successfully.`,
+        variant: "success",
+      });
+      
+      // Reset form
+      form.reset();
+      
+      // Redirect to campaigns list
+      setTimeout(() => {
+        router.push('/campaigns');
+      }, 1500);
+      
     } catch (error) {
+      console.error('Campaign creation error:', error);
       setSubmitError(error instanceof Error ? error.message : 'Failed to create campaign');
     } finally {
       setIsSubmitting(false);
@@ -133,162 +186,241 @@ const CreateCampaign: React.FC = () => {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <form onSubmit={handleSubmit} autoComplete="off">
-        <StyledPaper>
-          <Typography variant="h5" gutterBottom>
-            Create New Campaign
-          </Typography>
-          <Typography variant="body2" color="text.secondary" paragraph>
-            Fill out the details below to create a new marketing campaign. Required fields are marked with an asterisk (*).
-          </Typography>
-          <Divider sx={{ my: 2 }} />
-
-          {submitError && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {submitError}
-            </Alert>
-          )}
-
-          <FormSection>
-            <SectionTitle variant="h6">Basic Information</SectionTitle>
-            <Typography variant="body2" color="text.secondary" paragraph>
-              Start with the essential details about your campaign.
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <StyledPaper>
+            <Typography variant="h5" gutterBottom>
+              Create New Campaign
             </Typography>
-
-            <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' } }}>
-              <TextField
-                fullWidth
-                label="Campaign Name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                error={!!errors.name}
-                helperText={errors.name}
-                required
-              />
-
-              <FormControl fullWidth error={!!errors.type} required>
-                <InputLabel>Campaign Type</InputLabel>
-                <Select
-                  name="type"
-                  value={formData.type}
-                  onChange={handleChange}
-                  label="Campaign Type"
-                >
-                  {CAMPAIGN_TYPES.map(type => (
-                    <MenuItem key={type.value} value={type.value}>
-                      {type.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {errors.type && <FormHelperText>{errors.type}</FormHelperText>}
-              </FormControl>
-
-              <DatePicker
-                label="Schedule Date"
-                value={formData.scheduleDate}
-                onChange={handleDateChange}
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    error: !!errors.scheduleDate,
-                    helperText: errors.scheduleDate
-                  }
-                }}
-              />
-
-              <TextField
-                fullWidth
-                label="Description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                multiline
-                rows={3}
-              />
-            </Box>
-          </FormSection>
-
-          <FormSection>
-            <SectionTitle variant="h6">Email Details</SectionTitle>
             <Typography variant="body2" color="text.secondary" paragraph>
-              Configure the email content and sender information.
+              Fill out the details below to create a new marketing campaign. Required fields are marked with an asterisk (*).
             </Typography>
+            <Divider sx={{ my: 2 }} />
 
-            <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' } }}>
-              <TextField
-                fullWidth
-                label="Subject Line"
-                name="subject"
-                value={formData.subject}
-                onChange={handleChange}
-                error={!!errors.subject}
-                helperText={errors.subject}
-                required
-              />
+            {submitError && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {submitError}
+              </Alert>
+            )}
 
-              <TextField
-                fullWidth
-                label="Sender Name"
-                name="senderName"
-                value={formData.senderName}
-                onChange={handleChange}
-                error={!!errors.senderName}
-                helperText={errors.senderName}
-                required
-              />
+            <FormSection>
+              <SectionTitle variant="h6">Basic Information</SectionTitle>
+              <Typography variant="body2" color="text.secondary" paragraph>
+                Start with the essential details about your campaign.
+              </Typography>
 
-              <TextField
-                fullWidth
-                label="Sender Email"
-                name="senderEmail"
-                type="email"
-                value={formData.senderEmail}
-                onChange={handleChange}
-                error={!!errors.senderEmail}
-                helperText={errors.senderEmail}
-                required
-              />
-            </Box>
-          </FormSection>
+              <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' } }}>
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Campaign Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter campaign name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-          <FormSection>
-            <SectionTitle variant="h6">Audience</SectionTitle>
-            <Typography variant="body2" color="text.secondary" paragraph>
-              Select the audience segments for this campaign.
-            </Typography>
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Enter campaign description" 
+                          {...field} 
+                          value={field.value || ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <FormControl fullWidth error={!!errors.audiences} required>
-              <InputLabel>Select Audience Segments</InputLabel>
-              <Select
-                multiple
-                value={formData.audiences}
-                onChange={handleAudienceChange}
-                label="Select Audience Segments"
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <MuiFormControl fullWidth error={!!form.formState.errors.status} required>
+                        <InputLabel>Status</InputLabel>
+                        <Select
+                          {...field}
+                          label="Status"
+                        >
+                          {Object.values(CampaignStatus).map(status => (
+                            <MenuItem key={status} value={status}>
+                              {status.charAt(0).toUpperCase() + status.slice(1)}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                        {form.formState.errors.status && <FormHelperText>{form.formState.errors.status.message}</FormHelperText>}
+                      </MuiFormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="startDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Start Date</FormLabel>
+                      <DatePicker
+                        value={field.value ? new Date(field.value) : null}
+                        onChange={(date) => field.onChange(date?.toISOString() || '')}
+                        slotProps={{
+                          textField: {
+                            fullWidth: true,
+                            error: !!form.formState.errors.startDate,
+                            helperText: form.formState.errors.startDate?.message
+                          }
+                        }}
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="endDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>End Date</FormLabel>
+                      <DatePicker
+                        value={field.value ? new Date(field.value) : null}
+                        onChange={(date) => field.onChange(date?.toISOString() || '')}
+                        slotProps={{
+                          textField: {
+                            fullWidth: true,
+                            error: !!form.formState.errors.endDate,
+                            helperText: form.formState.errors.endDate?.message
+                          }
+                        }}
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="budget"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Budget</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="Enter budget" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="goalType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Goal Type</FormLabel>
+                      <Select
+                        {...field}
+                        label="Goal Type"
+                      >
+                        {Object.values(CampaignGoalType).map(type => (
+                          <MenuItem key={type} value={type}>
+                            {type.charAt(0).toUpperCase() + type.slice(1)}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="customGoal"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Custom Goal</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Enter custom goal" 
+                          {...field} 
+                          value={field.value || ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="scheduleFrequency"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Schedule Frequency</FormLabel>
+                      <Select
+                        {...field}
+                        label="Schedule Frequency"
+                      >
+                        {Object.values(ScheduleFrequency).map(freq => (
+                          <MenuItem key={freq} value={freq}>
+                            {freq.charAt(0).toUpperCase() + freq.slice(1)}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="timezone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Timezone</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter timezone" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </Box>
+            </FormSection>
+
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 4 }}>
+              <Button
+                variant="outlined"
+                onClick={() => form.reset()}
+                disabled={isSubmitting}
               >
-                {AUDIENCE_SEGMENTS.map(segment => (
-                  <MenuItem key={segment.value} value={segment.value}>
-                    {segment.label}
-                  </MenuItem>
-                ))}
-              </Select>
-              {errors.audiences && <FormHelperText>{errors.audiences}</FormHelperText>}
-            </FormControl>
-          </FormSection>
-
-          <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              disabled={isSubmitting}
-              startIcon={isSubmitting ? <CircularProgress size={20} /> : null}
-            >
-              {isSubmitting ? 'Creating...' : 'Create Campaign'}
-            </Button>
-          </Box>
-        </StyledPaper>
-      </form>
+                Reset
+              </Button>
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={isSubmitting}
+                startIcon={isSubmitting ? <CircularProgress size={20} /> : null}
+              >
+                {isSubmitting ? 'Creating...' : 'Create Campaign'}
+              </Button>
+            </Box>
+          </StyledPaper>
+        </form>
+      </Form>
     </LocalizationProvider>
   );
 };

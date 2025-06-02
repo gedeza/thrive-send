@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CampaignStatus } from '@prisma/client';
+import { CampaignStatus, CampaignGoalType, ScheduleFrequency } from '@prisma/client';
 
 // Schema for filtering campaigns in GET
 export const CampaignsQuerySchema = z.object({
@@ -20,9 +20,12 @@ export const CampaignCreateSchema = z.object({
     (v) => (v === '' || v == null ? undefined : v),
     z.number().positive().nullable().optional()
   ),
-  goals: z.string().nullable().optional(),
+  goalType: z.nativeEnum(CampaignGoalType).default(CampaignGoalType.ENGAGEMENT),
+  customGoal: z.string().nullable().optional(),
   status: z.nativeEnum(CampaignStatus).default(CampaignStatus.draft),
-  organizationId: z.string().min(1, 'Organization is required'),
+  organizationId: z.string().optional(),
   clientId: z.string().nullable().optional(),
   projectId: z.string().nullable().optional(),
+  scheduleFrequency: z.nativeEnum(ScheduleFrequency).default(ScheduleFrequency.ONCE),
+  timezone: z.string().default('UTC'),
 });

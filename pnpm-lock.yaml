@@ -179,6 +179,9 @@ importers:
       '@tiptap/starter-kit':
         specifier: ^2.12.0
         version: 2.12.0
+      '@types/lodash':
+        specifier: ^4.17.17
+        version: 4.17.17
       '@types/pg':
         specifier: ^8.15.2
         version: 8.15.2
@@ -233,6 +236,9 @@ importers:
       highlight.js:
         specifier: ^11.11.1
         version: 11.11.1
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
       lowlight:
         specifier: ^3.3.0
         version: 3.3.0
@@ -336,6 +342,9 @@ importers:
       '@eslint/eslintrc':
         specifier: ^3.3.1
         version: 3.3.1
+      '@faker-js/faker':
+        specifier: ^9.8.0
+        version: 9.8.0
       '@hookform/resolvers':
         specifier: ^5.0.1
         version: 5.0.1(react-hook-form@7.56.4(react@18.3.1))
@@ -1091,6 +1100,10 @@ packages:
   '@eslint/js@8.57.1':
     resolution: {integrity: sha512-d9zaMRSTIKDLhctzH12MtXvJKSSUhaHcjV+2Z+GK+EEY7XKpP5yR4x+N3TAcHTcu963nIr+TMcCb4DBCYX1z6Q==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
+
+  '@faker-js/faker@9.8.0':
+    resolution: {integrity: sha512-U9wpuSrJC93jZBxx/Qq2wPjCuYISBueyVUGK7qqdmj7r/nxaxwW8AQDCLeRO7wZnjj94sh3p246cAYjUKuqgfg==}
+    engines: {node: '>=18.0.0', npm: '>=9.0.0'}
 
   '@floating-ui/core@1.7.0':
     resolution: {integrity: sha512-FRdBLykrPPA6P76GGGqlex/e7fbe0F1ykgxHYNXQsH/iTEtjMj/f9bpY5oQqbjt5VgZvgz/uKXbGuROijh3VLA==}
@@ -3019,6 +3032,9 @@ packages:
 
   '@types/linkify-it@5.0.0':
     resolution: {integrity: sha512-sVDA58zAw4eWAffKOaQH5/5j3XeayukzDk+ewSsnv3p4yJEZHCCzMDiZM8e0OUrRvmpGZ85jf4yDHkHsgBNr9Q==}
+
+  '@types/lodash@4.17.17':
+    resolution: {integrity: sha512-RRVJ+J3J+WmyOTqnz3PiBLA501eKwXl2noseKOrNo/6+XEHjTAxO4xHvxQB6QuNm+s4WRbn6rSiap8+EA+ykFQ==}
 
   '@types/markdown-it@14.1.2':
     resolution: {integrity: sha512-promo4eFwuiW+TfGxhi+0x3czqTYJkG8qB17ZUJiVF10Xm7NLVRSLUsfRTU/6h1e24VvRnXCx+hG7li58lkzog==}
@@ -8732,6 +8748,8 @@ snapshots:
 
   '@eslint/js@8.57.1': {}
 
+  '@faker-js/faker@9.8.0': {}
+
   '@floating-ui/core@1.7.0':
     dependencies:
       '@floating-ui/utils': 0.2.9
@@ -10804,6 +10822,8 @@ snapshots:
   '@types/katex@0.16.7': {}
 
   '@types/linkify-it@5.0.0': {}
+
+  '@types/lodash@4.17.17': {}
 
   '@types/markdown-it@14.1.2':
     dependencies:

@@ -9,7 +9,7 @@ import { CustomUserButton } from '@/components/ui/user-button';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
       <Providers>
         <div className="min-h-screen bg-background flex flex-col">
           {/* Global Header */}

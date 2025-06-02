@@ -68,6 +68,25 @@ const publicRoutes = [
 const isPublicRoute = createRouteMatcher(publicRoutes);
 
 export default clerkMiddleware(async (auth, req) => {
+  // Check for malformed URL patterns first
+  const url = req.nextUrl.clone();
+  const pathname = url.pathname;
+  
+  // Improved malformed URL detection - check for different types of array notations
+  if (pathname.includes('/content/[') || 
+      pathname.includes('/content/%5B') || 
+      pathname.includes('/content/%22') ||
+      pathname === '/content/[]' ||
+      pathname.match(/\/content\/\[[^\]]*\]/) ||
+      pathname.match(/\/content\/\[.*/) ||
+      pathname.match(/\/content\/.*\]/) ||
+      pathname.match(/\/content\/blob:/) ||
+      pathname.includes('localhost:3000')) {
+    // Redirect to the content dashboard
+    url.pathname = '/content';
+    return NextResponse.redirect(url);
+  }
+
   const { userId } = await auth();
 
   // Handle authentication

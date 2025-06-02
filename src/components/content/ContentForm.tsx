@@ -71,9 +71,10 @@ const initialFormData: ContentFormData = {
 interface ContentFormProps {
   initialData?: Partial<ContentFormValues> & { id?: string };
   mode?: 'create' | 'edit';
+  contentListId?: string;
 }
 
-export function ContentForm({ initialData, mode = 'create' }: ContentFormProps) {
+export function ContentForm({ initialData, mode = 'create', contentListId }: ContentFormProps) {
   const router = useRouter();
   const { userId } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -165,6 +166,7 @@ export function ContentForm({ initialData, mode = 'create' }: ContentFormProps) 
       const payload = {
         ...data,
         media: media,
+        contentListId: contentListId,
       };
       let response;
       if (mode === 'edit' && initialData && typeof initialData.id === 'string') {
@@ -176,7 +178,13 @@ export function ContentForm({ initialData, mode = 'create' }: ContentFormProps) 
         title: 'Success',
         description: `Content ${mode === 'edit' ? 'updated' : 'created'} successfully`,
       });
-      router.push('/content');
+      
+      // Navigate to content list if provided, otherwise to content library
+      if (contentListId) {
+        router.push(`/content-lists/${contentListId}`);
+      } else {
+        router.push('/content');
+      }
     } catch (error) {
       console.error('Error saving content:', error);
       // Only show destructive toast for system errors, not validation errors

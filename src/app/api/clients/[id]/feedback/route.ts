@@ -46,7 +46,7 @@ export async function GET(
           'email', u.email
         ) as "createdBy"
       FROM "ClientFeedback" f
-      LEFT JOIN "User" u ON f."uploadedById" = u.id
+      LEFT JOIN "User" u ON f."userId" = u.id
       WHERE f."clientId" = ${clientId}
       ORDER BY f."createdAt" DESC
       ${limit ? Prisma.sql`LIMIT ${limit}` : Prisma.empty}

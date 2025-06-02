@@ -21,6 +21,12 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { useTimezone } from '@/hooks/use-timezone';
 import { Facebook, Twitter, Instagram, Linkedin, Edit, Trash2 } from 'lucide-react';
 
+// Extended version of CalendarEvent that includes optional content and mediaUrls
+interface ExtendedCalendarEvent extends CalendarEvent {
+  content?: string;
+  mediaUrls?: string[];
+}
+
 interface EventDetailsProps {
   event: CalendarEvent;
   onEdit?: () => void;
@@ -63,7 +69,7 @@ const contentTypeIcons: Record<string, React.ReactNode> = {
   email: <Mail className="h-4 w-4" />
 };
 
-const contentTypeColors = {
+const contentTypeColors: Record<string, string> = {
   article: 'bg-purple-50 border-purple-200',
   blog: 'bg-blue-50 border-blue-200',
   social: 'bg-green-50 border-green-200',
@@ -110,7 +116,7 @@ const SocialMediaPreview = ({ platform, content }: { platform: SocialPlatform; c
                 loading="lazy"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.src = '/placeholder-image.png';
+                  target.src = "/images/placeholder-image.png";
                 }}
               />
             </div>
@@ -157,6 +163,9 @@ export function EventDetails({ event, onEdit, onDelete, onRefreshAnalytics }: Ev
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
   const userTimezone = useTimezone();
+  
+  // Cast to extended type for type safety
+  const extendedEvent = event as ExtendedCalendarEvent;
 
   const formattedDate = useMemo(() => 
     event.scheduledDate ? format(new Date(event.scheduledDate), 'MMMM d, yyyy') : 'Not scheduled',
@@ -250,10 +259,18 @@ export function EventDetails({ event, onEdit, onDelete, onRefreshAnalytics }: Ev
     return <LoadingSkeleton />;
   }
 
+  // Get color for content type safely
+  const getContentTypeColor = (type: string) => {
+    if (type in contentTypeColors) {
+      return contentTypeColors[type];
+    }
+    return 'bg-gray-50 border-gray-200';
+  };
+
   return (
-    <div className="space-y-6" role="region" aria-label="Event Details">
-      {/* Header */}
-      <div className="flex items-start justify-between">
+    <div className="space-y-6 max-h-[80vh] overflow-y-auto" role="region" aria-label="Event Details">
+      {/* Header with fixed position */}
+      <div className="flex items-start justify-between sticky top-0 bg-white dark:bg-background z-10 py-2">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">{event.title}</h2>
           <div className="flex items-center gap-2 mt-1">
@@ -308,331 +325,341 @@ export function EventDetails({ event, onEdit, onDelete, onRefreshAnalytics }: Ev
         </div>
       </div>
 
-      {/* Main Content */}
-      <Tabs 
-        value={activeTab} 
-        onValueChange={setActiveTab}
-        className="space-y-4"
-        aria-label="Event content tabs"
-      >
-        <TabsList>
-          <TabsTrigger value="details">Details</TabsTrigger>
-          <TabsTrigger value="preview">Preview</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-        </TabsList>
+      {/* Main Content - scrollable */}
+      <div className="overflow-y-auto">
+        <Tabs 
+          value={activeTab} 
+          onValueChange={setActiveTab}
+          className="space-y-4"
+          aria-label="Event content tabs"
+        >
+          <TabsList>
+            <TabsTrigger value="details">Details</TabsTrigger>
+            <TabsTrigger value="preview">Preview</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="details" className="space-y-4">
-          {event.description && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Description</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="prose prose-sm max-w-none dark:prose-invert">
-                  <ReactMarkdown 
-                    remarkPlugins={[remarkGfm]}
-                    rehypePlugins={[rehypeRaw]}
-                  >
-                    {event.description}
-                  </ReactMarkdown>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {event.type === "social" && event.socialMediaContent ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>Social Media Content</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {event.socialMediaContent.platforms.map((platform) => {
-                    const content = event.socialMediaContent?.platformSpecificContent?.[platform];
-                    return (
-                      <div key={platform} className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground" aria-hidden="true">
-                            {platformIcons[platform]}
-                          </span>
-                          <span className="font-medium">{platform}</span>
-                        </div>
-                        {content?.text && (
-                          <div className="prose prose-sm max-w-none dark:prose-invert">
-                            <ReactMarkdown 
-                              remarkPlugins={[remarkGfm]}
-                              rehypePlugins={[rehypeRaw]}
-                            >
-                              {content.text}
-                            </ReactMarkdown>
-                          </div>
-                        )}
-                        {content?.mediaUrls && content.mediaUrls.length > 0 && (
-                          <div className={cn(
-                            "grid gap-2",
-                            content.mediaUrls.length === 1 ? "grid-cols-1" :
-                            content.mediaUrls.length === 2 ? "grid-cols-2" :
-                            content.mediaUrls.length === 3 ? "grid-cols-3" :
-                            "grid-cols-2"
-                          )}>
-                            {content.mediaUrls.map((url: string, index: number) => (
-                              <div key={index} className="relative aspect-square group">
-                                <img
-                                  src={url}
-                                  alt={`Media ${index + 1} for ${platform}`}
-                                  className="rounded-md object-cover w-full h-full"
-                                  loading="lazy"
-                                  onError={(e) => {
-                                    const target = e.target as HTMLImageElement;
-                                    target.src = '/placeholder-image.png';
-                                  }}
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        {content?.text && (
-                          <div className="text-xs text-muted-foreground">
-                            {content.text.length} / {platformMaxChars[platform]} characters
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground" aria-hidden="true">
-                    {contentTypeIcons[event.type] || <FileText className="h-4 w-4" />}
-                  </span>
-                  <CardTitle>{event.type.charAt(0).toUpperCase() + event.type.slice(1)} Content</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className={cn("rounded-lg border p-4", contentTypeColors[event.type] || 'bg-gray-50 border-gray-200')}>
+          <TabsContent value="details" className="space-y-4">
+            {event.description && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Description</CardTitle>
+                </CardHeader>
+                <CardContent>
                   <div className="prose prose-sm max-w-none dark:prose-invert">
                     <ReactMarkdown 
                       remarkPlugins={[remarkGfm]}
                       rehypePlugins={[rehypeRaw]}
                     >
-                      {event.content}
+                      {event.description}
                     </ReactMarkdown>
                   </div>
-                  {event.mediaUrls && event.mediaUrls.length > 0 && (
-                    <div className={cn(
-                      "mt-4 grid gap-2",
-                      event.mediaUrls.length === 1 ? "grid-cols-1" :
-                      event.mediaUrls.length === 2 ? "grid-cols-2" :
-                      event.mediaUrls.length === 3 ? "grid-cols-3" :
-                      "grid-cols-2"
-                    )}>
-                      {event.mediaUrls.map((url: string, index: number) => (
-                        <div key={index} className="relative aspect-square group">
-                          <img
-                            src={url}
-                            alt={`Media ${index + 1}`}
-                            className="rounded-md object-cover w-full h-full"
-                            loading="lazy"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
+                </CardContent>
+              </Card>
+            )}
 
-        <TabsContent value="preview" className="space-y-4">
-          {event.type === "social" && event.socialMediaContent ? (
-            <div className="space-y-6">
-              {/* If no platforms are selected, show a message and a Back to Edit button */}
-              {event.socialMediaContent.platforms.length === 0 && (
-                <div className="space-y-4">
-                  <div className="font-semibold text-lg">Social Media Content</div>
-                  <div className="mb-2 text-destructive">
-                    No platforms selected. Please go back to the previous step and select at least one social media platform.
-                  </div>
-                  {onEdit && (
-                    <Button variant="outline" onClick={onEdit}>
-                      Back to Edit
-                    </Button>
-                  )}
-                </div>
-              )}
-              {/* Existing preview rendering for selected platforms */}
-              {event.socialMediaContent.platforms.length > 0 &&
-                event.socialMediaContent.platforms.map((platform) => {
-                  const content = event.socialMediaContent?.platformSpecificContent?.[platform];
-                  const preview = event.preview?.platformPreviews?.[platform];
-                  return (
-                    <Card key={platform}>
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
+            {event.type === "social" && event.socialMediaContent ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Social Media Content</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {event.socialMediaContent.platforms.map((platform) => {
+                      const content = event.socialMediaContent?.platformSpecificContent?.[platform];
+                      return (
+                        <div key={platform} className="space-y-3">
                           <div className="flex items-center gap-2">
                             <span className="text-muted-foreground" aria-hidden="true">
                               {platformIcons[platform]}
                             </span>
-                            <CardTitle>{platform} Preview</CardTitle>
+                            <span className="font-medium">{platform}</span>
                           </div>
-                          {preview?.status && (
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                preview.status === 'approved' && "bg-green-100 text-green-800",
-                                preview.status === 'rejected' && "bg-red-100 text-red-800",
-                                preview.status === 'pending' && "bg-yellow-100 text-yellow-800"
-                              )}
-                            >
-                              {preview.status}
-                            </Badge>
+                          {content?.text && (
+                            <div className="prose prose-sm max-w-none dark:prose-invert">
+                              <ReactMarkdown 
+                                remarkPlugins={[remarkGfm]}
+                                rehypePlugins={[rehypeRaw]}
+                              >
+                                {content.text}
+                              </ReactMarkdown>
+                            </div>
+                          )}
+                          {content?.mediaUrls && content.mediaUrls.length > 0 && (
+                            <div className={cn(
+                              "grid gap-2",
+                              content.mediaUrls.length === 1 ? "grid-cols-1" :
+                              content.mediaUrls.length === 2 ? "grid-cols-2" :
+                              content.mediaUrls.length === 3 ? "grid-cols-3" :
+                              "grid-cols-2"
+                            )}>
+                              {content.mediaUrls.map((url: string, index: number) => (
+                                <div key={index} className="relative aspect-square group">
+                                  <img
+                                    src={url}
+                                    alt={`Media ${index + 1} for ${platform}`}
+                                    className="rounded-md object-cover w-full h-full"
+                                    loading="lazy"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.src = "/images/placeholder-image.png";
+                                    }}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {content?.text && (
+                            <div className="text-xs text-muted-foreground">
+                              {content.text.length} / {platformMaxChars[platform]} characters
+                            </div>
                           )}
                         </div>
-                      </CardHeader>
-                      <CardContent>
-                        {content ? (
-                          <SocialMediaPreview platform={platform} content={content} />
-                        ) : (
-                          <div className="text-center py-8 text-muted-foreground">
-                            No content available for {platform}
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground" aria-hidden="true">
+                      {contentTypeIcons[event.type] || <FileText className="h-4 w-4" />}
+                    </span>
+                    <CardTitle>{event.type.charAt(0).toUpperCase() + event.type.slice(1)} Content</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className={cn("rounded-lg border p-4", getContentTypeColor(event.type))}>
+                    <div className="prose prose-sm max-w-none dark:prose-invert">
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeRaw]}
+                      >
+                        {extendedEvent.content || event.description || ''}
+                      </ReactMarkdown>
+                    </div>
+                    {extendedEvent.mediaUrls && extendedEvent.mediaUrls.length > 0 && (
+                      <div className={cn(
+                        "mt-4 grid gap-2",
+                        extendedEvent.mediaUrls.length === 1 ? "grid-cols-1" :
+                        extendedEvent.mediaUrls.length === 2 ? "grid-cols-2" :
+                        extendedEvent.mediaUrls.length === 3 ? "grid-cols-3" :
+                        "grid-cols-2"
+                      )}>
+                        {extendedEvent.mediaUrls.map((url: string, index: number) => (
+                          <div key={index} className="relative aspect-square group">
+                            <img
+                              src={url}
+                              alt={`Media ${index + 1}`}
+                              className="rounded-md object-cover w-full h-full"
+                              loading="lazy"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = "/images/placeholder-image.png";
+                              }}
+                            />
                           </div>
-                        )}
-                        {preview?.rejectionReason && (
-                          <Alert intent="error" style={{ marginTop: '1rem' }}>
-                            <AlertCircle className="h-4 w-4" />
-                            <div className="ml-2">
-                              <h4 className="font-medium">Rejection Reason</h4>
-                              <p className="text-sm text-muted-foreground">{preview.rejectionReason}</p>
-                            </div>
-                          </Alert>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-            </div>
-          ) : (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground" aria-hidden="true">
-                    {contentTypeIcons[event.type] || <FileText className="h-4 w-4" />}
-                  </span>
-                  <CardTitle>Content Preview</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className={cn("rounded-lg border p-4", contentTypeColors[event.type] || 'bg-gray-50 border-gray-200')}>
-                  <div className="prose prose-sm max-w-none dark:prose-invert">
-                    <ReactMarkdown 
-                      remarkPlugins={[remarkGfm]}
-                      rehypePlugins={[rehypeRaw]}
-                    >
-                      {event.content}
-                    </ReactMarkdown>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  {event.mediaUrls && event.mediaUrls.length > 0 && (
-                    <div className={cn(
-                      "mt-4 grid gap-2",
-                      event.mediaUrls.length === 1 ? "grid-cols-1" :
-                      event.mediaUrls.length === 2 ? "grid-cols-2" :
-                      event.mediaUrls.length === 3 ? "grid-cols-3" :
-                      "grid-cols-2"
-                    )}>
-                      {event.mediaUrls.map((url: string, index: number) => (
-                        <div key={index} className="relative aspect-square group">
-                          <img
-                            src={url}
-                            alt={`Media ${index + 1}`}
-                            className="rounded-md object-cover w-full h-full"
-                            loading="lazy"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
 
-        <TabsContent value="analytics" className="space-y-4">
-          {event.analytics ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Views</CardTitle>
-                  <Eye className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {event.analytics.views?.toLocaleString() ?? 0}
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Engagement</CardTitle>
-                  <BarChart2 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {totalEngagement.toLocaleString()}
-                  </div>
-                  <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <ThumbsUp className="h-3 w-3" aria-hidden="true" />
-                      {event.analytics.engagement?.likes?.toLocaleString() ?? 0}
+          <TabsContent value="preview" className="space-y-4">
+            {event.type === "social" && event.socialMediaContent ? (
+              <div className="space-y-6">
+                {/* If no platforms are selected, show a message and a Back to Edit button */}
+                {event.socialMediaContent.platforms.length === 0 && (
+                  <div className="space-y-4">
+                    <div className="font-semibold text-lg">Social Media Content</div>
+                    <div className="mb-2 text-destructive">
+                      No platforms selected. Please go back to the previous step and select at least one social media platform.
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Share2 className="h-3 w-3" aria-hidden="true" />
-                      {event.analytics.engagement?.shares?.toLocaleString() ?? 0}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <MessageSquare className="h-3 w-3" aria-hidden="true" />
-                      {event.analytics.engagement?.comments?.toLocaleString() ?? 0}
-                    </div>
+                    {onEdit && (
+                      <Button variant="outline" onClick={onEdit}>
+                        Back to Edit
+                      </Button>
+                    )}
                   </div>
-                </CardContent>
-              </Card>
+                )}
+                {/* Existing preview rendering for selected platforms */}
+                {event.socialMediaContent.platforms.length > 0 &&
+                  event.socialMediaContent.platforms.map((platform) => {
+                    const content = event.socialMediaContent?.platformSpecificContent?.[platform];
+                    const preview = event.preview?.platformPreviews?.[platform];
+                    return (
+                      <Card key={platform}>
+                        <CardHeader>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground" aria-hidden="true">
+                                {platformIcons[platform]}
+                              </span>
+                              <CardTitle>{platform} Preview</CardTitle>
+                            </div>
+                            {preview?.status && (
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  preview.status === 'approved' && "bg-green-100 text-green-800",
+                                  preview.status === 'rejected' && "bg-red-100 text-red-800",
+                                  preview.status === 'pending' && "bg-yellow-100 text-yellow-800"
+                                )}
+                              >
+                                {preview.status}
+                              </Badge>
+                            )}
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          {content ? (
+                            <SocialMediaPreview platform={platform} content={content} />
+                          ) : (
+                            <div className="text-center py-8 text-muted-foreground">
+                              No content available for {platform}
+                            </div>
+                          )}
+                          {preview?.rejectionReason && (
+                            <Alert intent="error" style={{ marginTop: '1rem' }}>
+                              <AlertCircle className="h-4 w-4" />
+                              <div className="ml-2">
+                                <h4 className="font-medium">Rejection Reason</h4>
+                                <p className="text-sm text-muted-foreground">{preview.rejectionReason}</p>
+                              </div>
+                            </Alert>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+              </div>
+            ) : (
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Clicks</CardTitle>
-                  <ExternalLink className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground" aria-hidden="true">
+                      {contentTypeIcons[event.type] || <FileText className="h-4 w-4" />}
+                    </span>
+                    <CardTitle>Content Preview</CardTitle>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
-                    {event.analytics.clicks?.toLocaleString() ?? 0}
+                  <div className={cn("rounded-lg border p-4", getContentTypeColor(event.type))}>
+                    <div className="prose prose-sm max-w-none dark:prose-invert">
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeRaw]}
+                      >
+                        {extendedEvent.content || event.description || ''}
+                      </ReactMarkdown>
+                    </div>
+                    {extendedEvent.mediaUrls && extendedEvent.mediaUrls.length > 0 && (
+                      <div className={cn(
+                        "mt-4 grid gap-2",
+                        extendedEvent.mediaUrls.length === 1 ? "grid-cols-1" :
+                        extendedEvent.mediaUrls.length === 2 ? "grid-cols-2" :
+                        extendedEvent.mediaUrls.length === 3 ? "grid-cols-3" :
+                        "grid-cols-2"
+                      )}>
+                        {extendedEvent.mediaUrls.map((url: string, index: number) => (
+                          <div key={index} className="relative aspect-square group">
+                            <img
+                              src={url}
+                              alt={`Media ${index + 1}`}
+                              className="rounded-md object-cover w-full h-full"
+                              loading="lazy"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = "/images/placeholder-image.png";
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Last Updated</CardTitle>
-                  <RefreshCw className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-sm text-muted-foreground">
-                    {event.analytics.lastUpdated
-                      ? format(new Date(event.analytics.lastUpdated), "MMM d, yyyy 'at' h:mm a")
-                      : "Never"}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              No analytics available for this event
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+            )}
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-4">
+            {event.analytics ? (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Views</CardTitle>
+                    <Eye className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {event.analytics.views?.toLocaleString() ?? 0}
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Engagement</CardTitle>
+                    <BarChart2 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {totalEngagement.toLocaleString()}
+                    </div>
+                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <ThumbsUp className="h-3 w-3" aria-hidden="true" />
+                        {event.analytics.engagement?.likes?.toLocaleString() ?? 0}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Share2 className="h-3 w-3" aria-hidden="true" />
+                        {event.analytics.engagement?.shares?.toLocaleString() ?? 0}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <MessageSquare className="h-3 w-3" aria-hidden="true" />
+                        {event.analytics.engagement?.comments?.toLocaleString() ?? 0}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Clicks</CardTitle>
+                    <ExternalLink className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {event.analytics.clicks?.toLocaleString() ?? 0}
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Last Updated</CardTitle>
+                    <RefreshCw className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-sm text-muted-foreground">
+                      {event.analytics.lastUpdated
+                        ? format(new Date(event.analytics.lastUpdated), "MMM d, yyyy 'at' h:mm a")
+                        : "Never"}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No analytics available for this event
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 } 

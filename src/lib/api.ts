@@ -100,20 +100,27 @@ export async function uploadMedia(file: File): Promise<{ url: string, filename: 
 }
 
 import { handleApiError } from './apiErrorHandler';
+import { CampaignStatus, CampaignGoalType, ScheduleFrequency } from '@prisma/client';
 
 export interface CampaignData {
   name: string;
-  type: string;
-  scheduleDate: Date | null;
-  description: string;
-  subject: string;
-  senderName: string;
-  senderEmail: string;
-  audiences: string[];
+  description: string | null;
+  startDate: string;
+  endDate: string;
+  budget: number | null;
+  goalType: CampaignGoalType;
+  customGoal: string | null;
+  status: CampaignStatus;
+  organizationId?: string;
+  clientId?: string | null;
+  projectId?: string | null;
+  scheduleFrequency: ScheduleFrequency;
+  timezone: string;
 }
 
-export async function createCampaign(data: CampaignData): Promise<{ id: string; name: string }> {
+export async function createCampaign(data: CampaignData): Promise<Response> {
   try {
+    console.log('Sending campaign data to API:', data);
     const response = await fetch('/api/campaigns', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -121,12 +128,12 @@ export async function createCampaign(data: CampaignData): Promise<{ id: string; 
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to create campaign');
+      console.log('Campaign creation failed with status:', response.status);
     }
 
-    return response.json();
+    return response;
   } catch (error) {
+    console.error('API error in createCampaign:', error);
     throw handleApiError(error);
   }
 }

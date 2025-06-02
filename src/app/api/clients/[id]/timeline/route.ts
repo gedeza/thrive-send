@@ -62,7 +62,7 @@ export async function GET(
       db.$queryRaw<Milestone[]>`
         SELECT 
           m.id,
-          m.title,
+          m.name as title,
           m.description,
           m.status,
           m."dueDate"
@@ -98,7 +98,7 @@ export async function GET(
       db.$queryRaw<Project[]>`
         SELECT 
           id,
-          title,
+          name as title,
           description,
           status,
           "startDate"
