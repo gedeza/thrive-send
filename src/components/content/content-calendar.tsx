@@ -62,6 +62,7 @@ import debounce from 'lodash/debounce';
 import { MonthView } from './MonthView';
 import { DayView } from './DayView';
 import { ListView } from './ListView';
+import { WeekView } from './WeekView';
 import { CalendarHeader } from './CalendarHeader';
 // Add these constants at the top of the file, after the imports
 export const DEFAULT_DURATIONS: Record<ContentType, number> = {
@@ -1655,9 +1656,12 @@ export function ContentCalendar({
               )}
               {calendarView === "week" && (
                 <div className="p-4">
-                  <div className="text-center py-8 text-muted-foreground">
-                    Week view coming soon
-                  </div>
+                  {renderWeekView(
+                    currentDate,
+                    getEventsForDay,
+                    handleEventClick,
+                    userTimezone
+                  )}
                 </div>
               )}
               {calendarView === "day" && (
