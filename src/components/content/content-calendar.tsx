@@ -59,6 +59,10 @@ import { ContentCalendarSync } from "@/components/content/ContentCalendarSync";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import debounce from 'lodash/debounce';
+import { MonthView } from './MonthView';
+import { DayView } from './DayView';
+import { ListView } from './ListView';
+import { CalendarHeader } from './CalendarHeader';
 // Add these constants at the top of the file, after the imports
 export const DEFAULT_DURATIONS: Record<ContentType, number> = {
   social: 30, // 30 minutes for social posts
@@ -332,21 +336,11 @@ function MediaUploader({
   );
 }
 
-// Add these constants at the top of the file, after the imports
-const DEFAULT_DURATIONS: Record<ContentType, number> = {
-  social: 30, // 30 minutes for social posts
-  blog: 120,  // 2 hours for blog posts
-  email: 60,  // 1 hour for emails
-  custom: 60, // 1 hour default for custom content
-  article: 120 // 2 hours for articles
-};
+
 
 // Add this function near the top of the file, after imports
 async function fetchEventAnalytics(eventId: string): Promise<void> {
-  // This is a placeholder for the actual analytics fetching logic
-  // In a real application, this would make an API call to fetch analytics data
   return new Promise((resolve) => {
-    setTimeout(resolve, 1000);
   });
 }
 
@@ -1574,148 +1568,44 @@ export function ContentCalendar({
 
   return (
     <div className="space-y-4 border rounded-xl p-4 bg-card shadow-sm">
-      {/* Calendar Header with Actions */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--color-chart-blue)]">
-            Content Calendar
-          </h1>
-          <div className="h-6 w-px bg-border" />
-          <Tabs 
-            defaultValue={calendarView}
-            value={calendarView} 
-            onValueChange={(value) => {
-              const newView = value as CalendarView;
-              setCalendarView(newView);
-              onViewChange?.(newView);
-            }}
-            className="w-[280px]"
-          >
-            <TabsList className="grid w-full grid-cols-4 bg-muted/50 p-1">
-              {['month', 'week', 'day', 'list'].map((tab) => (
-                <TabsTrigger
-                  key={tab}
-                  value={tab}
-                  className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm cursor-pointer transition-all duration-200"
-                >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button 
-            onClick={() => {
-              setNewEvent(prev => ({ ...prev, start: currentDate }));
-              setIsCreateDialogOpen(true);
-            }}
-            className="h-9"
-          >
-            <Plus className="h-4 w-4 mr-2" /> Add Event
-          </Button>
-          <Button
-            variant="outline"
-            onClick={async () => {
-              try {
-                setLoading(true);
-                await fetchCalendarEventsDirectly();
-                toast({
-                  title: "Debug",
-                  description: `Attempted direct data fetch. Check console for details.`,
-                });
-              } catch (err) {
-                toast({
-                  title: "Debug Error",
-                  description: err instanceof Error ? err.message : "Error during debug fetch",
-                  variant: "destructive",
-                });
-              } finally {
-                setLoading(false);
-              }
-            }}
-            className="h-9"
-          >
-            <Bug className="h-4 w-4 mr-2" /> Debug
-          </Button>
-        </div>
-      </div>
-
-      {/* Filters and Navigation */}
-      <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-        <div className="flex items-center gap-3">
-          <div className="relative w-64">
-            <Input
-              type="search"
-              placeholder="Search events..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 h-9 bg-background transition-colors"
-              aria-label="Search events"
-            />
-            <Search className="h-4 w-4 absolute left-3 top-2.5 text-muted-foreground" aria-hidden="true" />
-          </div>
-
-          <Select value={selectedType} onValueChange={setSelectedType}>
-            <SelectTrigger className="w-[120px] h-9 bg-background transition-colors" aria-label="Filter by content type">
-              <SelectValue placeholder="Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All types</SelectItem>
-              <SelectItem value="email">Email</SelectItem>
-              <SelectItem value="social">Social</SelectItem>
-              <SelectItem value="blog">Blog</SelectItem>
-              <SelectItem value="article">Article</SelectItem>
-              <SelectItem value="custom">Custom</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-            <SelectTrigger className="w-[130px] h-9 bg-background transition-colors" aria-label="Filter by status">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="scheduled">Scheduled</SelectItem>
-              <SelectItem value="sent">Sent</SelectItem>
-              <SelectItem value="failed">Failed</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={() => setCurrentDate(subMonths(currentDate, 1))}
-            className="h-9 w-9 hover:bg-muted/80 transition-colors"
-            aria-label="Previous month"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={() => setCurrentDate(addMonths(currentDate, 1))}
-            className="h-9 w-9 hover:bg-muted/80 transition-colors"
-            aria-label="Next month"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => setCurrentDate(toZonedTime(new Date(), userTimezone))}
-            className="h-9 hover:bg-muted/80 transition-colors"
-            aria-label="Go to today"
-          >
-            Today
-          </Button>
-          <div className="text-sm font-medium text-muted-foreground" aria-live="polite" role="status">
-            {formatInTimeZone(currentDate, userTimezone, "MMMM yyyy")}
-          </div>
-        </div>
-      </div>
+      <CalendarHeader
+        calendarView={calendarView}
+        onViewChange={(view) => {
+          setCalendarView(view);
+          onViewChange?.(view);
+        }}
+        currentDate={currentDate}
+        onDateChange={setCurrentDate}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        selectedType={selectedType}
+        onTypeChange={setSelectedType}
+        selectedStatus={selectedStatus}
+        onStatusChange={setSelectedStatus}
+        onAddEvent={() => {
+          setNewEvent(prev => ({ ...prev, start: currentDate }));
+          setIsCreateDialogOpen(true);
+        }}
+        onDebug={async () => {
+          try {
+            setLoading(true);
+            await fetchCalendarEventsDirectly();
+            toast({
+              title: "Debug",
+              description: `Attempted direct data fetch. Check console for details.`,
+            });
+          } catch (err) {
+            toast({
+              title: "Debug Error",
+              description: err instanceof Error ? err.message : "Error during debug fetch",
+              variant: "destructive",
+            });
+          } finally {
+            setLoading(false);
+          }
+        }}
+        loading={loading}
+      />
 
       <DndContext
         sensors={sensors}
@@ -1751,32 +1641,39 @@ export function ContentCalendar({
             </div>
           ) : (
             <>
-          {calendarView === "month" && (
-            <div className="p-4">
-              {renderMonthView(
-                currentDate,
-                daysInMonth,
-                getEventsForDay,
-                handleEventClick,
-                handleDateClick,
-                userTimezone
+              {calendarView === "month" && (
+                <div className="p-4">
+                  <MonthView
+                    currentDate={currentDate}
+                    daysInMonth={daysInMonth}
+                    getEventsForDay={getEventsForDay}
+                    handleEventClick={handleEventClick}
+                    handleDateClick={handleDateClick}
+                    userTimezone={userTimezone}
+                  />
+                </div>
               )}
-            </div>
-          )}
-          {calendarView === "week" && (
-            <div className="p-4">
-              {renderWeekView(currentDate, getEventsForDay, handleEventClick, userTimezone)}
-            </div>
-          )}
-          {calendarView === "day" && (
-            <div className="p-4">
-              {renderDayView(currentDate, getEventsForDay, handleEventClick, userTimezone)}
-            </div>
-          )}
-          {calendarView === "list" && (
-            <div className="p-4">
+              {calendarView === "week" && (
+                <div className="p-4">
+                  <div className="text-center py-8 text-muted-foreground">
+                    Week view coming soon
+                  </div>
+                </div>
+              )}
+              {calendarView === "day" && (
+                <div className="p-4">
+                  <DayView
+                    date={currentDate}
+                    getEventsForDay={getEventsForDay}
+                    onEventClick={handleEventClick}
+                    userTimezone={userTimezone}
+                  />
+                </div>
+              )}
+              {calendarView === "list" && (
+                <div className="p-4">
                   <ListView events={filteredEvents} onEventClick={handleEventClick} />
-            </div>
+                </div>
               )}
             </>
           )}

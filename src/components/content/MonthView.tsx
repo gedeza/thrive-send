@@ -200,7 +200,8 @@ const MonthViewDay = ({
             className="text-xs text-primary hover:underline w-full text-left mt-1"
             onClick={(e) => {
               e.stopPropagation();
-              console.log('Show all events for', formatInTimeZone(day, userTimezone, 'yyyy-MM-dd'), events);
+              // Remove this console.log - it's causing render-phase updates
+              // console.log('Show all events for', formatInTimeZone(day, userTimezone, 'yyyy-MM-dd'), events);
             }}
             aria-label={`Show all ${events.length} events for ${dateString}`}
           >
