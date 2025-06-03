@@ -3,6 +3,8 @@
 import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
+// Add this import:
+import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +27,9 @@ import { ContentType } from '@/lib/types/content';
 import { MediaUploader, type MediaFile } from '@/components/content/MediaUploader';
 import { TagInput } from '@/components/content/TagInput';
 import type { SubmitHandler } from 'react-hook-form';
+import { useEffect } from 'react';
+import { getListsForContent } from '@/lib/api/content-list-service';
+import { Badge } from '@/components/ui/badge';
 
 // Content types
 const contentTypes: ContentType[] = ['blog', 'email', 'social'];
@@ -77,12 +82,32 @@ interface ContentFormProps {
 export function ContentForm({ initialData, mode = 'create', contentListId }: ContentFormProps) {
   const router = useRouter();
   const { userId } = useAuth();
+  // Add this line:
+  const queryClient = useQueryClient();
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newTag, setNewTag] = useState('');
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editorTab, setEditorTab] = useState<'editor' | 'preview'>('editor');
   const [media, setMedia] = useState<MediaFile[]>([]);
+  const [contentLists, setContentLists] = useState<any[]>([]);
+  
+  // Fetch content lists when editing existing content
+  useEffect(() => {
+    if (mode === 'edit' && initialData && initialData.id) {
+      const fetchContentLists = async () => {
+        try {
+          const { lists } = await getListsForContent(initialData.id as string);
+          setContentLists(lists);
+        } catch (error) {
+          console.error('Error fetching content lists:', error);
+        }
+      };
+      
+      fetchContentLists();
+    }
+  }, [initialData, mode]);
 
   const {
     register,
@@ -174,6 +199,11 @@ export function ContentForm({ initialData, mode = 'create', contentListId }: Con
       } else {
         response = await saveContent(payload);
       }
+      
+      // Fixed: Invalidate cache after successful operation (moved inside success block)
+      queryClient.invalidateQueries({ queryKey: ['content'] });
+      queryClient.invalidateQueries({ queryKey: ['content-lists'] });
+      
       toast({
         title: 'Success',
         description: `Content ${mode === 'edit' ? 'updated' : 'created'} successfully`,
@@ -324,6 +354,27 @@ export function ContentForm({ initialData, mode = 'create', contentListId }: Con
             </PopoverContent>
           </Popover>
         </div>
+        {/* Display associated content lists */}
+        {mode === 'edit' && (
+          <div>
+            <label className="block text-sm font-medium mb-1">Content Lists</label>
+            <div className="border rounded-md p-4">
+              {contentLists.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {contentLists.map((list) => (
+                    <Badge key={list.id} variant="secondary">
+                      {list.name}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  This content is not part of any content lists.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex justify-end space-x-4">

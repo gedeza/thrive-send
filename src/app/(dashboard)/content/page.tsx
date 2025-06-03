@@ -426,3 +426,29 @@ function ContentLibraryPage() {
 }
 
 export default ContentLibraryPage;
+
+// Remove everything below this line (lines 429-453)
+// The following code is causing the error:
+// {selectedContent && (
+//   <div className="space-y-4">
+//     {/* ... existing content details ... */}
+//     
+//     {/* Content Lists Section */}
+//     <div>
+//       <h3 className="text-lg font-medium mb-2">Content Lists</h3>
+//       {contentLists.length > 0 ? (
+//         <div className="flex flex-wrap gap-2">
+//           {contentLists.map((list) => (
+//             <Badge key={list.id} variant="secondary" className="px-3 py-1">
+//               {list.name}
+//             </Badge>
+//           ))}
+//         </div>
+//       ) : (
+//         <p className="text-sm text-muted-foreground">
+//           This content is not part of any content lists.
+//         </p>
+//       )}
+//     </div>
+//   </div>
+// )}

@@ -90,9 +90,10 @@ const convertCalendarEventToApiEvent = (event: ContentCalendarEvent): Omit<ApiCa
       scheduledTime: platformContent.scheduledTime,
       status: event.status === 'sent' ? 'published' : event.status
     } : undefined,
+    // Fixed: Add null checks for articleContent
     articleContent: event.type === 'article' ? {
-      content: event.description || '',
-      metadata: {}
+      content: event.articleContent?.content || event.description || '',
+      metadata: event.articleContent?.metadata || {}
     } : undefined,
     analytics: event.analytics ? {
       ...event.analytics,

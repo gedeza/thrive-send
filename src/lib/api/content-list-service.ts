@@ -218,4 +218,31 @@ export async function removeContentFromList(listId: string, contentId: string): 
     console.error('Error removing content from list:', error);
     throw error;
   }
-} 
+}
+
+export async function getListsForContent(contentId: string): Promise<{
+  lists: ContentListData[];
+  totalCount: number;
+}> {
+  try {
+    console.log('Fetching lists for content:', contentId);
+    const response = await fetch(`/api/content/${contentId}/lists`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to fetch content lists');
+    }
+    
+    const data = await response.json();
+    console.log('Content lists fetched:', data);
+    return data;
+  } catch (error) {
+    console.error('Error fetching lists for content:', error);
+    throw error;
+  }
+}

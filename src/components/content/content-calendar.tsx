@@ -59,7 +59,14 @@ import { ContentCalendarSync } from "@/components/content/ContentCalendarSync";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import debounce from 'lodash/debounce';
-
+// Add these constants at the top of the file, after the imports
+export const DEFAULT_DURATIONS: Record<ContentType, number> = {
+  social: 30, // 30 minutes for social posts
+  blog: 120,  // 2 hours for blog posts
+  email: 60,  // 1 hour for emails
+  custom: 60, // 1 hour default for custom content
+  article: 120 // 2 hours for articles
+};
 // NOTE: This file contains inline definitions for components that were originally defined in separate files.
 // The MonthView, WeekView, DayView, ListView, CalendarHeader, and CalendarFilters components are defined inline
 // rather than imported from separate files.

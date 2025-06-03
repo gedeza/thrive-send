@@ -17,7 +17,7 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { CalendarIcon, ImageIcon, Loader2, Plus, X, Facebook, Twitter, Instagram, Linkedin, Upload } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { RichTextEditor } from '@/components/rich-text-editor';
-import { ContentType, SocialPlatform, CalendarEvent, SocialMediaContent } from './content-calendar';
+import { ContentType, SocialPlatform, CalendarEvent, SocialMediaContent, DEFAULT_DURATIONS } from './content-calendar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useTimezone } from "@/hooks/use-timezone";
 import { DialogFooter } from '@/components/ui/dialog';
@@ -486,7 +486,7 @@ export function EventForm({
     type: "social",
     status: "draft",
     date: format(new Date(), "yyyy-MM-dd"),
-    time: format(new Date(), "HH:mm"),
+    time: "",
     socialMediaContent: {
       platforms: [],
       crossPost: false,
@@ -598,15 +598,16 @@ export function EventForm({
         };
 
         // Debug log to track state changes
-        console.log('Platform selection updated:', {
+        console.log('Platform toggle update:', {
           platform,
           newPlatforms,
-          formDataPlatforms: updatedFormData.socialMediaContent.platforms
+          updatedFormData: updatedFormData.socialMediaContent
         });
 
         return updatedFormData;
       });
 
+      
       onPlatformsChange?.(newPlatforms);
       return newPlatforms;
     });
@@ -1325,4 +1326,4 @@ export function EventForm({
       ) : null}
     </form>
   );
-} 
+}
