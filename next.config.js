@@ -7,5 +7,9 @@ const nextConfig = {
     domains: ["placehold.co"]
   }
 };
-
+module.exports = {
+  experimental: {
+    forceSwcTransforms: true,
+  },
+}
 module.exports = nextConfig;

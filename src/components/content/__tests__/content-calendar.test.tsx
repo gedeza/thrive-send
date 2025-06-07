@@ -6,15 +6,15 @@ import { format } from 'date-fns';
 
 // Mock the API calls
 jest.mock('@/lib/api/calendar-service', () => ({
-  fetchEvents: jest.fn(),
-  createEvent: jest.fn(),
-  updateEvent: jest.fn(),
-  deleteEvent: jest.fn(),
+  fetchCalendarEvents: jest.fn(),
+  createCalendarEvent: jest.fn(),
+  updateCalendarEvent: jest.fn(),
+  deleteCalendarEvent: jest.fn(),
 }));
 
 describe('ContentCalendar', () => {
-  const fetchEvents = require('@/lib/api/calendar-service').fetchEvents;
-  const createEvent = require('@/lib/api/calendar-service').createEvent;
+  const fetchCalendarEvents = require('@/lib/api/calendar-service').fetchCalendarEvents;
+  const createCalendarEvent = require('@/lib/api/calendar-service').createCalendarEvent;
   const updateEvent = require('@/lib/api/calendar-service').updateEvent;
   const deleteEvent = require('@/lib/api/calendar-service').deleteEvent;
   

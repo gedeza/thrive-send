@@ -233,7 +233,7 @@ export default function LandingPage() {
             <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
               <PricingCard 
                 title="Starter"
-                price="$29"
+                price="$49"
                 description="Perfect for individuals and small businesses just getting started with social media management."
                 features={[
                   "Up to 5 social accounts",

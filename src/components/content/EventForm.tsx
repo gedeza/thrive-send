@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,13 +14,22 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
-import { CalendarIcon, ImageIcon, Loader2, Plus, X, Facebook, Twitter, Instagram, Linkedin, Upload } from 'lucide-react';
+import { CalendarIcon, ImageIcon, Loader2, Plus, X, Facebook, Twitter, Instagram, Linkedin, Upload, FolderOpen, Save, Trash2, Clock, Copy } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { RichTextEditor } from '@/components/rich-text-editor';
 import { ContentType, SocialPlatform, CalendarEvent, SocialMediaContent, DEFAULT_DURATIONS } from './content-calendar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useTimezone } from "@/hooks/use-timezone";
 import { DialogFooter } from '@/components/ui/dialog';
+// import * as React from 'react'; //
+import type {
+  SocialPlatform,
+  ContentType,
+  CalendarView,
+  SocialMediaContent,
+  CalendarEvent
+} from '@/types/content';
+
 
 interface EventFormProps {
   initialData?: Partial<CalendarEvent>;
@@ -220,10 +229,40 @@ function MediaUploader({
   );
 }
 
-interface PlatformSpecificContent {
-  text: string;
-  mediaUrls: string[];
-  scheduledTime?: string;
+
+interface RecurrencePattern {
+  type: 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
+  interval: number; // Every X days/weeks/months
+  daysOfWeek?: number[]; // For weekly: 0=Sunday, 1=Monday, etc.
+  dayOfMonth?: number; // For monthly: 1-31
+  endDate?: string;
+  occurrences?: number;
+}
+
+interface RecurrenceState {
+  enabled: boolean;
+  pattern: RecurrencePattern;
+  previewDates: string[];
+}
+
+interface BulkCreationState {
+  enabled: boolean;
+  baseContent: Partial<FormData>;
+  variations: BulkVariation[];
+  previewMode: boolean;
+}
+
+interface BulkVariation {
+  id: string;
+  title: string;
+  date: string;
+  time?: string;
+  platformOverrides?: {
+    [key in SocialPlatform]?: {
+      text?: string;
+      mediaUrls?: string[];
+    };
+  };
 }
 
 interface FormSocialMediaContent {
@@ -238,6 +277,24 @@ interface FormSocialMediaContent {
 type AllowedContentType = 'article' | 'blog' | 'social' | 'email';
 type AllowedStatus = 'draft' | 'scheduled' | 'sent' | 'failed';
 
+interface ContentTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  type: AllowedContentType;
+  data: Partial<FormData>;
+  createdAt: string;
+  updatedAt: string;
+  usageCount: number;
+}
+
+interface TemplateState {
+  templates: ContentTemplate[];
+  selectedTemplate?: string;
+  showTemplateDialog: boolean;
+  saveAsTemplate: boolean;
+}
+
 interface FormData {
   id: string;
   title: string;
@@ -248,6 +305,9 @@ interface FormData {
   time?: string;
   content?: string;
   mediaUrls?: string[];
+  recurrence?: RecurrencePattern;
+  isTemplate?: boolean;
+  templateName?: string;
   socialMediaContent: {
     platforms: SocialPlatform[];
     crossPost: boolean;
@@ -523,6 +583,77 @@ export function EventForm({
   );
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Add new state for enhancements
+  const [recurrence, setRecurrence] = useState<RecurrenceState>({
+    enabled: false,
+    pattern: {
+      type: 'none',
+      interval: 1
+    },
+    previewDates: []
+  });
+  
+  const [templates, setTemplates] = useState<TemplateState>({
+    templates: [],
+    showTemplateDialog: false,
+    saveAsTemplate: false
+  });
+  
+  const [bulkCreation, setBulkCreation] = useState<BulkCreationState>({
+    enabled: false,
+    baseContent: {},
+    variations: [],
+    previewMode: false
+  });
+  
+  const [autoSave, setAutoSave] = useState({
+    enabled: true,
+    lastSaved: null as Date | null,
+    isDirty: false
+  });
+
+  // Update recurrence preview dates when form date changes
+  React.useEffect(() => {
+    if (recurrence.enabled && formData.date) {
+      const generatePreviewDates = (pattern: RecurrencePattern, startDate: string): string[] => {
+        const dates: string[] = [];
+        const start = new Date(startDate);
+        const maxDates = 10;
+        
+        for (let i = 0; i < maxDates; i++) {
+          let nextDate = new Date(start);
+          
+          switch (pattern.type) {
+            case 'daily':
+              nextDate.setDate(start.getDate() + (i * pattern.interval));
+              break;
+            case 'weekly':
+              nextDate.setDate(start.getDate() + (i * pattern.interval * 7));
+              break;
+            case 'monthly':
+              nextDate.setMonth(start.getMonth() + (i * pattern.interval));
+              break;
+            case 'yearly':
+              nextDate.setFullYear(start.getFullYear() + (i * pattern.interval));
+              break;
+          }
+          
+          if (pattern.endDate && nextDate > new Date(pattern.endDate)) break;
+          if (pattern.occurrences && i >= pattern.occurrences) break;
+          
+          dates.push(format(nextDate, 'yyyy-MM-dd'));
+        }
+        
+        return dates;
+      };
+      
+      setRecurrence(prev => ({
+        ...prev,
+        previewDates: generatePreviewDates(prev.pattern, formData.date)
+      }));
+    }
+  }, [formData.date, recurrence.enabled, recurrence.pattern]);
 
   const formatDate = (date: Date, format: string) => {
     return formatInTimeZone(date, userTimezone, format);
@@ -852,6 +983,11 @@ export function EventForm({
         submissionData.endTime = endDate.toISOString();
       }
       
+      // Add recurrence data if enabled
+      if (recurrence.enabled) {
+        submissionData.recurrence = recurrence.pattern;
+      }
+      
       // Submit the form
       await onSubmit?.(submissionData);
       
@@ -1129,10 +1265,334 @@ export function EventForm({
     );
   }
 
+  const TemplateManager = () => {
+    const saveAsTemplate = async () => {
+      const templateName = prompt('Enter template name:');
+      if (!templateName) return;
+      
+      const template: ContentTemplate = {
+        id: crypto.randomUUID(),
+        name: templateName,
+        type: formData.type as AllowedContentType,
+        data: { ...formData },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        usageCount: 0
+      };
+      
+      // Save to localStorage or API
+      const existingTemplates = JSON.parse(localStorage.getItem('contentTemplates') || '[]');
+      existingTemplates.push(template);
+      localStorage.setItem('contentTemplates', JSON.stringify(existingTemplates));
+      
+      setTemplates(prev => ({
+        ...prev,
+        templates: existingTemplates
+      }));
+      
+      toast({
+        title: 'Template Saved',
+        description: `Template "${templateName}" has been saved successfully.`
+      });
+    };
+    
+    const loadTemplate = (template: ContentTemplate) => {
+      setFormData(prev => ({
+        ...prev,
+        ...template.data,
+        id: crypto.randomUUID() // Generate new ID
+      }));
+      
+      // Update usage count
+      const updatedTemplates = templates.templates.map(t => 
+        t.id === template.id 
+          ? { ...t, usageCount: t.usageCount + 1, updatedAt: new Date().toISOString() }
+          : t
+      );
+      localStorage.setItem('contentTemplates', JSON.stringify(updatedTemplates));
+      
+      toast({
+        title: 'Template Loaded',
+        description: `Template "${template.name}" has been applied.`
+      });
+    };
+    
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Label className="font-medium">Templates</Label>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setTemplates(prev => ({ ...prev, showTemplateDialog: true }))}
+            >
+              <FolderOpen className="h-4 w-4 mr-2" />
+              Load Template
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={saveAsTemplate}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Save as Template
+            </Button>
+          </div>
+        </div>
+        
+        {templates.showTemplateDialog && (
+          <div className="border rounded-lg p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium">Select Template</h4>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setTemplates(prev => ({ ...prev, showTemplateDialog: false }))}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <div className="grid gap-2 max-h-60 overflow-y-auto">
+              {templates.templates
+                .filter(t => t.type === formData.type)
+                .map(template => (
+                  <div
+                    key={template.id}
+                    className="flex items-center justify-between p-3 border rounded-md hover:bg-accent cursor-pointer"
+                    onClick={() => {
+                      loadTemplate(template);
+                      setTemplates(prev => ({ ...prev, showTemplateDialog: false }));
+                    }}
+                  >
+                    <div>
+                      <div className="font-medium">{template.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Used {template.usageCount} times • {format(new Date(template.updatedAt), 'MMM dd, yyyy')}
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Delete template logic
+                        const updatedTemplates = templates.templates.filter(t => t.id !== template.id);
+                        localStorage.setItem('contentTemplates', JSON.stringify(updatedTemplates));
+                        setTemplates(prev => ({ ...prev, templates: updatedTemplates }));
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))
+              }
+              {templates.templates.filter(t => t.type === formData.type).length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  No templates found for {formData.type} content
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const RecurrenceSettings = () => {
+    const generatePreviewDates = (pattern: RecurrencePattern, startDate: string): string[] => {
+      const dates: string[] = [];
+      const start = new Date(startDate);
+      const maxDates = 10; // Show up to 10 preview dates
+      
+      for (let i = 0; i < maxDates; i++) {
+        let nextDate = new Date(start);
+        
+        switch (pattern.type) {
+          case 'daily':
+            nextDate.setDate(start.getDate() + (i * pattern.interval));
+            break;
+          case 'weekly':
+            nextDate.setDate(start.getDate() + (i * pattern.interval * 7));
+            break;
+          case 'monthly':
+            nextDate.setMonth(start.getMonth() + (i * pattern.interval));
+            break;
+          case 'yearly':
+            nextDate.setFullYear(start.getFullYear() + (i * pattern.interval));
+            break;
+        }
+        
+        if (pattern.endDate && nextDate > new Date(pattern.endDate)) break;
+        if (pattern.occurrences && i >= pattern.occurrences) break;
+        
+        dates.push(format(nextDate, 'yyyy-MM-dd'));
+      }
+      
+      return dates;
+    };
+
+    return (
+      <div className="space-y-4 p-4 border rounded-lg">
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="enable-recurrence"
+            checked={recurrence.enabled}
+            onCheckedChange={(checked) => {
+              setRecurrence(prev => ({
+                ...prev,
+                enabled: !!checked,
+                previewDates: checked ? generatePreviewDates(prev.pattern, formData.date || '') : []
+              }));
+            }}
+          />
+          <Label htmlFor="enable-recurrence" className="font-medium">
+            Make this a recurring event
+          </Label>
+        </div>
+        
+        {recurrence.enabled && (
+          <div className="space-y-4 ml-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Repeat</Label>
+                <Select
+                  value={recurrence.pattern.type}
+                  onValueChange={(value: RecurrencePattern['type']) => {
+                    const newPattern = { ...recurrence.pattern, type: value };
+                    setRecurrence(prev => ({
+                      ...prev,
+                      pattern: newPattern,
+                      previewDates: generatePreviewDates(newPattern, formData.date || '')
+                    }));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily">Daily</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="yearly">Yearly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Every</Label>
+                <div className="flex items-center space-x-2">
+                  <Input
+                    type="number"
+                    min="1"
+                    max="365"
+                    value={recurrence.pattern.interval}
+                    onChange={(e) => {
+                      const interval = parseInt(e.target.value) || 1;
+                      const newPattern = { ...recurrence.pattern, interval };
+                      setRecurrence(prev => ({
+                        ...prev,
+                        pattern: newPattern,
+                        previewDates: generatePreviewDates(newPattern, formData.date || '')
+                      }));
+                    }}
+                    className="w-20"
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    {recurrence.pattern.type === 'daily' && 'day(s)'}
+                    {recurrence.pattern.type === 'weekly' && 'week(s)'}
+                    {recurrence.pattern.type === 'monthly' && 'month(s)'}
+                    {recurrence.pattern.type === 'yearly' && 'year(s)'}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>End Date (Optional)</Label>
+                <Input
+                  type="date"
+                  value={recurrence.pattern.endDate || ''}
+                  onChange={(e) => {
+                    const newPattern = { ...recurrence.pattern, endDate: e.target.value };
+                    setRecurrence(prev => ({
+                      ...prev,
+                      pattern: newPattern,
+                      previewDates: generatePreviewDates(newPattern, formData.date || '')
+                    }));
+                  }}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Or after (occurrences)</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={recurrence.pattern.occurrences || ''}
+                  onChange={(e) => {
+                    const occurrences = e.target.value ? parseInt(e.target.value) : undefined;
+                    const newPattern = { ...recurrence.pattern, occurrences };
+                    setRecurrence(prev => ({
+                      ...prev,
+                      pattern: newPattern,
+                      previewDates: generatePreviewDates(newPattern, formData.date || '')
+                    }));
+                  }}
+                  placeholder="Number of events"
+                />
+              </div>
+            </div>
+            
+            {recurrence.previewDates.length > 0 && (
+              <div className="space-y-2">
+                <Label>Preview Dates</Label>
+                <div className="p-3 bg-muted rounded-md">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
+                    {recurrence.previewDates.slice(0, 6).map((date, index) => (
+                      <div key={index} className="text-muted-foreground">
+                        {format(new Date(date), 'MMM dd, yyyy')}
+                      </div>
+                    ))}
+                    {recurrence.previewDates.length > 6 && (
+                      <div className="text-muted-foreground font-medium">
+                        +{recurrence.previewDates.length - 6} more...
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {mode === 'create' || mode === 'edit' ? (
         <>
+          {/* Auto-save indicator */}
+          {autoSave.enabled && autoSave.isDirty && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-2 rounded-md">
+              <Clock className="h-4 w-4" />
+              {autoSave.lastSaved ? (
+                `Last saved: ${format(autoSave.lastSaved, 'HH:mm:ss')}`
+              ) : (
+                'Auto-saving enabled'
+              )}
+            </div>
+          )}
+          
+          {/* Template Manager */}
+          <TemplateManager />
+          
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="title">Title</Label>
@@ -1230,6 +1690,9 @@ export function EventForm({
               </Select>
             </div>
 
+            {/* Add Recurring Events section after the time field */}
+            <RecurrenceSettings />
+
             {formData.type === 'social' && (
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -1287,40 +1750,54 @@ export function EventForm({
             )}
           </div>
 
-          <div className="flex justify-end gap-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onCancel}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onSubmit?.({ ...formData, status: 'draft' } as CalendarEvent)}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                'Save as Draft'
-              )}
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {mode === 'edit' ? 'Updating...' : 'Creating...'}
-                </>
-              ) : (
-                mode === 'edit' ? 'Update Event' : 'Create Event'
-              )}
-            </Button>
+          {/* Enhanced action buttons */}
+          <div className="flex justify-between">
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setBulkCreation(prev => ({ ...prev, enabled: !prev.enabled }))}
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                {bulkCreation.enabled ? 'Disable' : 'Enable'} Bulk Creation
+              </Button>
+            </div>
+            
+            <div className="flex gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onSubmit?.({ ...formData, status: 'draft' } as CalendarEvent)}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save as Draft'
+                )}
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {mode === 'edit' ? 'Updating...' : 'Creating...'}
+                  </>
+                ) : (
+                  mode === 'edit' ? 'Update Event' : 'Create Event'
+                )}
+              </Button>
+            </div>
           </div>
         </>
       ) : null}

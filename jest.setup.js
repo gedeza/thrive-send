@@ -1,83 +1,94 @@
-// Learn more: https://github.com/testing-library/jest-dom
-require('@testing-library/jest-dom');
+import '@testing-library/jest-dom';
 
-// Set default timeout for all tests
-jest.setTimeout(30000);
+// Set test timeout
+jest.setTimeout(10000);
 
-// Mock next/navigation
-jest.mock('next/navigation', () => ({
-  useRouter() {
-    return {
-      push: jest.fn(),
-      replace: jest.fn(),
-      prefetch: jest.fn(),
-      back: jest.fn(),
-    };
-  },
-  usePathname() {
-    return '';
-  },
-  useSearchParams() {
-    return new URLSearchParams();
-  },
-}));
+// Only define window-related mocks in jsdom environment
+if (typeof window !== 'undefined') {
+  // Mock window.matchMedia
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: jest.fn().mockImplementation(query => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    })),
+  });
 
-// Mock next/image
-jest.mock('next/image', () => ({
-  __esModule: true,
-  default: (props) => {
-    // eslint-disable-next-line jsx-a11y/alt-text
-    return <img {...props} />;
-  },
-}));
+  // Mock ResizeObserver
+  global.ResizeObserver = jest.fn().mockImplementation(() => ({
+    observe: jest.fn(),
+    unobserve: jest.fn(),
+    disconnect: jest.fn(),
+  }));
 
-// Mock next/link
-jest.mock('next/link', () => ({
-  __esModule: true,
-  default: ({ children, href }) => {
-    return <a href={href}>{children}</a>;
-  },
-}));
-
-// Mock window.matchMedia
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: jest.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: jest.fn(),
-    removeListener: jest.fn(),
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn(),
-  })),
-});
-
-// Mock IntersectionObserver
-class IntersectionObserver {
-  observe = jest.fn();
-  disconnect = jest.fn();
-  unobserve = jest.fn();
+  // Mock IntersectionObserver
+  global.IntersectionObserver = jest.fn().mockImplementation(() => ({
+    observe: jest.fn(),
+    unobserve: jest.fn(),
+    disconnect: jest.fn(),
+  }));
 }
 
-Object.defineProperty(window, 'IntersectionObserver', {
-  writable: true,
-  configurable: true,
-  value: IntersectionObserver,
+// Mock Next.js modules (safe for both environments)
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    back: jest.fn(),
+    forward: jest.fn(),
+    refresh: jest.fn(),
+    pathname: '/test',
+    query: {},
+    asPath: '/test',
+  }),
+  useSearchParams: () => new URLSearchParams(),
+  usePathname: () => '/test',
+}));
+
+jest.mock('next/link', () => {
+  return ({ children, href, ...props }) => {
+    return React.createElement('a', { href, ...props }, children);
+  };
 });
 
-Object.defineProperty(global, 'IntersectionObserver', {
-  writable: true,
-  configurable: true,
-  value: IntersectionObserver,
+// Mock Clerk authentication
+jest.mock('@clerk/nextjs', () => ({
+  useUser: () => ({
+    user: { id: 'test-user-id', emailAddresses: [{ emailAddress: 'test@example.com' }] },
+    isLoaded: true,
+  }),
+  useAuth: () => ({
+    userId: 'test-user-id',
+    isLoaded: true,
+    isSignedIn: true,
+  }),
+  SignInButton: ({ children }) => children,
+  SignOutButton: ({ children }) => children,
+  UserButton: () => React.createElement('div', null, 'User Button'),
+}));
+
+// Global test utilities
+global.React = require('react');
+
+// Reset all mocks automatically between tests
+beforeEach(() => {
+  jest.clearAllMocks();
 });
 
-// Mock ResizeObserver
-global.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+// Mock console methods to reduce noise in tests
+global.console = {
+  ...console,
+  log: jest.fn(),
+  debug: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
 };
 
 // Mock email service

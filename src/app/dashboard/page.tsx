@@ -124,47 +124,9 @@ export default function DashboardHomePage() {
   });
 
   useEffect(() => {
-    let eventSource: EventSource | null = null;
-
-    try {
-      eventSource = new EventSource('/api/analytics/events');
-
-      eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.error) {
-            setError(data.error);
-            setAnalyticsData({ metrics: defaultMetrics, timestamp: new Date().toISOString() });
-          } else {
-            setAnalyticsData(data);
-            setError(null);
-          }
-          setIsLoading(false);
-        } catch (error) {
-          console.error('Error parsing SSE data:', error);
-          setError('Failed to parse analytics data');
-          setAnalyticsData({ metrics: defaultMetrics, timestamp: new Date().toISOString() });
-          setIsLoading(false);
-        }
-      };
-
-      eventSource.onerror = (error) => {
-        console.error('SSE error:', error);
-        setError('Failed to connect to analytics stream');
-        setAnalyticsData({ metrics: defaultMetrics, timestamp: new Date().toISOString() });
-        setIsLoading(false);
-        eventSource?.close();
-      };
-    } catch (error) {
-      console.error('Error setting up SSE:', error);
-      setError('Failed to set up analytics stream');
-      setAnalyticsData({ metrics: defaultMetrics, timestamp: new Date().toISOString() });
-      setIsLoading(false);
-    }
-
-    return () => {
-      eventSource?.close();
-    };
+    // Set default data instead of using SSE
+    setAnalyticsData({ metrics: defaultMetrics, timestamp: new Date().toISOString() });
+    setIsLoading(false);
   }, []);
 
   return (
@@ -198,4 +160,4 @@ export default function DashboardHomePage() {
       </div>
     </div>
   );
-} 
+}

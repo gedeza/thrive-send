@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/use-toast';
+import { useUser } from '@clerk/nextjs';
 
 interface OnboardingStep {
   id: string;
@@ -220,4 +221,4 @@ export function useOnboarding() {
     throw new Error('useOnboarding must be used within an OnboardingProvider');
   }
   return context;
-} 
+}

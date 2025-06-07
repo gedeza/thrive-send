@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,11 +10,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ChevronLeft, ChevronRight, Grid, List, MoreHorizontal, Plus, Search, Trash } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Grid, List, MoreHorizontal, Plus, Search, Trash, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { listContent, deleteContent, ContentData } from '@/lib/api/content-service';
 import { toast } from '@/components/ui/use-toast';
+import { ContentCalendarSync } from '@/components/content/ContentCalendarSync';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +32,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type StatusFilter = 'all' | 'draft' | 'published';
 type ContentTypeFilter = 'all' | 'article' | 'blog' | 'social' | 'email';
@@ -47,19 +55,55 @@ function ContentLibraryPage() {
   const [sortBy, setSortBy] = useState('createdAt');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [contentTypeFilter, setContentTypeFilter] = useState<ContentTypeFilter>('all');
+  const [showSyncDialog, setShowSyncDialog] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
 
-  // Fetch content data
-  const { data, isLoading, error } = useQuery({
+  // Fetch content data with refetch function
+  // Add debug logging to understand what's happening
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['content', currentPage, sortBy, statusFilter, contentTypeFilter],
-    queryFn: () => listContent({
-      page: currentPage,
-      limit: ITEMS_PER_PAGE,
-      status: statusFilter === 'all' ? undefined : statusFilter,
-      type: contentTypeFilter === 'all' ? undefined : contentTypeFilter,
-    }),
+    queryFn: async () => {
+      console.log('Fetching content with params:', {
+        page: currentPage,
+        limit: ITEMS_PER_PAGE,
+        status: statusFilter === 'all' ? undefined : statusFilter,
+        type: contentTypeFilter === 'all' ? undefined : contentTypeFilter,
+      });
+      const result = await listContent({
+        page: currentPage,
+        limit: ITEMS_PER_PAGE,
+        status: statusFilter === 'all' ? undefined : statusFilter,
+        type: contentTypeFilter === 'all' ? undefined : contentTypeFilter,
+      });
+      console.log('Content fetch result:', result);
+      return result;
+    },
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: true,
   });
+
+  // Add useEffect to refetch when component mounts
+  useEffect(() => {
+    refetch();
+  }, []);
+
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Listen for content creation events
+  useEffect(() => {
+    const handleContentCreated = () => {
+      console.log('Content created event received, refetching...');
+      refetch();
+    };
+
+    window.addEventListener('content-created', handleContentCreated);
+    return () => window.removeEventListener('content-created', handleContentCreated);
+  }, [refetch]);
 
   // Filter content based on search query
   const filteredContent = useMemo(() => {
@@ -154,7 +198,7 @@ function ContentLibraryPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
+      {/* Header with integrated sync functionality */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold">Content Library</h1>
@@ -169,6 +213,13 @@ function ContentLibraryPage() {
             onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
           >
             {viewMode === 'grid' ? <List className="h-4 w-4" /> : <Grid className="h-4 w-4" />}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setShowSyncDialog(true)}
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Sync to Calendar
           </Button>
           <Button asChild>
             <Link href="/content/new">
@@ -392,6 +443,24 @@ function ContentLibraryPage() {
         </div>
       )}
 
+      {/* Sync Content Dialog */}
+      <Dialog open={showSyncDialog} onOpenChange={setShowSyncDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Content Calendar Sync</DialogTitle>
+            <DialogDescription>
+              Sync your existing content to the calendar to see all your created content on the calendar view.
+            </DialogDescription>
+          </DialogHeader>
+          <ContentCalendarSync 
+            onSyncComplete={() => {
+              refetch();
+              setShowSyncDialog(false);
+            }} 
+          />
+        </DialogContent>
+      </Dialog>
+
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
@@ -423,32 +492,12 @@ function ContentLibraryPage() {
       </AlertDialog>
     </div>
   );
+
+  // Format dates only on client side
+  const formatDate = (dateString: string) => {
+    if (!isClient) return dateString; // Return raw string on server
+    return format(new Date(dateString), 'MMM d, yyyy');
+  };
 }
 
 export default ContentLibraryPage;
-
-// Remove everything below this line (lines 429-453)
-// The following code is causing the error:
-// {selectedContent && (
-//   <div className="space-y-4">
-//     {/* ... existing content details ... */}
-//     
-//     {/* Content Lists Section */}
-//     <div>
-//       <h3 className="text-lg font-medium mb-2">Content Lists</h3>
-//       {contentLists.length > 0 ? (
-//         <div className="flex flex-wrap gap-2">
-//           {contentLists.map((list) => (
-//             <Badge key={list.id} variant="secondary" className="px-3 py-1">
-//               {list.name}
-//             </Badge>
-//           ))}
-//         </div>
-//       ) : (
-//         <p className="text-sm text-muted-foreground">
-//           This content is not part of any content lists.
-//         </p>
-//       )}
-//     </div>
-//   </div>
-// )}

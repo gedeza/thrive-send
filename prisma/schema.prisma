@@ -235,6 +235,10 @@ model Engagement {
 model Analytics {
   id                String    @id @default(cuid())
   clientId          String
+  impressions       Int       @default(0)
+  engagements       Int       @default(0)
+  conversions       Int       @default(0)
+  revenue           Float     @default(0)
   projectCount      Int       @default(0)
   activeProjects    Int       @default(0)
   completedProjects Int       @default(0)
@@ -438,6 +442,7 @@ model Content {
   seo         SEO?
   schedule    Schedule?
   contentListItems ContentListItem[]
+  calendarEvents   CalendarEvent[]
 
   @@index([authorId])
   @@index([type])
@@ -544,6 +549,7 @@ model CalendarEvent {
   type               String
   status             String
   organizationId     String
+  contentId          String?
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
   socialMediaContent Json?
@@ -555,6 +561,7 @@ model CalendarEvent {
   emailCampaign      Json?
   endTime            DateTime
   startTime          DateTime
+  content            Content?     @relation(fields: [contentId], references: [id], onDelete: SetNull)
   creator            User         @relation(fields: [createdBy], references: [id])
   organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -563,6 +570,7 @@ model CalendarEvent {
   @@index([startTime])
   @@index([type])
   @@index([status])
+  @@index([contentId])
 }
 
 model ContentApproval {

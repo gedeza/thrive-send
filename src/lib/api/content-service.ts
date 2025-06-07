@@ -242,14 +242,21 @@ export async function listContent(params: {
 
 export async function createContent(data: ContentFormValues): Promise<ContentData> {
   try {
-    console.log('Creating content:', data);
+    console.log('Creating content with media:', data);
+    
+    // Ensure media is properly serialized
+    const processedData = {
+      ...data,
+      media: data.media ? JSON.stringify(data.media) : undefined,
+    };
+    
     const response = await fetch(API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       credentials: 'include',
-      body: JSON.stringify(data),
+      body: JSON.stringify(processedData),
     });
 
     if (!response.ok) {
@@ -259,16 +266,11 @@ export async function createContent(data: ContentFormValues): Promise<ContentDat
     }
 
     const createdContent = await response.json();
-    console.log('Content created:', createdContent);
+    console.log('Content created successfully:', createdContent);
 
-    // Create corresponding calendar event if content is scheduled
-    if (createdContent.scheduledAt || createdContent.status === 'PUBLISHED') {
-      try {
-        await createCalendarEventFromContent(createdContent);
-      } catch (calendarError) {
-        console.warn('Failed to create calendar event for content:', calendarError);
-        // Don't fail the content creation if calendar event creation fails
-      }
+    // Force refresh of content list
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('content-created'));
     }
 
     return createdContent;
@@ -293,13 +295,13 @@ export async function createCalendarEventFromContent(content: ContentData): Prom
 
     // Map content status to calendar event status
     const statusMapping: Record<string, string> = {
-      'DRAFT': 'scheduled',
-      'IN_REVIEW': 'draft',
-      'PENDING_REVIEW': 'draft',
-      'CHANGES_REQUESTED': 'draft',
-      'APPROVED': 'scheduled',
-      'PUBLISHED': 'sent',
-      'ARCHIVED': 'failed'
+      'DRAFT': 'draft',           // Show as draft in calendar
+      'IN_REVIEW': 'review',      // Show as under review
+      'PENDING_REVIEW': 'review', // Show as under review
+      'CHANGES_REQUESTED': 'draft', // Back to draft
+      'APPROVED': 'scheduled',    // Ready for publishing
+      'PUBLISHED': 'sent',        // Published content
+      'ARCHIVED': 'failed'        // Archived content
     };
 
     const eventStartTime = content.scheduledAt || content.publishedAt || new Date().toISOString();
@@ -322,6 +324,7 @@ export async function createCalendarEventFromContent(content: ContentData): Prom
     const calendarEventData = {
       title: content.title,
       description: content.excerpt || content.content.substring(0, 200) + '...',
+      contentId: content.id, // Add this critical line
       startTime: eventStartTime,
       endTime: eventEndTime,
       type: typeMapping[content.type] || 'article',
@@ -369,7 +372,10 @@ export async function createCalendarEventFromContent(content: ContentData): Prom
       }
     };
 
-    console.log('Creating calendar event from content:', calendarEventData);
+    console.log('Creating calendar event from content with contentId:', {
+      contentId: content.id,
+      calendarEventData
+    });
 
     const response = await fetch('/api/calendar/events', {
       method: 'POST',
@@ -386,7 +392,7 @@ export async function createCalendarEventFromContent(content: ContentData): Prom
     }
 
     const calendarEvent = await response.json();
-    console.log('Calendar event created successfully:', calendarEvent);
+    console.log('Calendar event created successfully with contentId link:', calendarEvent);
     return calendarEvent;
   } catch (error) {
     console.error('Error creating calendar event from content:', error);
@@ -398,17 +404,13 @@ export async function createCalendarEventFromContent(content: ContentData): Prom
  * Sync existing content to calendar events with retry mechanism
  */
 export async function syncContentToCalendar(retryCount = 0): Promise<{ synced: number; errors: number }> {
-  const MAX_RETRIES = 3;
-  const INITIAL_RETRY_DELAY = 1000; // 1 second
-
   try {
-    console.log('Starting content to calendar sync...');
+    console.log('Starting content to calendar sync with relationship tracking...');
     
     let synced = 0;
     let errors = 0;
     const statusesToSync = ['PUBLISHED', 'APPROVED'];
     
-    // Fetch content for each status separately since API doesn't support multiple statuses
     for (const status of statusesToSync) {
       try {
         const response = await fetch(`${API_URL}?limit=100&status=${status}`, {
@@ -428,24 +430,20 @@ export async function syncContentToCalendar(retryCount = 0): Promise<{ synced: n
 
         for (const content of contentList) {
           try {
-            // Check if calendar event already exists for this content
-            const calendarResponse = await fetch(`/api/calendar/events?title=${encodeURIComponent(content.title)}`, {
+            // Check if calendar event already exists for this content using contentId
+            const calendarResponse = await fetch(`/api/calendar/events?contentId=${content.id}`, {
               credentials: 'include',
             });
 
             if (calendarResponse.ok) {
               const { events } = await calendarResponse.json();
-              const existingEvent = events.find((event: any) => 
-                event.title === content.title && 
-                new Date(event.startTime).toDateString() === new Date(content.scheduledAt || content.publishedAt || content.createdAt).toDateString()
-              );
-
-              if (!existingEvent) {
-                console.log(`Creating calendar event for content: ${content.title}`);
+              
+              if (events.length === 0) {
+                console.log(`Creating calendar event for content: ${content.title} (ID: ${content.id})`);
                 await createCalendarEventFromContent(content);
                 synced++;
               } else {
-                console.log(`Calendar event already exists for content: ${content.title}`);
+                console.log(`Calendar event already exists for content: ${content.title} (ID: ${content.id})`);
               }
             }
           } catch (error) {
@@ -459,72 +457,10 @@ export async function syncContentToCalendar(retryCount = 0): Promise<{ synced: n
       }
     }
 
-    // Also fetch content that might be scheduled but not marked as APPROVED or PUBLISHED
-    try {
-      const response = await fetch(`${API_URL}?limit=100`, {
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const allContent = data.content || [];
-        
-        // Filter content that has a scheduledAt date
-        const scheduledContent = allContent.filter((content: any) => 
-          content.scheduledAt && !statusesToSync.includes(content.status)
-        );
-
-        console.log(`Found ${scheduledContent.length} additional scheduled content items`);
-
-        for (const content of scheduledContent) {
-          try {
-            const calendarResponse = await fetch(`/api/calendar/events?title=${encodeURIComponent(content.title)}`, {
-              credentials: 'include',
-            });
-
-            if (calendarResponse.ok) {
-              const { events } = await calendarResponse.json();
-              const existingEvent = events.find((event: any) => 
-                event.title === content.title && 
-                new Date(event.startTime).toDateString() === new Date(content.scheduledAt).toDateString()
-              );
-
-              if (!existingEvent) {
-                console.log(`Creating calendar event for scheduled content: ${content.title}`);
-                await createCalendarEventFromContent(content);
-                synced++;
-              }
-            }
-          } catch (error) {
-            console.error(`Failed to sync scheduled content ${content.id} to calendar:`, error);
-            errors++;
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Failed to fetch scheduled content:', error);
-      errors++;
-    }
-
-    // If there were errors and we haven't exceeded max retries, retry with exponential backoff
-    if (errors > 0 && retryCount < MAX_RETRIES) {
-      const delay = INITIAL_RETRY_DELAY * Math.pow(2, retryCount);
-      console.log(`Retrying sync in ${delay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})...`);
-      await new Promise(resolve => setTimeout(resolve, delay));
-      return syncContentToCalendar(retryCount + 1);
-    }
-
     console.log(`Sync completed: ${synced} synced, ${errors} errors`);
     return { synced, errors };
   } catch (error) {
     console.error('Error during content to calendar sync:', error);
-    // If this is a retry attempt, throw the error to be handled by the retry mechanism
-    if (retryCount < MAX_RETRIES) {
-      const delay = INITIAL_RETRY_DELAY * Math.pow(2, retryCount);
-      console.log(`Retrying sync in ${delay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})...`);
-      await new Promise(resolve => setTimeout(resolve, delay));
-      return syncContentToCalendar(retryCount + 1);
-    }
     throw error;
   }
-} 
+}

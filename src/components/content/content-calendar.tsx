@@ -29,7 +29,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, parseISO, startOfWeek, endOfWeek, addDays, addHours, setHours, setMinutes, addMinutes } from "date-fns";
+import { format, parseISO, isSameDay, isSameMonth, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, setHours, addMinutes } from 'date-fns';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -76,27 +76,7 @@ export const DEFAULT_DURATIONS: Record<ContentType, number> = {
 // The MonthView, WeekView, DayView, ListView, CalendarHeader, and CalendarFilters components are defined inline
 // rather than imported from separate files.
 
-// Enhanced content type definitions
-export type SocialPlatform = 'FACEBOOK' | 'TWITTER' | 'INSTAGRAM' | 'LINKEDIN';
 
-export interface SocialMediaContent {
-  platforms: SocialPlatform[];
-  mediaUrls: string[];
-  crossPost: boolean;
-  platformSpecificContent: {
-    [key in SocialPlatform]?: {
-      text: string;
-      mediaUrls: string[];
-      scheduledTime?: string;
-    };
-  };
-}
-
-// Update the content type to match the backend expectations
-export type ContentType = 'social' | 'blog' | 'email' | 'custom' | 'article';
-
-// Define CalendarView type here since we can't import it
-export type CalendarView = "month" | "week" | "day" | "list";
 
 // Update the event type color map to include all content types
 export const eventTypeColorMap: Record<ContentType, { bg: string; text: string }> = {
@@ -388,45 +368,6 @@ function isValidContentType(type: any): type is ContentType {
   return ['social', 'blog', 'email', 'custom', 'article'].includes(type);
 }
 
-// Define CalendarEvent interface
-export interface CalendarEvent {
-  id: string;
-  title: string;
-  description: string;
-  type: ContentType;
-  status: 'draft' | 'scheduled' | 'sent' | 'failed';
-  date: string;
-  time?: string;
-  duration?: number;
-  startTime?: string;
-  endTime?: string;
-  scheduledDate?: string;
-  scheduledTime?: string;
-  socialMediaContent: SocialMediaContent;
-  analytics?: {
-    views?: number;
-    engagement?: {
-      likes?: number;
-      shares?: number;
-      comments?: number;
-    };
-    clicks?: number;
-    lastUpdated?: string;
-  };
-  preview?: {
-    thumbnail?: string;
-    platformPreviews?: {
-      [key in SocialPlatform]?: {
-        previewUrl?: string;
-        status?: 'pending' | 'approved' | 'rejected';
-        rejectionReason?: string;
-      };
-    };
-  };
-  organizationId: string;
-  createdBy: string;
-  tags?: string[];
-}
 
 export function ContentCalendar({
   events: initialEvents = [],
@@ -447,7 +388,7 @@ export function ContentCalendar({
   const [events, setEvents] = useState<CalendarEvent[]>(initialEvents);
   const [currentDate, setCurrentDate] = useState<Date>(() => {
     const now = new Date();
-    return toZonedTime(now, userTimezone);
+    return now; // Initialize with local time, will be converted in useEffect
   });
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -790,7 +731,7 @@ export function ContentCalendar({
       // Search in title and description
       const searchLower = searchTerm.toLowerCase();
       const matchesSearch = searchTerm === "" || 
-        event.title.toLowerCase().includes(searchLower) ||
+        event.title?.toLowerCase().includes(searchLower) ||
         (event.description?.toLowerCase().includes(searchLower) ?? false);
       
       // Filter by type
