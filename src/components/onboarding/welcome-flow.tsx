@@ -140,12 +140,13 @@ function getIconForStep(stepId: string) {
   }
 }
 
+// Fix hardcoded colors in step content
 function getStepContent(stepId: string) {
   switch (stepId) {
     case 'welcome':
       return (
         <div className="space-y-8">
-          <div className="relative w-full h-[300px] mb-8 rounded-lg overflow-hidden bg-gray-50">
+          <div className="relative w-full h-[300px] mb-8 rounded-lg overflow-hidden bg-muted">
             <Image
               src="/docs/images/analytics-dashboard-screenshot.png"
               alt="Analytics Dashboard Screenshot"
@@ -165,9 +166,9 @@ function getStepContent(stepId: string) {
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-gray-50 p-6 rounded-lg">
+            <div className="bg-muted p-6 rounded-lg">
               <h3 className="text-2xl font-semibold mb-4">Key Features</h3>
-              <ul className="space-y-3 text-lg text-gray-700">
+              <ul className="space-y-3 text-lg text-foreground">
                 <li>• Email campaign management</li>
                 <li>• Content creation tools</li>
                 <li>• Analytics dashboard</li>
@@ -176,9 +177,9 @@ function getStepContent(stepId: string) {
                 <li>• Automated workflows</li>
               </ul>
             </div>
-            <div className="bg-gray-50 p-6 rounded-lg">
+            <div className="bg-muted p-6 rounded-lg">
               <h3 className="text-2xl font-semibold mb-4">Getting Started</h3>
-              <ul className="space-y-3 text-lg text-gray-700">
+              <ul className="space-y-3 text-lg text-foreground">
                 <li>• Create your account</li>
                 <li>• Set up your organization</li>
                 <li>• Invite team members</li>
@@ -195,22 +196,22 @@ function getStepContent(stepId: string) {
       return (
         <div className="space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-gray-50 p-6 rounded-lg">
+            <div className="bg-muted p-6 rounded-lg">
               <h3 className="text-2xl font-semibold mb-4">Sign Up Process</h3>
               <div className="space-y-6">
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                <div className="bg-card p-6 rounded-lg border">
                   <h4 className="text-xl font-medium mb-4">1. Create Your Account</h4>
-                  <ol className="space-y-4 text-lg text-gray-700">
-                    <li>1. Visit <a href="https://app.thrivesend.com/signup" className="text-blue-600 hover:underline">app.thrivesend.com/signup</a></li>
+                  <ol className="space-y-4 text-lg text-foreground">
+                    <li>1. Visit <a href="https://app.thrivesend.com/signup" className="text-primary hover:underline">app.thrivesend.com/signup</a></li>
                     <li>2. Enter your email address</li>
                     <li>3. Create a strong password</li>
                     <li>4. Click "Create Account"</li>
                     <li>5. Verify your email address</li>
                   </ol>
                 </div>
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                <div className="bg-card p-6 rounded-lg border">
                   <h4 className="text-xl font-medium mb-4">2. Complete Your Profile</h4>
-                  <ol className="space-y-4 text-lg text-gray-700">
+                  <ol className="space-y-4 text-lg text-foreground">
                     <li>1. Add your full name</li>
                     <li>2. Upload a profile picture</li>
                     <li>3. Set your timezone</li>
@@ -220,12 +221,12 @@ function getStepContent(stepId: string) {
                 </div>
               </div>
             </div>
-            <div className="bg-gray-50 p-6 rounded-lg">
+            <div className="bg-muted p-6 rounded-lg">
               <h3 className="text-2xl font-semibold mb-4">Account Settings</h3>
               <div className="space-y-6">
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                <div className="bg-card p-6 rounded-lg border">
                   <h4 className="text-xl font-medium mb-4">Profile Settings</h4>
-                  <ul className="space-y-2 text-lg text-gray-700">
+                  <ul className="space-y-2 text-lg text-foreground">
                     <li>• Update personal information</li>
                     <li>• Change password</li>
                     <li>• Manage email preferences</li>
@@ -233,15 +234,15 @@ function getStepContent(stepId: string) {
                     <li>• Configure account settings</li>
                   </ul>
                 </div>
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                <div className="bg-card p-6 rounded-lg border">
                   <h4 className="text-xl font-medium mb-4">Security Settings</h4>
-                  <ul className="space-y-2 text-lg text-gray-700">
+                  <ul className="space-y-2 text-lg text-foreground">
                     <li>• Two-factor authentication</li>
                     <li>• Session management</li>
                     <li>• Connected devices</li>
                     <li>• Security logs</li>
                     <li>• Access history</li>
-          </ul>
+                  </ul>
                 </div>
               </div>
             </div>
@@ -422,4 +423,4 @@ function getStepContent(stepId: string) {
     default:
       return null;
   }
-} 
+}
