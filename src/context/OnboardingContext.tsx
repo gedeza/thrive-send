@@ -72,8 +72,12 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
   const [isOnboardingComplete, setIsOnboardingComplete] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const { user, isLoaded } = useUser(); // Add this line
 
   useEffect(() => {
+    // Only run when user is loaded and authenticated
+    if (!isLoaded || !user) return;
+    
     // Check if user has completed onboarding
     const checkOnboardingStatus = async () => {
       try {
@@ -97,7 +101,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     };
 
     checkOnboardingStatus();
-  }, [toast]);
+  }, [toast, isLoaded, user]); // Add isLoaded and user to dependencies
 
   const completeStep = async (stepId: string) => {
     try {

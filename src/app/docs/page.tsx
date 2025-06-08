@@ -3,10 +3,10 @@ import Link from 'next/link';
 export default function DocsPage() {
   const guides = [
     {
-      title: 'Getting Started',
-      description: 'Learn the basics of Thrive Send and get up and running quickly.',
-      href: '/docs/getting-started',
-      icon: '🚀'
+      title: 'Interactive Welcome Flow',
+      description: 'Experience our guided onboarding process to get started quickly.',
+      href: '/docs/welcome-flow',
+      icon: '🎉'
     },
     {
       title: 'Campaign Management',

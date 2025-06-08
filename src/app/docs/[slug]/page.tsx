@@ -16,7 +16,7 @@ export default async function DocsPage({ params }: DocsPageProps) {
     return (
       <div className="flex min-h-screen">
         <DocumentationNav sections={[
-          { title: 'Getting Started', slug: 'getting-started' },
+          { title: 'Welcome Flow', slug: 'welcome-flow' },
           { title: 'Campaign Management', slug: 'campaign-management' },
           { title: 'Content Management', slug: 'content-management' },
           { title: 'Analytics', slug: 'analytics' },
@@ -30,4 +30,4 @@ export default async function DocsPage({ params }: DocsPageProps) {
   } catch (error) {
     notFound();
   }
-} 
+}

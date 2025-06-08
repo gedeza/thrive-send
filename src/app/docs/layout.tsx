@@ -5,9 +5,9 @@ import Link from 'next/link';
 
 const navigation = [
   {
-    title: 'Getting Started',
-    href: '/docs/getting-started',
-    icon: '🚀'
+    title: 'Welcome Flow',
+    href: '/docs/welcome-flow',
+    icon: '🎉'
   },
   {
     title: 'Campaign Management',

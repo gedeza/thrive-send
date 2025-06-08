@@ -62,17 +62,13 @@ jest.mock('next/link', () => {
 // Mock Clerk authentication
 jest.mock('@clerk/nextjs', () => ({
   useUser: () => ({
-    user: { id: 'test-user-id', emailAddresses: [{ emailAddress: 'test@example.com' }] },
-    isLoaded: true,
-  }),
-  useAuth: () => ({
-    userId: 'test-user-id',
+    user: { id: 'test-user', emailAddresses: [{ emailAddress: 'test@example.com' }] },
     isLoaded: true,
     isSignedIn: true,
   }),
   SignInButton: ({ children }) => children,
   SignOutButton: ({ children }) => children,
-  UserButton: () => React.createElement('div', null, 'User Button'),
+  UserButton: () => require('react').createElement('div', null, 'User Button'),
 }));
 
 // Global test utilities
@@ -94,7 +90,7 @@ global.console = {
 };
 
 // Mock email service
-jest.mock('@/lib/email', () => ({
+jest.mock('../src/lib/email', () => ({
   sendInvitationEmail: jest.fn().mockImplementation(() => Promise.resolve()),
 }));
 
@@ -210,4 +206,4 @@ beforeEach(() => {
 });
 
 // Add support for act(...)
-import { act } from '@testing-library/react';
+const { act } = require('@testing-library/react');
