@@ -52,7 +52,9 @@ jest.mock('next/navigation', () => ({
 }));
 
 jest.mock('next/link', () => {
-  return ({ children, href, ...props }) => {
+  // Use a function that returns the mock component
+  return function Link({ children, href, ...props }) {
+    const React = require('react');
     return React.createElement('a', { href, ...props }, children);
   };
 });

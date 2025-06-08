@@ -157,35 +157,21 @@ function getStepContent(stepId: string) {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 rounded-lg border bg-card">
-              <h4 className="font-medium mb-2">Quick Start</h4>
-              <p className="text-sm text-muted-foreground">Create your first content in minutes</p>
-            </div>
-            <div className="p-4 rounded-lg border bg-card">
-              <h4 className="font-medium mb-2">Need Help?</h4>
-              <p className="text-sm text-muted-foreground">Check our documentation anytime</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-muted p-6 rounded-lg">
-              <h3 className="text-2xl font-semibold mb-4">Key Features</h3>
-              <ul className="space-y-3 text-lg text-foreground">
-                <li>• Email campaign management</li>
-                <li>• Content creation tools</li>
-                <li>• Analytics dashboard</li>
-                <li>• Team collaboration</li>
-                <li>• Audience segmentation</li>
-                <li>• Automated workflows</li>
+              <h4 className="text-xl font-medium mb-4">Content Calendar</h4>
+              <ul className="space-y-2 text-lg text-muted-foreground">
+                <li>• Plan and schedule content</li>
+                <li>• Visual calendar interface</li>
+                <li>• Drag & drop functionality</li>
+                <li>• Multi-platform publishing</li>
               </ul>
             </div>
-            <div className="bg-muted p-6 rounded-lg">
-              <h3 className="text-2xl font-semibold mb-4">Getting Started</h3>
-              <ul className="space-y-3 text-lg text-foreground">
-                <li>• Create your account</li>
-                <li>• Set up your organization</li>
-                <li>• Invite team members</li>
-                <li>• Create your first campaign</li>
-                <li>• Explore the dashboard</li>
-                <li>• Set up your preferences</li>
+            <div className="p-4 rounded-lg border bg-card">
+              <h4 className="text-xl font-medium mb-4">Analytics Dashboard</h4>
+              <ul className="space-y-2 text-lg text-muted-foreground">
+                <li>• Real-time performance metrics</li>
+                <li>• Engagement tracking</li>
+                <li>• ROI analysis</li>
+                <li>• Custom reports</li>
               </ul>
             </div>
           </div>
@@ -194,57 +180,25 @@ function getStepContent(stepId: string) {
 
     case 'account-setup':
       return (
-        <div className="space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-muted p-6 rounded-lg">
-              <h3 className="text-2xl font-semibold mb-4">Sign Up Process</h3>
-              <div className="space-y-6">
-                <div className="bg-card p-6 rounded-lg border">
-                  <h4 className="text-xl font-medium mb-4">1. Create Your Account</h4>
-                  <ol className="space-y-4 text-lg text-foreground">
-                    <li>1. Visit <a href="https://app.thrivesend.com/signup" className="text-primary hover:underline">app.thrivesend.com/signup</a></li>
-                    <li>2. Enter your email address</li>
-                    <li>3. Create a strong password</li>
-                    <li>4. Click "Create Account"</li>
-                    <li>5. Verify your email address</li>
-                  </ol>
-                </div>
-                <div className="bg-card p-6 rounded-lg border">
-                  <h4 className="text-xl font-medium mb-4">2. Complete Your Profile</h4>
-                  <ol className="space-y-4 text-lg text-foreground">
-                    <li>1. Add your full name</li>
-                    <li>2. Upload a profile picture</li>
-                    <li>3. Set your timezone</li>
-                    <li>4. Choose your notification preferences</li>
-                    <li>5. Set up two-factor authentication (recommended)</li>
-                  </ol>
-                </div>
-              </div>
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="p-6 rounded-lg border bg-card">
+              <h4 className="text-xl font-medium mb-4">Profile Setup</h4>
+              <ol className="space-y-4 text-lg text-muted-foreground">
+                <li>1. Complete your profile information</li>
+                <li>2. Upload your company logo</li>
+                <li>3. Set your brand colors</li>
+                <li>4. Configure notification preferences</li>
+              </ol>
             </div>
-            <div className="bg-muted p-6 rounded-lg">
-              <h3 className="text-2xl font-semibold mb-4">Account Settings</h3>
-              <div className="space-y-6">
-                <div className="bg-card p-6 rounded-lg border">
-                  <h4 className="text-xl font-medium mb-4">Profile Settings</h4>
-                  <ul className="space-y-2 text-lg text-foreground">
-                    <li>• Update personal information</li>
-                    <li>• Change password</li>
-                    <li>• Manage email preferences</li>
-                    <li>• Set notification preferences</li>
-                    <li>• Configure account settings</li>
-                  </ul>
-                </div>
-                <div className="bg-card p-6 rounded-lg border">
-                  <h4 className="text-xl font-medium mb-4">Security Settings</h4>
-                  <ul className="space-y-2 text-lg text-foreground">
-                    <li>• Two-factor authentication</li>
-                    <li>• Session management</li>
-                    <li>• Connected devices</li>
-                    <li>• Security logs</li>
-                    <li>• Access history</li>
-                  </ul>
-                </div>
-              </div>
+            <div className="p-6 rounded-lg border bg-card">
+              <h4 className="text-xl font-medium mb-4">Brand Guidelines</h4>
+              <ol className="space-y-4 text-lg text-muted-foreground">
+                <li>1. Define your brand voice</li>
+                <li>2. Set content templates</li>
+                <li>3. Create approval workflows</li>
+                <li>4. Configure publishing rules</li>
+              </ol>
             </div>
           </div>
         </div>
@@ -252,53 +206,27 @@ function getStepContent(stepId: string) {
 
     case 'first-content':
       return (
-        <div className="space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <h3 className="text-2xl font-semibold mb-4">Content Types</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded-lg border bg-card">
-              <h4 className="font-medium mb-2">Social Media</h4>
-              <p className="text-sm text-muted-foreground">Posts for multiple platforms</p>
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="p-6 rounded-lg border bg-card">
+              <h4 className="text-xl font-medium mb-4">Content Types</h4>
+              <ul className="space-y-2 text-lg text-muted-foreground">
+                <li>• Social media posts</li>
+                <li>• Blog articles</li>
+                <li>• Email campaigns</li>
+                <li>• Video content</li>
+                <li>• Infographics</li>
+              </ul>
             </div>
-            <div className="p-4 rounded-lg border bg-card">
-              <h4 className="font-medium mb-2">Blog Posts</h4>
-              <p className="text-sm text-muted-foreground">Long-form content</p>
-            </div>
-            <div className="p-4 rounded-lg border bg-card">
-              <h4 className="font-medium mb-2">Email Campaigns</h4>
-              <p className="text-sm text-muted-foreground">Newsletters and updates</p>
-            </div>
-            <div className="p-4 rounded-lg border bg-card">
-              <h4 className="font-medium mb-2">Custom Content</h4>
-              <p className="text-sm text-muted-foreground">Other content types</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <h3 className="text-2xl font-semibold mb-4">Content Calendar</h3>
-              <div className="space-y-6">
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
-                  <h4 className="text-xl font-medium mb-4">Calendar Features</h4>
-                  <ul className="space-y-2 text-lg text-gray-700">
-                    <li>• Monthly/weekly views</li>
-                    <li>• Drag-and-drop scheduling</li>
-                    <li>• Content type filtering</li>
-                    <li>• Team assignments</li>
-                    <li>• Analytics integration</li>
-                  </ul>
-                </div>
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
-                  <h4 className="text-xl font-medium mb-4">Getting Started</h4>
-                  <ol className="space-y-4 text-lg text-gray-700">
-                    <li>1. Navigate to Content Calendar</li>
-                    <li>2. Create your first content</li>
-                    <li>3. Schedule it on the calendar</li>
-                    <li>4. Set up recurring content</li>
-                    <li>5. Monitor performance</li>
-                  </ol>
-                </div>
-              </div>
+            <div className="p-6 rounded-lg border bg-card">
+              <h4 className="text-xl font-medium mb-4">Publishing Platforms</h4>
+              <ul className="space-y-2 text-lg text-muted-foreground">
+                <li>• Facebook & Instagram</li>
+                <li>• Twitter & LinkedIn</li>
+                <li>• YouTube & TikTok</li>
+                <li>• WordPress & Medium</li>
+                <li>• Custom integrations</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -306,57 +234,27 @@ function getStepContent(stepId: string) {
 
     case 'team-setup':
       return (
-        <div className="space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <h3 className="text-2xl font-semibold mb-4">Team Management</h3>
-              <div className="space-y-6">
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
-                  <h4 className="text-xl font-medium mb-4">Invite Team Members</h4>
-                  <ol className="space-y-4 text-lg text-gray-700">
-                    <li>1. Go to Team Settings</li>
-                    <li>2. Click "Invite Members"</li>
-                    <li>3. Enter email addresses</li>
-                    <li>4. Assign roles and permissions</li>
-                    <li>5. Send invitations</li>
-                  </ol>
-                </div>
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
-                  <h4 className="text-xl font-medium mb-4">Role Types</h4>
-                  <ul className="space-y-2 text-lg text-gray-700">
-                    <li>• Administrator: Full system access</li>
-                    <li>• Manager: Team and campaign management</li>
-                    <li>• Editor: Content creation and editing</li>
-                    <li>• Viewer: Read-only access</li>
-                    <li>• Custom: Tailored permissions</li>
-                  </ul>
-                </div>
-              </div>
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="p-6 rounded-lg border bg-card">
+              <h4 className="text-xl font-medium mb-4">Team Roles</h4>
+              <ul className="space-y-2 text-lg text-muted-foreground">
+                <li>• Content Creators</li>
+                <li>• Reviewers & Editors</li>
+                <li>• Approvers & Publishers</li>
+                <li>• Analytics Viewers</li>
+                <li>• Admin Users</li>
+              </ul>
             </div>
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <h3 className="text-2xl font-semibold mb-4">Collaboration Tools</h3>
-              <div className="space-y-6">
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
-                  <h4 className="text-xl font-medium mb-4">Workflow Features</h4>
-                  <ul className="space-y-2 text-lg text-gray-700">
-                    <li>• Content approval workflows</li>
-                    <li>• Team assignments</li>
-                    <li>• Content scheduling</li>
-                    <li>• Performance tracking</li>
-                    <li>• Communication tools</li>
-                  </ul>
-                </div>
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
-                  <h4 className="text-xl font-medium mb-4">Best Practices</h4>
-                  <ul className="space-y-2 text-lg text-gray-700">
-                    <li>• Set clear roles and responsibilities</li>
-                    <li>• Establish approval processes</li>
-                    <li>• Use team communication tools</li>
-                    <li>• Monitor team performance</li>
-                    <li>• Regular team sync-ups</li>
-          </ul>
-                </div>
-              </div>
+            <div className="p-6 rounded-lg border bg-card">
+              <h4 className="text-xl font-medium mb-4">Collaboration Features</h4>
+              <ul className="space-y-2 text-lg text-muted-foreground">
+                <li>• Real-time editing</li>
+                <li>• Comment & feedback system</li>
+                <li>• Approval workflows</li>
+                <li>• Task assignments</li>
+                <li>• Activity notifications</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -364,57 +262,37 @@ function getStepContent(stepId: string) {
 
     case 'integrations':
       return (
-        <div className="space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <h3 className="text-2xl font-semibold mb-4">Available Integrations</h3>
-              <div className="space-y-6">
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
-                  <h4 className="text-xl font-medium mb-4">Social Media</h4>
-                  <ul className="space-y-2 text-lg text-gray-700">
-                    <li>• Facebook</li>
-                    <li>• Twitter</li>
-                    <li>• Instagram</li>
-                    <li>• LinkedIn</li>
-                    <li>• TikTok</li>
-                  </ul>
-                </div>
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
-                  <h4 className="text-xl font-medium mb-4">Email Marketing</h4>
-                  <ul className="space-y-2 text-lg text-gray-700">
-                    <li>• Mailchimp</li>
-                    <li>• SendGrid</li>
-                    <li>• HubSpot</li>
-                    <li>• ActiveCampaign</li>
-                    <li>• Custom SMTP</li>
-                  </ul>
-                </div>
-              </div>
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="p-6 rounded-lg border bg-card">
+              <h4 className="text-xl font-medium mb-4">Social Platforms</h4>
+              <ul className="space-y-2 text-lg text-muted-foreground">
+                <li>• Facebook Business</li>
+                <li>• Instagram Business</li>
+                <li>• Twitter API</li>
+                <li>• LinkedIn Company</li>
+                <li>• YouTube Channel</li>
+              </ul>
             </div>
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <h3 className="text-2xl font-semibold mb-4">Analytics & Tools</h3>
-              <div className="space-y-6">
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
-                  <h4 className="text-xl font-medium mb-4">Analytics Platforms</h4>
-                  <ul className="space-y-2 text-lg text-gray-700">
-                    <li>• Google Analytics</li>
-                    <li>• Facebook Pixel</li>
-                    <li>• Custom tracking</li>
-                    <li>• Performance metrics</li>
-                    <li>• ROI tracking</li>
-                  </ul>
-                </div>
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
-                  <h4 className="text-xl font-medium mb-4">Additional Tools</h4>
-                  <ul className="space-y-2 text-lg text-gray-700">
-                    <li>• CRM integration</li>
-                    <li>• Marketing automation</li>
-                    <li>• Customer support</li>
-                    <li>• Project management</li>
-                    <li>• Custom webhooks</li>
-          </ul>
-                </div>
-              </div>
+            <div className="p-6 rounded-lg border bg-card">
+              <h4 className="text-xl font-medium mb-4">Analytics Tools</h4>
+              <ul className="space-y-2 text-lg text-muted-foreground">
+                <li>• Google Analytics</li>
+                <li>• Facebook Pixel</li>
+                <li>• Custom tracking</li>
+                <li>• Performance metrics</li>
+                <li>• ROI tracking</li>
+              </ul>
+            </div>
+            <div className="p-6 rounded-lg border bg-card">
+              <h4 className="text-xl font-medium mb-4">Additional Tools</h4>
+              <ul className="space-y-2 text-lg text-muted-foreground">
+                <li>• CRM integration</li>
+                <li>• Marketing automation</li>
+                <li>• Customer support</li>
+                <li>• Project management</li>
+                <li>• Custom webhooks</li>
+              </ul>
             </div>
           </div>
         </div>
