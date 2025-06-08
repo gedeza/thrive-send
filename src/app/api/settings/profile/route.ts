@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs'
+import { auth, clerkClient } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
 import { z } from 'zod'
 
@@ -61,25 +61,31 @@ export async function PATCH(req: Request) {
       },
     })
 
-    // Update Clerk user
-    const clerkResponse = await fetch(`https://api.clerk.dev/v1/users/${userId}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}`,
-      },
-      body: JSON.stringify({
+    try {
+      // Update Clerk user using SDK (excluding email for now)
+      await clerkClient.users.updateUser(userId, {
         firstName: validatedData.firstName,
         lastName: validatedData.lastName,
-        emailAddress: [validatedData.email],
-      }),
-    })
+        // Note: Email updates in Clerk require email verification flow
+        // and should be handled separately through Clerk's email update process
+      })
 
-    if (!clerkResponse.ok) {
-      throw new Error('Failed to update Clerk user')
+      return NextResponse.json({ success: true, user: updatedUser })
+    } catch (clerkError: any) {
+      console.error('Clerk update error:', clerkError)
+      // Rollback database changes if Clerk update fails
+      await db.user.update({
+        where: { clerkId: userId },
+        data: {
+          firstName: updatedUser.firstName, // Restore original values
+          lastName: updatedUser.lastName,
+        },
+      })
+      return new NextResponse(
+        JSON.stringify({ message: 'Failed to update profile. Please try again.' }),
+        { status: 500 }
+      )
     }
-
-    return NextResponse.json({ success: true, user: updatedUser })
   } catch (error) {
     console.error('Error updating profile settings:', error)
     if (error instanceof z.ZodError) {

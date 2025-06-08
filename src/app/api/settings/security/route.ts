@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs'
+import { NextRequest, NextResponse } from 'next/server'
+import { auth, clerkClient } from '@clerk/nextjs/server'
 import { z } from 'zod'
-import bcrypt from 'bcryptjs'
 
 const securitySettingsSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
@@ -13,6 +12,29 @@ const securitySettingsSchema = z.object({
   path: ['confirmPassword'],
 })
 
+// GET endpoint to retrieve security settings
+export async function GET() {
+  try {
+    const { userId } = await auth()
+    if (!userId) {
+      return new NextResponse('Unauthorized', { status: 401 })
+    }
+
+    // Get user's current security settings using Clerk SDK
+    const user = await clerkClient.users.getUser(userId)
+    
+    return NextResponse.json({
+      twoFactorEnabled: user.twoFactorEnabled || false,
+      hasPassword: user.passwordEnabled || false,
+      lastPasswordUpdate: user.updatedAt,
+    })
+  } catch (error) {
+    console.error('Error fetching security settings:', error)
+    return new NextResponse('Internal Server Error', { status: 500 })
+  }
+}
+
+// PATCH endpoint for updating security settings
 export async function PATCH(req: Request) {
   try {
     const { userId } = await auth()
@@ -23,33 +45,26 @@ export async function PATCH(req: Request) {
     const body = await req.json()
     const validatedData = securitySettingsSchema.parse(body)
 
-    // Update password via Clerk API
-    const clerkResponse = await fetch(`https://api.clerk.dev/v1/users/${userId}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}`,
-      },
-      body: JSON.stringify({
+    // Update password using Clerk SDK (secure method)
+    try {
+      await clerkClient.users.updateUser(userId, {
         password: validatedData.newPassword,
-      }),
-    })
-
-    if (!clerkResponse.ok) {
-      const error = await clerkResponse.json()
+      })
+    } catch (clerkError: any) {
+      console.error('Clerk password update error:', clerkError)
       return NextResponse.json(
-        { error: 'Failed to update password', details: error },
+        { 
+          error: 'Failed to update password', 
+          details: clerkError.message || 'Invalid password or user not found'
+        },
         { status: 400 }
       )
     }
 
-    // Handle two-factor authentication settings
-    if (validatedData.enableTwoFactor) {
-      // Enable 2FA via Clerk API
-      // This would require additional Clerk API calls
-    }
-
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ 
+      success: true,
+      message: 'Security settings updated successfully'
+    })
   } catch (error) {
     console.error('Error updating security settings:', error)
     if (error instanceof z.ZodError) {
