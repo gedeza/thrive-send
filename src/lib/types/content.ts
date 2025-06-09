@@ -1,8 +1,7 @@
 import { MediaFile } from '@/components/content/MediaUploader';
 
-export type ContentType = 'blog' | 'email' | 'social';
-
-export type ContentStatus = 'draft' | 'scheduled' | 'published' | 'archived';
+export type ContentType = 'ARTICLE' | 'BLOG' | 'SOCIAL' | 'EMAIL';
+export type ContentStatus = 'DRAFT' | 'IN_REVIEW' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'APPROVED' | 'REJECTED' | 'PUBLISHED' | 'ARCHIVED';
 
 export interface Content {
   id: string;
@@ -34,4 +33,4 @@ export interface CreateContentInput {
 export interface UpdateContentInput extends Partial<CreateContentInput> {
   id: string;
   status?: ContentStatus;
-} 
+}
