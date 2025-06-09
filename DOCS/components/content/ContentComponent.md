@@ -1,6 +1,7 @@
 # Content Component
 
 ## Overview
+
 The Content Component is a comprehensive content management system that enables users to create, edit, schedule, and manage various types of content including social media posts, blog articles, and marketing materials. It provides a rich text editing experience, media management, and calendar integration.
 
 ## Screenshots
@@ -22,6 +23,7 @@ The Content Component is a comprehensive content management system that enables 
 *Calendar integration showing scheduled content and publishing timeline*
 
 ## Component Architecture
+
 ```mermaid
 graph TD
     A[ContentComponent] --> B[ContentForm]
@@ -50,7 +52,9 @@ graph TD
     style D fill:#bbf,stroke:#333,stroke-width:1px
     style E fill:#bbf,stroke:#333,stroke-width:1px
 ```
-# Data Flow
+
+## Data Flow
+
 ```mermaid
 sequenceDiagram
     participant U as User
@@ -69,28 +73,30 @@ sequenceDiagram
     CS-->>CF: Update UI State
     CF-->>U: Show Success Message
 ```
+
 ## Features
-- Rich text editing with Tiptap editor
-- Media upload and management
-- Content scheduling and calendar integration
-- Tag management with suggestions
-- Multi-step content creation wizard
-- Social media platform integration
-- Content approval workflows
-- Real-time collaboration
-- Version control and history
-- SEO optimization tools
+
+- **Rich text editing** with Tiptap editor
+- **Media upload and management**
+- **Content scheduling** and calendar integration
+- **Tag management** with suggestions
+- **Multi-step content creation** wizard
+- **Social media platform** integration
+- **Content approval** workflows
+- **Real-time collaboration**
+- **Version control** and history
+- **SEO optimization** tools
 
 ## Props
-```markdown
+
 | Prop | Type | Required | Default | Description |
 |------|------|----------|---------|-------------|
-| initialData | Content \| null | No | null | Initial content data for editing |
-| onSave | (content: Content) => void | Yes | - | Callback when content is saved |
-| onCancel | () => void | No | - | Callback when operation is cancelled |
-| mode | 'create' \| 'edit' | No | 'create' | Component mode |
-| listId | string | No | - | Associated content list ID |
-```
+| initialData | `Content` \| `null` | No | `null` | Initial content data for editing |
+| onSave | `(content: Content) => void` | Yes | - | Callback when content is saved |
+| onCancel | `() => void` | No | - | Callback when operation is cancelled |
+| mode | `'create'` \| `'edit'` | No | `'create'` | Component mode |
+| listId | `string` | No | - | Associated content list ID |
+
 ## Usage
 
 ```typescript
@@ -116,7 +122,9 @@ import { ContentWizard } from '@/components/content/ContentWizard';
   listId="content-list-123"
 />
 ```
-# Data Models
+
+## Data Models
+
 ```typescript
 interface Content {
   id: string;
@@ -149,7 +157,9 @@ interface ContentFormData {
 type ContentType = 'blog' | 'social' | 'email' | 'landing-page';
 type ContentStatus = 'draft' | 'review' | 'approved' | 'published' | 'archived';
 ```
+
 ## Components
+
 ### ContentForm
 Main form component for content creation and editing with validation and rich text editing.
 
@@ -169,42 +179,54 @@ Tag management with autocomplete suggestions and validation.
 Scheduling interface with calendar integration and platform selection.
 
 ## Styling
+
 The component uses Tailwind CSS with the project's design system:
 
-- Semantic color tokens for consistent theming
-- .text-custom-white for button text requiring white color
-- Responsive design with mobile-first approach
-- Dark mode support through CSS variables
+- **Semantic color tokens** for consistent theming
+- **`.text-custom-white`** for button text requiring white color
+- **Responsive design** with mobile-first approach
+- **Dark mode support** through CSS variables
+
 ## Accessibility
-- ARIA labels and descriptions for all interactive elements
-- Keyboard navigation support
-- Screen reader compatibility
-- High contrast mode support
-- Focus management and visual indicators
+
+- **ARIA labels and descriptions** for all interactive elements
+- **Keyboard navigation** support
+- **Screen reader compatibility**
+- **High contrast mode** support
+- **Focus management** and visual indicators
+
 ## Error Handling
-- Form validation with Zod schemas
-- Network error recovery with retry mechanisms
-- User-friendly error messages
-- Graceful degradation for offline scenarios
+
+- **Form validation** with Zod schemas
+- **Network error recovery** with retry mechanisms
+- **User-friendly error messages**
+- **Graceful degradation** for offline scenarios
+
 ## Performance Optimizations
-- Lazy loading of editor components
-- Debounced auto-save functionality
-- Optimistic UI updates
-- Image optimization and lazy loading
-- Code splitting for large dependencies
+
+- **Lazy loading** of editor components
+- **Debounced auto-save** functionality
+- **Optimistic UI updates**
+- **Image optimization** and lazy loading
+- **Code splitting** for large dependencies
 
 ## Dependencies
-- @tiptap/react - Rich text editor
-- react-dropzone - File upload
-- react-hook-form - Form management
-- zod - Schema validation
-- date-fns - Date manipulation
-- lucide-react - Icons
+
+- **@tiptap/react** - Rich text editor
+- **react-dropzone** - File upload
+- **react-hook-form** - Form management
+- **zod** - Schema validation
+- **date-fns** - Date manipulation
+- **lucide-react** - Icons
+
 ## Related Components
-- Calendar Component
-- Media Library
-- Form Components
+
+- **Calendar Component**
+- **Media Library**
+- **Form Components**
+
 ## Examples
+
 ### Basic Content Creation
 
 ```typescript
@@ -232,7 +254,9 @@ const CreateContentPage = () => {
   );
 };
 ```
-## Content Editing with Validation
+
+### Content Editing with Validation
+
 ```typescript
 const EditContentPage = ({ contentId }: { contentId: string }) => {
   const { data: content, isLoading } = useQuery(
@@ -251,37 +275,46 @@ const EditContentPage = ({ contentId }: { contentId: string }) => {
   );
 };
 ```
-## Best Practices
-1. Data Validation : Always validate form data using Zod schemas
-2. Error Handling : Implement comprehensive error handling with user feedback
-3. Performance : Use lazy loading for heavy components like the rich text editor
-4. Accessibility : Ensure all form elements have proper labels and ARIA attributes
-5. State Management : Use React Query for server state and React Hook Form for form state
-## Troubleshooting
-### Common Issues
-Rich Text Editor Not Loading
 
+## Best Practices
+
+1. **Data Validation**: Always validate form data using Zod schemas
+2. **Error Handling**: Implement comprehensive error handling with user feedback
+3. **Performance**: Use lazy loading for heavy components like the rich text editor
+4. **Accessibility**: Ensure all form elements have proper labels and ARIA attributes
+5. **State Management**: Use React Query for server state and React Hook Form for form state
+
+## Troubleshooting
+
+### Common Issues
+
+**Rich Text Editor Not Loading**
 - Ensure Tiptap dependencies are properly installed
 - Check for JavaScript errors in browser console
 - Verify editor extensions are compatible
-Media Upload Failures
 
+**Media Upload Failures**
 - Check file size limits (max 10MB)
 - Verify supported file types
 - Ensure proper CORS configuration
-Form Validation Errors
 
+**Form Validation Errors**
 - Review Zod schema definitions
 - Check required field configurations
 - Verify data type matching
 
 ## Contributing
+
 When modifying the Content Component:
 
 1. Follow TypeScript strict mode requirements
-2. Update relevant tests in __tests__/components/content/
+2. Update relevant tests in `__tests__/components/content/`
 3. Maintain backward compatibility for existing APIs
 4. Update this documentation with any changes
 5. Follow the project's color system guidelines
 
+---
 
+**Last updated**: 2025-01-06  
+**Component version**: 2.0.0  
+**Documentation version**: 1.0.0
