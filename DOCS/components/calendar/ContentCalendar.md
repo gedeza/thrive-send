@@ -1,6 +1,7 @@
 # ContentCalendar Component
 
 ## Overview
+
 The Content Calendar is a complex, feature-rich component that allows users to schedule, manage, and track various types of content including social media posts, emails, blog posts, and articles. It provides an interactive calendar interface with multiple views (month, week, day, list) and supports drag-and-drop rescheduling of content with advanced sync capabilities and cache control.
 
 ## Screenshots
@@ -112,23 +113,40 @@ sequenceDiagram
 *Data flow during user interactions*
 
 ## Features
-- Multiple calendar views (month, week, day, list)
-- Content creation, editing, and deletion
-- Advanced filtering by content type, status, or search terms
-- Drag-and-drop content rescheduling with DndKit
-- Social media content previews
-- Analytics display for published content
-- Real-time sync capabilities with external calendars
-- Intelligent cache control for performance
-- Timezone-aware scheduling
-- Responsive design for desktop and mobile
-- Accessibility-first design
-- Bulk operations support
-- Advanced search and filtering
+
+- **Multiple calendar views** (month, week, day, list)
+- **Content creation, editing, and deletion**
+- **Advanced filtering** by content type, status, or search terms
+- **Drag-and-drop content rescheduling** with DndKit
+- **Social media content previews**
+- **Analytics display** for published content
+- **Real-time sync capabilities** with external calendars
+- **Intelligent cache control** for performance
+- **Timezone-aware scheduling**
+- **Responsive design** for desktop and mobile
+- **Accessibility-first design**
+- **Bulk operations support**
+- **Advanced search and filtering**
+
 ## Props
-```md
-Prop Type Required Description events CalendarEvent[] No Array of calendar events to display onEventCreate (event: Omit<CalendarEvent, "id">) => Promise No Handler for creating new events onEventUpdate (event: CalendarEvent) => Promise No Handler for updating existing events onEventDelete (eventId: string) => Promise No Handler for deleting events onDateSelect (day: string) => void No Handler for date selection fetchEvents () => Promise<CalendarEvent[]> No Function to fetch events from API defaultView CalendarView No Initial view mode (month, week, day, list) onViewChange (view: CalendarView) => void No Handler for view mode changes onSyncClick () => void No Handler for sync button click onSettingsClick () => void No Handler for settings button click userTimezone string No User's timezone for date/time display enableSync boolean No Enable/disable sync functionality cacheTimeout number No Cache timeout in milliseconds enableDragDrop boolean No Enable/disable drag and drop maxEventsPerDay number No Maximum events to show per day in month view
-```
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| events | `CalendarEvent[]` | No | Array of calendar events to display |
+| onEventCreate | `(event: Omit<CalendarEvent, "id">) => Promise<void>` | No | Handler for creating new events |
+| onEventUpdate | `(event: CalendarEvent) => Promise<void>` | No | Handler for updating existing events |
+| onEventDelete | `(eventId: string) => Promise<void>` | No | Handler for deleting events |
+| onDateSelect | `(day: string) => void` | No | Handler for date selection |
+| fetchEvents | `() => Promise<CalendarEvent[]>` | No | Function to fetch events from API |
+| defaultView | `CalendarView` | No | Initial view mode (month, week, day, list) |
+| onViewChange | `(view: CalendarView) => void` | No | Handler for view mode changes |
+| onSyncClick | `() => void` | No | Handler for sync button click |
+| onSettingsClick | `() => void` | No | Handler for settings button click |
+| userTimezone | `string` | No | User's timezone for date/time display |
+| enableSync | `boolean` | No | Enable/disable sync functionality |
+| cacheTimeout | `number` | No | Cache timeout in milliseconds |
+| enableDragDrop | `boolean` | No | Enable/disable drag and drop |
+| maxEventsPerDay | `number` | No | Maximum events to show per day in month view |
 
 ## Usage
 
@@ -259,9 +277,12 @@ graph LR
 *User interaction flows within the calendar component*
 
 ## Components
+
 ### ContentCalendar
+
 The main container component that handles state management, data fetching, event handling, and coordinates all child components.
- Features
+
+**Features:**
 - State management for events and view modes
 - API integration and error handling
 - Drag and drop coordination
@@ -269,8 +290,10 @@ The main container component that handles state management, data fetching, event
 - Sync orchestration
 
 ### CalendarHeader
+
 Header component providing navigation, view switching, and action controls.
- Features
+
+**Features:**
 - Date navigation (previous/next)
 - View mode selector (month/week/day/list)
 - Search and filter controls
@@ -278,8 +301,10 @@ Header component providing navigation, view switching, and action controls.
 - Settings access
 
 ### EventForm
+
 Form component for creating and editing calendar events.
- Features
+
+**Features:**
 - Dynamic form fields based on content type
 - Social media platform selection
 - Media uploads
@@ -288,8 +313,10 @@ Form component for creating and editing calendar events.
 - Timezone handling
 
 ### EventDetails
+
 Component for displaying detailed information about a calendar event.
- Features
+
+**Features:**
 - Platform-specific previews
 - Analytics display
 - Edit and delete actions
@@ -297,8 +324,10 @@ Component for displaying detailed information about a calendar event.
 - Performance metrics
 
 ### MonthView
+
 Displays events in a traditional calendar grid.
- Features
+
+**Features:**
 - Day cells with events
 - Drag and drop support
 - Event color coding by type
@@ -306,51 +335,65 @@ Displays events in a traditional calendar grid.
 - Responsive grid layout
 
 ### WeekView
+
 Displays events in a weekly timeline format.
- Features
+
+**Features:**
 - Hourly time slots
 - Multi-day event support
 - Drag and drop rescheduling
 - Time-based positioning
 
 ### DayView
+
 Displays events for a single day with detailed time slots.
- Features
+
+**Features:**
 - Detailed hourly breakdown
 - Event duration visualization
 - Conflict detection
 - Time slot availability
 
 ### ListView
+
 Displays events in a chronological list format.
- Features
+
+**Features:**
 - Sortable columns
 - Advanced filtering
 - Bulk operations
 - Export capabilities
 
 ### ContentCalendarSync
+
 Handles synchronization with external calendar systems.
- Features
+
+**Features:**
 - Real-time sync status
 - Conflict resolution
 - Sync scheduling
 - Error recovery
 
 ### CacheControl
+
 Manages caching strategies for performance optimization.
- Features
+
+**Features:**
 - Intelligent cache invalidation
 - Background refresh
 - Cache statistics
 - Memory management
 
 ## Data Models
-## CalendarView Type
+
+### CalendarView Type
+
 ```ts
 export type CalendarView = 'month' | 'week' | 'day' | 'list';
 ```
+
 ### CalendarEvent Interface
+
 ```typescript
 export interface CalendarEvent {
   id: string;
@@ -429,53 +472,60 @@ export interface CacheConfig {
 ```
 
 ## Styling
+
 The component uses a combination of Tailwind CSS and custom styles:
-- Responsive grid layouts for different views
-- Color coding for different content types and statuses using semantic color tokens
-- Hover and active states for interactive elements
-- Accessibility-focused styling with high contrast
-- Dark mode support with theme-aware colors
-- Custom CSS variables for consistent theming
+
+- **Responsive grid layouts** for different views
+- **Color coding** for different content types and statuses using semantic color tokens
+- **Hover and active states** for interactive elements
+- **Accessibility-focused styling** with high contrast
+- **Dark mode support** with theme-aware colors
+- **Custom CSS variables** for consistent theming
 
 ## Accessibility
-- ARIA attributes for interactive elements
-- Keyboard navigation support (Tab, Arrow keys, Enter, Escape)
-- Focus management with proper focus trapping
-- Screen reader friendly text alternatives
-- High contrast visual indicators
-- Reduced motion support for animations
-- Semantic HTML structure
+
+- **ARIA attributes** for interactive elements
+- **Keyboard navigation support** (Tab, Arrow keys, Enter, Escape)
+- **Focus management** with proper focus trapping
+- **Screen reader friendly** text alternatives
+- **High contrast** visual indicators
+- **Reduced motion support** for animations
+- **Semantic HTML structure**
 
 ## Error Handling
-- API failures are caught and displayed with toast notifications
-- Network errors trigger a fallback direct fetch mechanism
-- Validation errors in forms provide detailed feedback
-- Failed operations can be retried with exponential backoff
-- Graceful degradation when sync is unavailable
-- Error boundaries to prevent component crashes
-- Comprehensive error logging for debugging
+
+- **API failures** are caught and displayed with toast notifications
+- **Network errors** trigger a fallback direct fetch mechanism
+- **Validation errors** in forms provide detailed feedback
+- **Failed operations** can be retried with exponential backoff
+- **Graceful degradation** when sync is unavailable
+- **Error boundaries** to prevent component crashes
+- **Comprehensive error logging** for debugging
 
 ## Performance Optimizations
-- Memoization with useMemo and useCallback
-- Lazy loading with React.lazy and Suspense
-- Virtualization for large datasets (1000+ events)
-- Debouncing for search inputs (300ms delay)
-- Component memoization with React.memo
-- Intelligent cache management
-- Background data prefetching
-- Image lazy loading for event thumbnails
-- Bundle splitting for view components
+
+- **Memoization** with useMemo and useCallback
+- **Lazy loading** with React.lazy and Suspense
+- **Virtualization** for large datasets (1000+ events)
+- **Debouncing** for search inputs (300ms delay)
+- **Component memoization** with React.memo
+- **Intelligent cache management**
+- **Background data prefetching**
+- **Image lazy loading** for event thumbnails
+- **Bundle splitting** for view components
 
 ## Dependencies
-- date-fns and date-fns-tz for date handling
-- @dnd-kit/core for drag and drop functionality
-- @dnd-kit/modifiers for drag constraints
-- lucide-react for icons
-- @/components/ui/* for UI components
-- React 18+ for concurrent features
-- TypeScript for type safety
+
+- **date-fns and date-fns-tz** for date handling
+- **@dnd-kit/core** for drag and drop functionality
+- **@dnd-kit/modifiers** for drag constraints
+- **lucide-react** for icons
+- **@/components/ui/\*** for UI components
+- **React 18+** for concurrent features
+- **TypeScript** for type safety
 
 ## Related Components
+
 - `EventForm.md`
 - `EventDetails.md`
 - `RichTextEditor.md`
@@ -484,7 +534,9 @@ The component uses a combination of Tailwind CSS and custom styles:
 - Dialog (from UI components)
 
 ## Additional Examples
+
 ### Custom Event Types
+
 ```typescript
 // Adding custom content types
 const customEvents = [
@@ -504,7 +556,9 @@ const customEvents = [
   }}
 />
 ```
-## Timezone Handling
+
+### Timezone Handling
+
 ```typescript
 // Multi-timezone support
 <ContentCalendar
@@ -513,8 +567,10 @@ const customEvents = [
   events={events}
 />
 ```
-## Advanced Filtering
-```ts 
+
+### Advanced Filtering
+
+```typescript
 // Custom filter implementation
 const [filters, setFilters] = useState({
   contentType: 'all',
@@ -528,7 +584,9 @@ const [filters, setFilters] = useState({
   enableAdvancedFilters={true}
 />
 ```
+
 ## Best Practices
+
 1. Always provide a fetchEvents function or events array
 2. Implement proper error handling for API calls
 3. Consider timezone handling for date/time display
@@ -541,15 +599,29 @@ const [filters, setFilters] = useState({
 10. Follow accessibility guidelines
 
 ## Troubleshooting
+
 ### Common Issues
-1. Event not showing on calendar : Ensure the event has a valid date property in the format "YYYY-MM-DD".
-2. Drag and drop not working : Check if the onEventUpdate prop is provided and correctly implemented.
-3. Time display issues : The calendar uses the user's timezone, make sure userTimezone is correctly set.
-4. Events not loading : Verify the fetchEvents function is returning properly formatted CalendarEvent objects.
-5. Sync not working : Check network connectivity and API endpoint availability.
-6. Performance issues : Enable virtualization for large datasets and check cache configuration.
+
+**Event not showing on calendar**
+- Ensure the event has a valid date property in the format "YYYY-MM-DD"
+
+**Drag and drop not working**
+- Check if the onEventUpdate prop is provided and correctly implemented
+
+**Time display issues**
+- The calendar uses the user's timezone, make sure userTimezone is correctly set
+
+**Events not loading**
+- Verify the fetchEvents function is returning properly formatted CalendarEvent objects
+
+**Sync not working**
+- Check network connectivity and API endpoint availability
+
+**Performance issues**
+- Enable virtualization for large datasets and check cache configuration
 
 ### Solutions
+
 1. Check browser console for API errors
 2. Verify event object structure matches the CalendarEvent interface
 3. Test with mock data to isolate API vs rendering issues
@@ -559,9 +631,8 @@ const [filters, setFilters] = useState({
 7. Verify proper TypeScript configuration
 
 ### Debug Mode
+
 ```tsx
-<ContentCalendar
-  debugMode={true}
 // Enable debug mode for troubleshooting
 <ContentCalendar
   debug={true}
@@ -569,8 +640,11 @@ const [filters, setFilters] = useState({
   events={events}
 />
 ```
+
 ## Contributing
+
 When contributing to the Content Calendar component:
+
 1. Follow the established code patterns and organization
 2. Update documentation for any new features or changes
 3. Add appropriate accessibility attributes
@@ -581,3 +655,9 @@ When contributing to the Content Calendar component:
 8. Follow TypeScript best practices
 9. Update type definitions when adding new features
 10. Test across different timezones and locales
+
+---
+
+**Last updated**: 2025-01-06  
+**Component version**: 2.1.0  
+**Documentation version**: 1.0.0
