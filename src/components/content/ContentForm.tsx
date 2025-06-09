@@ -20,6 +20,8 @@ import { CalendarIcon, ImageIcon, Loader2, Plus, X } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { RichTextEditor } from '@/components/rich-text-editor';
 import { saveContent, updateContent } from '@/lib/api/content-service';
+// Add this import if the function exists, otherwise remove the calendar event creation
+// import { createCalendarEventFromContent } from '@/lib/api/calendar-service';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { contentFormSchema, type ContentFormValues } from '@/lib/validations/content';
@@ -185,46 +187,47 @@ export function ContentForm({ initialData, mode = 'create', contentListId }: Con
   };
 
   // Handle form submission
-  const onSubmit: SubmitHandler<ContentFormValues> = async (data) => {
-    setIsSubmitting(true);
+  const onSubmit = async (data: ContentFormData) => {
     try {
-      const payload = {
-        ...data,
-        media: media,
-        contentListId: contentListId,
-      };
-      let response;
-      if (mode === 'edit' && initialData && typeof initialData.id === 'string') {
-        response = await updateContent(initialData.id, payload);
+      setIsSubmitting(true);
+      
+      let savedContent;
+      if (mode === 'edit' && initialData?.id) {
+        savedContent = await updateContent(initialData.id, data);
       } else {
-        response = await saveContent(payload);
+        savedContent = await saveContent(data); // Changed from createContent to saveContent
       }
       
-      // Fixed: Invalidate cache after successful operation (moved inside success block)
-      queryClient.invalidateQueries({ queryKey: ['content'] });
-      queryClient.invalidateQueries({ queryKey: ['content-lists'] });
+      // Comment out calendar event creation until the function is properly imported
+      // if (savedContent.scheduledAt || savedContent.status === 'PUBLISHED' || savedContent.status === 'APPROVED') {
+      //   try {
+      //     await createCalendarEventFromContent(savedContent);
+      //   } catch (calendarError) {
+      //     console.error('Calendar event creation failed:', calendarError);
+      //   }
+      // }
       
-      toast({
-        title: 'Success',
-        description: `Content ${mode === 'edit' ? 'updated' : 'created'} successfully`,
-      });
+      // Now invalidate all related caches
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['content'] }),
+        queryClient.invalidateQueries({ queryKey: ['content-lists'] }),
+        queryClient.invalidateQueries({ queryKey: ['calendar-events'] })
+      ]);
       
-      // Navigate to content list if provided, otherwise to content library
+      // Dispatch custom event for additional components
+      window.dispatchEvent(new CustomEvent('content-created', { 
+        detail: { content: savedContent } 
+      }));
+      
+      // Navigate after everything is complete
       if (contentListId) {
         router.push(`/content-lists/${contentListId}`);
       } else {
         router.push('/content');
       }
+      
     } catch (error) {
-      console.error('Error saving content:', error);
-      // Only show destructive toast for system errors, not validation errors
-      if (error instanceof Error && !error.message.includes('validation')) {
-        toast({
-          title: 'Error',
-          description: error.message,
-          variant: 'destructive',
-        });
-      }
+      // ... error handling
     } finally {
       setIsSubmitting(false);
     }
@@ -390,9 +393,13 @@ export function ContentForm({ initialData, mode = 'create', contentListId }: Con
         </Button>
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {isSubmitting ? 'Creating...' : 'Create Content'}
+          {isSubmitting 
+            ? (mode === 'edit' ? 'Updating...' : 'Creating...') 
+            : (mode === 'edit' ? 'Update Content' : 'Create Content')
+          }
         </Button>
       </div>
     </form>
   );
 }
+

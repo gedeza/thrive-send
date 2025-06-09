@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useRef } from 'react';
 import Cropper from 'react-cropper';
 import 'cropperjs/dist/cropper.css';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -151,4 +151,4 @@ export function ImageEditor({ image, onSave, onCancel, isOpen }: ImageEditorProp
       </DialogContent>
     </Dialog>
   );
-} 
+}

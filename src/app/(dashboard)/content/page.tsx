@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
@@ -60,34 +60,39 @@ function ContentLibraryPage() {
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
 
-  // Fetch content data with refetch function
-  // Add debug logging to understand what's happening
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['content', currentPage, sortBy, statusFilter, contentTypeFilter],
-    queryFn: async () => {
-      console.log('Fetching content with params:', {
-        page: currentPage,
-        limit: ITEMS_PER_PAGE,
-        status: statusFilter === 'all' ? undefined : statusFilter,
-        type: contentTypeFilter === 'all' ? undefined : contentTypeFilter,
-      });
-      const result = await listContent({
-        page: currentPage,
-        limit: ITEMS_PER_PAGE,
-        status: statusFilter === 'all' ? undefined : statusFilter,
-        type: contentTypeFilter === 'all' ? undefined : contentTypeFilter,
-      });
-      console.log('Content fetch result:', result);
-      return result;
-    },
-    staleTime: 30000, // 30 seconds
+  // Define queryParams first
+  const queryParams = useMemo(() => {
+    const params = new URLSearchParams({
+      page: currentPage.toString(),
+      limit: ITEMS_PER_PAGE.toString(),
+    });
+    
+    if (statusFilter !== 'all') params.set('status', statusFilter);
+    if (contentTypeFilter !== 'all') params.set('contentType', contentTypeFilter);
+    if (searchQuery) params.set('search', searchQuery);
+    if (sortBy) params.set('sortBy', sortBy);
+    
+    return params;
+  }, [currentPage, statusFilter, contentTypeFilter, searchQuery, sortBy]);
+
+  // Single useQuery hook with proper configuration
+  const {
+    data: contentData,
+    isLoading,
+    error,
+    refetch
+  } = useQuery({
+    queryKey: ['content', queryParams.toString()],
+    queryFn: () => listContent(Object.fromEntries(queryParams.entries())),
+    staleTime: 0,
+    refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
 
   // Add useEffect to refetch when component mounts
   useEffect(() => {
     refetch();
-  }, []);
+  }, [refetch]);
 
   // Prevent hydration mismatch
   useEffect(() => {
@@ -105,18 +110,18 @@ function ContentLibraryPage() {
     return () => window.removeEventListener('content-created', handleContentCreated);
   }, [refetch]);
 
-  // Filter content based on search query
+  // Filter content based on search query - FIXED variable reference
   const filteredContent = useMemo(() => {
-    if (!data?.content) return [];
-    if (!searchQuery.trim()) return data.content;
+    if (!contentData?.content) return [];
+    if (!searchQuery.trim()) return contentData.content;
     
     const query = searchQuery.toLowerCase();
-    return data.content.filter((item: ContentData) => 
+    return contentData.content.filter((item: ContentData) => 
       item.title.toLowerCase().includes(query) || 
-      item.contentType.toLowerCase().includes(query) ||
+      item.type.toLowerCase().includes(query) ||
       item.tags.some((tag: string) => tag.toLowerCase().includes(query))
     );
-  }, [searchQuery, data?.content]);
+  }, [searchQuery, contentData?.content]);
 
   // Handle bulk actions
   const handleBulkDelete = async () => {
@@ -177,21 +182,42 @@ function ContentLibraryPage() {
     }
   };
 
-  // Update the query parameters to include content type
-  const queryParams = new URLSearchParams({
-    page: currentPage.toString(),
-    limit: ITEMS_PER_PAGE.toString(),
-    ...(statusFilter !== 'all' && { status: statusFilter }),
-    ...(contentTypeFilter !== 'all' && { contentType: contentTypeFilter }),
-    ...(searchQuery && { search: searchQuery }),
-    ...(sortBy && { sortBy }),
-  });
+  // Add refresh functionality
+  const handleManualRefresh = async () => {
+    try {
+      await refetch();
+      toast({
+        title: 'Success',
+        description: 'Content list refreshed successfully',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to refresh content list',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Handle sync completion
+  const handleSyncComplete = () => {
+    setShowSyncDialog(false);
+    refetch(); // Refresh content list after sync
+  };
+
+  if (!isClient) {
+    return <div>Loading...</div>;
+  }
 
   if (error) {
     return (
       <div className="p-6 text-center">
         <h2 className="text-2xl font-bold text-destructive">Error Loading Content</h2>
         <p className="text-muted-foreground mt-2">Please try again later</p>
+        <Button onClick={() => refetch()} className="mt-4">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Retry
+        </Button>
       </div>
     );
   }
@@ -209,58 +235,45 @@ function ContentLibraryPage() {
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
-            size="icon"
-            onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+            size="sm"
+            onClick={handleManualRefresh}
+            disabled={isLoading}
           >
-            {viewMode === 'grid' ? <List className="h-4 w-4" /> : <Grid className="h-4 w-4" />}
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
           </Button>
           <Button
             variant="outline"
+            size="sm"
             onClick={() => setShowSyncDialog(true)}
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Sync to Calendar
+            <RefreshCw className="h-4 w-4" />
+            Sync Calendar
           </Button>
           <Button asChild>
             <Link href="/content/new">
               <Plus className="h-4 w-4 mr-2" />
-              New Content
+              Create Content
             </Link>
           </Button>
         </div>
       </div>
 
-      {/* Filters and Search */}
+      {/* Search and Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search content..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8"
-            />
-          </div>
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Search content..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
         </div>
         <div className="flex gap-2">
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="createdAt">Date Created</SelectItem>
-              <SelectItem value="title">Title</SelectItem>
-              <SelectItem value="contentType">Content Type</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select 
-            value={statusFilter} 
-            onValueChange={(value) => setStatusFilter(value as StatusFilter)}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by status" />
+          <Select value={statusFilter} onValueChange={(value: StatusFilter) => setStatusFilter(value)}>
+            <SelectTrigger className="w-32">
+              <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
@@ -268,196 +281,150 @@ function ContentLibraryPage() {
               <SelectItem value="published">Published</SelectItem>
             </SelectContent>
           </Select>
-          <Select 
-            value={contentTypeFilter} 
-            onValueChange={(value) => setContentTypeFilter(value as ContentTypeFilter)}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by type" />
+          <Select value={contentTypeFilter} onValueChange={(value: ContentTypeFilter) => setContentTypeFilter(value)}>
+            <SelectTrigger className="w-32">
+              <SelectValue placeholder="Type" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
               <SelectItem value="article">Article</SelectItem>
-              <SelectItem value="blog">Blog Post</SelectItem>
-              <SelectItem value="social">Social Media Post</SelectItem>
-              <SelectItem value="email">Email Campaign</SelectItem>
+              <SelectItem value="blog">Blog</SelectItem>
+              <SelectItem value="social">Social</SelectItem>
+              <SelectItem value="email">Email</SelectItem>
             </SelectContent>
           </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+          >
+            {viewMode === 'grid' ? <List className="h-4 w-4" /> : <Grid className="h-4 w-4" />}
+          </Button>
         </div>
       </div>
 
-      {/* Bulk Actions */}
-      {selectedItems.length > 0 && (
-        <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
-          <Checkbox
-            checked={selectedItems.length === filteredContent.length}
-            onCheckedChange={handleSelectAll}
-          />
-          <span className="text-sm font-medium">
-            {selectedItems.length} items selected
+      {/* Content List */}
+      {isLoading ? (
+        <div className="text-center py-8">
+          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Loading content...</p>
+        </div>
+      ) : filteredContent.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground mb-4">No content found</p>
+          <Button asChild>
+            <Link href="/content/new">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Your First Content
+            </Link>
+          </Button>
+        </div>
+      ) : (
+        <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
+          {filteredContent.map((item: ContentData) => (
+            <Card key={item.id} className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <CardTitle className="text-lg">{item.title}</CardTitle>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Badge variant="secondary">{item.type}</Badge>
+                      <Badge variant={item.status === 'published' ? 'default' : 'outline'}>
+                        {item.status}
+                      </Badge>
+                    </div>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/content/edit/${item.id}`}>Edit</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setItemToDelete(item.id!);
+                          setDeleteDialogOpen(true);
+                        }}
+                        className="text-destructive"
+                      >
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {item.excerpt && (
+                  <p className="text-sm text-muted-foreground mb-3">{item.excerpt}</p>
+                )}
+                {item.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    {item.tags.slice(0, 3).map((tag, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                    {item.tags.length > 3 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{item.tags.length - 3}
+                      </Badge>
+                    )}
+                  </div>
+                )}
+                <div className="text-xs text-muted-foreground">
+                  {item.scheduledAt ? (
+                    `Scheduled: ${format(new Date(item.scheduledAt), 'MMM d, yyyy')}`
+                  ) : (
+                    `Created: ${format(new Date(item.createdAt!), 'MMM d, yyyy')}`
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {contentData && contentData.pages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Previous
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Page {currentPage} of {contentData.pages}
           </span>
           <Button
-            variant="destructive"
+            variant="outline"
             size="sm"
-            onClick={() => {
-              setItemToDelete('bulk');
-              setDeleteDialogOpen(true);
-            }}
+            onClick={() => setCurrentPage(prev => Math.min(contentData.pages, prev + 1))}
+            disabled={currentPage === contentData.pages}
           >
-            <Trash className="h-4 w-4 mr-2" />
-            Delete Selected
+            Next
+            <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
       )}
 
-      {/* Content Grid/List */}
-      {isLoading ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader className="pb-2">
-                <div className="h-4 bg-muted rounded w-3/4" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="h-3 bg-muted rounded w-1/2" />
-                  <div className="h-3 bg-muted rounded w-2/3" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : filteredContent.length > 0 ? (
-        <div className={viewMode === 'grid' 
-          ? "grid gap-6 md:grid-cols-2 lg:grid-cols-3"
-          : "space-y-4"
-        }>
-          {filteredContent.map((item: ContentData) => (
-            <Card key={item.id} className={viewMode === 'list' ? "flex items-center" : ""}>
-              {viewMode === 'list' && (
-                <div className="p-4">
-                  <Checkbox
-                    checked={selectedItems.includes(item.id!)}
-                    onCheckedChange={() => handleSelectItem(item.id!)}
-                  />
-                </div>
-              )}
-              <CardHeader className={viewMode === 'list' ? "flex-1 pb-2" : "pb-2"}>
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="text-lg">{item.title}</CardTitle>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={item.status === 'published' ? 'default' : 'secondary'}>
-                        {item.status}
-                      </Badge>
-                      <span className="text-sm text-muted-foreground">
-                        {item.contentType}
-                      </span>
-                    </div>
-                  </div>
-                  {viewMode === 'grid' && (
-                    <Checkbox
-                      checked={selectedItems.includes(item.id!)}
-                      onCheckedChange={() => handleSelectItem(item.id!)}
-                    />
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className={viewMode === 'list' ? "flex-1" : ""}>
-                <div className="space-y-2">
-                  <div className="flex flex-wrap gap-2">
-                    {item.tags.map((tag: string) => (
-                      <Badge key={tag} variant="outline">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
-                      {format(new Date(item.createdAt!), 'MMM d, yyyy')}
-                    </span>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => router.push(`/content/edit/${item.id}`)}>
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-destructive"
-                          onClick={() => {
-                            setItemToDelete(item.id!);
-                            setDeleteDialogOpen(true);
-                          }}
-                        >
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <Card className="text-center p-6">
-          <CardContent className="pt-6">
-            <p className="mb-4">No content found</p>
-            <Button asChild>
-              <Link href="/content/new">
-                Create New Content
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Pagination */}
-      {data && data.total > ITEMS_PER_PAGE && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, data.total)} of {data.total} items
-          </p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setCurrentPage(p => p + 1)}
-              disabled={currentPage * ITEMS_PER_PAGE >= data.total}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Sync Content Dialog */}
+      {/* Sync Dialog */}
       <Dialog open={showSyncDialog} onOpenChange={setShowSyncDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Content Calendar Sync</DialogTitle>
+            <DialogTitle>Sync Content to Calendar</DialogTitle>
             <DialogDescription>
               Sync your existing content to the calendar to see all your created content on the calendar view.
             </DialogDescription>
           </DialogHeader>
-          <ContentCalendarSync 
-            onSyncComplete={() => {
-              refetch();
-              setShowSyncDialog(false);
-            }} 
-          />
+          <ContentCalendarSync onSyncComplete={handleSyncComplete} />
         </DialogContent>
       </Dialog>
 
@@ -467,22 +434,13 @@ function ContentLibraryPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              {itemToDelete === 'bulk' 
-                ? `This will permanently delete ${selectedItems.length} selected items.`
-                : 'This will permanently delete this content item.'}
-              This action cannot be undone.
+              This action cannot be undone. This will permanently delete the content.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
-                if (itemToDelete === 'bulk') {
-                  handleBulkDelete();
-                } else if (itemToDelete) {
-                  handleDelete(itemToDelete);
-                }
-              }}
+              onClick={() => itemToDelete && handleDelete(itemToDelete)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete
@@ -492,12 +450,6 @@ function ContentLibraryPage() {
       </AlertDialog>
     </div>
   );
-
-  // Format dates only on client side
-  const formatDate = (dateString: string) => {
-    if (!isClient) return dateString; // Return raw string on server
-    return format(new Date(dateString), 'MMM d, yyyy');
-  };
 }
 
 export default ContentLibraryPage;

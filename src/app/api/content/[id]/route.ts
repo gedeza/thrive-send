@@ -27,10 +27,36 @@ export async function GET(
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const content = await prisma.content.findUnique({
+    // Get user and their organization membership (similar to main content API)
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      include: {
+        organizationMemberships: {
+          include: {
+            organization: true
+          }
+        }
+      }
+    });
+
+    if (!user || user.organizationMemberships.length === 0) {
+      return NextResponse.json({ message: 'User not found or not part of any organization' }, { status: 404 });
+    }
+
+    const organizationId = user.organizationMemberships[0].organizationId;
+
+    // Get all users in the same organization
+    const organizationMembers = await prisma.organizationMember.findMany({
+      where: { organizationId },
+      include: { user: true }
+    });
+
+    const memberUserIds = organizationMembers.map(member => member.user.id);
+
+    const content = await prisma.content.findFirst({
       where: {
         id: params.id,
-        userId,
+        authorId: { in: memberUserIds }, // Filter by organization members instead of just userId
       },
     });
 
@@ -56,10 +82,36 @@ export async function PUT(
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const content = await prisma.content.findUnique({
+    // Get user and their organization membership
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      include: {
+        organizationMemberships: {
+          include: {
+            organization: true
+          }
+        }
+      }
+    });
+
+    if (!user || user.organizationMemberships.length === 0) {
+      return NextResponse.json({ message: 'User not found or not part of any organization' }, { status: 404 });
+    }
+
+    const organizationId = user.organizationMemberships[0].organizationId;
+
+    // Get all users in the same organization
+    const organizationMembers = await prisma.organizationMember.findMany({
+      where: { organizationId },
+      include: { user: true }
+    });
+
+    const memberUserIds = organizationMembers.map(member => member.user.id);
+
+    const content = await prisma.content.findFirst({
       where: {
         id: params.id,
-        userId,
+        authorId: { in: memberUserIds }, // Filter by organization members
       },
     });
 
@@ -107,15 +159,24 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { userId } = getAuth(request);
-    if (!userId) {
+    const { userId: clerkId } = getAuth(request);
+    if (!clerkId) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get the user from our database using their Clerk ID
+    const user = await prisma.user.findUnique({
+      where: { clerkId }
+    });
+
+    if (!user) {
+      return NextResponse.json({ message: 'User not found' }, { status: 404 });
+    }
+
+    // First, check if the content exists
     const content = await prisma.content.findUnique({
       where: {
         id: params.id,
-        userId,
       },
     });
 
@@ -123,6 +184,12 @@ export async function DELETE(
       return NextResponse.json({ message: 'Content not found' }, { status: 404 });
     }
 
+    // Check if the user is the author (authorization) - now comparing database user IDs
+    if (content.authorId !== user.id) {
+      return NextResponse.json({ message: 'Forbidden: You can only delete your own content' }, { status: 403 });
+    }
+
+    // Delete the content
     await prisma.content.delete({
       where: {
         id: params.id,
@@ -134,4 +201,4 @@ export async function DELETE(
     console.error('Error in DELETE /api/content/[id]:', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
-} 
+}

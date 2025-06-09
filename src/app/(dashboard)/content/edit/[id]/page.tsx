@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import ContentForm from "@/components/content/ContentForm";
+import { ContentForm } from "@/components/content/ContentForm";
 import { Card } from "@/components/ui/card";
 import { toast } from "@/components/ui/use-toast";
 

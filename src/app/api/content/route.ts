@@ -50,6 +50,31 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get user and their organization membership (similar to calendar API)
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      include: { organizationMemberships: true },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    if (user.organizationMemberships.length === 0) {
+      return NextResponse.json({ error: 'User is not a member of any organization' }, { status: 403 });
+    }
+
+    // Use the first organization membership
+    const organizationId = user.organizationMemberships[0].organizationId;
+
+    // Get all users in the organization
+    const organizationMembers = await prisma.organizationMember.findMany({
+      where: { organizationId },
+      select: { userId: true }
+    });
+
+    const memberUserIds = organizationMembers.map(member => member.userId);
+
     const { searchParams } = new URL(request.url);
     const query = Object.fromEntries(searchParams.entries());
     const validatedQuery = querySchema.parse(query);
@@ -59,7 +84,7 @@ export async function GET(request: Request) {
     const skip = (page - 1) * limit;
 
     const where = {
-      authorId: userId,
+      authorId: { in: memberUserIds }, // Filter by organization members instead of just current user
       ...(validatedQuery.type && { type: validatedQuery.type }),
       ...(validatedQuery.status && { status: validatedQuery.status }),
     };
@@ -290,4 +315,4 @@ export async function PUT(request: Request) {
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-} 
+}

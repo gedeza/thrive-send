@@ -658,6 +658,6 @@ When contributing to the Content Calendar component:
 
 ---
 
-**Last updated**: 2025-01-06  
-**Component version**: 2.1.0  
-**Documentation version**: 1.0.0
+*Last updated: 2025-01-06*
+*Component version: 2.1.0*  
+*Documentation version: 1.0.0*

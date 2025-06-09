@@ -223,3 +223,68 @@ const ContentForm: React.FC<ContentFormProps> = ({ initialDate }) => {
 };
 
 export default ContentForm;
+
+
+const onSubmit = async (data: ContentFormData) => {
+  try {
+    setIsSubmitting(true);
+    
+    let result;
+    if (isEditing && content?.id) {
+      result = await updateContent(content.id, data);
+    } else {
+      result = await createContent(data);
+    }
+
+    if (result.success) {
+      // Wait for calendar event creation to complete
+      if (result.data?.id && (data.status === 'PUBLISHED' || data.status === 'APPROVED')) {
+        await createCalendarEventFromContent(result.data);
+      }
+      
+      // Now invalidate caches after calendar sync
+      await queryClient.invalidateQueries({ queryKey: ['content'] });
+      await queryClient.invalidateQueries({ queryKey: ['content-lists'] });
+      await queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+      
+      toast.success(isEditing ? 'Content updated successfully!' : 'Content created successfully!');
+      
+      if (onSuccess) {
+        onSuccess(result.data);
+      } else {
+        router.push(isEditing ? '/content' : '/content');
+      }
+    }
+  } catch (error) {
+    // ... existing code ...
+  }
+};
+
+const createContentMutation = useMutation({
+  mutationFn: createContent,
+  onMutate: async (newContent) => {
+    // Cancel outgoing refetches
+    await queryClient.cancelQueries({ queryKey: ['content'] });
+    
+    // Snapshot previous value
+    const previousContent = queryClient.getQueryData(['content']);
+    
+    // Optimistically update
+    queryClient.setQueryData(['content'], (old: any) => {
+      return {
+        ...old,
+        data: [newContent, ...(old?.data || [])]
+      };
+    });
+    
+    return { previousContent };
+  },
+  onError: (err, newContent, context) => {
+    // Rollback on error
+    queryClient.setQueryData(['content'], context?.previousContent);
+  },
+  onSettled: () => {
+    // Always refetch after mutation
+    queryClient.invalidateQueries({ queryKey: ['content'] });
+  },
+});
