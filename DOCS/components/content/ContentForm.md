@@ -80,7 +80,7 @@ sequenceDiagram
     CF->>QC: Invalidate cache
     CF->>R: Navigate to content list
     CF->>U: Show success toast
-    ```
+
 ```
 ## Features
 - Rich Text Editing : Advanced content editor with formatting options
@@ -190,7 +190,7 @@ graph LR
     style A fill:#90EE90
     style N fill:#FFB6C1
     style K fill:#FFB6C1
-    ```
+
 ```
 ## Components
 ### Core Components
@@ -591,7 +591,7 @@ graph TD
     style B fill:#bbf,stroke:#333,stroke-width:1px
     style C fill:#bbf,stroke:#333,stroke-width:1px
     style D fill:#bbf,stroke:#333,stroke-width:1px
-```
+
 ## Data Flow
 ```mermaid
 sequenceDiagram
@@ -620,7 +620,7 @@ sequenceDiagram
     CF->>QC: Invalidate cache
     CF->>R: Navigate to content list
     CF->>U: Show success toast
-```
+
 ```
 ## Features
 - Rich Text Editing : Advanced content editor with formatting options
@@ -637,8 +637,9 @@ sequenceDiagram
 - Error Handling : Comprehensive error management with user feedback
 
 ## Props
+```md
 Prop Type Required Default Description mode 'create' | 'edit' No 'create' Form operation mode initialData ContentFormData No undefined Pre-populated form data for edit mode contentListId string No undefined ID of associated content list onSubmit (data: ContentFormData) => void No undefined Custom submit handler onCancel () => void No undefined Cancel action handler className string No undefined Additional CSS classes
-
+```
 ## Usage Examples
 ### Basic Usage
 ```tsx
@@ -724,6 +725,7 @@ graph LR
     style A fill:#90EE90
     style N fill:#FFB6C1
     style K fill:#FFB6C1
+
 ```
 ## Components
 ### Core Components
