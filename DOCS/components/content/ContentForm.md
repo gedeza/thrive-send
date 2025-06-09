@@ -380,12 +380,27 @@ const formatFileSize = useCallback((bytes: number): string => {
 ## Dependencies
 
 ### Core Dependencies
+- **react**: ^18.0.0
+- **react-hook-form**: ^7.45.0
+- **@hookform/resolvers**: ^3.1.0
+- **zod**: ^3.21.0
+- **uuid**: ^9.0.0 *(Required for file upload functionality)*
+- **lucide-react**: ^0.263.0
 
-- **react-hook-form**: Form state management and validation
-- **@hookform/resolvers/zod**: Zod integration for validation
-- **zod**: Schema validation
-- **@tanstack/react-query**: Data fetching and caching
-- **next/router**: Navigation
+### Internal Dependencies
+- **@/lib/api/content-service**: Content API operations
+- **@/components/ui/button**: Button component
+- **@/components/ui/input**: Input components
+- **@/components/ui/textarea**: Textarea component
+- **@/components/ui/select**: Select dropdown
+- **@/components/ui/calendar**: Calendar component
+- **@/components/ui/popover**: Popover component
+- **@/components/ui/toast**: Toast notifications
+- **@/components/content/MediaUploader**: File upload component
+- **@/components/content/RichTextEditor**: Rich text editor
+- **@/components/content/TagInput**: Tag management
+- **@/hooks/useToast**: Toast notifications
+- **@/lib/utils**: Utility functions
 
 ### UI Dependencies
 
@@ -498,37 +513,26 @@ function BulkContentForm() {
 - Implement client-side validation for immediate feedback
 - Always validate on the server side as well
 
-### User Experience
+### Dependencies Management
 
-- Save drafts automatically to prevent data loss
-- Provide clear feedback for all user actions
-- Use loading states during form submission
-- Allow users to preview content before publishing
-- Implement keyboard shortcuts for power users
+- **NEW**: Always verify all required packages are installed before deployment
+- Keep dependencies up to date for security and performance
+- Use exact versions for critical dependencies like `uuid`
+- Test thoroughly after dependency updates
 
-### Performance
+### Function References
 
-- Debounce expensive operations like validation
-- Use React.memo for expensive child components
-- Implement proper error boundaries
-- Optimize file uploads with progress tracking
-- Cache form data to prevent loss on navigation
+- **NEW**: Use consistent function naming across components
+- Import functions from their correct modules
+- Avoid mixing different API service functions
+- Document function dependencies clearly
 
-## Troubleshooting
+### Button States
 
-### Common Issues
-
-**Form not submitting**
-- Check validation errors in form state
-- Verify all required fields are filled
-- Check network connectivity
-- Review browser console for JavaScript errors
-
-**File upload failing**
-- Check file size limits (5MB default)
-- Verify file type is supported
-- Check network connection
-- Review server upload limits
+- **NEW**: Ensure button text reflects the current operation (Create vs Update)
+- Implement proper loading states during form submission
+- Provide clear visual feedback for user actions
+- Use semantic button variants for different actions
 
 **Validation errors not showing**
 - Ensure Zod schema is properly configured
@@ -608,6 +612,7 @@ pnpm test:a11y ContentForm
 
 ---
 
-**Last updated**: 2025-01-06  
-**Component version**: 2.1.0  
-**Documentation version**: 1.0.0
+*Last updated: 2025-01-06*
+*Component version: 2.1.1*
+*Documentation version: 1.1.0*
+*Recent fixes: UUID dependency, button text correction, function reference fixes*
