@@ -28,6 +28,8 @@ import { contentFormSchema, type ContentFormValues } from '@/lib/validations/con
 import { ContentType } from '@/lib/types/content';
 import { MediaUploader, type MediaFile } from '@/components/content/MediaUploader';
 import { TagInput } from '@/components/content/TagInput';
+// ADD THIS MISSING IMPORT:
+import { FormActions } from '@/components/content/shared/FormActions';
 import type { SubmitHandler } from 'react-hook-form';
 import { useEffect } from 'react';
 import { getListsForContent } from '@/lib/api/content-list-service';
@@ -255,7 +257,10 @@ export function ContentForm({ initialData, mode = 'create', contentListId }: Con
             Content Type
           </label>
           <Select
-            onValueChange={(value: ContentType) => setValue('type', value)}
+            onValueChange={(value: ContentType) => {
+              // Use setTimeout to defer the state update
+              setTimeout(() => setValue('type', value), 0);
+            }}
             defaultValue={watch('type')}
           >
             <SelectTrigger>
@@ -291,8 +296,11 @@ export function ContentForm({ initialData, mode = 'create', contentListId }: Con
         <div>
           <label className="block text-sm font-medium mb-1">Tags</label>
           <TagInput
-            tags={watch('tags')}
-            onChange={(tags) => setValue('tags', tags)}
+            tags={watch('tags') || []}
+            onChange={(tags) => {
+              // Use setTimeout to defer the state update
+              setTimeout(() => setValue('tags', tags), 0);
+            }}
             suggestions={tagSuggestions}
           />
           {formErrors.tags && (
@@ -320,8 +328,12 @@ export function ContentForm({ initialData, mode = 'create', contentListId }: Con
         <div>
           <label className="block text-sm font-medium mb-1">Content</label>
           <RichTextEditor
-            value={watch('content')}
-            onChange={(value: string) => setValue('content', value)}
+            value={watch('content') || ''}
+            onChange={(value: string) => {
+              // Use setTimeout to defer the state update
+              setTimeout(() => setValue('content', value), 0);
+            }}
+            placeholder="Write your content here..."
           />
           {formErrors.content && (
             <p className="mt-1 text-sm text-yellow-600">{formErrors.content.message}</p>
@@ -351,7 +363,10 @@ export function ContentForm({ initialData, mode = 'create', contentListId }: Con
               <Calendar
                 mode="single"
                 selected={watch('scheduledAt') ? new Date(watch('scheduledAt') as string) : undefined}
-                onSelect={(date: Date | undefined) => setValue('scheduledAt', date ? date.toISOString() : undefined)}
+                onSelect={(date: Date | undefined) => {
+                  // Use setTimeout to defer the state update
+                  setTimeout(() => setValue('scheduledAt', date ? date.toISOString() : undefined), 0);
+                }}
                 initialFocus
               />
             </PopoverContent>
@@ -381,23 +396,16 @@ export function ContentForm({ initialData, mode = 'create', contentListId }: Con
       </div>
 
       <div className="flex justify-end space-x-4">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => {
+        <FormActions
+          mode={mode}
+          isSubmitting={isSubmitting}
+          onCancel={() => router.back()}
+          onReset={() => {
             setValue('content', '');
             setMedia([]);
           }}
-        >
-          Reset
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {isSubmitting 
-            ? (mode === 'edit' ? 'Updating...' : 'Creating...') 
-            : (mode === 'edit' ? 'Update Content' : 'Create Content')
-          }
-        </Button>
+          submitText={mode === 'edit' ? 'Update Content' : 'Create Content'}
+        />
       </div>
     </form>
   );

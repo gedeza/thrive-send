@@ -17,12 +17,15 @@ const contentSchema = z.object({
 });
 
 // GET /api/content/[id]
+// Replace getAuth with the standard auth() function for consistency
+import { auth } from '@clerk/nextjs/server';
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const { userId } = getAuth(request);
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }

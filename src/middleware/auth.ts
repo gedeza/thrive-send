@@ -58,168 +58,42 @@ export async function withOrganization(
 ) {
   return withAuth(request, async (authedRequest) => {
     try {
-      // Try to get organizationId from Clerk session first
-      // Import the auth function directly to get fresh session data
       const { auth } = await import('@clerk/nextjs/server');
       const session = await auth();
-      let organizationId = session.orgId || undefined;
+      let organizationId = session.orgId;
       
-      console.log('Using organization ID from Clerk session:', organizationId);
-      
-      // If no organizationId in Clerk session, we could look for it in the URL or headers
-      // This avoids consuming the request body
+      // Simplified: Don't auto-create organizations
       if (!organizationId) {
-        // For now, let's leave the organizationId as undefined
-        // In the future we could check query params or headers
-        console.log('No organization ID found in session');
+        return NextResponse.json(
+          { error: "No organization selected. Please select an organization first." },
+          { status: 400 }
+        );
       }
 
-      console.log('Organization verification:', {
-        organizationId,
-        userId: authedRequest.auth.user.id,
-        userClerkId: authedRequest.auth.user.clerkId
-      });
-
-      if (!organizationId) {
-        throw new ApiError("organizationId is required", 400);
-      }
-
-      // First check if the organization exists
-      let organization = await prisma.organization.findUnique({
+      // Verify organization exists and user has access
+      const membership = await prisma.organizationMember.findFirst({
         where: {
-          clerkOrganizationId: organizationId
-        }
-      });
-
-      console.log('Organization lookup result:', {
-        organizationId,
-        found: !!organization,
-        organizationDetails: organization
-      });
-
-      if (!organization) {
-        console.log('Organization not found, attempting to create it...');
-        
-        try {
-          // Create the organization in our database with minimal info
-          organization = await prisma.organization.create({
-            data: {
-              name: 'Organization ' + organizationId,
-              slug: 'org-' + Date.now(), // Generate a unique slug
-              clerkOrganizationId: organizationId,
-              primaryColor: "#000000"
-            }
-          });
-          
-          console.log('Created new organization:', organization);
-        } catch (error) {
-          console.error('Failed to create organization:', error);
-          throw new ApiError("Failed to create organization automatically", 500);
-        }
-      }
-
-      // Get all user's organization memberships
-      const userMemberships = await prisma.organizationMember.findMany({
-        where: {
-          user: {
-            clerkId: authedRequest.auth.user.clerkId
-          }
+          organization: { clerkOrganizationId: organizationId },
+          user: { clerkId: authedRequest.auth.user.clerkId }
         },
-        include: {
-          organization: true
-        }
-      });
-
-      console.log('User organization memberships:', {
-        userClerkId: authedRequest.auth.user.clerkId,
-        membershipsCount: userMemberships.length,
-        memberships: userMemberships.map(m => ({
-          organizationId: m.organizationId,
-          organizationName: m.organization.name,
-          organizationClerkId: m.organization.clerkOrganizationId,
-          role: m.role
-        }))
-      });
-
-      // Verify organization access using Clerk user ID
-      let membership = await prisma.organizationMember.findFirst({
-        where: {
-          organization: {
-            clerkOrganizationId: organizationId
-          },
-          user: {
-            clerkId: authedRequest.auth.user.clerkId
-          }
-        },
-        include: {
-          user: true,
-          organization: true
-        }
-      });
-
-      console.log('Organization membership check:', {
-        found: !!membership,
-        membership,
-        organizationId
+        include: { organization: true }
       });
 
       if (!membership) {
-        console.log('No membership found, checking if membership should be created...');
-        
-        // TEMPORARY FIX: Create organization for development purposes
-        try {
-          console.log('Creating new organization membership as workaround');
-          // Ensure we have an organization to work with
-          if (!organization) {
-            organization = await prisma.organization.create({
-              data: {
-                name: 'Default Organization',
-                slug: 'default-org-' + Date.now(),
-                clerkOrganizationId: organizationId || 'default-clerk-org',
-                primaryColor: "#3b82f6"
-              }
-            });
-          }
-          
-          const newMembership = await prisma.organizationMember.create({
-            data: {
-              organizationId: organization.id,
-              userId: authedRequest.auth.user.id,
-              role: 'ADMIN'
-            },
-            include: {
-              user: true,
-              organization: true
-            }
-          });
-          
-          console.log('Created temporary organization membership:', newMembership);
-          membership = newMembership;
-        } catch (error) {
-          console.error('Failed to create temporary membership:', error);
-          throw new ApiError("Organization access denied", 403);
-        }
+        return NextResponse.json(
+          { error: "Access denied to this organization" },
+          { status: 403 }
+        );
       }
 
-      // Add organization to auth context
       authedRequest.auth.organizationId = membership.organization.id;
-      
-      console.log('Organization middleware using internal ID:', membership.organization.id);
-
-      // Instead of cloning the request (which fails), just use the authedRequest directly
       return handler(authedRequest);
     } catch (error) {
       console.error('Organization middleware error:', error);
-      if (error instanceof ApiError) {
-        return NextResponse.json(
-          { error: error.message },
-          { status: error.statusCode }
-        );
-      }
       return NextResponse.json(
         { error: "Organization access check failed" },
         { status: 500 }
       );
     }
   });
-} 
+}

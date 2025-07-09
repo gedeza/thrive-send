@@ -178,14 +178,12 @@ const trackEvent = async (event: AnalyticsEvent) => {
  */
 const formatScheduledDate = (dateInput: string | Date, timeInput: string): string => {
   try {
-    console.log('Formatting date inputs:', { dateInput, timeInput });
     
     // If dateInput is already a complete ISO string with time (and it's valid), return it
     if (typeof dateInput === 'string' && 
         dateInput.includes('T') && 
         dateInput.includes('Z') && 
         !isNaN(new Date(dateInput).getTime())) {
-      console.log('Input is already a valid ISO string:', dateInput);
       return dateInput;
     }
     
@@ -221,7 +219,6 @@ const formatScheduledDate = (dateInput: string | Date, timeInput: string): strin
       throw new Error('The resulting date is invalid');
     }
     
-    console.log('Successfully formatted date:', isoString);
     return isoString;
   } catch (error) {
     console.error('Date formatting error:', error);
@@ -504,7 +501,6 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
 
   // Add a new function to handle platform updates
   const handlePlatformUpdate = (platforms: SocialPlatform[]) => {
-    console.log('ContentWizard: Platform update received:', platforms);
     setEvent(prev => ({
       ...prev,
       socialMediaContent: {
@@ -594,15 +590,8 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
       
       if (event.date && event.time) {
         try {
-          console.log('Content scheduling data:', { 
-            date: event.date, 
-            time: event.time,
-            dateType: typeof event.date
-          });
-          
           // Format the date using our improved function
           scheduledDateTime = formatScheduledDate(event.date, event.time);
-          console.log('Formatted scheduled date:', scheduledDateTime);
         } catch (error) {
           console.error('Date formatting failed:', error);
           toast({

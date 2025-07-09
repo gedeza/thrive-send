@@ -1,49 +1,111 @@
 import { NextResponse } from 'next/server';
 import { subDays, format } from 'date-fns';
+import { auth } from '@clerk/nextjs/server';
+import { prisma } from '@/lib/prisma';
+import { getOptimizedAnalyticsOverview } from '@/lib/analytics/query-optimizer';
+import { 
+  AnalyticsErrorHandler, 
+  AnalyticsRequestValidator, 
+  withAnalyticsErrorHandler 
+} from '@/lib/analytics/error-handler';
 
-// Mock data generator
-function generateMockData(days: number, platform?: string) {
-  const data = [];
-  const platforms = platform ? [platform] : ['facebook', 'twitter', 'instagram', 'linkedin'];
-
-  for (let i = 0; i < days; i++) {
-    const date = subDays(new Date(), i);
-    platforms.forEach((p) => {
-      data.push({
-        contentId: `${p}-${i}`,
-        platform: p,
-        metrics: {
-          views: Math.floor(Math.random() * 1000) + 100,
-          engagement: {
-            likes: Math.floor(Math.random() * 100) + 10,
-            shares: Math.floor(Math.random() * 50) + 5,
-            comments: Math.floor(Math.random() * 25) + 2,
-          },
-          reach: Math.floor(Math.random() * 2000) + 200,
-          clicks: Math.floor(Math.random() * 150) + 15,
-          timestamp: format(date, "yyyy-MM-dd'T'HH:mm:ss'Z'"),
-        },
-      });
-    });
+// Helper function to get authenticated user with proper error handling
+async function getAuthenticatedUser() {
+  const { userId } = await auth();
+  if (!userId) {
+    throw new Error('Not authenticated');
   }
-
-  return data;
+  
+  const user = await prisma.user.findUnique({ 
+    where: { clerkId: userId },
+    include: {
+      organizationMemberships: {
+        select: {
+          organizationId: true,
+          role: true
+        }
+      }
+    }
+  });
+  
+  if (!user) {
+    throw new Error('User not found');
+  }
+  
+  return user;
 }
 
-export async function GET(request: Request) {
+export const GET = withAnalyticsErrorHandler(async (request: Request) => {
+  const user = await getAuthenticatedUser();
   const { searchParams } = new URL(request.url);
   const timeRange = searchParams.get('timeRange') || '7d';
   const platform = searchParams.get('platform') || 'all';
 
-  // Convert timeRange to days
-  const days = parseInt(timeRange.replace('d', ''));
-  const platformFilter = platform === 'all' ? undefined : platform;
+  // Validate timeRange format
+  const timeRangePattern = /^\d+[dwmy]$/;
+  if (!timeRangePattern.test(timeRange)) {
+    return AnalyticsErrorHandler.handleValidationError(
+      'Invalid timeRange format. Use format like: 7d, 30d, 1w, 1m, 1y'
+    );
+  }
 
-  // Generate mock data
-  const data = generateMockData(days, platformFilter);
+  // Validate platform
+  const platformValidation = AnalyticsRequestValidator.validatePlatform(platform);
+  if (!platformValidation.isValid) {
+    return AnalyticsErrorHandler.handleValidationError(platformValidation.error!);
+  }
 
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  // Check user has access to analytics
+  if (!user.organizationMemberships || user.organizationMemberships.length === 0) {
+    return AnalyticsErrorHandler.handleAuthzError('No organization membership found');
+  }
 
-  return NextResponse.json(data);
-} 
+  // Validate time range (max 365 days)
+  const days = parseInt(timeRange.replace(/[dwmy]/, ''));
+  const unit = timeRange.slice(-1);
+  let maxDays = 365;
+  
+  if (unit === 'w') {
+    maxDays = 52; // 52 weeks
+  } else if (unit === 'm') {
+    maxDays = 12; // 12 months
+  } else if (unit === 'y') {
+    maxDays = 5; // 5 years
+  }
+  
+  if (days > maxDays) {
+    return AnalyticsErrorHandler.handleValidationError(
+      `Time range too large. Maximum ${maxDays} ${unit === 'd' ? 'days' : unit === 'w' ? 'weeks' : unit === 'm' ? 'months' : 'years'} allowed`
+    );
+  }
+
+  try {
+    // Use optimized analytics overview query
+    const analyticsData = await getOptimizedAnalyticsOverview({
+      userId: user.id,
+      clerkId: user.clerkId,
+      timeRange,
+      platform
+    });
+
+    // Check if we have any data
+    if (!analyticsData || analyticsData.length === 0) {
+      return AnalyticsErrorHandler.handleInsufficientDataError(
+        'No analytics data found for the specified criteria'
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: analyticsData,
+      metadata: {
+        timeRange,
+        platform,
+        recordCount: analyticsData.length,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  } catch (dbError) {
+    return AnalyticsErrorHandler.handleDatabaseError(dbError as Error, 'analytics overview fetch');
+  }
+}); 

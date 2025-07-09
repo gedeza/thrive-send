@@ -11,18 +11,21 @@ async function main() {
     {
       id: "org1",
       name: "Marketing Agency Inc.",
+      slug: "marketing-agency-inc",
       type: "AGENCY",
       industry: "Marketing"
     },
     {
       id: "org2",
       name: "Tech Solutions Ltd.",
+      slug: "tech-solutions-ltd",
       type: "ENTERPRISE",
       industry: "Technology"
     },
     {
       id: "org3",
       name: "Nonprofit Foundation",
+      slug: "nonprofit-foundation",
       type: "NONPROFIT",
       industry: "Social Services"
     }
@@ -43,12 +46,18 @@ async function main() {
     {
       id: "client1",
       name: "Retail Chain Co.",
-      industry: "Retail"
+      email: "contact@retailchain.com",
+      type: "CORPORATE",
+      industry: "Retail",
+      organizationId: "org1"
     },
     {
       id: "client2",
       name: "Financial Services Group",
-      industry: "Finance"
+      email: "info@financialservices.com",
+      type: "ENTERPRISE",
+      industry: "Finance",
+      organizationId: "org2"
     }
   ];
 

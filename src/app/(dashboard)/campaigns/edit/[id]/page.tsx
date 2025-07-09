@@ -2,9 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
-import { Box, CircularProgress } from '@mui/material';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import EditCampaign from '@/components/Campaign/EditCampaign';
@@ -61,9 +62,9 @@ export default function CampaignEditPage({ params }: { params: { id: string } })
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-        <CircularProgress />
-      </Box>
+      <div className="flex justify-center items-center min-h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
     );
   }
 

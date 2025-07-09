@@ -1,0 +1,14 @@
+{
+  "shellConfig": {
+    "performanceThreshold": 60,
+    "securityThreshold": 70,
+    "maintainabilityThreshold": 60,
+    "costThreshold": 65,
+    "overallThreshold": 60,
+    "strictMode": false,
+    "autofix": true,
+    "blockOnWarnings": false
+  },
+  "integrationMode": "hybrid",
+  "lastSync": "2025-07-08T13:27:00Z"
+}

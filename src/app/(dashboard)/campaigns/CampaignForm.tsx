@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
-import { TextField, Button, MenuItem, Box, Typography, FormHelperText } from "@mui/material";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { campaigns, type Campaign, CampaignStatus } from "./campaigns.mock-data";
 
 interface CampaignFormProps {

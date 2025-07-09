@@ -1,5 +1,12 @@
 import { Users, Mail, MousePointerClick, Activity } from "lucide-react";
-import type { StatCard } from "../dashboard.mock-data";
+
+// Define StatCard interface locally since mock-data file doesn't exist
+interface StatCard {
+  title: string;
+  value: string | number;
+  icon: keyof typeof iconMap;
+  desc: string;
+}
 
 // Mapping between icon string and Lucide icon component
 const iconMap = {

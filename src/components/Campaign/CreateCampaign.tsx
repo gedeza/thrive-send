@@ -1,18 +1,19 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import {
-  Box, Button, TextField, Typography, Paper, MenuItem,
-  FormControl as MuiFormControl,
-  InputLabel, Select, Divider, CircularProgress, Alert,
-  FormHelperText
-} from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { styled } from '@mui/material/styles';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { toast } from '@/components/ui/use-toast';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { CalendarIcon, Loader2 } from 'lucide-react';
 import { createCampaign } from '@/lib/api';
-import type { SelectChangeEvent } from '@mui/material/Select';
 import { CampaignStatus, CampaignGoalType, ScheduleFrequency } from '@prisma/client';
 import { useOrganization } from '@clerk/nextjs';
 import { useForm } from 'react-hook-form';
@@ -26,8 +27,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { useRouter } from 'next/navigation';
 

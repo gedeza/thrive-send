@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { queryConfig } from '@/lib/react-query-config';
 import { format } from 'date-fns';
 import {
   LineChart,
@@ -73,6 +74,7 @@ export function AnalyticsDashboard() {
       }
       return response.json();
     },
+    ...queryConfig.analytics, // Use centralized analytics configuration
   });
 
   // Process the unified-simple API response

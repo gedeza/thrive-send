@@ -667,7 +667,7 @@ export function EventForm({
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
       const formattedDate = format(date, "yyyy-MM-dd");
-      console.log('Date selected:', { date, formattedDate });
+      // Date selected for event
       
       setFormData(prev => ({
         ...prev,
@@ -728,13 +728,7 @@ export function EventForm({
           }
         };
 
-        // Debug log to track state changes
-        console.log('Platform toggle update:', {
-          platform,
-          newPlatforms,
-          updatedFormData: updatedFormData.socialMediaContent
-        });
-
+        // Platform update complete
         return updatedFormData;
       });
 
@@ -845,7 +839,6 @@ export function EventForm({
   const handleSchedule = (date: Date | undefined) => {
     if (date) {
       const formattedDate = format(date, "yyyy-MM-dd");
-      console.log('Schedule date selected:', { date, formattedDate });
       
       setFormData(prev => ({
         ...prev,
@@ -1189,7 +1182,6 @@ export function EventForm({
                 mode="single"
                 selected={formData.date ? new Date(formData.date) : undefined}
                 onSelect={(date) => {
-                  console.log('Date selected in schedule mode:', date);
                   handleDateSelect(date);
                 }}
                 initialFocus
@@ -1750,54 +1742,51 @@ export function EventForm({
             )}
           </div>
 
-          {/* Enhanced action buttons */}
-          <div className="flex justify-between">
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setBulkCreation(prev => ({ ...prev, enabled: !prev.enabled }))}
-              >
-                <Copy className="h-4 w-4 mr-2" />
-                {bulkCreation.enabled ? 'Disable' : 'Enable'} Bulk Creation
-              </Button>
-            </div>
-            
-            <div className="flex gap-4">
+          <div className="flex gap-4 pt-4">
+            {onCancel && (
               <Button
                 type="button"
                 variant="outline"
                 onClick={onCancel}
                 disabled={isSubmitting}
+                className="flex-1"
               >
                 Cancel
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onSubmit?.({ ...formData, status: 'draft' } as CalendarEvent)}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  'Save as Draft'
-                )}
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {mode === 'edit' ? 'Updating...' : 'Creating...'}
-                  </>
-                ) : (
-                  mode === 'edit' ? 'Update Event' : 'Create Event'
-                )}
-              </Button>
-            </div>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setFormData(prev => ({ ...prev, status: 'draft' }));
+                handleSubmit(new Event('submit') as any);
+              }}
+              disabled={isSubmitting}
+              className="flex-1"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save as Draft'
+              )}
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex-1"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {mode === 'edit' ? 'Updating...' : 'Creating...'}
+                </>
+              ) : (
+                mode === 'edit' ? 'Update Event' : 'Create Event'
+              )}
+            </Button>
           </div>
         </>
       ) : null}

@@ -1,20 +1,9 @@
 import React from "react";
-import {
-  Chart as ChartJS,
-  LineElement,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  Tooltip,
-  Legend,
-  Filler
-} from "chart.js";
 import { Line } from "react-chartjs-2";
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
-
-ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend, Filler);
+import BaseChartWidget from './BaseChartWidget';
+import { getBaseChartOptions, createChartDataset, validateChartData } from '@/lib/analytics/chart-theme';
+import { useTheme } from 'next-themes';
+import ChartJS from './ChartSetup';
 
 type LineChartWidgetProps = {
   title: string;
@@ -30,36 +19,57 @@ type LineChartWidgetProps = {
   };
   options?: object;
   isLoading?: boolean;
+  error?: Error | string | null;
   className?: string;
+  onRetry?: () => void;
 };
 
-const LineChartWidget: React.FC<LineChartWidgetProps> = ({ title, data, options, isLoading, className }) => {
-  if (isLoading) {
-    return (
-      <Card className={cn("w-full", className)}>
-        <CardHeader>
-          <Skeleton className="h-6 w-40" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-[200px] w-full" />
-        </CardContent>
-      </Card>
-    );
-  }
+const LineChartWidget: React.FC<LineChartWidgetProps> = ({ title, data, options, isLoading, error, className, onRetry }) => {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
+  // Validate data
+  const dataError = data && !validateChartData(data) ? 'Invalid chart data format' : null;
+  const finalError = error || dataError;
+
+  // Apply consistent theming to data
+  const themedData = data ? {
+    ...data,
+    datasets: data.datasets.map((dataset, index) => 
+      createChartDataset(dataset.label, dataset.data, {
+        colorIndex: index,
+        fill: dataset.fill || false,
+        backgroundColor: dataset.backgroundColor,
+        borderColor: dataset.borderColor,
+      })
+    )
+  } : null;
+
+  // Merge with base theme options
+  const chartOptions = {
+    ...getBaseChartOptions(isDark),
+    ...options,
+    plugins: {
+      ...getBaseChartOptions(isDark).plugins,
+      ...options?.plugins,
+    },
+    elements: {
+      line: {
+        tension: 0.3,
+      },
+    },
+  };
 
   return (
-    <Card className={cn("w-full", className)}>
-      {title && (
-        <CardHeader>
-          <CardTitle className="text-lg font-medium">{title}</CardTitle>
-        </CardHeader>
-      )}
-      <CardContent>
-        <div className="h-[300px] w-full">
-          <Line data={data} options={options} />
-        </div>
-      </CardContent>
-    </Card>
+    <BaseChartWidget
+      title={title}
+      isLoading={isLoading}
+      error={finalError}
+      className={className}
+      onRetry={onRetry}
+    >
+      {themedData && <Line key={`line-${JSON.stringify(themedData.labels)}`} data={themedData} options={chartOptions} />}
+    </BaseChartWidget>
   );
 };
 

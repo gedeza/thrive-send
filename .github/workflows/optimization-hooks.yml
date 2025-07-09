@@ -1,0 +1,339 @@
+name: Code Quality & Optimization Enforcement
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '18'
+  PNPM_VERSION: '8'
+
+jobs:
+  optimization-analysis:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run TypeScript compilation
+        run: pnpm build
+        continue-on-error: false
+
+      - name: Execute optimization gatekeeper
+        run: |
+          chmod +x ./scripts/optimization-gatekeeper.sh
+          ./scripts/optimization-gatekeeper.sh --ci --strict
+        env:
+          CI: true
+          OPTIMIZATION_STRICT: true
+
+      - name: Run optimization hook system
+        run: |
+          node -e "
+            const { OptimizationHookSystem } = require('./src/lib/hooks/optimization-hook-system.ts');
+            const system = OptimizationHookSystem.getInstance();
+            system.analyzeProject().then(results => {
+              console.log('Optimization analysis results:', JSON.stringify(results, null, 2));
+              if (results.violations.filter(v => v.severity === 'error').length > 0) {
+                process.exit(1);
+              }
+            }).catch(err => {
+              console.error('Optimization analysis failed:', err);
+              process.exit(1);
+            });
+          "
+
+      - name: Generate optimization report
+        run: |
+          node -e "
+            const fs = require('fs');
+            const { OptimizationMetrics } = require('./src/lib/hooks/optimization-metrics.ts');
+            const metrics = new OptimizationMetrics();
+            const report = metrics.generateReport();
+            fs.writeFileSync('optimization-report.json', JSON.stringify(report, null, 2));
+            console.log('Optimization report generated');
+          "
+
+      - name: Upload optimization report
+        uses: actions/upload-artifact@v3
+        with:
+          name: optimization-report
+          path: optimization-report.json
+
+      - name: Comment PR with optimization results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            let reportContent = '';
+            try {
+              const report = JSON.parse(fs.readFileSync('optimization-report.json', 'utf8'));
+              reportContent = `
+            ## 🔍 Code Quality Analysis Results
+            
+            **Quality Score:** ${report.qualityScore}/100
+            **Violations Found:** ${report.totalViolations}
+            
+            ### Breakdown by Severity
+            - ❌ **Errors:** ${report.errorCount}
+            - ⚠️ **Warnings:** ${report.warningCount}
+            - 💡 **Suggestions:** ${report.suggestionCount}
+            
+            ### Performance Metrics
+            - **Bundle Size Impact:** ${report.bundleSizeImpact || 'No impact'}
+            - **Security Score:** ${report.securityScore || 'N/A'}/100
+            - **Maintainability Score:** ${report.maintainabilityScore || 'N/A'}/100
+            
+            ${report.errorCount > 0 ? '⚠️ **This PR introduces code quality violations that must be addressed before merging.**' : '✅ **No critical violations found.**'}
+            `;
+            } catch (error) {
+              reportContent = `
+            ## 🔍 Code Quality Analysis
+            
+            ⚠️ Unable to generate detailed report. Please check the workflow logs for details.
+            `;
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: reportContent
+            });
+
+  lint-and-format:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint
+        run: pnpm lint
+
+      - name: Check TypeScript types
+        run: npx tsc --noEmit
+
+  security-scan:
+    name: Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run npm audit
+        run: |
+          npm audit --audit-level=moderate || exit 1
+
+      - name: Run security optimization rules
+        run: |
+          node -e "
+            const { SecurityRules } = require('./src/lib/hooks/optimization-rules.ts');
+            const rules = new SecurityRules();
+            const violations = rules.checkSecurityViolations('./src');
+            if (violations.length > 0) {
+              console.error('Security violations found:', violations);
+              process.exit(1);
+            }
+            console.log('No security violations detected');
+          "
+
+  performance-analysis:
+    name: Performance Impact Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Analyze bundle size
+        run: |
+          pnpm build
+          npx next-bundle-analyzer
+
+      - name: Run performance optimization rules
+        run: |
+          node -e "
+            const { PerformanceRules } = require('./src/lib/hooks/optimization-rules.ts');
+            const rules = new PerformanceRules();
+            const violations = rules.checkPerformanceViolations('./src');
+            if (violations.filter(v => v.severity === 'error').length > 0) {
+              console.error('Critical performance violations found:', violations);
+              process.exit(1);
+            }
+            console.log('Performance analysis complete');
+          "
+
+  integration-test:
+    name: Integration Test with Hooks
+    runs-on: ubuntu-latest
+    needs: [optimization-analysis, lint-and-format]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests with optimization hooks enabled
+        run: |
+          export OPTIMIZATION_HOOKS_ENABLED=true
+          pnpm test
+        env:
+          NODE_ENV: test
+          OPTIMIZATION_HOOKS_ENABLED: true
+
+      - name: Run E2E tests
+        run: pnpm test:e2e
+        env:
+          NODE_ENV: test
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [optimization-analysis, lint-and-format, security-scan, performance-analysis, integration-test]
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build application
+        run: pnpm build
+        env:
+          NODE_ENV: production
+          OPTIMIZATION_HOOKS_ENABLED: true
+
+      - name: Deploy to staging
+        run: |
+          echo "Deploying to staging environment..."
+          # Add your deployment commands here
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [optimization-analysis, lint-and-format, security-scan, performance-analysis, integration-test]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Final optimization check
+        run: |
+          chmod +x ./scripts/optimization-gatekeeper.sh
+          ./scripts/optimization-gatekeeper.sh --production --strict
+        env:
+          NODE_ENV: production
+          OPTIMIZATION_STRICT: true
+
+      - name: Build for production
+        run: pnpm build
+        env:
+          NODE_ENV: production
+          OPTIMIZATION_HOOKS_ENABLED: true
+
+      - name: Deploy to production
+        run: |
+          echo "Deploying to production environment..."
+          # Add your production deployment commands here

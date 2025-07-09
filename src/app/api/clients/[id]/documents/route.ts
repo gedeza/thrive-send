@@ -77,11 +77,27 @@ export async function POST(
       return new NextResponse('File is required', { status: 400 });
     }
 
-    // TODO: Implement file upload to storage service (e.g., S3)
-    // For now, we'll just simulate it
-    const fileUrl = 'https://example.com/files/' + file.name;
+    // Implement basic file upload to local storage
+    // In production, this should be replaced with cloud storage (S3, etc.)
+    const fileName = `${Date.now()}-${file.name}`;
     const fileType = file.name.split('.').pop() || '';
     const size = file.size;
+
+    // Create uploads directory if it doesn't exist
+    const uploadDir = './public/uploads';
+    const fs = require('fs');
+    const path = require('path');
+    
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    // Save file to local storage
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const filePath = path.join(uploadDir, fileName);
+    fs.writeFileSync(filePath, buffer);
+
+    const fileUrl = `/uploads/${fileName}`;
 
     try {
       // Create document record

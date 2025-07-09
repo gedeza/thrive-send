@@ -61,32 +61,35 @@ export function ActivityFeed({ activities: initialActivities }: ActivityFeedProp
 
   const [activities, setActivities] = useState<Activity[]>(initialActivities)
   const [filter, setFilter] = useState<Activity["type"] | "all">("all")
+  const [loading, setLoading] = useState(false)
 
-  // Simulate real-time updates
+  // Fetch real activity data from API
   useEffect(() => {
-    try {
-      const interval = setInterval(() => {
-        setActivities((prev) => {
-          try {
-            const newActivity = {
-              id: Math.random().toString(),
-              type: ["campaign", "email", "user", "system"][Math.floor(Math.random() * 4)] as Activity["type"],
-              title: "New Activity",
-              description: "This is a simulated real-time update",
-              timestamp: new Date().toISOString(),
-            }
-            return [newActivity, ...prev].slice(0, 10)
-          } catch (error) {
-            handleError(error)
-            return prev
+    const fetchActivities = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/activity')
+        if (response.ok) {
+          const data = await response.json()
+          if (data.activities && Array.isArray(data.activities)) {
+            setActivities(data.activities)
           }
-        })
-      }, 30000) // Add new activity every 30 seconds
-
-      return () => clearInterval(interval)
-    } catch (error) {
-      handleError(error)
+        } else {
+          console.warn('Failed to fetch activities:', response.statusText)
+        }
+      } catch (error) {
+        handleError(error)
+        console.error('Error fetching activities:', error)
+      } finally {
+        setLoading(false)
+      }
     }
+
+    fetchActivities()
+
+    // Set up periodic refresh for real-time updates - INCREASED to 15 minutes to reduce API load
+    const interval = setInterval(fetchActivities, 900000) // Refresh every 15 minutes
+    return () => clearInterval(interval)
   }, [handleError])
 
   const filteredActivities = filter === "all" 
@@ -125,6 +128,24 @@ export function ActivityFeed({ activities: initialActivities }: ActivityFeedProp
             >
               Try Again
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (loading && activities.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Activity Feed</CardTitle>
+          <CardDescription>
+            Real-time updates from your campaigns
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center p-8">
+            <div className="text-sm text-muted-foreground">Loading activities...</div>
           </div>
         </CardContent>
       </Card>

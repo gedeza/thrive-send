@@ -1,0 +1,24 @@
+sequenceDiagram
+    participant App as Application
+    participant Provider as OnboardingProvider
+    participant API as Backend API
+    participant Component as Consumer Component
+    
+    App->>Provider: Initialize with defaultSteps
+    Provider->>API: GET /api/user/onboarding-status
+    API-->>Provider: Return user onboarding data
+    Provider->>Provider: Update state with API response
+    
+    Component->>Provider: useOnboarding()
+    Provider-->>Component: Return context value
+    
+    Component->>Provider: completeStep(stepId)
+    Provider->>Provider: Update local state
+    Provider->>API: POST /api/user/onboarding-status
+    API-->>Provider: Confirm update
+    Provider->>Provider: Check if all required steps complete
+    
+    alt All required steps completed
+        Provider->>Provider: Set isWelcomeFlowOpen = false
+        Provider->>Component: Trigger toast notification
+    end

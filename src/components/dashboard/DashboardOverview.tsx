@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { Users, Mail, BarChart2, MousePointerClick, CheckCircle2, Clock, ChevronDown, ChevronUp } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Line } from "react-chartjs-2"
 import { ErrorBoundary } from "@/components/error/ErrorBoundary"
 import { useErrorHandler } from "@/hooks/useErrorHandler"
+import { useDashboardData } from "@/hooks/useDashboardData"
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -301,6 +302,19 @@ export function RecentCampaigns({ campaigns }: { campaigns: { name: string, stat
   }
 }
 
+// Safe version of RecentContent with error handling
+const SafeRecentContent: React.FC<{ content: { title: string, status: string, createdAt: string }[], loading?: boolean }> = (props) => (
+  <ErrorBoundary
+    fallback={
+      <div className="bg-card rounded-xl shadow p-6">
+        <div className="text-sm text-muted-foreground">Failed to load content</div>
+      </div>
+    }
+  >
+    <RecentContent {...props} />
+  </ErrorBoundary>
+)
+
 // Safe version of RecentSubscribers with error handling
 const SafeRecentSubscribers: React.FC<{ subscribers: { email: string, joinedAt: string }[] }> = (props) => (
   <ErrorBoundary
@@ -313,6 +327,99 @@ const SafeRecentSubscribers: React.FC<{ subscribers: { email: string, joinedAt: 
     <RecentSubscribers {...props} />
   </ErrorBoundary>
 )
+
+// --- Recent Content List with search and filtering  
+export function RecentContent({ content }: { content: { title: string, status: string, createdAt: string }[], loading?: boolean }) {
+  const { error, handleError } = useErrorHandler({
+    fallbackMessage: 'Failed to load content',
+  });
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+
+  try {
+    const filteredContent = content.filter(c => 
+      c.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      (filterStatus === 'all' || c.status === filterStatus)
+    );
+
+    if (error.hasError) {
+      return (
+        <div className="bg-card rounded-xl shadow p-6">
+          <div className="text-sm text-muted-foreground">{error.message}</div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="bg-card rounded-xl shadow p-6" role="region" aria-label="Recent Content">
+        <div className="flex justify-between items-center mb-4">
+          <div className="font-semibold text-[var(--color-chart-purple)]">Recent Content</div>
+          <div className="flex gap-2">
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="Draft">Draft</SelectItem>
+                <SelectItem value="Published">Published</SelectItem>
+                <SelectItem value="Review">In Review</SelectItem>
+              </SelectContent>
+            </Select>
+            <input
+              type="search"
+              placeholder="Search content..."
+              className="px-3 py-1 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-chart-purple)]"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label="Search content"
+            />
+          </div>
+        </div>
+        <ul className="space-y-2" role="list">
+          {filteredContent.slice(0, 5).map((c, i) => (
+            <motion.li
+              key={i}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className="flex justify-between items-center border-b border-neutral-200 dark:border-neutral-800 py-2"
+            >
+              <span className="font-medium text-neutral-800 dark:text-neutral-100 truncate">{c.title}</span>
+              <div className="flex items-center gap-2">
+                <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
+                  c.status === 'Published' ? 'bg-[var(--activity-success)]/10 text-[var(--activity-success)]' :
+                  c.status === 'Draft' ? 'bg-[var(--activity-warning)]/10 text-[var(--activity-warning)]' :
+                  'bg-[var(--activity-info)]/10 text-[var(--activity-info)]'
+                }`}>
+                  {c.status}
+                </span>
+                <span className="text-xs text-neutral-500 dark:text-neutral-400">{c.createdAt}</span>
+              </div>
+            </motion.li>
+          ))}
+        </ul>
+        <div className="mt-3 text-right">
+          <a 
+            href="/content" 
+            className="text-[var(--color-chart-blue)] hover:text-[var(--color-chart-green)] text-sm transition-colors"
+            aria-label="View all content"
+          >
+            View all
+          </a>
+        </div>
+      </div>
+    );
+  } catch (error) {
+    handleError(error);
+    return (
+      <div className="bg-card rounded-xl shadow p-6">
+        <div className="text-sm text-muted-foreground">Failed to load content</div>
+      </div>
+    );
+  }
+}
 
 // --- Recent Subscribers List with search and pagination
 export function RecentSubscribers({ subscribers }: { subscribers: { email: string, joinedAt: string }[] }) {
@@ -522,50 +629,47 @@ export function DashboardOverview({ dateRange, customRange }: DashboardOverviewP
     fallbackMessage: 'Failed to load dashboard data',
   });
 
-  // Demo data, integrate with backend/schema later
-  const metrics = [
-    { title: "Active Campaigns", value: 5, change: "+8%" },
-    { title: "Total Subscribers", value: 1820, change: "+20" },
-    { title: "Open Rate", value: "45%", change: "+3%" },
-    { title: "Click Rate", value: "12%", change: null },
-  ];
+  // Use React Query for efficient data fetching and caching
+  const { data: dashboardData, isLoading, isError, error: queryError } = useDashboardData(
+    dateRange, 
+    customRange
+  );
 
-  // Generate data based on date range
-  const getDataForRange = (range: '1d' | '7d' | '30d' | 'custom', custom?: { from: string; to: string } | null) => {
-    try {
-      if (range === '1d') return [Math.floor(Math.random() * 50) + 10];
-      if (range === '7d') return Array.from({ length: 7 }, () => Math.floor(Math.random() * 50) + 10);
-      if (range === '30d') return Array.from({ length: 30 }, () => Math.floor(Math.random() * 50) + 10);
-      if (range === 'custom' && custom && custom.from && custom.to) {
-        const fromDate = new Date(custom.from);
-        const toDate = new Date(custom.to);
-        const days = Math.max(1, Math.floor((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
-        return Array.from({ length: days }, () => Math.floor(Math.random() * 50) + 10);
-      }
-      return Array.from({ length: 7 }, () => Math.floor(Math.random() * 50) + 10);
-    } catch (error) {
-      handleError(error);
-      return Array.from({ length: 7 }, () => 0);
+  // Memoize computed values to prevent unnecessary re-renders
+  const metrics = useMemo(() => {
+    const analytics = dashboardData?.analytics?.data;
+    return [
+      { title: "Total Content", value: analytics?.summary?.totalContent || 0, change: "—" },
+      { title: "Published Content", value: analytics?.summary?.publishedContent || 0, change: "—" },
+      { title: "Publish Rate", value: `${analytics?.summary?.publishRate || 0}%`, change: "—" },
+      { title: "Active Campaigns", value: analytics?.summary?.activeCampaigns || 0, change: "—" },
+    ];
+  }, [dashboardData]);
+
+  const growthData = useMemo(() => {
+    return dashboardData?.analytics?.data?.timeSeriesData?.datasets?.[0]?.data || [];
+  }, [dashboardData]);
+
+  const campaigns = useMemo(() => {
+    return dashboardData?.campaigns || [];
+  }, [dashboardData]);
+
+  const recentContent = useMemo(() => {
+    return dashboardData?.content || [];
+  }, [dashboardData]);
+
+  // Handle React Query errors
+  useEffect(() => {
+    if (isError && queryError) {
+      handleError(queryError);
     }
-  };
+  }, [isError, queryError, handleError]);
 
-  const growthData = getDataForRange(dateRange, customRange);
-  const campaigns = [
-    { name: "Spring Sale", status: "Sent", sentAt: "2024-06-01" },
-    { name: "Newsletter May", status: "Draft", sentAt: "—" },
-    { name: "Beta Invite", status: "Sent", sentAt: "2024-05-27" },
-  ];
-  const subscribers = [
-    { email: "alice@email.com", joinedAt: "2024-06-01" },
-    { email: "bob@email.com", joinedAt: "2024-05-30" },
-    { email: "chris@email.com", joinedAt: "2024-05-29" },
-  ];
-
-  if (error.hasError) {
+  if (error.hasError || isError) {
     return (
       <div className="space-y-8 bg-transparent">
         <div className="bg-card rounded-xl shadow p-6">
-          <div className="text-destructive mb-4">{error.message}</div>
+          <div className="text-destructive mb-4">{error.message || 'Failed to load dashboard data'}</div>
           <Button onClick={resetError}>Try Again</Button>
         </div>
       </div>
@@ -611,8 +715,8 @@ export function DashboardOverview({ dateRange, customRange }: DashboardOverviewP
       </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <SafeRecentCampaigns campaigns={campaigns} />
-        <SafeRecentSubscribers subscribers={subscribers} />
+        <SafeRecentCampaigns campaigns={campaigns} loading={isLoading} />
+        <SafeRecentContent content={recentContent} loading={isLoading} />
       </div>
     </div>
   );

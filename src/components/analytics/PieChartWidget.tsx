@@ -1,16 +1,9 @@
 import React from "react";
-import {
-  Chart as ChartJS,
-  ArcElement,
-  Tooltip,
-  Legend
-} from "chart.js";
 import { Pie } from "react-chartjs-2";
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
-
-ChartJS.register(ArcElement, Tooltip, Legend);
+import BaseChartWidget from './BaseChartWidget';
+import { getBaseChartOptions, getChartColors, validateChartData } from '@/lib/analytics/chart-theme';
+import { useTheme } from 'next-themes';
+import ChartJS from './ChartSetup';
 
 type PieChartWidgetProps = {
   title: string;
@@ -20,36 +13,57 @@ type PieChartWidgetProps = {
   };
   options?: object;
   isLoading?: boolean;
+  error?: Error | string | null;
   className?: string;
+  onRetry?: () => void;
 };
 
-const PieChartWidget: React.FC<PieChartWidgetProps> = ({ title, data, options, isLoading, className }) => {
-  if (isLoading) {
-    return (
-      <Card className={cn("w-full", className)}>
-        <CardHeader>
-          <Skeleton className="h-6 w-40" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-[200px] w-full" />
-        </CardContent>
-      </Card>
-    );
-  }
+const PieChartWidget: React.FC<PieChartWidgetProps> = ({ title, data, options, isLoading, error, className, onRetry }) => {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
+  // Validate data
+  const dataError = data && !validateChartData(data) ? 'Invalid chart data format' : null;
+  const finalError = error || dataError;
+
+  // Apply consistent theming to data
+  const themedData = data ? {
+    ...data,
+    datasets: data.datasets.map((dataset) => ({
+      ...dataset,
+      backgroundColor: dataset.backgroundColor || getChartColors(data.labels.length),
+      borderColor: '#ffffff',
+      borderWidth: 2,
+      hoverBorderWidth: 3,
+      hoverOffset: 4,
+    }))
+  } : null;
+
+  // Merge with base theme options
+  const chartOptions = {
+    ...getBaseChartOptions(isDark),
+    ...options,
+    plugins: {
+      ...getBaseChartOptions(isDark).plugins,
+      ...options?.plugins,
+      legend: {
+        ...getBaseChartOptions(isDark).plugins.legend,
+        position: 'bottom' as const,
+        ...options?.plugins?.legend,
+      },
+    },
+  };
 
   return (
-    <Card className={cn("w-full", className)}>
-      {title && (
-        <CardHeader>
-          <CardTitle className="text-lg font-medium">{title}</CardTitle>
-        </CardHeader>
-      )}
-      <CardContent>
-        <div className="h-[300px] w-full">
-          <Pie data={data} options={options} />
-        </div>
-      </CardContent>
-    </Card>
+    <BaseChartWidget
+      title={title}
+      isLoading={isLoading}
+      error={finalError}
+      className={className}
+      onRetry={onRetry}
+    >
+      {themedData && <Pie key={`pie-${JSON.stringify(themedData.labels)}`} data={themedData} options={chartOptions} />}
+    </BaseChartWidget>
   );
 };
 

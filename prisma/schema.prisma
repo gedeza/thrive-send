@@ -254,11 +254,21 @@ model Analytics {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   campaignId        String?
+  // Add missing fields required by metrics API
+  views             Int       @default(0)
+  shares            Int       @default(0)
+  likes             Int       @default(0)
+  comments          Int       @default(0)
+  clicks            Int       @default(0)
+  openRate          Float     @default(0)
+  clickRate         Float     @default(0)
+  bounceRate        Float     @default(0)
   campaign          Campaign? @relation(fields: [campaignId], references: [id])
   client            Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
   @@index([campaignId])
+  @@index([createdAt])
 }
 
 model Subscription {

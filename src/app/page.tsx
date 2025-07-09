@@ -11,7 +11,5 @@ export default async function Home() {
   }
   
   // If user is authenticated, redirect to dashboard
-  // Use the dashboard directly without redirecting
-  // Let the (dashboard) layout handle the rendering
-  return null;
+  redirect('/dashboard');
 }

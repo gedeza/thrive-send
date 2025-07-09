@@ -148,7 +148,7 @@ export async function POST(request: Request) {
     // If user doesn't exist in our database, create them
     // This handles cases where the webhook might not have fired or failed
     if (!user) {
-      console.log('User not found in database, attempting to create:', clerkId);
+      
       
       try {
         // We'll create a minimal user record - this should ideally be handled by webhooks
@@ -162,7 +162,7 @@ export async function POST(request: Request) {
             role: 'CONTENT_CREATOR', // Default role
           }
         });
-        console.log('Created fallback user record:', user.id);
+        
       } catch (createError) {
         console.error('Failed to create fallback user:', createError);
         return NextResponse.json({ 
@@ -173,7 +173,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    console.log('API received body:', body);
+    
     
     try {
       // Transform the request body to use uppercase enum values
@@ -184,7 +184,7 @@ export async function POST(request: Request) {
       };
       
       const validatedData = contentSchema.parse(transformedBody);
-      console.log('Validation successful:', validatedData);
+      
 
       try {
         // Generate slug from title if not provided
@@ -227,7 +227,7 @@ export async function POST(request: Request) {
                   contentListId: contentListId,
                 }
               });
-              console.log(`Content ${newContent.id} associated with list ${contentListId}`);
+              
             } catch (listError) {
               console.error('Error associating content with list:', listError);
               // Continue with content creation even if list association fails
@@ -237,7 +237,7 @@ export async function POST(request: Request) {
           return newContent;
         });
 
-        console.log('Content created successfully:', content);
+        
         return NextResponse.json(content);
       } catch (prismaError) {
         console.error('Prisma error details:', prismaError);

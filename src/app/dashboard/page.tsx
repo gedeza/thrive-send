@@ -54,63 +54,26 @@ const defaultMetrics = [
   },
 ];
 
-const chartData = [
-  { date: "2024-01", value: 400 },
-  { date: "2024-02", value: 300 },
-  { date: "2024-03", value: 600 },
-  { date: "2024-04", value: 800 },
-  { date: "2024-05", value: 700 },
-  { date: "2024-06", value: 900 },
+// Default fallback data for when API is unavailable
+const defaultChartData = [
+  { date: "No data", value: 0 },
 ]
 
-const activities: Activity[] = [
+const defaultActivities: Activity[] = [
   {
-    id: "1",
-    type: "campaign",
-    title: "New Campaign Created",
-    description: "Spring Sale Campaign was created",
-    timestamp: "2024-06-01T10:00:00Z",
-    user: {
-      id: "user1",
-      name: "John Doe",
-      image: "https://github.com/shadcn.png",
-    },
-    status: "published"
-  },
-  {
-    id: "2",
-    type: "email",
-    title: "Email Sent",
-    description: "Newsletter was sent to 1,000 subscribers",
-    timestamp: "2024-06-01T09:30:00Z",
-    status: "sent",
-    recipientCount: 1000
-  },
-  {
-    id: "3",
-    type: "user",
-    title: "New User Joined",
-    description: "Sarah Smith joined the organization",
-    timestamp: "2024-06-01T09:00:00Z",
-    user: {
-      id: "user2",
-      name: "Sarah Smith",
-    },
-    action: "joined"
-  },
-  {
-    id: "4",
+    id: "default",
     type: "system",
-    title: "System Update",
-    description: "System maintenance completed successfully",
-    timestamp: "2024-06-01T08:30:00Z",
-    severity: "info"
+    title: "No activities available",
+    description: "No recent activities to display",
+    timestamp: new Date().toISOString(),
   },
 ];
 
 export default function DashboardHomePage() {
   const router = useRouter();
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  const [chartData, setChartData] = useState(defaultChartData);
+  const [activities, setActivities] = useState<Activity[]>(defaultActivities);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange>(() => {
@@ -124,10 +87,63 @@ export default function DashboardHomePage() {
   });
 
   useEffect(() => {
-    // Set default data instead of using SSE
-    setAnalyticsData({ metrics: defaultMetrics, timestamp: new Date().toISOString() });
-    setIsLoading(false);
-  }, []);
+    const fetchDashboardData = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Fetch analytics data
+        const analyticsResponse = await fetch('/api/analytics', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (analyticsResponse.ok) {
+          const analyticsData = await analyticsResponse.json();
+          setAnalyticsData({ 
+            metrics: analyticsData.metrics, 
+            timestamp: new Date().toISOString() 
+          });
+          
+          // Use time series data for chart if available
+          if (analyticsData.timeSeriesData?.datasets?.[0]?.data && analyticsData.timeSeriesData?.labels) {
+            const chartDataFormatted = analyticsData.timeSeriesData.labels.map((label: string, index: number) => ({
+              date: label,
+              value: analyticsData.timeSeriesData.datasets[0].data[index] || 0
+            }));
+            setChartData(chartDataFormatted);
+          }
+        } else {
+          console.warn('Failed to fetch analytics data');
+          setAnalyticsData({ metrics: defaultMetrics, timestamp: new Date().toISOString() });
+        }
+
+        // Fetch activities data
+        const activitiesResponse = await fetch('/api/activity');
+        if (activitiesResponse.ok) {
+          const activitiesData = await activitiesResponse.json();
+          if (activitiesData.activities && Array.isArray(activitiesData.activities)) {
+            setActivities(activitiesData.activities);
+          }
+        } else {
+          console.warn('Failed to fetch activities data');
+        }
+
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
+        // Fallback to default data if API fails
+        setAnalyticsData({ metrics: defaultMetrics, timestamp: new Date().toISOString() });
+        setChartData(defaultChartData);
+        setActivities(defaultActivities);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [dateRange]);
 
   return (
     <div className="flex-1 space-y-8 p-8 pt-6 bg-neutral-background">
@@ -135,6 +151,13 @@ export default function DashboardHomePage() {
       <div className="mb-4">
         <DateFilter value={dateRange} onChange={setDateRange} />
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          {error}
+        </div>
+      )}
 
       {/* Dashboard Overview Section */}
       <DashboardOverview dateRange="7d" />

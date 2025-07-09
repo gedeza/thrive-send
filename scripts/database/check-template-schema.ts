@@ -30,7 +30,7 @@ async function checkTemplateSchema() {
         status: true,
         content: true,
         createdAt: true,
-        updatedAt: true,
+        lastUpdated: true,
         authorId: true,
         organizationId: true,
         previewImage: true,
@@ -48,10 +48,12 @@ async function checkTemplateSchema() {
     console.log("Creating a test template...");
     const testTemplate = await prisma.template.create({
       data: {
+        id: "test-template-" + Date.now(),
         name: "Test Template",
         description: "This is a test template created by the schema checker",
         category: "Email",
         status: "DRAFT",
+        lastUpdated: new Date(),
         content: JSON.stringify([
           {
             id: "header-123",
@@ -66,7 +68,7 @@ async function checkTemplateSchema() {
         ]),
         // Note: You'll need to provide valid authorId and organizationId that exist in your database
         authorId: "PLACEHOLDER_AUTHOR_ID", // Replace with valid ID from your Users table
-        organizationId: "PLACEHOLDER_ORG_ID", // Replace with valid ID from your Organization table
+        organizationId: "PLACEHOLDER_ORG_ID" // Replace with valid ID from your Organization table
       }
     });
     
