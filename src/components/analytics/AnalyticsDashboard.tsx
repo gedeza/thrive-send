@@ -48,12 +48,26 @@ export function AnalyticsDashboard() {
   const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange>(timeRanges[0]);
   const [selectedPlatform, setSelectedPlatform] = useState<string>('all');
 
-  const { data: analyticsData, isLoading } = useQuery<AnalyticsData[]>({
+  const { data: rawAnalyticsData, isLoading } = useQuery({
     queryKey: ['analytics', selectedTimeRange.value, selectedPlatform],
     queryFn: async () => {
-      const response = await fetch(
-        `/api/analytics/overview?timeRange=${selectedTimeRange.value}&platform=${selectedPlatform}`
-      );
+      const response = await fetch('/api/analytics/unified-simple', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          include: {
+            metrics: true,
+            overview: true,
+            engagement: true,
+            audience: true,
+            performance: true
+          },
+          timeframe: selectedTimeRange.value,
+          platform: selectedPlatform
+        })
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch analytics data');
       }
@@ -61,16 +75,19 @@ export function AnalyticsDashboard() {
     },
   });
 
-  const totalViews = analyticsData?.reduce((sum, data) => sum + data.metrics.views, 0) ?? 0;
-  const totalEngagement = analyticsData?.reduce(
-    (sum, data) =>
-      sum +
-      data.metrics.engagement.likes +
-      data.metrics.engagement.shares +
-      data.metrics.engagement.comments,
-    0
-  ) ?? 0;
-  const totalReach = analyticsData?.reduce((sum, data) => sum + data.metrics.reach, 0) ?? 0;
+  // Process the unified-simple API response
+  const analyticsData = rawAnalyticsData?.data;
+  
+  // Extract metrics from the unified response
+  const totalViews = analyticsData?.overview?.totalViews || 0;
+  const totalEngagement = analyticsData?.overview?.totalEngagement || 0;
+  const totalReach = analyticsData?.overview?.totalViews || 0; // Using views as reach fallback
+  
+  // Transform engagement data for Recharts
+  const engagementChartData = analyticsData?.engagement?.labels?.map((label: string, index: number) => ({
+    day: label,
+    engagement: analyticsData.engagement.datasets[0]?.data[index] || 0
+  })) || [];
 
   if (isLoading) {
     return (
@@ -152,14 +169,11 @@ export function AnalyticsDashboard() {
         <div className="h-96 w-full" style={{ minWidth: '500px' }}>
           <ResponsiveContainer width="100%" height="100%" aspect={2}>
             <LineChart
-              data={analyticsData?.map((data) => ({
-                date: format(new Date(data.metrics.timestamp), 'MMM d'),
-                views: data.metrics.views,
-                engagement:
-                  data.metrics.engagement.likes +
-                  data.metrics.engagement.shares +
-                  data.metrics.engagement.comments,
-                reach: data.metrics.reach,
+              data={engagementChartData.map((data, index) => ({
+                date: data.day,
+                views: analyticsData?.performance?.datasets[0]?.data[index] || 0,
+                engagement: data.engagement,
+                reach: analyticsData?.performance?.datasets[0]?.data[index] || 0,
               }))}
             >
               <CartesianGrid strokeDasharray="3 3" />
