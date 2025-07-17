@@ -103,42 +103,45 @@ export function TemplateSelector({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            Choose a Template
-          </DialogTitle>
-          <DialogDescription>
-            Start with a pre-built template to speed up your content creation, or start from scratch.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-4xl max-w-[95vw] max-h-[90vh] overflow-hidden flex flex-col gap-0 p-0">
+        <div className="px-6 pt-6 pb-2 border-b border-border/10 flex-shrink-0">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Choose a Template
+            </DialogTitle>
+            <DialogDescription>
+              Start with a pre-built template to speed up your content creation, or start from scratch.
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-        <div className="flex-1 flex flex-col gap-4 min-h-0">
+        <div className="flex-1 flex flex-col gap-4 min-h-0 px-6 pb-6">
           {/* Search and filters */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 pt-4 flex-shrink-0">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search templates..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 h-10 sm:h-9"
               />
             </div>
             <Button
               onClick={handleStartFromScratch}
               variant="outline"
-              className="whitespace-nowrap"
+              className="whitespace-nowrap h-10 sm:h-9"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Start from Scratch
+              <span className="hidden sm:inline">Start from Scratch</span>
+              <span className="sm:hidden">Start Fresh</span>
             </Button>
           </div>
 
           {/* Category tabs */}
           <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="flex-1 flex flex-col min-h-0">
-            <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
+            <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 flex-shrink-0">
               <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
               {TEMPLATE_CATEGORIES.map(category => (
                 <TabsTrigger key={category.id} value={category.id} className="text-xs">
@@ -148,9 +151,9 @@ export function TemplateSelector({
               ))}
             </TabsList>
 
-            <TabsContent value="all" className="flex-1 mt-4">
+            <TabsContent value="all" className="flex-1 mt-4 overflow-hidden">
               <ScrollArea className="h-full">
-                <div className="space-y-6">
+                <div className="space-y-6 pr-4">
                   {Object.entries(templatesByCategory).map(([categoryId, templates]) => {
                     const category = TEMPLATE_CATEGORIES.find(c => c.id === categoryId);
                     if (!category || templates.length === 0) return null;
@@ -164,7 +167,7 @@ export function TemplateSelector({
                             {templates.length}
                           </Badge>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                           {templates.map(template => (
                             <TemplateCard
                               key={template.id}
@@ -181,15 +184,15 @@ export function TemplateSelector({
             </TabsContent>
 
             {TEMPLATE_CATEGORIES.map(category => (
-              <TabsContent key={category.id} value={category.id} className="flex-1 mt-4">
+              <TabsContent key={category.id} value={category.id} className="flex-1 mt-4 overflow-hidden">
                 <ScrollArea className="h-full">
-                  <div className="space-y-4">
+                  <div className="space-y-4 pr-4">
                     <div className="text-center p-4 bg-muted/30 rounded-lg">
                       <div className="text-2xl mb-2">{category.icon}</div>
                       <h3 className="font-semibold mb-1">{category.name}</h3>
                       <p className="text-sm text-muted-foreground">{category.description}</p>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                       {getTemplatesByCategory(category.id as any).map(template => (
                         <TemplateCard
                           key={template.id}
@@ -216,27 +219,28 @@ interface TemplateCardProps {
 
 function TemplateCard({ template, onSelect }: TemplateCardProps) {
   return (
-    <Card className="cursor-pointer hover:shadow-md transition-shadow group" onClick={onSelect}>
-      <CardHeader className="pb-3">
+    <Card className="cursor-pointer hover:shadow-md transition-shadow group touch-manipulation" onClick={onSelect}>
+      <CardHeader className="pb-3 p-3 sm:p-6">
         <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">{template.icon}</span>
-            <div>
-              <CardTitle className="text-sm">{template.name}</CardTitle>
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <span className="text-lg flex-shrink-0">{template.icon}</span>
+            <div className="min-w-0 flex-1">
+              <CardTitle className="text-sm truncate">{template.name}</CardTitle>
               <Badge variant="outline" className="text-xs mt-1">
                 {template.type}
               </Badge>
             </div>
           </div>
           {template.defaultDuration && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0 ml-2">
               <Clock className="h-3 w-3" />
-              {template.defaultDuration}m
+              <span className="hidden sm:inline">{template.defaultDuration}m</span>
+              <span className="sm:hidden">{template.defaultDuration}'</span>
             </div>
           )}
         </div>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="pt-0 p-3 sm:p-6 sm:pt-0">
         <CardDescription className="text-xs line-clamp-2 mb-3">
           {template.description}
         </CardDescription>
@@ -254,7 +258,8 @@ function TemplateCard({ template, onSelect }: TemplateCardProps) {
           )}
         </div>
         <div className="mt-3 text-xs text-muted-foreground group-hover:text-primary transition-colors">
-          Click to use this template
+          <span className="hidden sm:inline">Click to use this template</span>
+          <span className="sm:hidden">Tap to use</span>
         </div>
       </CardContent>
     </Card>
