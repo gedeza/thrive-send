@@ -9,10 +9,24 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { toast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { CalendarIcon, Loader2 } from 'lucide-react';
+import { 
+  CalendarIcon, 
+  Loader2, 
+  ArrowRight, 
+  ArrowLeft, 
+  Target, 
+  Calendar as CalendarIconSolid,
+  DollarSign,
+  Settings,
+  Check,
+  Info,
+  Lightbulb
+} from 'lucide-react';
 import { createCampaign } from '@/lib/api';
 import { CampaignStatus, CampaignGoalType, ScheduleFrequency } from '@prisma/client';
 import { useOrganization } from '@clerk/nextjs';
@@ -49,13 +63,60 @@ const campaignFormSchema = z.object({
 
 type CampaignFormData = z.infer<typeof campaignFormSchema>;
 
-// --- Component Styles ---
-// Using Tailwind CSS classes instead of styled-components
+// --- Multi-Step Wizard Configuration ---
+const WIZARD_STEPS = [
+  {
+    id: 'basics',
+    title: 'Campaign Basics',
+    description: 'Give your campaign a name and description',
+    icon: Target,
+    fields: ['name', 'description']
+  },
+  {
+    id: 'goals',
+    title: 'Goals & Objectives',
+    description: 'Define what you want to achieve',
+    icon: Target,
+    fields: ['goalType', 'customGoal']
+  },
+  {
+    id: 'schedule',
+    title: 'Timeline & Schedule',
+    description: 'Set when your campaign will run',
+    icon: CalendarIconSolid,
+    fields: ['startDate', 'endDate', 'scheduleFrequency', 'timezone']
+  },
+  {
+    id: 'budget',
+    title: 'Budget & Settings',
+    description: 'Configure budget and final settings',
+    icon: DollarSign,
+    fields: ['budget', 'status']
+  }
+];
+
+// --- Smart Defaults ---
+const SMART_DEFAULTS = {
+  status: CampaignStatus.draft,
+  goalType: CampaignGoalType.ENGAGEMENT,
+  scheduleFrequency: ScheduleFrequency.ONCE,
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+};
+
+// --- Goal Type Descriptions ---
+const GOAL_TYPE_DESCRIPTIONS = {
+  [CampaignGoalType.AWARENESS]: 'Increase brand visibility and reach new audiences',
+  [CampaignGoalType.ENGAGEMENT]: 'Drive interactions, likes, shares, and comments',
+  [CampaignGoalType.CONVERSION]: 'Generate leads, sales, or specific actions',
+  [CampaignGoalType.RETENTION]: 'Keep existing customers engaged and loyal'
+};
 
 const CreateCampaign: React.FC = () => {
   const { organization } = useOrganization();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [currentStep, setCurrentStep] = useState(0);
+  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -72,14 +133,14 @@ const CreateCampaign: React.FC = () => {
       startDate: '',
       endDate: '',
       budget: '',
-      goalType: CampaignGoalType.ENGAGEMENT,
+      goalType: SMART_DEFAULTS.goalType,
       customGoal: null,
-      status: CampaignStatus.draft,
+      status: SMART_DEFAULTS.status,
       organizationId: organization?.id || '',
       clientId: '',
       projectId: '',
-      scheduleFrequency: ScheduleFrequency.ONCE,
-      timezone: 'UTC'
+      scheduleFrequency: SMART_DEFAULTS.scheduleFrequency,
+      timezone: SMART_DEFAULTS.timezone
     }
   });
 
@@ -88,6 +149,50 @@ const CreateCampaign: React.FC = () => {
       form.setValue('organizationId', organization.id);
     }
   }, [organization?.id, form]);
+
+  // Calculate progress
+  const totalSteps = WIZARD_STEPS.length;
+  const progressPercentage = ((currentStep + 1) / totalSteps) * 100;
+
+  // Check if current step is valid
+  const isCurrentStepValid = () => {
+    const currentStepConfig = WIZARD_STEPS[currentStep];
+    const fieldValues = form.getValues();
+    
+    return currentStepConfig.fields.every(field => {
+      const value = fieldValues[field as keyof CampaignFormData];
+      return value !== '' && value !== null && value !== undefined;
+    });
+  };
+
+  // Move to next step
+  const nextStep = () => {
+    if (isCurrentStepValid()) {
+      setCompletedSteps(prev => [...prev, currentStep]);
+      setCurrentStep(prev => Math.min(prev + 1, totalSteps - 1));
+    }
+  };
+
+  // Move to previous step
+  const prevStep = () => {
+    setCurrentStep(prev => Math.max(prev - 1, 0));
+  };
+
+  // Generate smart suggestions based on context
+  const generateSuggestions = () => {
+    const orgName = organization?.name || 'Your Organization';
+    const currentDate = new Date();
+    const nextWeek = new Date(currentDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+    
+    return {
+      name: `${orgName} Marketing Campaign ${format(currentDate, 'MMM yyyy')}`,
+      startDate: format(nextWeek, 'yyyy-MM-dd'),
+      endDate: format(new Date(nextWeek.getTime() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
+      budget: '5000'
+    };
+  };
+
+  const suggestions = generateSuggestions();
 
   const onSubmit = async (data: CampaignFormData) => {
     setIsSubmitting(true);
@@ -167,295 +272,499 @@ const CreateCampaign: React.FC = () => {
     }
   };
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <Card className="p-6 md:p-8 shadow-lg rounded-lg">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-2xl font-semibold">
-                Create New Campaign
-              </CardTitle>
-              <p className="text-muted-foreground">
-                Fill out the details below to create a new marketing campaign. Required fields are marked with an asterisk (*).
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {submitError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
-                  {submitError}
-                </div>
-              )}
+  // Helper function to apply smart suggestions
+  const applySuggestion = (field: keyof CampaignFormData, value: string) => {
+    form.setValue(field, value);
+  };
 
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <h3 className="text-lg font-semibold">Basic Information</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Start with the essential details about your campaign.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Campaign Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter campaign name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Enter campaign description" 
-                            {...field} 
-                            value={field.value || ''}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Status</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select status" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {Object.values(CampaignStatus).map(status => (
-                              <SelectItem key={status} value={status}>
-                                {status.charAt(0).toUpperCase() + status.slice(1)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="startDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Start Date</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  "w-full pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                {field.value ? (
-                                  format(new Date(field.value), "PPP")
-                                ) : (
-                                  <span>Pick a date</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value ? new Date(field.value) : undefined}
-                              onSelect={(date) => field.onChange(date?.toISOString() || '')}
-                              disabled={(date) => date < new Date()}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="endDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>End Date</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  "w-full pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                {field.value ? (
-                                  format(new Date(field.value), "PPP")
-                                ) : (
-                                  <span>Pick a date</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value ? new Date(field.value) : undefined}
-                              onSelect={(date) => field.onChange(date?.toISOString() || '')}
-                              disabled={(date) => date < new Date()}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="budget"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Budget</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="Enter budget" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="goalType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Goal Type</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select goal type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {Object.values(CampaignGoalType).map(type => (
-                              <SelectItem key={type} value={type}>
-                                {type.charAt(0).toUpperCase() + type.slice(1)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="customGoal"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Custom Goal</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Enter custom goal" 
-                            {...field} 
-                            value={field.value || ''}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="scheduleFrequency"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Schedule Frequency</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select frequency" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {Object.values(ScheduleFrequency).map(freq => (
-                              <SelectItem key={freq} value={freq}>
-                                {freq.charAt(0).toUpperCase() + freq.slice(1)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="timezone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Timezone</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter timezone" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+  // Render step content
+  const renderStepContent = () => {
+    const currentStepConfig = WIZARD_STEPS[currentStep];
+    
+    switch (currentStepConfig.id) {
+      case 'basics':
+        return (
+          <div className="space-y-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Lightbulb className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-800">Smart Suggestion</span>
               </div>
+              <p className="text-sm text-blue-700 mb-3">
+                Based on your organization, we suggest: "{suggestions.name}"
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => applySuggestion('name', suggestions.name)}
+                className="text-blue-600 border-blue-300"
+              >
+                Use Suggestion
+              </Button>
+            </div>
+            
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Campaign Name *</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Enter a descriptive name for your campaign" 
+                      {...field} 
+                      className="text-lg"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <div className="flex justify-end gap-2 mt-6">
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Describe what this campaign is about, who it targets, and what you hope to achieve..."
+                      {...field} 
+                      value={field.value || ''}
+                      className="min-h-[100px]"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        );
+
+      case 'goals':
+        return (
+          <div className="space-y-6">
+            <FormField
+              control={form.control}
+              name="goalType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Campaign Goal Type *</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your primary goal" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.values(CampaignGoalType).map(type => (
+                        <SelectItem key={type} value={type}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">
+                              {type.charAt(0).toUpperCase() + type.slice(1)}
+                            </span>
+                            <span className="text-sm text-muted-foreground">
+                              {GOAL_TYPE_DESCRIPTIONS[type]}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="customGoal"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Custom Goal Description</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Describe your specific goals and success metrics..."
+                      {...field} 
+                      value={field.value || ''}
+                      className="min-h-[80px]"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        );
+
+      case 'schedule':
+        return (
+          <div className="space-y-6">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Info className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium text-green-800">Recommended Timeline</span>
+              </div>
+              <p className="text-sm text-green-700 mb-3">
+                Start next week and run for 30 days for optimal results
+              </p>
+              <div className="flex gap-2">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => form.reset()}
-                  disabled={isSubmitting}
+                  size="sm"
+                  onClick={() => applySuggestion('startDate', suggestions.startDate)}
+                  className="text-green-600 border-green-300"
                 >
-                  Reset
+                  Use Start Date
                 </Button>
                 <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => applySuggestion('endDate', suggestions.endDate)}
+                  className="text-green-600 border-green-300"
+                >
+                  Use End Date
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="startDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Start Date *</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(new Date(field.value), "PPP")
+                            ) : (
+                              <span>Pick a start date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value ? new Date(field.value) : undefined}
+                          onSelect={(date) => field.onChange(date?.toISOString() || '')}
+                          disabled={(date) => date < new Date()}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="endDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>End Date *</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(new Date(field.value), "PPP")
+                            ) : (
+                              <span>Pick an end date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value ? new Date(field.value) : undefined}
+                          onSelect={(date) => field.onChange(date?.toISOString() || '')}
+                          disabled={(date) => date < new Date()}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="scheduleFrequency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Schedule Frequency</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="How often to run" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.values(ScheduleFrequency).map(freq => (
+                          <SelectItem key={freq} value={freq}>
+                            {freq.charAt(0).toUpperCase() + freq.slice(1)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="timezone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Timezone</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., America/New_York" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+        );
+
+      case 'budget':
+        return (
+          <div className="space-y-6">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <DollarSign className="h-4 w-4 text-yellow-600" />
+                <span className="text-sm font-medium text-yellow-800">Budget Recommendation</span>
+              </div>
+              <p className="text-sm text-yellow-700 mb-3">
+                Based on similar campaigns, we recommend a budget of ${suggestions.budget}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => applySuggestion('budget', suggestions.budget)}
+                className="text-yellow-600 border-yellow-300"
+              >
+                Use Suggested Budget
+              </Button>
+            </div>
+
+            <FormField
+              control={form.control}
+              name="budget"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Budget ($)</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        type="number" 
+                        placeholder="Enter your budget"
+                        className="pl-10 text-lg"
+                        {...field} 
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Initial Status</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select initial status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.values(CampaignStatus).map(status => (
+                        <SelectItem key={status} value={status}>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={status === 'active' ? 'default' : 'secondary'}>
+                              {status.charAt(0).toUpperCase() + status.slice(1)}
+                            </Badge>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          {/* Progress Header */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h1 className="text-3xl font-bold">Create New Campaign</h1>
+              <Badge variant="outline" className="text-sm">
+                Step {currentStep + 1} of {totalSteps}
+              </Badge>
+            </div>
+            
+            <Progress value={progressPercentage} className="mb-6" />
+            
+            {/* Step Navigation */}
+            <div className="flex items-center justify-between">
+              {WIZARD_STEPS.map((step, index) => (
+                <div key={step.id} className="flex items-center">
+                  <div
+                    className={cn(
+                      "flex items-center justify-center w-10 h-10 rounded-full border-2 transition-colors",
+                      index === currentStep
+                        ? "bg-blue-500 text-white border-blue-500"
+                        : completedSteps.includes(index)
+                        ? "bg-green-500 text-white border-green-500"
+                        : "bg-gray-100 text-gray-500 border-gray-300"
+                    )}
+                  >
+                    {completedSteps.includes(index) ? (
+                      <Check className="h-5 w-5" />
+                    ) : (
+                      React.createElement(step.icon, { className: "h-5 w-5" })
+                    )}
+                  </div>
+                  <div className="ml-3 hidden sm:block">
+                    <p className={cn(
+                      "text-sm font-medium",
+                      index === currentStep ? "text-blue-600" : "text-gray-500"
+                    )}>
+                      {step.title}
+                    </p>
+                    <p className="text-xs text-gray-400">{step.description}</p>
+                  </div>
+                  {index < WIZARD_STEPS.length - 1 && (
+                    <ArrowRight className="h-4 w-4 text-gray-400 mx-4" />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Step Content */}
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                {React.createElement(WIZARD_STEPS[currentStep].icon, { className: "h-5 w-5" })}
+                {WIZARD_STEPS[currentStep].title}
+              </CardTitle>
+              <p className="text-muted-foreground">
+                {WIZARD_STEPS[currentStep].description}
+              </p>
+            </CardHeader>
+            <CardContent>
+              {submitError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-6">
+                  {submitError}
+                </div>
+              )}
+              
+              {renderStepContent()}
+            </CardContent>
+          </Card>
+
+          {/* Navigation Buttons */}
+          <div className="flex justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={prevStep}
+              disabled={currentStep === 0}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => form.reset()}
+                disabled={isSubmitting}
+              >
+                Reset
+              </Button>
+              
+              {currentStep < totalSteps - 1 ? (
+                <Button
+                  type="button"
+                  onClick={nextStep}
+                  disabled={!isCurrentStepValid()}
+                  className="flex items-center gap-2"
+                >
+                  Next
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !isCurrentStepValid()}
+                  className="flex items-center gap-2"
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Creating Campaign...
                     </>
                   ) : (
-                    'Create Campaign'
+                    <>
+                      <Check className="h-4 w-4" />
+                      Create Campaign
+                    </>
                   )}
                 </Button>
-              </div>
-            </CardContent>
-          </Card>
+              )}
+            </div>
+          </div>
         </form>
       </Form>
     </div>
