@@ -1,11 +1,47 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BarChart2, Mail, Smartphone, Globe2, PauseCircle, Archive, RefreshCcw, AlertCircle, Edit, Eye } from "lucide-react";
+import { Skeleton } from '@/components/ui/skeleton';
+import { 
+  BarChart2, 
+  Mail, 
+  Smartphone, 
+  Globe2, 
+  PauseCircle, 
+  Archive, 
+  RefreshCcw, 
+  AlertCircle, 
+  Edit, 
+  Eye,
+  Target,
+  TrendingUp,
+  Users,
+  Activity,
+  Search,
+  Grid,
+  List,
+  Filter,
+  MoreHorizontal,
+  Plus,
+  Calendar,
+  Clock,
+  DollarSign,
+  User
+} from "lucide-react";
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from '@/lib/utils';
 import DeleteCampaign from '@/components/Campaign/DeleteCampaign';
 
 // Campaign type definition
@@ -67,6 +103,14 @@ export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState<any>(null);
+  const [statsLoading, setStatsLoading] = useState<boolean>(true);
+  
+  // Search and filter states
+  const [search, setSearch] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [channelFilter, setChannelFilter] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // Helper function to map database status to UI status (with defensive fallback)
   function mapDatabaseStatusToUI(status: string): CampaignStatus {
@@ -94,6 +138,83 @@ export default function CampaignsPage() {
       ? (channel as CampaignChannel) 
       : 'Email';
   }
+
+  // Metric Card Component
+  interface MetricCardProps {
+    title: string;
+    value: string | number;
+    description?: string;
+    icon: React.ReactNode;
+    change?: number;
+    isLoading?: boolean;
+  }
+
+  function MetricCard({ title, value, description, icon, change, isLoading }: MetricCardProps) {
+    if (isLoading) {
+      return (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-6 w-16" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+              <Skeleton className="h-6 w-6 rounded" />
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return (
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">{title}</p>
+              <p className="text-2xl font-bold">{typeof value === 'number' ? value.toLocaleString() : value}</p>
+              {description && (
+                <p className="text-xs text-muted-foreground">{description}</p>
+              )}
+              {change !== undefined && (
+                <div className={`flex items-center text-xs ${
+                  change >= 0 ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  <TrendingUp className="mr-1 h-3 w-3" />
+                  {change >= 0 ? '+' : ''}{change.toFixed(1)}% from last month
+                </div>
+              )}
+            </div>
+            <div className="text-primary">
+              {icon}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Fetch campaign statistics
+  const fetchStats = async () => {
+    try {
+      const res = await fetch("/api/campaigns/stats", {
+        cache: 'no-store',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        setStats(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch campaign stats:', err);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
 
   const fetchCampaigns = async () => {
     setLoading(true);
@@ -180,157 +301,445 @@ export default function CampaignsPage() {
     }
   };
 
+  // Handle refresh
+  const handleRefresh = () => {
+    fetchCampaigns();
+    fetchStats();
+  };
+
+  // Filtered campaigns
+  const filteredCampaigns = useMemo(() => {
+    let filtered = campaigns;
+    
+    // Search filter
+    if (search.trim()) {
+      const term = search.toLowerCase().trim();
+      filtered = filtered.filter(campaign => 
+        campaign.name.toLowerCase().includes(term) ||
+        campaign.audience?.toLowerCase().includes(term) ||
+        campaign.clientName?.toLowerCase().includes(term)
+      );
+    }
+    
+    // Status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(campaign => 
+        campaign.status.toLowerCase() === statusFilter.toLowerCase()
+      );
+    }
+    
+    // Channel filter
+    if (channelFilter !== 'all') {
+      filtered = filtered.filter(campaign => 
+        campaign.channel?.toLowerCase() === channelFilter.toLowerCase()
+      );
+    }
+    
+    return filtered;
+  }, [search, campaigns, statusFilter, channelFilter]);
+
   useEffect(() => {
     fetchCampaigns();
+    fetchStats();
   }, []);
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="space-y-4 p-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-3xl font-bold">Campaigns</h1>
-          <p className="text-muted-foreground">Create and manage your marketing campaigns</p>
+          <h1 className="text-2xl font-bold tracking-tight">Campaigns</h1>
+          <p className="text-sm text-muted-foreground">
+            Create and manage your marketing campaigns
+          </p>
         </div>
-        <Button 
-      asChild 
-          className="flex items-center gap-1"
-          data-testid="create-campaign"
-        >
-          <Link href="/campaigns/new">
-            + Create Campaign
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={loading || statsLoading}
+          >
+            <RefreshCcw className={cn("mr-2 h-4 w-4", (loading || statsLoading) && "animate-spin")} />
+            Refresh
+          </Button>
+          <Button asChild className="flex items-center gap-1">
+            <Link href="/campaigns/new">
+              <Plus className="h-4 w-4" />
+              Add Campaign
+            </Link>
+          </Button>
+        </div>
       </div>
       
+      {/* Campaign Statistics */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <MetricCard
+          title="Total Campaigns"
+          value={stats?.totalCampaigns || 0}
+          description="All campaigns"
+          icon={<Target className="h-5 w-5" />}
+          change={stats?.campaignGrowth}
+          isLoading={statsLoading}
+        />
+        <MetricCard
+          title="Active Campaigns"
+          value={stats?.activeCampaigns || 0}
+          description={`${stats?.activePercentage || 0}% of total`}
+          icon={<Activity className="h-5 w-5" />}
+          isLoading={statsLoading}
+        />
+        <MetricCard
+          title="Success Rate"
+          value={`${stats?.successRate || 0}%`}
+          description="Campaign completion"
+          icon={<TrendingUp className="h-5 w-5" />}
+          isLoading={statsLoading}
+        />
+        <MetricCard
+          title="Estimated Reach"
+          value={stats?.estimatedReach || 0}
+          description="Total audience"
+          icon={<Users className="h-5 w-5" />}
+          isLoading={statsLoading}
+        />
+      </div>
+      
+      {/* Search and Filters */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 justify-between">
-            <div className="flex items-center gap-2">
-              <BarChart2 className="h-5 w-5" />
-              Campaign List
+        <CardContent className="p-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex items-center gap-2 flex-1">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search campaigns by name, audience, or client..."
+                className="flex-1 h-8"
+              />
             </div>
-            {error && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={fetchCampaigns}
-                className="flex items-center gap-1"
-              >
-                <RefreshCcw className="h-4 w-4" />
-                Retry
-              </Button>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading && (
-            <div className="flex justify-center items-center py-12">
-              <div className="flex flex-col items-center gap-2">
-                <div className="h-8 w-8 rounded-full border-t-2 border-b-2 border-blue-500 animate-spin"></div>
-                <div className="text-sm text-muted-foreground">Loading campaigns...</div>
+            
+            <div className="flex items-center gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-24 h-8 text-xs">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="scheduled">Scheduled</SelectItem>
+                  <SelectItem value="sent">Sent</SelectItem>
+                  <SelectItem value="paused">Paused</SelectItem>
+                  <SelectItem value="archived">Archived</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={channelFilter} onValueChange={setChannelFilter}>
+                <SelectTrigger className="w-24 h-8 text-xs">
+                  <SelectValue placeholder="Channel" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Channels</SelectItem>
+                  <SelectItem value="email">Email</SelectItem>
+                  <SelectItem value="sms">SMS</SelectItem>
+                  <SelectItem value="social">Social</SelectItem>
+                  <SelectItem value="push">Push</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <div className="flex items-center border rounded-md">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                  className="h-8 px-2 border-0 rounded-r-none"
+                >
+                  <Grid className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                  className="h-8 px-2 border-0 rounded-l-none"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
               </div>
             </div>
-          )}
-
-          {error && (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <AlertCircle className="h-10 w-10 text-red-500 mb-3" />
-              <p className="text-red-500 mb-3">{error}</p>
-              <Button 
-                variant="outline" 
-                onClick={fetchCampaigns}
-                className="flex items-center gap-1"
-              >
-                <RefreshCcw className="h-4 w-4" />
-                Try Again
-              </Button>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Loading State */}
+      {loading && (
+        <div className={cn(
+          viewMode === 'grid' 
+            ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" 
+            : "space-y-2"
+        )}>
+          {[...Array(8)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2 flex-1">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
+                    <Skeleton className="h-6 w-6" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Skeleton className="h-5 w-16" />
+                    <Skeleton className="h-5 w-20" />
+                  </div>
+                  <Skeleton className="h-3 w-full" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+      
+      {/* Error State */}
+      {error && (
+        <Card className="border-destructive">
+          <CardContent className="p-6 text-center">
+            <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-3" />
+            <h3 className="text-lg font-semibold mb-2">Unable to load campaigns</h3>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={handleRefresh}>
+              <RefreshCcw className="h-4 w-4 mr-2" />
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Empty State */}
+      {!loading && !error && filteredCampaigns.length === 0 && (
+        <Card className="border-dashed">
+          <CardContent className="p-8 text-center">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 bg-muted rounded-full">
+                <Target className="h-8 w-8 text-muted-foreground" />
+              </div>
             </div>
-          )}
-
-          {!loading && !error && campaigns.length === 0 && (
-            <div className="text-center p-6">
-              <p className="mb-4">No campaigns found</p>
-              <p className="text-sm text-muted-foreground mb-4">Create your first campaign to get started</p>
+            <h3 className="text-lg font-semibold mb-2">No campaigns found</h3>
+            <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+              {campaigns.length === 0 
+                ? "Get started by creating your first campaign to reach your audience."
+                : "No campaigns match your current search criteria. Try adjusting your filters or search terms."
+              }
+            </p>
+            {campaigns.length === 0 ? (
               <Button asChild>
                 <Link href="/campaigns/new">
+                  <Plus className="h-4 w-4 mr-2" />
                   Create Your First Campaign
                 </Link>
               </Button>
-            </div>
-          )}
-
-          {!loading && !error && campaigns.length > 0 && (
-            <div className="rounded-md border divide-y">
-              {/* Table Head */}
-              <div className="grid grid-cols-12 bg-muted/50 p-3 text-sm font-medium">
-                <div className="col-span-3">Name</div>
-                <div className="col-span-2">Channel</div>
-                <div className="col-span-2">Audience</div>
-                <div className="col-span-2">Status</div>
-                <div className="col-span-2">Sent Date</div>
-                <div className="col-span-1">Actions</div>
+            ) : (
+              <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                <Button variant="outline" onClick={() => {
+                  setSearch('');
+                  setStatusFilter('all');
+                  setChannelFilter('all');
+                }}>
+                  Clear Filters
+                </Button>
+                <Button asChild>
+                  <Link href="/campaigns/new">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add New Campaign
+                  </Link>
+                </Button>
               </div>
-              {campaigns.map(campaign => (
-                <div key={campaign.id} className="grid grid-cols-12 items-center p-3 text-sm">
-                  {/* Name + Created At + Link */}
-                  <div className="col-span-3 flex flex-col">
-                    <Link href={`/campaigns/analytics/${campaign.id}`} className="font-medium text-blue-700 hover:underline">
-                      {campaign.name}
-                    </Link>
-                    <span className="text-xs text-muted-foreground">Created: {prettyDate(campaign.createdAt)}</span>
-                    {campaign.clientName && (
-                      <span className="text-xs text-muted-foreground">Client: {campaign.clientName}</span>
-                    )}
-              </div>
-                  {/* Channel */}
-                  <div className="col-span-2 flex items-center gap-2">
-                    {channelIcons[campaign.channel || 'Email'] || <Mail className="h-4 w-4" />}
-                    {campaign.channel || 'Email'}
-                  </div>
-                  {/* Audience */}
-                  <div className="col-span-2">{campaign.audience || 'All Users'}</div>
-                  {/* Status */}
-                  <div className="col-span-2">
-                    <Badge variant={getStatusVariant(campaign.status)}>
-                      {campaign.status}
-                      {campaign.status === 'Paused' || campaign.status === 'Archived' ? (
-                        <Archive className="ml-1 h-3 w-3 text-gray-500 inline-block" />
-                      ) : null}
-                    </Badge>
-                  </div>
-                  {/* Sent Date */}
-                  <div className="col-span-2">{prettyDate(campaign.sentDate)}</div>
-                  {/* Actions */}
-                  <div className="col-span-1 flex items-center justify-start gap-1">
-                    {campaign.status !== "Draft" && (
-                      <Button variant="ghost" size="icon" asChild className="h-8 w-8 text-blue-600 hover:text-blue-800 hover:bg-blue-50">
-                        <Link href={`/campaigns/analytics/${campaign.id}`}>
-                          <Eye className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                    )}
-                    {campaign.status === "Draft" && (
-                      <Button variant="ghost" size="icon" asChild className="h-8 w-8 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50">
-                        <Link href={`/campaigns/edit/${campaign.id}`}>
-                          <Edit className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                    )}
-                    <DeleteCampaign 
-                      campaignId={campaign.id}
-                      campaignName={campaign.name}
-                      onDeleteSuccess={fetchCampaigns}
-                      buttonVariant="ghost"
-                      buttonSize="sm"
-                      buttonLabel=""
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Campaign Cards/List */}
+      {!loading && !error && filteredCampaigns.length > 0 && (
+        <div className={cn(
+          viewMode === 'grid' 
+            ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" 
+            : "space-y-2"
+        )}>
+          {filteredCampaigns.map((campaign) => (
+            <CampaignCard key={campaign.id} campaign={campaign} viewMode={viewMode} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
+
+// Campaign Card Component
+interface CampaignCardProps {
+  campaign: Campaign;
+  viewMode: 'grid' | 'list';
+}
+
+function CampaignCard({ campaign, viewMode }: CampaignCardProps) {
+  if (viewMode === 'list') {
+    return (
+      <Card className="hover:shadow-sm transition-shadow">
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3 flex-1">
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10 text-primary border">
+                  {channelIcons[campaign.channel || 'Email'] || <Mail className="h-4 w-4" />}
+                </div>
+              </div>
+              
+              <div className="flex-1 min-w-0">
+                <div className="mb-1">
+                  <Link 
+                    href={`/campaigns/analytics/${campaign.id}`} 
+                    className="font-semibold hover:text-primary transition-colors block truncate"
+                    title={campaign.name}
+                  >
+                    {campaign.name}
+                  </Link>
+                  <div className="flex items-center gap-1 mt-1 flex-wrap">
+                    <Badge variant={getStatusVariant(campaign.status)} className="text-xs px-1.5 py-0.5 whitespace-nowrap">
+                      {campaign.status}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs px-1.5 py-0.5 whitespace-nowrap">
+                      {campaign.channel || 'Email'}
+                    </Badge>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1 truncate">
+                    <Users className="h-3 w-3" />
+                    {campaign.audience || 'All Users'}
+                  </span>
+                  {campaign.clientName && (
+                    <span className="flex items-center gap-1">
+                      <User className="h-3 w-3" />
+                      {campaign.clientName}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    {prettyDate(campaign.createdAt)}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {campaign.openRate && (
+                <span className="text-sm text-muted-foreground">
+                  {campaign.openRate} open rate
+                </span>
+              )}
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link href={`/campaigns/analytics/${campaign.id}`}>
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Analytics
+                    </Link>
+                  </DropdownMenuItem>
+                  {campaign.status === 'Draft' && (
+                    <DropdownMenuItem asChild>
+                      <Link href={`/campaigns/edit/${campaign.id}`}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Campaign
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  // Grid view
+  return (
+    <Card className="hover:shadow-md transition-all duration-200 cursor-pointer group">
+      <CardContent className="p-4">
+        <div className="space-y-3">
+          <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0">
+              <Link 
+                href={`/campaigns/analytics/${campaign.id}`}
+                className="font-semibold text-sm hover:text-primary transition-colors block truncate group-hover:text-primary"
+                title={campaign.name}
+              >
+                {campaign.name}
+              </Link>
+              <p className="text-xs text-muted-foreground mt-1">
+                {campaign.audience || 'All Users'}
+              </p>
+            </div>
+            <div className="flex-shrink-0 ml-2">
+              {channelIcons[campaign.channel || 'Email'] || <Mail className="h-4 w-4 text-muted-foreground" />}
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge variant={getStatusVariant(campaign.status)} className="text-xs">
+              {campaign.status}
+            </Badge>
+            <Badge variant="outline" className="text-xs">
+              {campaign.channel || 'Email'}
+            </Badge>
+          </div>
+          
+          <div className="space-y-2">
+            {campaign.clientName && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <User className="h-3 w-3" />
+                <span className="truncate">{campaign.clientName}</span>
+              </div>
+            )}
+            
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                {prettyDate(campaign.sentDate || campaign.createdAt)}
+              </span>
+              {campaign.openRate && (
+                <span>{campaign.openRate}</span>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-1 pt-1">
+              <Button variant="ghost" size="sm" asChild className="h-7 px-2 text-xs">
+                <Link href={`/campaigns/analytics/${campaign.id}`}>
+                  <Eye className="h-3 w-3 mr-1" />
+                  Analytics
+                </Link>
+              </Button>
+              {campaign.status === 'Draft' && (
+                <Button variant="ghost" size="sm" asChild className="h-7 px-2 text-xs">
+                  <Link href={`/campaigns/edit/${campaign.id}`}>
+                    <Edit className="h-3 w-3 mr-1" />
+                    Edit
+                  </Link>
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Legacy table view removed and replaced with card-based layout
