@@ -64,6 +64,7 @@ import { DayView } from './DayView';
 import { ListView } from './ListView';
 import { WeekView } from './WeekView';
 import { CalendarHeader } from './CalendarHeader';
+import { TemplateSelector } from './TemplateSelector';
 // Add these constants at the top of the file, after the imports
 export const DEFAULT_DURATIONS: Record<ContentType, number> = {
   social: 30, // 30 minutes for social posts
@@ -533,12 +534,25 @@ export function ContentCalendar({
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [hoveredEvent, setHoveredEvent] = useState<CalendarEvent | null>(null);
   const [previewPosition, setPreviewPosition] = useState<{ x: number; y: number } | null>(null);
+  const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false);
+  const [pendingEventDate, setPendingEventDate] = useState<string | null>(null);
   const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isFetchingRef = useRef<boolean>(false);
   const initialEventsRef = useRef<boolean>(false);
 
   // Add a ref to track if we're already fetching
   const lastFetchTime = useRef(0);
+  
+  // Template selection handler
+  const handleTemplateSelect = (eventData: Partial<CalendarEvent>) => {
+    setNewEvent(prev => ({
+      ...prev,
+      ...eventData,
+      start: new Date(eventData.date || pendingEventDate || new Date().toISOString().split('T')[0])
+    }));
+    setIsTemplateSelectorOpen(false);
+    setIsCreateDialogOpen(true);
+  };
   
   // Direct fetch function - moved up before it's used
   const fetchCalendarEventsDirectly = async () => {
@@ -1874,8 +1888,8 @@ export function ContentCalendar({
         selectedStatus={selectedStatus}
         onStatusChange={setSelectedStatus}
         onAddEvent={() => {
-          setNewEvent(prev => ({ ...prev, start: currentDate }));
-          setIsCreateDialogOpen(true);
+          setPendingEventDate(currentDate.toISOString().split('T')[0]);
+          setIsTemplateSelectorOpen(true);
         }}
         isSelectionMode={isSelectionMode}
         selectedCount={selectedEvents.size}
@@ -2290,6 +2304,14 @@ export function ContentCalendar({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Template Selector Dialog */}
+      <TemplateSelector
+        isOpen={isTemplateSelectorOpen}
+        onClose={() => setIsTemplateSelectorOpen(false)}
+        onSelectTemplate={handleTemplateSelect}
+        initialDate={pendingEventDate || undefined}
+      />
       
       {/* Event Preview Tooltip */}
       {hoveredEvent && previewPosition && (
