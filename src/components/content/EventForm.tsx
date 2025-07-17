@@ -591,6 +591,18 @@ function EventForm({
     initialData?.recurringData?.pattern || null
   );
   
+  // Add recurrence state for RecurrenceSettings component
+  const [recurrence, setRecurrence] = useState({
+    enabled: !!initialData?.recurringData?.pattern,
+    pattern: {
+      type: 'weekly' as RecurrencePattern['type'],
+      interval: 1,
+      endDate: null as string | null,
+      occurrences: null as number | null
+    },
+    previewDates: [] as string[]
+  });
+  
   const [autoSave, setAutoSave] = useState({
     enabled: true,
     lastSaved: null as Date | null,
@@ -1353,38 +1365,40 @@ function EventForm({
     );
   };
 
-  const RecurrenceSettings = () => {
-    const generatePreviewDates = (pattern: RecurrencePattern, startDate: string): string[] => {
-      const dates: string[] = [];
-      const start = new Date(startDate);
-      const maxDates = 10; // Show up to 10 preview dates
+  // Move generatePreviewDates outside of component to avoid recreation on each render
+  const generatePreviewDates = useCallback((pattern: RecurrencePattern, startDate: string): string[] => {
+    const dates: string[] = [];
+    const start = new Date(startDate);
+    const maxDates = 10; // Show up to 10 preview dates
+    
+    for (let i = 0; i < maxDates; i++) {
+      let nextDate = new Date(start);
       
-      for (let i = 0; i < maxDates; i++) {
-        let nextDate = new Date(start);
-        
-        switch (pattern.type) {
-          case 'daily':
-            nextDate.setDate(start.getDate() + (i * pattern.interval));
-            break;
-          case 'weekly':
-            nextDate.setDate(start.getDate() + (i * pattern.interval * 7));
-            break;
-          case 'monthly':
-            nextDate.setMonth(start.getMonth() + (i * pattern.interval));
-            break;
-          case 'yearly':
-            nextDate.setFullYear(start.getFullYear() + (i * pattern.interval));
-            break;
-        }
-        
-        if (pattern.endDate && nextDate > new Date(pattern.endDate)) break;
-        if (pattern.occurrences && i >= pattern.occurrences) break;
-        
-        dates.push(format(nextDate, 'yyyy-MM-dd'));
+      switch (pattern.type) {
+        case 'daily':
+          nextDate.setDate(start.getDate() + (i * pattern.interval));
+          break;
+        case 'weekly':
+          nextDate.setDate(start.getDate() + (i * pattern.interval * 7));
+          break;
+        case 'monthly':
+          nextDate.setMonth(start.getMonth() + (i * pattern.interval));
+          break;
+        case 'yearly':
+          nextDate.setFullYear(start.getFullYear() + (i * pattern.interval));
+          break;
       }
       
-      return dates;
-    };
+      if (pattern.endDate && nextDate > new Date(pattern.endDate)) break;
+      if (pattern.occurrences && i >= pattern.occurrences) break;
+      
+      dates.push(format(nextDate, 'yyyy-MM-dd'));
+    }
+    
+    return dates;
+  }, []);
+
+  const RecurrenceSettings = () => {
 
     return (
       <div className="space-y-4 p-4 border rounded-lg">
@@ -1392,13 +1406,13 @@ function EventForm({
           <Checkbox
             id="enable-recurrence"
             checked={recurrence.enabled}
-            onCheckedChange={(checked) => {
+            onCheckedChange={useCallback((checked) => {
               setRecurrence(prev => ({
                 ...prev,
                 enabled: !!checked,
                 previewDates: checked ? generatePreviewDates(prev.pattern, formData.date || '') : []
               }));
-            }}
+            }, [generatePreviewDates, formData.date])}
           />
           <Label htmlFor="enable-recurrence" className="font-medium">
             Make this a recurring event
@@ -1412,14 +1426,14 @@ function EventForm({
                 <Label>Repeat</Label>
                 <Select
                   value={recurrence.pattern.type}
-                  onValueChange={(value: RecurrencePattern['type']) => {
+                  onValueChange={useCallback((value: RecurrencePattern['type']) => {
                     const newPattern = { ...recurrence.pattern, type: value };
                     setRecurrence(prev => ({
                       ...prev,
                       pattern: newPattern,
                       previewDates: generatePreviewDates(newPattern, formData.date || '')
                     }));
-                  }}
+                  }, [recurrence.pattern, generatePreviewDates, formData.date])}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -1441,7 +1455,7 @@ function EventForm({
                     min="1"
                     max="365"
                     value={recurrence.pattern.interval}
-                    onChange={(e) => {
+                    onChange={useCallback((e) => {
                       const interval = parseInt(e.target.value) || 1;
                       const newPattern = { ...recurrence.pattern, interval };
                       setRecurrence(prev => ({
@@ -1449,7 +1463,7 @@ function EventForm({
                         pattern: newPattern,
                         previewDates: generatePreviewDates(newPattern, formData.date || '')
                       }));
-                    }}
+                    }, [recurrence.pattern, generatePreviewDates, formData.date])}
                     className="w-20"
                   />
                   <span className="text-sm text-muted-foreground">
