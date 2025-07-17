@@ -1,7 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from "react";
+import { 
+  preloadCriticalComponents, 
+  progressiveEnhancement, 
+  usePerformanceMonitoring,
+  dynamicImports 
+} from "@/lib/utils/bundle-optimizer";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Search, Filter, LayoutGrid, LayoutList, Clock, Facebook, Twitter, Instagram, Linkedin, Upload, X, Settings as SettingsIcon, RefreshCw, Bug, Trash2 } from "lucide-react";
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useSensor, useSensors, PointerSensor, closestCenter } from "@dnd-kit/core";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
@@ -50,7 +57,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { EventForm } from './EventForm';
+// Lazy load heavy components
+const EventForm = React.lazy(() => dynamicImports.EventForm());
 import { EventDetails } from './EventDetails';
 import { useTimezone } from "@/hooks/use-timezone";
 import { CSS } from '@dnd-kit/utilities';
@@ -64,7 +72,7 @@ import { DayView } from './DayView';
 import { ListView } from './ListView';
 import { WeekView } from './WeekView';
 import { CalendarHeader } from './CalendarHeader';
-import { TemplateSelector } from './TemplateSelector';
+const TemplateSelector = React.lazy(() => dynamicImports.TemplateSelector());
 // Add these constants at the top of the file, after the imports
 export const DEFAULT_DURATIONS: Record<ContentType, number> = {
   social: 30, // 30 minutes for social posts
@@ -493,6 +501,17 @@ export function ContentCalendar({
 }: ContentCalendarProps) {
   const { toast } = useToast();
   const userTimezone = useTimezone();
+  const { measurePerformance, getBundleReport } = usePerformanceMonitoring();
+  
+  // Performance optimization: Check if we should use optimized mode
+  const useOptimizedMode = useMemo(() => {
+    return progressiveEnhancement.shouldUseOptimizedMode();
+  }, []);
+  
+  // Preload critical components on mount
+  useEffect(() => {
+    preloadCriticalComponents();
+  }, []);
   
   // State
   const [events, setEvents] = useState<CalendarEvent[]>(initialEvents);
@@ -2137,35 +2156,40 @@ export function ContentCalendar({
             </DialogHeader>
           </div>
           <div className="flex-1 overflow-y-auto px-6 pb-6 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">{/* Scrollable container with custom scrollbar */}
-            <EventForm
-            mode="create"
-            initialData={{
-              date: format(newEvent.start, "yyyy-MM-dd"),
-              time: format(newEvent.start, "HH:mm"),
-              status: "draft",
-              type: "email"
-            }}
-            onSubmit={async (event) => {
-              if (onEventCreate) {
-                try {
-                  const created = await onEventCreate(event);
-                  setEvents(prev => [...prev, created]);
-                  setIsCreateDialogOpen(false);
-                  toast({
-                    title: "Success",
-                    description: "Event created successfully",
-                  });
-                } catch (error) {
-                  toast({
-                    title: "Error",
-                    description: error instanceof Error ? error.message : "Failed to create event",
-                    variant: "destructive",
-                  });
+            <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+              <EventForm
+              mode="create"
+              initialData={{
+                date: format(newEvent.start, "yyyy-MM-dd"),
+                time: format(newEvent.start, "HH:mm"),
+                status: "draft",
+                type: "email"
+              }}
+              onSubmit={async (event) => {
+                if (onEventCreate) {
+                  try {
+                    measurePerformance('create-event', () => {
+                      // Performance measurement wrapper
+                    });
+                    const created = await onEventCreate(event);
+                    setEvents(prev => [...prev, created]);
+                    setIsCreateDialogOpen(false);
+                    toast({
+                      title: "Success",
+                      description: "Event created successfully",
+                    });
+                  } catch (error) {
+                    toast({
+                      title: "Error",
+                      description: error instanceof Error ? error.message : "Failed to create event",
+                      variant: "destructive",
+                    });
+                  }
                 }
-              }
-            }}
-              onCancel={() => setIsCreateDialogOpen(false)}
-            />
+              }}
+                onCancel={() => setIsCreateDialogOpen(false)}
+              />
+            </Suspense>
           </div>{/* End scrollable container */}
         </DialogContent>
       </Dialog>
@@ -2183,30 +2207,35 @@ export function ContentCalendar({
           </div>
           <div className="flex-1 overflow-y-auto px-6 pb-6 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">{/* Scrollable container with custom scrollbar */}
             {selectedEvent && (
-              <EventForm
-              mode="edit"
-              initialData={selectedEvent}
-              onSubmit={async (event) => {
-                if (onEventUpdate) {
-                  try {
-                    const updated = await onEventUpdate(event);
-                    setEvents(prev => prev.map(e => e.id === updated.id ? updated : e));
-                    setIsEditDialogOpen(false);
-                    toast({
-                      title: "Success",
-                      description: "Event updated successfully",
-                    });
-                  } catch (error) {
-                    toast({
-                      title: "Error",
-                      description: error instanceof Error ? error.message : "Failed to update event",
-                      variant: "destructive",
-                    });
+              <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+                <EventForm
+                mode="edit"
+                initialData={selectedEvent}
+                onSubmit={async (event) => {
+                  if (onEventUpdate) {
+                    try {
+                      measurePerformance('update-event', () => {
+                        // Performance measurement wrapper
+                      });
+                      const updated = await onEventUpdate(event);
+                      setEvents(prev => prev.map(e => e.id === updated.id ? updated : e));
+                      setIsEditDialogOpen(false);
+                      toast({
+                        title: "Success",
+                        description: "Event updated successfully",
+                      });
+                    } catch (error) {
+                      toast({
+                        title: "Error",
+                        description: error instanceof Error ? error.message : "Failed to update event",
+                        variant: "destructive",
+                      });
+                    }
                   }
-                }
-              }}
-                onCancel={() => setIsEditDialogOpen(false)}
-              />
+                }}
+                  onCancel={() => setIsEditDialogOpen(false)}
+                />
+              </Suspense>
             )}
           </div>{/* End scrollable container */}
         </DialogContent>
@@ -2306,12 +2335,16 @@ export function ContentCalendar({
       </AlertDialog>
 
       {/* Template Selector Dialog */}
-      <TemplateSelector
-        isOpen={isTemplateSelectorOpen}
-        onClose={() => setIsTemplateSelectorOpen(false)}
-        onSelectTemplate={handleTemplateSelect}
-        initialDate={pendingEventDate || undefined}
-      />
+      {isTemplateSelectorOpen && (
+        <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+          <TemplateSelector
+            isOpen={isTemplateSelectorOpen}
+            onClose={() => setIsTemplateSelectorOpen(false)}
+            onSelectTemplate={handleTemplateSelect}
+            initialDate={pendingEventDate || undefined}
+          />
+        </Suspense>
+      )}
       
       {/* Event Preview Tooltip */}
       {hoveredEvent && previewPosition && (

@@ -19,7 +19,9 @@
     "hooks:check": "node scripts/hooks-check.js",
     "hooks:setup": "chmod +x ./scripts/setup-gatekeeper.sh && ./scripts/setup-gatekeeper.sh",
     "hooks:analyze": "chmod +x ./scripts/optimization-gatekeeper.sh && ./scripts/optimization-gatekeeper.sh",
-    "hooks:metrics": "node -e \"const { OptimizationMetrics } = require('./src/lib/hooks/optimization-metrics'); console.log(JSON.stringify(new OptimizationMetrics().generateReport(), null, 2));\""
+    "hooks:metrics": "node -e \"const { OptimizationMetrics } = require('./src/lib/hooks/optimization-metrics'); console.log(JSON.stringify(new OptimizationMetrics().generateReport(), null, 2));\"",
+    "analyze:bundle": "node scripts/analyze-bundle.js",
+    "analyze:performance": "pnpm analyze:bundle && echo 'Bundle analysis complete!'"
   },
   "dependencies": {
     "@clerk/clerk-sdk-node": "^5.1.6",
