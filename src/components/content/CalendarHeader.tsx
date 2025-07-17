@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from "react";
-import { ChevronLeft, ChevronRight, Plus, Search, Bug, CheckSquare, Square, Users, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Search, Bug, CheckSquare, Square, Users, Trash2, Download, Calendar as CalendarIconLucide } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -16,9 +16,17 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { addMonths, subMonths } from "date-fns";
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
-import { CalendarView } from './types';
+import { CalendarView, CalendarEvent } from './types';
+import { exportCalendar, ExportFormat } from '@/lib/utils/calendar-export';
 
 interface CalendarHeaderProps {
   // View management
@@ -51,6 +59,10 @@ interface CalendarHeaderProps {
   onSelectAll?: () => void;
   onClearSelection?: () => void;
   
+  // Export functionality
+  events?: CalendarEvent[];
+  selectedEvents?: CalendarEvent[];
+  
   // Loading state
   loading?: boolean;
 }
@@ -76,8 +88,31 @@ export function CalendarHeader({
   onToggleSelection,
   onSelectAll,
   onClearSelection,
+  events = [],
+  selectedEvents = [],
   loading = false
 }: CalendarHeaderProps) {
+  
+  // Export handlers
+  const handleExport = (format: ExportFormat) => {
+    const eventsToExport = isSelectionMode && selectedEvents.length > 0 ? selectedEvents : events;
+    
+    if (eventsToExport.length === 0) {
+      return;
+    }
+    
+    try {
+      exportCalendar({
+        format,
+        events: eventsToExport,
+        userTimezone,
+        filename: `thrive-send-calendar-${formatInTimeZone(new Date(), userTimezone, 'yyyy-MM-dd')}.ics`,
+        calendarName: `Thrive Send Calendar - ${formatInTimeZone(currentDate, userTimezone, 'MMMM yyyy')}`
+      });
+    } catch (error) {
+      console.error('Export failed:', error);
+    }
+  };
   return (
     <div className="space-y-4">
       {/* Calendar Navigation and Controls - Mobile Responsive */}
@@ -117,6 +152,45 @@ export function CalendarHeader({
             <span className="hidden sm:inline">Add Event</span>
             <span className="sm:hidden">Add</span>
           </Button>
+          
+          {/* Export Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="outline"
+                size="sm"
+                disabled={loading || events.length === 0}
+                className="touch-manipulation"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Export</span>
+                <span className="sm:hidden">Export</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => handleExport('ical')}>
+                <CalendarIconLucide className="h-4 w-4 mr-2" />
+                Download .ics file
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleExport('google')}>
+                <span className="text-[#4285F4] mr-2">📅</span>
+                Google Calendar
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('outlook')}>
+                <span className="text-[#0078D4] mr-2">📧</span>
+                Outlook
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('office365')}>
+                <span className="text-[#0078D4] mr-2">🏢</span>
+                Office 365
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('yahoo')}>
+                <span className="text-[#7B0099] mr-2">📮</span>
+                Yahoo Calendar
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           
           {onToggleSelection && (
             <Button 
@@ -238,14 +312,41 @@ export function CalendarHeader({
       
       {/* Bulk Actions Bar - Only shown when in selection mode */}
       {isSelectionMode && (
-        <div className="flex items-center justify-between p-3 bg-primary/10 border border-primary/20 rounded-lg">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 bg-primary/10 border border-primary/20 rounded-lg">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium">
               {selectedCount} event{selectedCount !== 1 ? 's' : ''} selected
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {selectedCount > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 text-xs"
+                  >
+                    <Download className="h-3 w-3 mr-1" />
+                    Export Selected
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  <DropdownMenuItem onClick={() => handleExport('ical')}>
+                    <CalendarIconLucide className="h-3 w-3 mr-2" />
+                    .ics file
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => handleExport('google')}>
+                    📅 Google
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport('outlook')}>
+                    📧 Outlook
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             {onSelectAll && (
               <Button
                 variant="ghost"

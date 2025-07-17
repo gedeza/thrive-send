@@ -140,10 +140,6 @@ const DayViewTimeSlot = ({
                 zIndex: 1
               }}
               onClick={() => onEventClick(event)}
-              onMouseEnter={(e) => onEventHover?.(event, e)}
-              onMouseLeave={onEventHoverEnd}
-              onFocus={(e) => onEventHover?.(event, e as any)}
-              onBlur={onEventHoverEnd}
             >
               <div className="flex items-start justify-between h-full">
                 <div className="flex-1 min-w-0">

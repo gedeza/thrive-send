@@ -1882,6 +1882,8 @@ export function ContentCalendar({
         onToggleSelection={toggleSelectionMode}
         onSelectAll={selectAllEvents}
         onClearSelection={clearSelection}
+        events={events}
+        selectedEvents={Array.from(selectedEvents).map(id => events.find(e => e.id === id)).filter(Boolean) as CalendarEvent[]}
         onDebugFetch={async () => {
           try {
             setLoading(true);
