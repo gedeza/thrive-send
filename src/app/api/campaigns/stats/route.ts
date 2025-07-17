@@ -123,16 +123,8 @@ export async function GET(request: NextRequest) {
       }),
       
       // Average success rate (simplified calculation)
-      db.campaign.aggregate({
-        where: { 
-          ...orgFilter,
-          status: 'completed'
-        },
-        _avg: {
-          // This would need to be calculated based on actual campaign metrics
-          // For now, we'll use a placeholder calculation
-        }
-      })
+      // For now, we'll calculate this separately since we don't have a specific success rate field
+      Promise.resolve(null)
     ]);
 
     // Calculate growth percentages

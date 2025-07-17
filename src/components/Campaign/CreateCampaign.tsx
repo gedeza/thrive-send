@@ -49,24 +49,8 @@ const campaignFormSchema = z.object({
 
 type CampaignFormData = z.infer<typeof campaignFormSchema>;
 
-// --- Styled Components ---
-const StyledPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  [theme.breakpoints.up('md')]: {
-    padding: theme.spacing(4),
-  },
-  boxShadow: theme.shadows[2],
-  borderRadius: theme.shape.borderRadius * 2,
-}));
-
-const FormSection = styled(Box)(({ theme }) => ({
-  marginBottom: theme.spacing(4),
-}));
-
-const SectionTitle = styled(Typography)(({ theme }) => ({
-  fontWeight: 600,
-  marginBottom: theme.spacing(2),
-}));
+// --- Component Styles ---
+// Using Tailwind CSS classes instead of styled-components
 
 const CreateCampaign: React.FC = () => {
   const { organization } = useOrganization();
@@ -184,243 +168,297 @@ const CreateCampaign: React.FC = () => {
   };
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
+    <div className="container mx-auto px-4 py-8">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <StyledPaper>
-            <Typography variant="h5" gutterBottom>
-              Create New Campaign
-            </Typography>
-            <Typography variant="body2" color="text.secondary" paragraph>
-              Fill out the details below to create a new marketing campaign. Required fields are marked with an asterisk (*).
-            </Typography>
-            <Divider sx={{ my: 2 }} />
+          <Card className="p-6 md:p-8 shadow-lg rounded-lg">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-2xl font-semibold">
+                Create New Campaign
+              </CardTitle>
+              <p className="text-muted-foreground">
+                Fill out the details below to create a new marketing campaign. Required fields are marked with an asterisk (*).
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {submitError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+                  {submitError}
+                </div>
+              )}
 
-            {submitError && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {submitError}
-              </Alert>
-            )}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold">Basic Information</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Start with the essential details about your campaign.
+                  </p>
+                </div>
 
-            <FormSection>
-              <SectionTitle variant="h6">Basic Information</SectionTitle>
-              <Typography variant="body2" color="text.secondary" paragraph>
-                Start with the essential details about your campaign.
-              </Typography>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Campaign Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter campaign name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' } }}>
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Campaign Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter campaign name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Enter campaign description" 
+                            {...field} 
+                            value={field.value || ''}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Enter campaign description" 
-                          {...field} 
-                          value={field.value || ''}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <MuiFormControl fullWidth error={!!form.formState.errors.status} required>
-                        <InputLabel>Status</InputLabel>
-                        <Select
-                          {...field}
-                          label="Status"
-                        >
-                          {Object.values(CampaignStatus).map(status => (
-                            <MenuItem key={status} value={status}>
-                              {status.charAt(0).toUpperCase() + status.slice(1)}
-                            </MenuItem>
-                          ))}
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {Object.values(CampaignStatus).map(status => (
+                              <SelectItem key={status} value={status}>
+                                {status.charAt(0).toUpperCase() + status.slice(1)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
                         </Select>
-                        {form.formState.errors.status && <FormHelperText>{form.formState.errors.status.message}</FormHelperText>}
-                      </MuiFormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="startDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Start Date</FormLabel>
-                      <DatePicker
-                        value={field.value ? new Date(field.value) : null}
-                        onChange={(date) => field.onChange(date?.toISOString() || '')}
-                        slotProps={{
-                          textField: {
-                            fullWidth: true,
-                            error: !!form.formState.errors.startDate,
-                            helperText: form.formState.errors.startDate?.message
-                          }
-                        }}
-                      />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="startDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Start Date</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(new Date(field.value), "PPP")
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value ? new Date(field.value) : undefined}
+                              onSelect={(date) => field.onChange(date?.toISOString() || '')}
+                              disabled={(date) => date < new Date()}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="endDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>End Date</FormLabel>
-                      <DatePicker
-                        value={field.value ? new Date(field.value) : null}
-                        onChange={(date) => field.onChange(date?.toISOString() || '')}
-                        slotProps={{
-                          textField: {
-                            fullWidth: true,
-                            error: !!form.formState.errors.endDate,
-                            helperText: form.formState.errors.endDate?.message
-                          }
-                        }}
-                      />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="endDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>End Date</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(new Date(field.value), "PPP")
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value ? new Date(field.value) : undefined}
+                              onSelect={(date) => field.onChange(date?.toISOString() || '')}
+                              disabled={(date) => date < new Date()}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="budget"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Budget</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="Enter budget" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="budget"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Budget</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="Enter budget" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="goalType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Goal Type</FormLabel>
-                      <Select
-                        {...field}
-                        label="Goal Type"
-                      >
-                        {Object.values(CampaignGoalType).map(type => (
-                          <MenuItem key={type} value={type}>
-                            {type.charAt(0).toUpperCase() + type.slice(1)}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="goalType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Goal Type</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select goal type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {Object.values(CampaignGoalType).map(type => (
+                              <SelectItem key={type} value={type}>
+                                {type.charAt(0).toUpperCase() + type.slice(1)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="customGoal"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Custom Goal</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Enter custom goal" 
-                          {...field} 
-                          value={field.value || ''}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="customGoal"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Custom Goal</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Enter custom goal" 
+                            {...field} 
+                            value={field.value || ''}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="scheduleFrequency"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Schedule Frequency</FormLabel>
-                      <Select
-                        {...field}
-                        label="Schedule Frequency"
-                      >
-                        {Object.values(ScheduleFrequency).map(freq => (
-                          <MenuItem key={freq} value={freq}>
-                            {freq.charAt(0).toUpperCase() + freq.slice(1)}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="scheduleFrequency"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Schedule Frequency</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select frequency" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {Object.values(ScheduleFrequency).map(freq => (
+                              <SelectItem key={freq} value={freq}>
+                                {freq.charAt(0).toUpperCase() + freq.slice(1)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="timezone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Timezone</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter timezone" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </Box>
-            </FormSection>
+                  <FormField
+                    control={form.control}
+                    name="timezone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Timezone</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter timezone" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
 
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 4 }}>
-              <Button
-                variant="outlined"
-                onClick={() => form.reset()}
-                disabled={isSubmitting}
-              >
-                Reset
-              </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={isSubmitting}
-                startIcon={isSubmitting ? <CircularProgress size={20} /> : null}
-              >
-                {isSubmitting ? 'Creating...' : 'Create Campaign'}
-              </Button>
-            </Box>
-          </StyledPaper>
+              <div className="flex justify-end gap-2 mt-6">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => form.reset()}
+                  disabled={isSubmitting}
+                >
+                  Reset
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    'Create Campaign'
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </form>
       </Form>
-    </LocalizationProvider>
+    </div>
   );
 };
 

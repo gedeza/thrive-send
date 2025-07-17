@@ -58,11 +58,10 @@ export async function GET(request: NextRequest) {
         where: { organizationId: organization.id }
       }),
       
-      // Active clients
+      // Active clients (since Client model doesn't have status field, use total clients)
       db.client.count({
         where: { 
-          organizationId: organization.id,
-          status: 'active'
+          organizationId: organization.id
         }
       }),
       
@@ -92,32 +91,28 @@ export async function GET(request: NextRequest) {
         _count: { type: true }
       }),
       
-      // Clients by status
-      db.client.groupBy({
-        by: ['status'],
-        where: { organizationId: organization.id },
-        _count: { status: true }
-      }),
+      // Clients by status (Client model doesn't have status field, return empty)
+      Promise.resolve([]),
       
       // Total projects
       db.project.count({
         where: {
-          client: { organizationId: organization.id }
+          organizationId: organization.id
         }
       }),
       
-      // Active projects
+      // Active projects (using string value as seen in schema)
       db.project.count({
         where: {
-          client: { organizationId: organization.id },
+          organizationId: organization.id,
           status: 'ACTIVE'
         }
       }),
       
-      // Completed projects
+      // Completed projects (using string value as seen in schema)
       db.project.count({
         where: {
-          client: { organizationId: organization.id },
+          organizationId: organization.id,
           status: 'COMPLETED'
         }
       })
@@ -146,10 +141,7 @@ export async function GET(request: NextRequest) {
         acc[item.type] = item._count.type;
         return acc;
       }, {} as Record<string, number>),
-      clientsByStatus: clientsByStatus.reduce((acc, item) => {
-        acc[item.status || 'unknown'] = item._count.status;
-        return acc;
-      }, {} as Record<string, number>),
+      clientsByStatus: {}, // Empty since Client model doesn't have status field
       projects: {
         total: totalProjects,
         active: activeProjects,
