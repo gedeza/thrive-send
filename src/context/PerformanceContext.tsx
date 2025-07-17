@@ -131,8 +131,7 @@ export const PerformanceProvider: React.FC<PerformanceProviderProps> = ({
       'list-view': () => import('@/components/content/ListView'),
       'virtualized-list': () => import('@/components/content/VirtualizedEventList'),
       'infinite-loader': () => import('@/components/content/InfiniteEventLoader'),
-      'template-selector': () => import('@/components/content/TemplateSelector'),
-      'recurrence-selector': () => import('@/components/content/RecurrenceSelector'),
+      // Note: TemplateSelector and RecurrenceSelector will be available when created
     };
 
     const preloadFn = preloadMap[componentName];

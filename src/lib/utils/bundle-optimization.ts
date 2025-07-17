@@ -7,51 +7,67 @@ import { lazy, ComponentType } from 'react';
 import dynamic from 'next/dynamic';
 
 // Lazy load calendar components for better performance
-export const LazyMonthView = lazy(() => import('@/components/content/MonthView').then(module => ({ default: module.MonthView })));
-export const LazyWeekView = lazy(() => import('@/components/content/WeekView').then(module => ({ default: module.WeekView })));
-export const LazyDayView = lazy(() => import('@/components/content/DayView').then(module => ({ default: module.DayView })));
-export const LazyListView = lazy(() => import('@/components/content/ListView').then(module => ({ default: module.ListView })));
+export const LazyMonthView = lazy(() => import('@/components/content/MonthView'));
+export const LazyWeekView = lazy(() => import('@/components/content/WeekView'));
+export const LazyDayView = lazy(() => import('@/components/content/DayView'));
+export const LazyListView = lazy(() => import('@/components/content/ListView'));
 
 // Dynamic imports for heavy components
 export const DynamicVirtualizedEventList = dynamic(
-  () => import('@/components/content/VirtualizedEventList').then(mod => ({ default: mod.VirtualizedEventList })),
+  () => import('@/components/content/VirtualizedEventList'),
   {
-    loading: () => <div className="animate-pulse bg-muted h-96 rounded-lg" />,
+    loading: () => {
+      const React = require('react');
+      return React.createElement('div', { className: 'animate-pulse bg-muted h-96 rounded-lg' });
+    },
     ssr: false
   }
 );
 
 export const DynamicInfiniteEventLoader = dynamic(
-  () => import('@/components/content/InfiniteEventLoader').then(mod => ({ default: mod.InfiniteEventLoader })),
+  () => import('@/components/content/InfiniteEventLoader'),
   {
-    loading: () => <div className="animate-pulse bg-muted h-96 rounded-lg" />,
+    loading: () => {
+      const React = require('react');
+      return React.createElement('div', { className: 'animate-pulse bg-muted h-96 rounded-lg' });
+    },
     ssr: false
   }
 );
 
 export const DynamicProgressiveCalendar = dynamic(
-  () => import('@/components/content/ProgressiveCalendar').then(mod => ({ default: mod.ProgressiveCalendar })),
+  () => import('@/components/content/ProgressiveCalendar'),
   {
-    loading: () => <div className="animate-pulse bg-muted h-96 rounded-lg" />,
+    loading: () => {
+      const React = require('react');
+      return React.createElement('div', { className: 'animate-pulse bg-muted h-96 rounded-lg' });
+    },
     ssr: false
   }
 );
 
-export const DynamicTemplateSelector = dynamic(
-  () => import('@/components/content/TemplateSelector').then(mod => ({ default: mod.TemplateSelector })),
-  {
-    loading: () => <div className="animate-pulse bg-muted h-48 rounded-lg" />,
-    ssr: false
-  }
-);
+// Note: TemplateSelector and RecurrenceSelector will be available when created
+// export const DynamicTemplateSelector = dynamic(
+//   () => import('@/components/content/TemplateSelector').then(mod => ({ default: mod.TemplateSelector })),
+//   {
+//     loading: () => {
+//       const React = require('react');
+//       return React.createElement('div', { className: 'animate-pulse bg-muted h-48 rounded-lg' });
+//     },
+//     ssr: false
+//   }
+// );
 
-export const DynamicRecurrenceSelector = dynamic(
-  () => import('@/components/content/RecurrenceSelector').then(mod => ({ default: mod.RecurrenceSelector })),
-  {
-    loading: () => <div className="animate-pulse bg-muted h-32 rounded-lg" />,
-    ssr: false
-  }
-);
+// export const DynamicRecurrenceSelector = dynamic(
+//   () => import('@/components/content/RecurrenceSelector').then(mod => ({ default: mod.RecurrenceSelector })),
+//   {
+//     loading: () => {
+//       const React = require('react');
+//       return React.createElement('div', { className: 'animate-pulse bg-muted h-32 rounded-lg' });
+//     },
+//     ssr: false
+//   }
+// );
 
 // Preload functions for better UX
 export const preloadCalendarComponents = {
@@ -61,8 +77,8 @@ export const preloadCalendarComponents = {
   listView: () => import('@/components/content/ListView'),
   virtualizedList: () => import('@/components/content/VirtualizedEventList'),
   infiniteLoader: () => import('@/components/content/InfiniteEventLoader'),
-  templateSelector: () => import('@/components/content/TemplateSelector'),
-  recurrenceSelector: () => import('@/components/content/RecurrenceSelector'),
+  // templateSelector: () => import('@/components/content/TemplateSelector'),
+  // recurrenceSelector: () => import('@/components/content/RecurrenceSelector'),
 };
 
 // Bundle analyzer helper
@@ -280,8 +296,8 @@ export default {
     DynamicVirtualizedEventList,
     DynamicInfiniteEventLoader,
     DynamicProgressiveCalendar,
-    DynamicTemplateSelector,
-    DynamicRecurrenceSelector
+    // DynamicTemplateSelector,
+    // DynamicRecurrenceSelector
   },
   preload: preloadCalendarComponents,
   performance: performanceMonitor,
