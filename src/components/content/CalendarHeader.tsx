@@ -68,13 +68,9 @@ export function CalendarHeader({
 }: CalendarHeaderProps) {
   return (
     <div className="space-y-4">
-      {/* Calendar Header with Actions */}
+      {/* Calendar Navigation and Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--color-chart-blue)]">
-            Content Calendar
-          </h1>
-          <div className="h-6 w-px bg-border" />
           <Tabs 
             defaultValue={view}
             value={view} 
@@ -100,7 +96,7 @@ export function CalendarHeader({
         <div className="flex items-center gap-2">
           <Button 
             onClick={onAddEvent}
-            className="h-9"
+            size="sm"
             disabled={loading}
           >
             <Plus className="h-4 w-4 mr-2" /> Add Event
@@ -108,8 +104,8 @@ export function CalendarHeader({
           {onDebugFetch && (
             <Button
               variant="outline"
+              size="sm"
               onClick={onDebugFetch}
-              className="h-9"
               disabled={loading}
             >
               <Bug className="h-4 w-4 mr-2" /> Debug
@@ -119,7 +115,7 @@ export function CalendarHeader({
       </div>
 
       {/* Filters and Navigation */}
-      <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+      <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border">
         <div className="flex items-center gap-3">
           <div className="relative w-64">
             <Input
@@ -127,7 +123,7 @@ export function CalendarHeader({
               placeholder="Search events..."
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-9 h-9 bg-background transition-colors"
+              className="pl-9 h-9 bg-background/60 border-0 focus:bg-background transition-colors"
               aria-label="Search events"
               disabled={loading}
             />
@@ -135,7 +131,7 @@ export function CalendarHeader({
           </div>
 
           <Select value={selectedType} onValueChange={onTypeChange} disabled={loading}>
-            <SelectTrigger className="w-[120px] h-9 bg-background transition-colors" aria-label="Filter by content type">
+            <SelectTrigger className="w-[120px] h-9 bg-background/60 border-0 focus:bg-background transition-colors" aria-label="Filter by content type">
               <SelectValue placeholder="Type" />
             </SelectTrigger>
             <SelectContent>
@@ -149,7 +145,7 @@ export function CalendarHeader({
           </Select>
 
           <Select value={selectedStatus} onValueChange={onStatusChange} disabled={loading}>
-            <SelectTrigger className="w-[130px] h-9 bg-background transition-colors" aria-label="Filter by status">
+            <SelectTrigger className="w-[130px] h-9 bg-background/60 border-0 focus:bg-background transition-colors" aria-label="Filter by status">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -167,7 +163,7 @@ export function CalendarHeader({
             variant="outline" 
             size="icon" 
             onClick={onDatePrev}
-            className="h-9 w-9 hover:bg-muted/80 transition-colors"
+            className="h-9 w-9 border-0 bg-background/60 hover:bg-background transition-colors"
             aria-label="Previous month"
             disabled={loading}
           >
@@ -177,7 +173,7 @@ export function CalendarHeader({
             variant="outline" 
             size="icon" 
             onClick={onDateNext}
-            className="h-9 w-9 hover:bg-muted/80 transition-colors"
+            className="h-9 w-9 border-0 bg-background/60 hover:bg-background transition-colors"
             aria-label="Next month"
             disabled={loading}
           >
@@ -186,13 +182,13 @@ export function CalendarHeader({
           <Button 
             variant="outline" 
             onClick={onDateToday}
-            className="h-9 hover:bg-muted/80 transition-colors"
+            className="h-9 border-0 bg-background/60 hover:bg-background transition-colors"
             aria-label="Go to today"
             disabled={loading}
           >
             Today
           </Button>
-          <div className="text-sm font-medium text-muted-foreground" aria-live="polite" role="status">
+          <div className="text-sm font-medium text-foreground/70 ml-2" aria-live="polite" role="status">
             {formatInTimeZone(currentDate, userTimezone, "MMMM yyyy")}
           </div>
         </div>

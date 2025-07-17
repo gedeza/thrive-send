@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { ContentCalendar, ContentType, SocialPlatform, CalendarEvent as ContentCalendarEvent } from "@/components/content/content-calendar";
 import { WelcomeFlow } from "@/components/onboarding/welcome-flow";
@@ -171,50 +172,52 @@ export default function CalendarPage() {
   }, [clearAllCaches, loadEvents, toast]);
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto px-4 py-6 space-y-6">
       <WelcomeFlow isOpen={showWelcomeFlow} onClose={closeWelcomeFlow} />
       
-      {/* Header with actions */}
-      <div className="flex items-center justify-between mb-6">
+      {/* Page Header - Consistent with campaigns page */}
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--color-chart-blue)]">Content Calendar</h1>
-          <div className="h-6 w-px bg-border" />
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowSync(true)}
-              className="flex items-center gap-2 hover:bg-muted/80 transition-colors"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Sync Content
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleForceRefresh}
-              className="flex items-center gap-2 hover:bg-muted/80 transition-colors"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Force Refresh
-            </Button>
-            <div className="flex items-center gap-2 ml-2">
-              <Label htmlFor="cache-toggle" className="text-sm font-medium">
-                Caching {isCachingEnabled ? 'On' : 'Off'}
-              </Label>
-              <Switch 
-                id="cache-toggle" 
-                checked={isCachingEnabled} 
-                onCheckedChange={setCachingEnabled} 
-              />
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => setShowSettings(true)}
-              className="flex items-center gap-2 hover:bg-muted/80 transition-colors"
-            >
-              <Settings className="h-4 w-4" />
-              Settings
-            </Button>
+          <h1 className="text-3xl font-bold tracking-tight">Content Calendar</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowSync(true)}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Sync Content
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleForceRefresh}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Force Refresh
+          </Button>
+          <div className="flex items-center gap-2 ml-2 px-2">
+            <Label htmlFor="cache-toggle" className="text-sm font-medium">
+              Caching {isCachingEnabled ? 'On' : 'Off'}
+            </Label>
+            <Switch 
+              id="cache-toggle" 
+              checked={isCachingEnabled} 
+              onCheckedChange={setCachingEnabled} 
+            />
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowSettings(true)}
+            className="flex items-center gap-2"
+          >
+            <Settings className="h-4 w-4" />
+            Settings
+          </Button>
         </div>
       </div>
 
@@ -237,19 +240,21 @@ export default function CalendarPage() {
       )}
 
       {/* Main calendar view */}
-      <div className="space-y-4 border rounded-xl p-4 bg-card shadow-sm">
-        <ContentCalendar
-          events={events}
-          onEventCreate={handleEventCreate}
-          onEventUpdate={handleEventUpdate}
-          onEventDelete={handleEventDelete}
-          fetchEvents={loadEvents}
-          defaultView={calendarView}
-          onViewChange={handleViewChange}
-          onSyncClick={() => setShowSync(true)}
-          onSettingsClick={() => setShowSettings(true)}
-        />
-      </div>
+      <Card className="shadow-sm">
+        <CardContent className="p-6">
+          <ContentCalendar
+            events={events}
+            onEventCreate={handleEventCreate}
+            onEventUpdate={handleEventUpdate}
+            onEventDelete={handleEventDelete}
+            fetchEvents={loadEvents}
+            defaultView={calendarView}
+            onViewChange={handleViewChange}
+            onSyncClick={() => setShowSync(true)}
+            onSettingsClick={() => setShowSettings(true)}
+          />
+        </CardContent>
+      </Card>
 
       {/* Sync Dialog */}
       <Dialog open={showSync} onOpenChange={setShowSync}>
