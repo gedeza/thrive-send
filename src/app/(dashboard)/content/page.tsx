@@ -280,24 +280,16 @@ function ContentLibraryPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Enhanced Header with stats */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      {/* Dashboard-style Header */}
+      <div className="space-y-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-1">
             <h1 className="text-3xl font-bold tracking-tight">Content Library</h1>
             <p className="text-muted-foreground">
-              Manage and organize your content assets
-              {filteredContent.length > 0 && (
-                <span className="ml-2 text-sm">•</span>
-              )}
-              {filteredContent.length > 0 && (
-                <span className="ml-2 text-sm font-medium">
-                  {filteredContent.length} {filteredContent.length === 1 ? 'item' : 'items'}
-                </span>
-              )}
+              Create, manage, and schedule your content across all platforms
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -326,7 +318,7 @@ function ContentLibraryPage() {
               <span className="hidden sm:inline ml-2">Sync Calendar</span>
             </Button>
             
-            <Button asChild size="sm">
+            <Button asChild>
               <Link href="/content/new">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Content
@@ -335,158 +327,223 @@ function ContentLibraryPage() {
           </div>
         </div>
 
-        {/* Quick Stats */}
+        {/* Analytics-style Metric Cards */}
         {contentStats && (
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {Object.entries(STATUS_CONFIG).map(([status, config]) => {
               const count = contentStats[status] || 0;
-              if (count === 0) return null;
+              const total = filteredContent.length;
+              const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : '0';
+              
               return (
-                <Badge key={status} variant="outline" className={cn("text-xs", config.color)}>
-                  <config.icon className="h-3 w-3 mr-1" />
-                  {count} {config.label}
-                </Badge>
+                <Card key={status}>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">{config.label}</p>
+                        <p className="text-2xl font-bold">{count}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {percentage}% of total content
+                        </p>
+                      </div>
+                      <div className={cn("rounded-lg p-2", config.color)}>
+                        <config.icon className="h-5 w-5" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               );
             })}
           </div>
         )}
       </div>
 
-      {/* Enhanced Search and Filters */}
-      <div className="space-y-4">
-        <div className="flex flex-col lg:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Search content by title, type, or tags..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4"
-            />
-            {searchQuery && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
-                onClick={() => setSearchQuery('')}
-              >
-                ×
-              </Button>
-            )}
-          </div>
-          
-          <div className="flex flex-wrap gap-2">
-            <Select value={statusFilter} onValueChange={(value: StatusFilter) => setStatusFilter(value)}>
-              <SelectTrigger className="w-36">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="published">Published</SelectItem>
-              </SelectContent>
-            </Select>
+      {/* Analytics-style Controls */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            {/* Search and Primary Filters */}
+            <div className="flex flex-col lg:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Search content by title, type, or tags..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 pr-4"
+                />
+                {searchQuery && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-gray-100"
+                    onClick={() => setSearchQuery('')}
+                  >
+                    ×
+                  </Button>
+                )}
+              </div>
+              
+              <div className="flex flex-wrap gap-2">
+                <Select value={statusFilter} onValueChange={(value: StatusFilter) => setStatusFilter(value)}>
+                  <SelectTrigger className="w-36">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="published">Published</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Select value={contentTypeFilter} onValueChange={(value: ContentTypeFilter) => setContentTypeFilter(value)}>
+                  <SelectTrigger className="w-36">
+                    <SelectValue placeholder="Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    {Object.entries(CONTENT_TYPE_CONFIG).map(([key, config]) => (
+                      <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
+                  const [field, order] = value.split('-');
+                  setSortBy(field);
+                  setSortOrder(order as 'asc' | 'desc');
+                }}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Sort" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="createdAt-desc">Newest first</SelectItem>
+                    <SelectItem value="createdAt-asc">Oldest first</SelectItem>
+                    <SelectItem value="title-asc">Title A-Z</SelectItem>
+                    <SelectItem value="title-desc">Title Z-A</SelectItem>
+                    <SelectItem value="updatedAt-desc">Recently updated</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             
-            <Select value={contentTypeFilter} onValueChange={(value: ContentTypeFilter) => setContentTypeFilter(value)}>
-              <SelectTrigger className="w-36">
-                <SelectValue placeholder="Filter by type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                {Object.entries(CONTENT_TYPE_CONFIG).map(([key, config]) => (
-                  <SelectItem key={key} value={key}>{config.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
-              const [field, order] = value.split('-');
-              setSortBy(field);
-              setSortOrder(order as 'asc' | 'desc');
-            }}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="createdAt-desc">Newest first</SelectItem>
-                <SelectItem value="createdAt-asc">Oldest first</SelectItem>
-                <SelectItem value="title-asc">Title A-Z</SelectItem>
-                <SelectItem value="title-desc">Title Z-A</SelectItem>
-                <SelectItem value="updatedAt-desc">Recently updated</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <div className="flex border rounded-md">
-              <Button
-                variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('grid')}
-                className="rounded-r-none"
-              >
-                <Grid className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('list')}
-                className="rounded-l-none"
-              >
-                <List className="h-4 w-4" />
-              </Button>
+            {/* View Controls and Results Info */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <p className="text-sm text-muted-foreground">
+                  {filteredContent.length} {filteredContent.length === 1 ? 'item' : 'items'}
+                  {(debouncedSearchQuery || statusFilter !== 'all' || contentTypeFilter !== 'all') && ' found'}
+                </p>
+                {(debouncedSearchQuery || statusFilter !== 'all' || contentTypeFilter !== 'all') && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setStatusFilter('all');
+                      setContentTypeFilter('all');
+                    }}
+                    className="h-7 px-2 text-xs"
+                  >
+                    Clear filters
+                  </Button>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <div className="flex border rounded-lg p-1">
+                  <Button
+                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('grid')}
+                    className="h-7 px-2"
+                  >
+                    <Grid className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('list')}
+                    className="h-7 px-2"
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        {/* Bulk Actions Bar */}
-        {showBulkActions && (
-          <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={isAllSelected}
-                ref={(el) => {
-                  if (el) el.indeterminate = isPartiallySelected;
-                }}
-                onCheckedChange={handleSelectAll}
-              />
-              <span className="text-sm font-medium">
-                {selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''} selected
-              </span>
+      {/* Bulk Actions Bar */}
+      {showBulkActions && (
+        <Card className="border-blue-200 bg-blue-50/50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  checked={isAllSelected}
+                  ref={(el) => {
+                    if (el) el.indeterminate = isPartiallySelected;
+                  }}
+                  onCheckedChange={handleSelectAll}
+                />
+                <span className="text-sm font-medium text-blue-900">
+                  {selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''} selected
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={clearSelection}>
+                  Clear Selection
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleBulkDelete}
+                  disabled={selectedItems.length === 0}
+                >
+                  <Trash className="h-4 w-4 mr-2" />
+                  Delete Selected
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={clearSelection}>
-                Clear
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleBulkDelete}
-                disabled={selectedItems.length === 0}
-              >
-                <Trash className="h-4 w-4 mr-1" />
-                Delete Selected
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Enhanced Content List */}
+      {/* Content List with Analytics-style Loading */}
       {isLoading ? (
         <div className="space-y-4">
           {viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {Array.from({ length: 6 }).map((_, i) => (
-                <Card key={i}>
-                  <CardHeader>
-                    <Skeleton className="h-5 w-3/4" />
-                    <div className="flex gap-2 mt-2">
-                      <Skeleton className="h-5 w-16" />
-                      <Skeleton className="h-5 w-20" />
+                <Card key={i} className="border">
+                  <CardContent className="p-6">
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-3 flex-1">
+                          <Skeleton className="h-4 w-4 rounded" />
+                          <div className="flex-1">
+                            <Skeleton className="h-5 w-3/4 mb-2" />
+                            <div className="flex gap-2">
+                              <Skeleton className="h-5 w-16 rounded-full" />
+                              <Skeleton className="h-5 w-20 rounded-full" />
+                            </div>
+                          </div>
+                        </div>
+                        <Skeleton className="h-8 w-8 rounded" />
+                      </div>
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-2/3" />
+                      <div className="flex gap-1">
+                        <Skeleton className="h-5 w-12 rounded-full" />
+                        <Skeleton className="h-5 w-16 rounded-full" />
+                      </div>
+                      <div className="flex items-center justify-between pt-2 border-t">
+                        <Skeleton className="h-3 w-24" />
+                        <Skeleton className="h-3 w-20" />
+                      </div>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <Skeleton className="h-4 w-full mb-2" />
-                    <Skeleton className="h-4 w-2/3" />
                   </CardContent>
                 </Card>
               ))}
@@ -494,14 +551,31 @@ function ContentLibraryPage() {
           ) : (
             <div className="space-y-3">
               {Array.from({ length: 8 }).map((_, i) => (
-                <Card key={i} className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <Skeleton className="h-5 w-1/2 mb-2" />
-                      <Skeleton className="h-4 w-1/4" />
+                <Card key={i} className="border">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4 flex-1">
+                        <Skeleton className="h-4 w-4 rounded" />
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-3">
+                            <Skeleton className="h-5 w-1/3" />
+                            <Skeleton className="h-5 w-20 rounded-full" />
+                            <Skeleton className="h-5 w-16 rounded-full" />
+                          </div>
+                          <Skeleton className="h-4 w-2/3" />
+                          <div className="flex gap-1">
+                            <Skeleton className="h-4 w-12 rounded-full" />
+                            <Skeleton className="h-4 w-16 rounded-full" />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        <Skeleton className="h-8 w-8 rounded" />
+                        <Skeleton className="h-8 w-8 rounded" />
+                        <Skeleton className="h-8 w-8 rounded" />
+                      </div>
                     </div>
-                    <Skeleton className="h-8 w-20" />
-                  </div>
+                  </CardContent>
                 </Card>
               ))}
             </div>
@@ -580,31 +654,68 @@ function ContentLibraryPage() {
         </div>
       )}
 
-      {/* Pagination */}
+      {/* Analytics-style Pagination */}
       {contentData && contentData.pages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Previous
-          </Button>
-          <span className="text-sm text-muted-foreground">
-            Page {currentPage} of {contentData.pages}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(prev => Math.min(contentData.pages, prev + 1))}
-            disabled={currentPage === contentData.pages}
-          >
-            Next
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, contentData.total)} of {contentData.total} results
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="h-8"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, contentData.pages) }, (_, i) => {
+                    const page = i + 1;
+                    return (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(page)}
+                        className="h-8 w-8 p-0"
+                      >
+                        {page}
+                      </Button>
+                    );
+                  })}
+                  {contentData.pages > 5 && (
+                    <>
+                      <span className="text-muted-foreground">...</span>
+                      <Button
+                        variant={currentPage === contentData.pages ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(contentData.pages)}
+                        className="h-8 w-8 p-0"
+                      >
+                        {contentData.pages}
+                      </Button>
+                    </>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(contentData.pages, prev + 1))}
+                  disabled={currentPage === contentData.pages}
+                  className="h-8"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Sync Dialog */}
