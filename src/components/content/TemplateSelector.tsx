@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import {
   ContentTemplate,
@@ -103,8 +102,8 @@ export function TemplateSelector({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-w-[95vw] max-h-[90vh] overflow-hidden flex flex-col gap-0 p-0">
-        <div className="px-6 pt-6 pb-2 border-b border-border/10 flex-shrink-0">
+      <DialogContent className="max-w-4xl max-w-[95vw] max-h-[90vh] overflow-y-auto flex flex-col gap-0 p-0">
+        <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-2 border-b border-border/10 flex-shrink-0 sticky top-0 bg-background z-10">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
@@ -116,7 +115,7 @@ export function TemplateSelector({
           </DialogHeader>
         </div>
 
-        <div className="flex-1 flex flex-col gap-4 min-h-0 px-6 pb-6">
+        <div className="flex-1 flex flex-col gap-4 px-4 sm:px-6 pb-4 sm:pb-6">
           {/* Search and filters */}
           <div className="flex flex-col sm:flex-row gap-3 pt-4 flex-shrink-0">
             <div className="relative flex-1">
@@ -140,8 +139,8 @@ export function TemplateSelector({
           </div>
 
           {/* Category tabs */}
-          <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="flex-1 flex flex-col min-h-0">
-            <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 flex-shrink-0">
+          <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="flex-1 flex flex-col">
+            <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 flex-shrink-0 sticky top-[100px] sm:top-[120px] bg-background z-10 mb-4 shadow-sm">
               <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
               {TEMPLATE_CATEGORIES.map(category => (
                 <TabsTrigger key={category.id} value={category.id} className="text-xs">
@@ -151,58 +150,54 @@ export function TemplateSelector({
               ))}
             </TabsList>
 
-            <TabsContent value="all" className="flex-1 mt-4 overflow-hidden">
-              <ScrollArea className="h-full">
-                <div className="space-y-6 pr-4">
-                  {Object.entries(templatesByCategory).map(([categoryId, templates]) => {
-                    const category = TEMPLATE_CATEGORIES.find(c => c.id === categoryId);
-                    if (!category || templates.length === 0) return null;
+            <TabsContent value="all" className="mt-0">
+              <div className="space-y-6">
+                {Object.entries(templatesByCategory).map(([categoryId, templates]) => {
+                  const category = TEMPLATE_CATEGORIES.find(c => c.id === categoryId);
+                  if (!category || templates.length === 0) return null;
 
-                    return (
-                      <div key={categoryId}>
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className="text-lg">{category.icon}</span>
-                          <h3 className="font-semibold">{category.name}</h3>
-                          <Badge variant="secondary" className="text-xs">
-                            {templates.length}
-                          </Badge>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                          {templates.map(template => (
-                            <TemplateCard
-                              key={template.id}
-                              template={template}
-                              onSelect={() => handleTemplateSelect(template)}
-                            />
-                          ))}
-                        </div>
+                  return (
+                    <div key={categoryId}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-lg">{category.icon}</span>
+                        <h3 className="font-semibold">{category.name}</h3>
+                        <Badge variant="secondary" className="text-xs">
+                          {templates.length}
+                        </Badge>
                       </div>
-                    );
-                  })}
-                </div>
-              </ScrollArea>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                        {templates.map(template => (
+                          <TemplateCard
+                            key={template.id}
+                            template={template}
+                            onSelect={() => handleTemplateSelect(template)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </TabsContent>
 
             {TEMPLATE_CATEGORIES.map(category => (
-              <TabsContent key={category.id} value={category.id} className="flex-1 mt-4 overflow-hidden">
-                <ScrollArea className="h-full">
-                  <div className="space-y-4 pr-4">
-                    <div className="text-center p-4 bg-muted/30 rounded-lg">
-                      <div className="text-2xl mb-2">{category.icon}</div>
-                      <h3 className="font-semibold mb-1">{category.name}</h3>
-                      <p className="text-sm text-muted-foreground">{category.description}</p>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                      {getTemplatesByCategory(category.id as any).map(template => (
-                        <TemplateCard
-                          key={template.id}
-                          template={template}
-                          onSelect={() => handleTemplateSelect(template)}
-                        />
-                      ))}
-                    </div>
+              <TabsContent key={category.id} value={category.id} className="mt-0">
+                <div className="space-y-4">
+                  <div className="text-center p-4 bg-muted/30 rounded-lg">
+                    <div className="text-2xl mb-2">{category.icon}</div>
+                    <h3 className="font-semibold mb-1">{category.name}</h3>
+                    <p className="text-sm text-muted-foreground">{category.description}</p>
                   </div>
-                </ScrollArea>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                    {getTemplatesByCategory(category.id as any).map(template => (
+                      <TemplateCard
+                        key={template.id}
+                        template={template}
+                        onSelect={() => handleTemplateSelect(template)}
+                      />
+                    ))}
+                  </div>
+                </div>
               </TabsContent>
             ))}
           </Tabs>
