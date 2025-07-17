@@ -590,12 +590,17 @@ const CreateCampaign: React.FC = () => {
                       <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input 
                         type="number" 
-                        placeholder="Enter your budget"
+                        placeholder="Enter your budget (e.g., 5000)"
                         className="pl-10 text-lg"
+                        min="0"
+                        step="100"
                         {...field} 
                       />
                     </div>
                   </FormControl>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Optional: Leave blank if budget is not yet determined
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}
@@ -609,17 +614,33 @@ const CreateCampaign: React.FC = () => {
                   <FormLabel>Initial Status</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="h-12">
                         <SelectValue placeholder="Select initial status" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {Object.values(CampaignStatus).map(status => (
-                        <SelectItem key={status} value={status}>
-                          <div className="flex items-center gap-2">
-                            <Badge variant={status === 'active' ? 'default' : 'secondary'}>
-                              {status.charAt(0).toUpperCase() + status.slice(1)}
-                            </Badge>
+                        <SelectItem key={status} value={status} className="h-12 cursor-pointer">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-3 h-3 rounded-full ${
+                              status === 'active' ? 'bg-green-500' : 
+                              status === 'draft' ? 'bg-gray-400' : 
+                              status === 'completed' ? 'bg-blue-500' :
+                              status === 'paused' ? 'bg-yellow-500' :
+                              'bg-red-500'
+                            }`}></div>
+                            <div className="flex flex-col">
+                              <span className="font-medium text-foreground">
+                                {status.charAt(0).toUpperCase() + status.slice(1)}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {status === 'draft' && 'Campaign is being prepared'}
+                                {status === 'active' && 'Campaign is currently running'}
+                                {status === 'completed' && 'Campaign has finished'}
+                                {status === 'paused' && 'Campaign is temporarily stopped'}
+                                {status === 'cancelled' && 'Campaign has been cancelled'}
+                              </span>
+                            </div>
                           </div>
                         </SelectItem>
                       ))}
