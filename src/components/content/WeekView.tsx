@@ -114,6 +114,10 @@ const WeekViewTimeSlot: React.FC<{
           <div
             key={`${event.id}-${index}`}
             onClick={() => onEventClick(event)}
+            onMouseEnter={(e) => onEventHover?.(event, e)}
+            onMouseLeave={onEventHoverEnd}
+            onFocus={(e) => onEventHover?.(event, e as any)}
+            onBlur={onEventHoverEnd}
             className={cn(
               "absolute left-0.5 sm:left-1 right-0.5 sm:right-1 rounded px-1 py-0.5 text-xs cursor-pointer transition-all hover:shadow-sm border touch-manipulation",
               typeColors.bg,
@@ -154,13 +158,17 @@ export interface WeekViewProps {
   getEventsForDay: (day: Date) => CalendarEvent[];
   onEventClick: (event: CalendarEvent) => void;
   userTimezone: string;
+  onEventHover?: (event: CalendarEvent, e: React.MouseEvent) => void;
+  onEventHoverEnd?: () => void;
 }
 
 export const WeekView: React.FC<WeekViewProps> = ({
   currentDate,
   getEventsForDay,
   onEventClick,
-  userTimezone
+  userTimezone,
+  onEventHover,
+  onEventHoverEnd
 }) => {
   const { weekDays, hours } = useMemo(() => {
     const weekStart = startOfWeek(currentDate);

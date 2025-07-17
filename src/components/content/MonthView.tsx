@@ -68,6 +68,8 @@ interface MonthViewProps {
   handleEventClick: (event: CalendarEvent) => void;
   handleDateClick: (day: Date) => void;
   userTimezone: string;
+  onEventHover?: (event: CalendarEvent, e: React.MouseEvent) => void;
+  onEventHoverEnd?: () => void;
 }
 
 // Helper functions
@@ -92,7 +94,9 @@ const MonthViewDay = ({
   isCurrentMonth, 
   onEventClick, 
   onClick,
-  userTimezone 
+  userTimezone,
+  onEventHover,
+  onEventHoverEnd
 }: { 
   day: Date; 
   events: CalendarEvent[];
@@ -100,6 +104,8 @@ const MonthViewDay = ({
   onEventClick: (event: CalendarEvent) => void;
   onClick: () => void;
   userTimezone: string;
+  onEventHover?: (event: CalendarEvent, e: React.MouseEvent) => void;
+  onEventHoverEnd?: () => void;
 }) => {
   const { setNodeRef, isOver } = useDroppable({
     id: formatInTimeZone(day, userTimezone, 'yyyy-MM-dd'),
@@ -172,6 +178,10 @@ const MonthViewDay = ({
                   e.stopPropagation();
                   onEventClick(event);
                 }}
+                onMouseEnter={(e) => {
+                  onEventHover?.(event, e);
+                }}
+                onMouseLeave={onEventHoverEnd}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
@@ -179,6 +189,10 @@ const MonthViewDay = ({
                     onEventClick(event);
                   }
                 }}
+                onFocus={(e) => {
+                  onEventHover?.(event, e as any);
+                }}
+                onBlur={onEventHoverEnd}
                 tabIndex={0}
                 role="button"
                 aria-label={`${event.title}, ${event.type} event${event.time ? ` at ${event.time}` : ''}`}
@@ -237,7 +251,9 @@ export function MonthView({
   getEventsForDay,
   handleEventClick,
   handleDateClick,
-  userTimezone
+  userTimezone,
+  onEventHover,
+  onEventHoverEnd
 }: MonthViewProps) {
   return (
     <div className="p-2 sm:p-4">
@@ -272,6 +288,8 @@ export function MonthView({
                 onEventClick={handleEventClick}
                 onClick={() => handleDateClick(day)}
                 userTimezone={userTimezone}
+                onEventHover={onEventHover}
+                onEventHoverEnd={onEventHoverEnd}
               />
             </div>
           );

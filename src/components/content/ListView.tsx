@@ -59,6 +59,8 @@ export interface ListViewProps {
   isSelectionMode?: boolean;
   selectedEvents?: Set<string>;
   onToggleSelection?: (eventId: string) => void;
+  onEventHover?: (event: CalendarEvent, e: React.MouseEvent) => void;
+  onEventHoverEnd?: () => void;
 }
 
 export const ListView: React.FC<ListViewProps> = ({
@@ -66,7 +68,9 @@ export const ListView: React.FC<ListViewProps> = ({
   onEventClick,
   isSelectionMode = false,
   selectedEvents = new Set(),
-  onToggleSelection
+  onToggleSelection,
+  onEventHover,
+  onEventHoverEnd
 }) => {
   const userTimezone = useTimezone();
   
@@ -116,6 +120,10 @@ export const ListView: React.FC<ListViewProps> = ({
                 onEventClick(event);
               }
             }}
+            onMouseEnter={(e) => onEventHover?.(event, e)}
+            onMouseLeave={onEventHoverEnd}
+            onFocus={(e) => onEventHover?.(event, e as any)}
+            onBlur={onEventHoverEnd}
           >
             {/* Checkbox column (desktop only) */}
             {isSelectionMode && (

@@ -207,6 +207,115 @@ interface NewEventState {
   };
 }
 
+// Event Preview Component
+function EventPreview({ event, position }: { event: CalendarEvent; position: { x: number; y: number } }) {
+  const userTimezone = useTimezone();
+  
+  const formatEventTime = (date: string, time?: string) => {
+    if (!time) return formatInTimeZone(new Date(date), userTimezone, "MMM d, yyyy");
+    return formatInTimeZone(new Date(`${date}T${time}`), userTimezone, "MMM d, yyyy 'at' h:mm a");
+  };
+
+  const getPlatformIcon = (platform: SocialPlatform) => {
+    const icons = {
+      facebook: <Facebook className="h-3 w-3 text-blue-600" />,
+      twitter: <Twitter className="h-3 w-3 text-sky-500" />,
+      instagram: <Instagram className="h-3 w-3 text-pink-600" />,
+      linkedin: <Linkedin className="h-3 w-3 text-blue-700" />,
+      youtube: "🎥",
+      tiktok: "🎵",
+      pinterest: "📌"
+    };
+    return icons[platform] || "📱";
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'draft': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'scheduled': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'sent': return 'bg-green-100 text-green-800 border-green-200';
+      case 'failed': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  return (
+    <div
+      className="fixed z-50 max-w-sm bg-white dark:bg-gray-800 border rounded-lg shadow-lg p-4 pointer-events-none"
+      style={{
+        left: Math.min(position.x + 10, window.innerWidth - 300),
+        top: Math.min(position.y + 10, window.innerHeight - 200)
+      }}
+    >
+      <div className="space-y-3">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="font-semibold text-sm leading-tight">{event.title}</h3>
+          <span className={cn(
+            "px-2 py-1 rounded-full text-xs font-medium border",
+            getStatusColor(event.status)
+          )}>
+            {event.status}
+          </span>
+        </div>
+
+        {/* Time and Type */}
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Clock className="h-3 w-3" />
+            <span>{formatEventTime(event.date, event.time)}</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className={cn(
+              "px-2 py-1 rounded-full text-xs font-medium",
+              isValidContentType(event.type) ? eventTypeColorMap[event.type].bg : "bg-gray-100",
+              isValidContentType(event.type) ? eventTypeColorMap[event.type].text : "text-gray-700"
+            )}>
+              {event.type}
+            </span>
+          </div>
+        </div>
+
+        {/* Description */}
+        {event.description && (
+          <p className="text-xs text-muted-foreground line-clamp-3">
+            {event.description}
+          </p>
+        )}
+
+        {/* Social Media Platforms */}
+        {event.type === 'social' && event.socialMediaContent?.platforms && event.socialMediaContent.platforms.length > 0 && (
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-muted-foreground">Platforms:</span>
+            <div className="flex gap-1">
+              {event.socialMediaContent.platforms.map((platform, index) => (
+                <span key={index} className="inline-flex items-center">
+                  {getPlatformIcon(platform)}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Media Count */}
+        {event.socialMediaContent?.mediaUrls && event.socialMediaContent.mediaUrls.length > 0 && (
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Upload className="h-3 w-3" />
+            <span>{event.socialMediaContent.mediaUrls.length} media file{event.socialMediaContent.mediaUrls.length !== 1 ? 's' : ''}</span>
+          </div>
+        )}
+
+        {/* Quick Actions */}
+        <div className="flex gap-2 pt-2 border-t">
+          <span className="text-xs text-muted-foreground">
+            Click to view details
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Add this component for media upload
 function MediaUploader({ 
   platform, 
@@ -422,6 +531,9 @@ export function ContentCalendar({
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedEvents, setSelectedEvents] = useState<Set<string>>(new Set());
   const [showBulkActions, setShowBulkActions] = useState(false);
+  const [hoveredEvent, setHoveredEvent] = useState<CalendarEvent | null>(null);
+  const [previewPosition, setPreviewPosition] = useState<{ x: number; y: number } | null>(null);
+  const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isFetchingRef = useRef<boolean>(false);
   const initialEventsRef = useRef<boolean>(false);
 
@@ -1035,6 +1147,43 @@ export function ContentCalendar({
     }
   }, [selectedEvents, events, onEventUpdate, toast]);
 
+  // Event preview handlers
+  const handleEventHover = useCallback((event: CalendarEvent, mouseEvent: React.MouseEvent) => {
+    if (previewTimeoutRef.current) {
+      clearTimeout(previewTimeoutRef.current);
+    }
+    
+    previewTimeoutRef.current = setTimeout(() => {
+      setHoveredEvent(event);
+      setPreviewPosition({ x: mouseEvent.clientX, y: mouseEvent.clientY });
+    }, 500); // Show preview after 500ms delay
+  }, []);
+
+  const handleEventHoverEnd = useCallback(() => {
+    if (previewTimeoutRef.current) {
+      clearTimeout(previewTimeoutRef.current);
+      previewTimeoutRef.current = null;
+    }
+    
+    // Keep preview open for a short time to allow mouse to move to it
+    previewTimeoutRef.current = setTimeout(() => {
+      setHoveredEvent(null);
+      setPreviewPosition(null);
+    }, 300);
+  }, []);
+
+  const handlePreviewHover = useCallback(() => {
+    if (previewTimeoutRef.current) {
+      clearTimeout(previewTimeoutRef.current);
+      previewTimeoutRef.current = null;
+    }
+  }, []);
+
+  const handlePreviewLeave = useCallback(() => {
+    setHoveredEvent(null);
+    setPreviewPosition(null);
+  }, []);
+
   // Keyboard navigation handlers
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     // Don't interfere with form inputs
@@ -1181,6 +1330,15 @@ export function ContentCalendar({
         break;
     }
   }, [calendarView, currentDate, handleDatePrev, handleDateNext, handleDateToday, toggleSelectionMode, isSelectionMode, selectAllEvents, selectedEvents, handleBulkDelete, clearSelection]);
+
+  // Cleanup preview timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (previewTimeoutRef.current) {
+        clearTimeout(previewTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleGestureEnd = useCallback((e: React.TouchEvent | React.PointerEvent) => {
     if (!gestureStateRef.current.isGesturing) return;
@@ -1434,6 +1592,10 @@ export function ContentCalendar({
                   zIndex: 1
                 }}
                 onClick={() => onEventClick(event)}
+                onMouseEnter={(e) => handleEventHover(event, e)}
+                onMouseLeave={handleEventHoverEnd}
+                onFocus={(e) => handleEventHover(event, e as any)}
+                onBlur={handleEventHoverEnd}
               >
                 <div className="flex items-start justify-between h-full">
                   <div className="flex-1 min-w-0">
@@ -1607,6 +1769,10 @@ export function ContentCalendar({
                           zIndex: 1
                         }}
                         onClick={() => handleEventClick(event)}
+                        onMouseEnter={(e) => handleEventHover(event, e)}
+                        onMouseLeave={handleEventHoverEnd}
+                        onFocus={(e) => handleEventHover(event, e as any)}
+                        onBlur={handleEventHoverEnd}
                       >
                         <div className="font-medium truncate">{event.title}</div>
                         <div className="text-muted-foreground text-[10px]">
@@ -1800,6 +1966,8 @@ export function ContentCalendar({
                     handleEventClick={handleEventClick}
                     handleDateClick={handleDateClick}
                     userTimezone={userTimezone}
+                    onEventHover={handleEventHover}
+                    onEventHoverEnd={handleEventHoverEnd}
                   />
                 </div>
               )}
@@ -1810,6 +1978,8 @@ export function ContentCalendar({
                     getEventsForDay={getEventsForDay}
                     onEventClick={handleEventClick}
                     userTimezone={userTimezone}
+                    onEventHover={handleEventHover}
+                    onEventHoverEnd={handleEventHoverEnd}
                   />
                 </div>
               )}
@@ -1820,6 +1990,8 @@ export function ContentCalendar({
                     getEventsForDay={getEventsForDay}
                     onEventClick={handleEventClick}
                     userTimezone={userTimezone}
+                    onEventHover={handleEventHover}
+                    onEventHoverEnd={handleEventHoverEnd}
                   />
                 </div>
               )}
@@ -1831,6 +2003,8 @@ export function ContentCalendar({
                     isSelectionMode={isSelectionMode}
                     selectedEvents={selectedEvents}
                     onToggleSelection={toggleEventSelection}
+                    onEventHover={handleEventHover}
+                    onEventHoverEnd={handleEventHoverEnd}
                   />
                 </div>
               )}
@@ -2106,6 +2280,17 @@ export function ContentCalendar({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* Event Preview Tooltip */}
+      {hoveredEvent && previewPosition && (
+        <div 
+          onMouseEnter={handlePreviewHover}
+          onMouseLeave={handlePreviewLeave}
+          className="pointer-events-auto"
+        >
+          <EventPreview event={hoveredEvent} position={previewPosition} />
+        </div>
+      )}
     </div>
   );
 }
