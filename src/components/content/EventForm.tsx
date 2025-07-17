@@ -21,6 +21,8 @@ import { ContentType, SocialPlatform, CalendarEvent, SocialMediaContent, DEFAULT
 import { Checkbox } from '@/components/ui/checkbox';
 import { useTimezone } from "@/hooks/use-timezone";
 import { DialogFooter } from '@/components/ui/dialog';
+import { RecurrenceSelector } from './RecurrenceSelector';
+import { RecurrencePattern } from '@/lib/utils/recurring-events';
 // import * as React from 'react'; //
 import type {
   SocialPlatform,
@@ -585,27 +587,9 @@ export function EventForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Add new state for enhancements
-  const [recurrence, setRecurrence] = useState<RecurrenceState>({
-    enabled: false,
-    pattern: {
-      type: 'none',
-      interval: 1
-    },
-    previewDates: []
-  });
-  
-  const [templates, setTemplates] = useState<TemplateState>({
-    templates: [],
-    showTemplateDialog: false,
-    saveAsTemplate: false
-  });
-  
-  const [bulkCreation, setBulkCreation] = useState<BulkCreationState>({
-    enabled: false,
-    baseContent: {},
-    variations: [],
-    previewMode: false
-  });
+  const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern | null>(
+    initialData?.recurringData?.pattern || null
+  );
   
   const [autoSave, setAutoSave] = useState({
     enabled: true,
@@ -613,47 +597,16 @@ export function EventForm({
     isDirty: false
   });
 
-  // Update recurrence preview dates when form date changes
+  // Auto-save functionality
   React.useEffect(() => {
-    if (recurrence.enabled && formData.date) {
-      const generatePreviewDates = (pattern: RecurrencePattern, startDate: string): string[] => {
-        const dates: string[] = [];
-        const start = new Date(startDate);
-        const maxDates = 10;
-        
-        for (let i = 0; i < maxDates; i++) {
-          let nextDate = new Date(start);
-          
-          switch (pattern.type) {
-            case 'daily':
-              nextDate.setDate(start.getDate() + (i * pattern.interval));
-              break;
-            case 'weekly':
-              nextDate.setDate(start.getDate() + (i * pattern.interval * 7));
-              break;
-            case 'monthly':
-              nextDate.setMonth(start.getMonth() + (i * pattern.interval));
-              break;
-            case 'yearly':
-              nextDate.setFullYear(start.getFullYear() + (i * pattern.interval));
-              break;
-          }
-          
-          if (pattern.endDate && nextDate > new Date(pattern.endDate)) break;
-          if (pattern.occurrences && i >= pattern.occurrences) break;
-          
-          dates.push(format(nextDate, 'yyyy-MM-dd'));
-        }
-        
-        return dates;
-      };
+    if (autoSave.enabled) {
+      const timer = setTimeout(() => {
+        setAutoSave(prev => ({ ...prev, lastSaved: new Date(), isDirty: false }));
+      }, 2000);
       
-      setRecurrence(prev => ({
-        ...prev,
-        previewDates: generatePreviewDates(prev.pattern, formData.date)
-      }));
+      return () => clearTimeout(timer);
     }
-  }, [formData.date, recurrence.enabled, recurrence.pattern]);
+  }, [formData, autoSave.enabled]);
 
   const formatDate = (date: Date, format: string) => {
     return formatInTimeZone(date, userTimezone, format);
@@ -977,8 +930,13 @@ export function EventForm({
       }
       
       // Add recurrence data if enabled
-      if (recurrence.enabled) {
-        submissionData.recurrence = recurrence.pattern;
+      if (recurrencePattern) {
+        submissionData.recurringData = {
+          pattern: recurrencePattern,
+          seriesId: crypto.randomUUID(),
+          isRecurring: true,
+          occurrenceNumber: 0
+        };
       }
       
       // Submit the form
@@ -1583,8 +1541,6 @@ export function EventForm({
             </div>
           )}
           
-          {/* Template Manager */}
-          <TemplateManager />
           
           <div className="space-y-4">
             <div className="space-y-2">
@@ -1745,6 +1701,19 @@ export function EventForm({
               </div>
             )}
           </div>
+
+          {/* Recurrence Settings */}
+          {mode === 'create' && (
+            <div className="space-y-4">
+              <RecurrenceSelector
+                value={recurrencePattern}
+                onChange={setRecurrencePattern}
+                contentType={formData.type}
+                startDate={formData.date || format(new Date(), 'yyyy-MM-dd')}
+                showPreview={true}
+              />
+            </div>
+          )}
 
           {/* Mobile-optimized button layout */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
