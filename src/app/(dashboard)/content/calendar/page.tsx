@@ -55,12 +55,14 @@ import { format, formatDistanceToNow } from "date-fns";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { Label } from "@/components/ui/label";
 import { useCalendarCache } from '@/context/CalendarCacheContext';
+import { PerformanceProvider, usePerformance } from '@/context/PerformanceContext';
+import { DynamicProgressiveCalendar } from '@/lib/utils/bundle-optimization';
 import { Switch } from "@/components/ui/switch";
 
 // Use the CalendarEvent type from the content calendar component
 // type CalendarEvent = ContentCalendarEvent;
 
-export default function CalendarPage() {
+function CalendarPageContent() {
   const router = useRouter();
   const { toast } = useToast();
   const { showWelcomeFlow, closeWelcomeFlow } = useOnboarding();
@@ -71,11 +73,13 @@ export default function CalendarPage() {
     setCachingEnabled,
     clearAllCaches 
   } = useCalendarCache();
+  const { isOptimizedMode, setOptimizedMode, metrics } = usePerformance();
   const [events, setEvents] = useState<ContentCalendarEvent[]>([]);
   const [showSync, setShowSync] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [calendarView, setCalendarView] = useState<"month" | "week" | "day" | "list">("month");
   const [isDbUnavailable, setIsDbUnavailable] = useState(false);
+  const [showPerformanceMetrics, setShowPerformanceMetrics] = useState(false);
 
   // Fetch events
   const loadEvents = useCallback(async () => {
@@ -206,6 +210,16 @@ export default function CalendarPage() {
                 onCheckedChange={setCachingEnabled} 
               />
             </div>
+            <div className="flex items-center gap-2 ml-2">
+              <Label htmlFor="performance-toggle" className="text-sm font-medium">
+                Performance Mode {isOptimizedMode ? 'On' : 'Off'}
+              </Label>
+              <Switch 
+                id="performance-toggle" 
+                checked={isOptimizedMode} 
+                onCheckedChange={setOptimizedMode} 
+              />
+            </div>
             <Button
               variant="outline"
               onClick={() => setShowSettings(true)}
@@ -238,17 +252,31 @@ export default function CalendarPage() {
 
       {/* Main calendar view */}
       <div className="space-y-4 border rounded-xl p-4 bg-card shadow-sm">
-        <ContentCalendar
-          events={events}
-          onEventCreate={handleEventCreate}
-          onEventUpdate={handleEventUpdate}
-          onEventDelete={handleEventDelete}
-          fetchEvents={loadEvents}
-          defaultView={calendarView}
-          onViewChange={handleViewChange}
-          onSyncClick={() => setShowSync(true)}
-          onSettingsClick={() => setShowSettings(true)}
-        />
+        {isOptimizedMode ? (
+          <DynamicProgressiveCalendar
+            events={events}
+            onEventCreate={handleEventCreate}
+            onEventUpdate={handleEventUpdate}
+            onEventDelete={handleEventDelete}
+            fetchEvents={loadEvents}
+            defaultView={calendarView}
+            onViewChange={handleViewChange}
+            selectedDate={new Date()}
+            onDateChange={() => {}}
+          />
+        ) : (
+          <ContentCalendar
+            events={events}
+            onEventCreate={handleEventCreate}
+            onEventUpdate={handleEventUpdate}
+            onEventDelete={handleEventDelete}
+            fetchEvents={loadEvents}
+            defaultView={calendarView}
+            onViewChange={handleViewChange}
+            onSyncClick={() => setShowSync(true)}
+            onSettingsClick={() => setShowSettings(true)}
+          />
+        )}
       </div>
 
       {/* Sync Dialog */}
@@ -293,6 +321,56 @@ export default function CalendarPage() {
             </div>
             
             <div>
+              <h3 className="font-medium mb-2">Performance</h3>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="cache-stats">Cache Hit Rate</Label>
+                  <span className="text-sm text-muted-foreground">
+                    {metrics.cacheHitRate.toFixed(1)}%
+                  </span>
+                </div>
+                {metrics.memoryUsage && (
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="memory-usage">Memory Usage</Label>
+                    <span className="text-sm text-muted-foreground">
+                      {metrics.memoryUsage.percentage.toFixed(1)}%
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="lcp">LCP</Label>
+                  <span className="text-sm text-muted-foreground">
+                    {metrics.lcp ? `${metrics.lcp.toFixed(0)}ms` : 'N/A'}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowPerformanceMetrics(!showPerformanceMetrics)}
+                  className="w-full"
+                >
+                  {showPerformanceMetrics ? 'Hide' : 'Show'} Performance Details
+                </Button>
+              </div>
+            </div>
+            
+            {showPerformanceMetrics && (
+              <div>
+                <h3 className="font-medium mb-2">Component Render Times</h3>
+                <div className="space-y-1 text-sm">
+                  {Object.entries(metrics.componentRenderTimes).map(([name, time]) => (
+                    <div key={name} className="flex justify-between">
+                      <span>{name}</span>
+                      <span className={time > 100 ? 'text-red-500' : 'text-green-500'}>
+                        {time.toFixed(2)}ms
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <div>
               <h3 className="font-medium mb-2">Notifications</h3>
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
@@ -330,5 +408,13 @@ export default function CalendarPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function CalendarPage() {
+  return (
+    <PerformanceProvider enableOptimizations={true}>
+      <CalendarPageContent />
+    </PerformanceProvider>
   );
 } 
