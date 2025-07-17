@@ -43,6 +43,7 @@ export const CalendarEventSchema = z.object({
   contentId: z.string().optional(), // Add this field
   startTime: z.string().min(1, "Start time is required"),
   endTime: z.string().min(1, "End time is required"),
+  scheduledAt: z.string().optional(), // Add this field that's used in the API
   type: z.enum(["social", "blog", "email", "custom", "article"]),
   status: z.enum(["draft", "scheduled", "published", "sent", "failed"]).default("draft"),
   socialMediaContent: z.object({
@@ -97,6 +98,7 @@ export const CalendarEventUpdateSchema = CalendarEventSchema.partial();
 
 // Schema for event reschedule
 export const EventRescheduleSchema = z.object({
+  eventId: z.string().min(1, "Event ID is required"),
   date: z.string().min(1, "Date is required"),
   time: z.string().optional(),
 });

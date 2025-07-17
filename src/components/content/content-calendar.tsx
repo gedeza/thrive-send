@@ -2,12 +2,12 @@
 
 import * as React from "react";
 import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from "react";
-import { 
-  preloadCriticalComponents, 
-  progressiveEnhancement, 
-  usePerformanceMonitoring,
-  dynamicImports 
-} from "@/lib/utils/bundle-optimizer";
+// Temporarily disable bundle optimizer import to fix lazy loading issue
+// import { 
+//   preloadCriticalComponents, 
+//   progressiveEnhancement, 
+//   usePerformanceMonitoring
+// } from "@/lib/utils/bundle-optimizer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Search, Filter, LayoutGrid, LayoutList, Clock, Facebook, Twitter, Instagram, Linkedin, Upload, X, Settings as SettingsIcon, RefreshCw, Bug, Trash2 } from "lucide-react";
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useSensor, useSensors, PointerSensor, closestCenter } from "@dnd-kit/core";
@@ -58,7 +58,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 // Lazy load heavy components
-const EventForm = React.lazy(() => dynamicImports.EventForm());
+const EventForm = React.lazy(() => import('./EventForm'));
 import { EventDetails } from './EventDetails';
 import { useTimezone } from "@/hooks/use-timezone";
 import { CSS } from '@dnd-kit/utilities';
@@ -72,7 +72,7 @@ import { DayView } from './DayView';
 import { ListView } from './ListView';
 import { WeekView } from './WeekView';
 import { CalendarHeader } from './CalendarHeader';
-const TemplateSelector = React.lazy(() => dynamicImports.TemplateSelector());
+const TemplateSelector = React.lazy(() => import('./TemplateSelector'));
 // Add these constants at the top of the file, after the imports
 export const DEFAULT_DURATIONS: Record<ContentType, number> = {
   social: 30, // 30 minutes for social posts
@@ -501,17 +501,18 @@ export function ContentCalendar({
 }: ContentCalendarProps) {
   const { toast } = useToast();
   const userTimezone = useTimezone();
-  const { measurePerformance, getBundleReport } = usePerformanceMonitoring();
+  // Temporarily disable performance monitoring to fix lazy loading issue
+  // const { measurePerformance, getBundleReport } = usePerformanceMonitoring();
   
   // Performance optimization: Check if we should use optimized mode
-  const useOptimizedMode = useMemo(() => {
-    return progressiveEnhancement.shouldUseOptimizedMode();
-  }, []);
+  // const useOptimizedMode = useMemo(() => {
+  //   return progressiveEnhancement.shouldUseOptimizedMode();
+  // }, []);
   
   // Preload critical components on mount
-  useEffect(() => {
-    preloadCriticalComponents();
-  }, []);
+  // useEffect(() => {
+  //   preloadCriticalComponents();
+  // }, []);
   
   // State
   const [events, setEvents] = useState<CalendarEvent[]>(initialEvents);
@@ -2168,9 +2169,9 @@ export function ContentCalendar({
               onSubmit={async (event) => {
                 if (onEventCreate) {
                   try {
-                    measurePerformance('create-event', () => {
-                      // Performance measurement wrapper
-                    });
+                    // measurePerformance('create-event', () => {
+                    //   // Performance measurement wrapper
+                    // });
                     const created = await onEventCreate(event);
                     setEvents(prev => [...prev, created]);
                     setIsCreateDialogOpen(false);
@@ -2214,9 +2215,9 @@ export function ContentCalendar({
                 onSubmit={async (event) => {
                   if (onEventUpdate) {
                     try {
-                      measurePerformance('update-event', () => {
-                        // Performance measurement wrapper
-                      });
+                      // measurePerformance('update-event', () => {
+                      //   // Performance measurement wrapper
+                      // });
                       const updated = await onEventUpdate(event);
                       setEvents(prev => prev.map(e => e.id === updated.id ? updated : e));
                       setIsEditDialogOpen(false);

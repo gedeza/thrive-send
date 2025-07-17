@@ -28,7 +28,7 @@ interface TemplateSelectorProps {
   initialDate?: string;
 }
 
-export function TemplateSelector({
+function TemplateSelector({
   isOpen,
   onClose,
   onSelectTemplate,
@@ -260,3 +260,6 @@ function TemplateCard({ template, onSelect }: TemplateCardProps) {
     </Card>
   );
 }
+
+export default TemplateSelector;
+export { TemplateSelector };

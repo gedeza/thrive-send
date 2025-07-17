@@ -529,7 +529,7 @@ const validateSocialContent = (content: string, platform: SocialPlatform): Valid
   return null;
 };
 
-export function EventForm({
+function EventForm({
   initialData,
   mode = 'create',
   onPlatformsChange,
@@ -1775,3 +1775,5 @@ export function EventForm({
     </form>
   );
 }
+export default EventForm;
+export { EventForm };
