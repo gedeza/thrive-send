@@ -565,10 +565,19 @@ export function ContentCalendar({
   
   // Template selection handler
   const handleTemplateSelect = (eventData: Partial<CalendarEvent>) => {
+    const templateDate = eventData.date || pendingEventDate || new Date().toISOString().split('T')[0];
+    const startDate = new Date(templateDate);
+    const endDate = new Date(startDate);
+    endDate.setHours(startDate.getHours() + 1); // Default 1 hour duration
+    
     setNewEvent(prev => ({
       ...prev,
-      ...eventData,
-      start: new Date(eventData.date || pendingEventDate || new Date().toISOString().split('T')[0])
+      title: eventData.title || "",
+      description: eventData.description || "",
+      start: startDate,
+      end: endDate,
+      type: eventData.type || "email",
+      socialMediaContent: eventData.socialMediaContent || prev.socialMediaContent
     }));
     setIsTemplateSelectorOpen(false);
     setIsCreateDialogOpen(true);
@@ -2163,8 +2172,11 @@ export function ContentCalendar({
               initialData={{
                 date: format(newEvent.start, "yyyy-MM-dd"),
                 time: format(newEvent.start, "HH:mm"),
-                status: "draft",
-                type: "email"
+                status: newEvent.status || "draft",
+                type: newEvent.type || "email",
+                title: newEvent.title || "",
+                description: newEvent.description || "",
+                ...newEvent
               }}
               onSubmit={async (event) => {
                 if (onEventCreate) {

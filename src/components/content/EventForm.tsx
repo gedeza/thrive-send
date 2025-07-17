@@ -79,6 +79,27 @@ const platformContentLimits = {
     maxTextLength: 3000,
     maxMediaCount: 9,
     supportedMediaTypes: ['image', 'video', 'document']
+  },
+  // Support lowercase versions for template compatibility
+  facebook: {
+    maxTextLength: 63206,
+    maxMediaCount: 10,
+    supportedMediaTypes: ['image', 'video', 'link']
+  },
+  twitter: {
+    maxTextLength: 280,
+    maxMediaCount: 4,
+    supportedMediaTypes: ['image', 'video', 'gif']
+  },
+  instagram: {
+    maxTextLength: 2200,
+    maxMediaCount: 10,
+    supportedMediaTypes: ['image', 'video', 'carousel']
+  },
+  linkedin: {
+    maxTextLength: 3000,
+    maxMediaCount: 9,
+    supportedMediaTypes: ['image', 'video', 'document']
   }
 };
 
@@ -492,7 +513,7 @@ const validateSocialContent = (content: string, platform: SocialPlatform): Valid
   }
   
   // Length check
-  const maxLength = platformContentLimits[platform].maxTextLength;
+  const maxLength = platformContentLimits[platform]?.maxTextLength || 1000;
   if (content.length > maxLength) {
     return {
       code: 'CONTENT_TOO_LONG',
@@ -869,10 +890,11 @@ function EventForm({
         }
         
         const mediaCount = content?.mediaUrls?.length || 0;
-        if (mediaCount > platformContentLimits[platform].maxMediaCount) {
+        const maxMediaCount = platformContentLimits[platform]?.maxMediaCount || 5;
+        if (mediaCount > maxMediaCount) {
           const mediaError: ValidationError = {
             code: 'TOO_MANY_MEDIA',
-            message: `You can add up to ${platformContentLimits[platform].maxMediaCount} media files for ${platform}`,
+            message: `You can add up to ${maxMediaCount} media files for ${platform}`,
             field: 'mediaUrls',
             validationType: 'count'
           };
@@ -1699,8 +1721,8 @@ function EventForm({
                     )}
                     <MediaUploader
                       platform={platform}
-                      maxCount={platformContentLimits[platform].maxMediaCount}
-                      supportedTypes={platformContentLimits[platform].supportedMediaTypes}
+                      maxCount={platformContentLimits[platform]?.maxMediaCount || 5}
+                      supportedTypes={platformContentLimits[platform]?.supportedMediaTypes || ['image']}
                       currentMedia={formData.socialMediaContent.platformSpecificContent[platform]?.mediaUrls || []}
                       onUpload={(files) => handleMediaUpload(platform, files)}
                       onRemove={(index) => handleMediaRemove(platform, index)}
