@@ -2111,14 +2111,17 @@ export function ContentCalendar({
 
       {/* Create Event Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Create New Event</DialogTitle>
-            <DialogDescription>
-              Add a new event to your content calendar.
-            </DialogDescription>
-          </DialogHeader>
-          <EventForm
+        <DialogContent className="sm:max-w-[700px] max-w-[95vw] max-h-[90vh] overflow-hidden flex flex-col gap-0 p-0">
+          <div className="px-6 pt-6 pb-2 border-b border-border/10">{/* Header with subtle separator */}
+            <DialogHeader className="flex-shrink-0">
+              <DialogTitle>Create New Event</DialogTitle>
+              <DialogDescription>
+                Add a new event to your content calendar.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="flex-1 overflow-y-auto px-6 pb-6 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">{/* Scrollable container with custom scrollbar */}
+            <EventForm
             mode="create"
             initialData={{
               date: format(newEvent.start, "yyyy-MM-dd"),
@@ -2145,22 +2148,26 @@ export function ContentCalendar({
                 }
               }
             }}
-            onCancel={() => setIsCreateDialogOpen(false)}
-          />
+              onCancel={() => setIsCreateDialogOpen(false)}
+            />
+          </div>{/* End scrollable container */}
         </DialogContent>
       </Dialog>
 
       {/* Edit Event Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Edit Event</DialogTitle>
-            <DialogDescription>
-              Make changes to your event details.
-            </DialogDescription>
-          </DialogHeader>
-          {selectedEvent && (
-            <EventForm
+        <DialogContent className="sm:max-w-[700px] max-w-[95vw] max-h-[90vh] overflow-hidden flex flex-col gap-0 p-0">
+          <div className="px-6 pt-6 pb-2 border-b border-border/10">{/* Header with subtle separator */}
+            <DialogHeader className="flex-shrink-0">
+              <DialogTitle>Edit Event</DialogTitle>
+              <DialogDescription>
+                Make changes to your event details.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="flex-1 overflow-y-auto px-6 pb-6 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">{/* Scrollable container with custom scrollbar */}
+            {selectedEvent && (
+              <EventForm
               mode="edit"
               initialData={selectedEvent}
               onSubmit={async (event) => {
@@ -2182,9 +2189,10 @@ export function ContentCalendar({
                   }
                 }
               }}
-              onCancel={() => setIsEditDialogOpen(false)}
-            />
-          )}
+                onCancel={() => setIsEditDialogOpen(false)}
+              />
+            )}
+          </div>{/* End scrollable container */}
         </DialogContent>
       </Dialog>
 
