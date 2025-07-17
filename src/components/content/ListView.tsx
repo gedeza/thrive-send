@@ -5,6 +5,7 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { cn } from '@/lib/utils';
 import { useTimezone } from '@/hooks/use-timezone';
 import { CalendarEvent, ContentType, SocialPlatform } from '@/types/calendar';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Color mappings for event types
 const eventTypeColorMap: Record<ContentType, { bg: string; text: string; border: string }> = {
@@ -55,11 +56,17 @@ function isValidContentType(type: any): type is ContentType {
 export interface ListViewProps {
   events: CalendarEvent[];
   onEventClick: (event: CalendarEvent) => void;
+  isSelectionMode?: boolean;
+  selectedEvents?: Set<string>;
+  onToggleSelection?: (eventId: string) => void;
 }
 
 export const ListView: React.FC<ListViewProps> = ({
   events,
-  onEventClick
+  onEventClick,
+  isSelectionMode = false,
+  selectedEvents = new Set(),
+  onToggleSelection
 }) => {
   const userTimezone = useTimezone();
   
@@ -75,7 +82,11 @@ export const ListView: React.FC<ListViewProps> = ({
   return (
     <div className="space-y-4">
       {/* Header row - responsive */}
-      <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 bg-muted/50 rounded-md font-medium text-sm">
+      <div className={cn(
+        "hidden md:grid gap-4 p-4 bg-muted/50 rounded-md font-medium text-sm",
+        isSelectionMode ? "md:grid-cols-13" : "md:grid-cols-12"
+      )}>
+        {isSelectionMode && <div className="col-span-1"></div>}
         <div className="col-span-3">Title</div>
         <div className="col-span-2">Type</div>
         <div className="col-span-2">Date & Time</div>
@@ -94,12 +105,39 @@ export const ListView: React.FC<ListViewProps> = ({
         {sortedEvents.map((event) => (
           <div 
             key={event.id} 
-            className="grid grid-cols-1 md:grid-cols-12 gap-4 p-3 sm:p-4 border rounded-md hover:bg-muted/50 transition-colors cursor-pointer touch-manipulation"
-            onClick={() => onEventClick(event)}
+            className={cn(
+              "grid gap-4 p-3 sm:p-4 border rounded-md hover:bg-muted/50 transition-colors cursor-pointer touch-manipulation",
+              isSelectionMode ? "grid-cols-1 md:grid-cols-13" : "grid-cols-1 md:grid-cols-12"
+            )}
+            onClick={() => {
+              if (isSelectionMode && onToggleSelection) {
+                onToggleSelection(event.id);
+              } else {
+                onEventClick(event);
+              }
+            }}
           >
+            {/* Checkbox column (desktop only) */}
+            {isSelectionMode && (
+              <div className="hidden md:block md:col-span-1 flex items-center justify-center">
+                <Checkbox
+                  checked={selectedEvents.has(event.id)}
+                  onCheckedChange={() => onToggleSelection?.(event.id)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            )}
             {/* Mobile view */}
             <div className="md:hidden space-y-2">
               <div className="flex items-start justify-between gap-2">
+                {isSelectionMode && (
+                  <Checkbox
+                    checked={selectedEvents.has(event.id)}
+                    onCheckedChange={() => onToggleSelection?.(event.id)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="mt-1"
+                  />
+                )}
                 <div className="font-medium flex-1">{event.title}</div>
                 <div className="text-xs text-muted-foreground flex-shrink-0">
                   {formatInTimeZone(new Date(`${event.date}T${event.time || '00:00'}`), userTimezone, "MMM d")}

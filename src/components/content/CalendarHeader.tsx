@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from "react";
-import { ChevronLeft, ChevronRight, Plus, Search, Bug } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Search, Bug, CheckSquare, Square, Users, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -44,6 +44,13 @@ interface CalendarHeaderProps {
   onAddEvent: () => void;
   onDebugFetch?: () => void;
   
+  // Bulk selection
+  isSelectionMode?: boolean;
+  selectedCount?: number;
+  onToggleSelection?: () => void;
+  onSelectAll?: () => void;
+  onClearSelection?: () => void;
+  
   // Loading state
   loading?: boolean;
 }
@@ -64,6 +71,11 @@ export function CalendarHeader({
   onStatusChange,
   onAddEvent,
   onDebugFetch,
+  isSelectionMode = false,
+  selectedCount = 0,
+  onToggleSelection,
+  onSelectAll,
+  onClearSelection,
   loading = false
 }: CalendarHeaderProps) {
   return (
@@ -105,6 +117,20 @@ export function CalendarHeader({
             <span className="hidden sm:inline">Add Event</span>
             <span className="sm:hidden">Add</span>
           </Button>
+          
+          {onToggleSelection && (
+            <Button 
+              onClick={onToggleSelection}
+              size="sm"
+              variant={isSelectionMode ? "default" : "outline"}
+              disabled={loading}
+              className="touch-manipulation"
+            >
+              {isSelectionMode ? <CheckSquare className="h-4 w-4 mr-2" /> : <Square className="h-4 w-4 mr-2" />}
+              <span className="hidden sm:inline">Select</span>
+              <span className="sm:hidden">Select</span>
+            </Button>
+          )}
           {onDebugFetch && (
             <Button
               variant="outline"
@@ -209,6 +235,40 @@ export function CalendarHeader({
           </div>
         </div>
       </div>
+      
+      {/* Bulk Actions Bar - Only shown when in selection mode */}
+      {isSelectionMode && (
+        <div className="flex items-center justify-between p-3 bg-primary/10 border border-primary/20 rounded-lg">
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">
+              {selectedCount} event{selectedCount !== 1 ? 's' : ''} selected
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            {onSelectAll && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onSelectAll}
+                className="h-8 text-xs"
+              >
+                Select All
+              </Button>
+            )}
+            {onClearSelection && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClearSelection}
+                className="h-8 text-xs"
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Search, Filter, LayoutGrid, LayoutList, Clock, Facebook, Twitter, Instagram, Linkedin, Upload, X, Settings as SettingsIcon, RefreshCw, Bug } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Search, Filter, LayoutGrid, LayoutList, Clock, Facebook, Twitter, Instagram, Linkedin, Upload, X, Settings as SettingsIcon, RefreshCw, Bug, Trash2 } from "lucide-react";
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useSensor, useSensors, PointerSensor, closestCenter } from "@dnd-kit/core";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import { Button } from "@/components/ui/button";
@@ -419,6 +419,9 @@ export function ContentCalendar({
   const [showEventDetails, setShowEventDetails] = useState(false);
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
   const [pendingDialogClose, setPendingDialogClose] = useState(false);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedEvents, setSelectedEvents] = useState<Set<string>>(new Set());
+  const [showBulkActions, setShowBulkActions] = useState(false);
   const isFetchingRef = useRef<boolean>(false);
   const initialEventsRef = useRef<boolean>(false);
 
@@ -428,7 +431,7 @@ export function ContentCalendar({
   // Direct fetch function - moved up before it's used
   const fetchCalendarEventsDirectly = async () => {
     try {
-      console.log("[Debug] Checking calendar data...");
+      // Debug: Checking calendar data
       // Try the debug endpoint first to check if data exists
       const debugResponse = await fetch('/api/calendar/debug', {
         credentials: 'include'
@@ -436,8 +439,7 @@ export function ContentCalendar({
       
       if (debugResponse.ok) {
         const debugData = await debugResponse.json();
-        console.log("[Debug] API response:", debugData);
-        console.log("[Debug] Events count:", debugData.calendarEvents?.count);
+        // Debug: API response received
         
         // If debug shows events exist but we're not getting them, try direct fetch
         if (debugData.calendarEvents?.count > 0) {
@@ -453,8 +455,7 @@ export function ContentCalendar({
           if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
           
           const data = await response.json();
-          console.log(`Direct fetch found ${data.events?.length || 0} events`);
-          console.log("Raw API events sample:", data.events?.slice(0, 2));
+          // Direct fetch completed
           
           if (data.events && Array.isArray(data.events)) {
             try {
@@ -486,7 +487,7 @@ export function ContentCalendar({
                   };
                 }
               });
-              console.log(`[Debug] Converted ${calendarEvents.length} events successfully`);
+              // TODO: Log conversion success for debugging purposes
               return calendarEvents;
             } catch (mapErr) {
               console.error("Error mapping API events to calendar events:", mapErr);
@@ -496,7 +497,7 @@ export function ContentCalendar({
             console.warn("No events array found in API response:", data);
           }
         } else {
-          console.log("[Debug] No events found in database");
+          // TODO: Handle case where no events are found
         }
       } else {
         console.error("Debug API failed:", await debugResponse.text());
@@ -513,13 +514,13 @@ export function ContentCalendar({
   // Define the loadEvents function
   const loadEvents = useCallback(async () => {
     try {
-      console.log("Fetching calendar events...");
+      // TODO: Add proper loading state indication
       if (!fetchEvents) {
-        console.log("No fetchEvents function provided, trying direct fetch");
+        // TODO: Handle case where fetchEvents function is not provided
         return await fetchCalendarEventsDirectly();
       }
       const fetchedEvents = await fetchEvents();
-      console.log(`Fetched ${fetchedEvents.length} events:`, fetchedEvents);
+      // TODO: Add proper event logging for debugging
       setError(null);
       return fetchedEvents;
     } catch (err) {
@@ -551,9 +552,7 @@ export function ContentCalendar({
         const newEvents = await loadEvents();
         
         // Only update events if there are actual changes to prevent unnecessary re-renders
-        if (JSON.stringify(newEvents) !== JSON.stringify(events)) {
-          setEvents(newEvents);
-        }
+        setEvents(newEvents);
       } catch (err) {
         console.error("Error loading events:", err);
         setError(err instanceof Error ? err.message : "Failed to load events");
@@ -562,7 +561,7 @@ export function ContentCalendar({
         isFetchingRef.current = false;
       }
     }, 500),
-    [loadEvents, events]
+    [loadEvents]
   );
 
   // Replace the useEffect that loads events
@@ -610,7 +609,7 @@ export function ContentCalendar({
 
   // Helper function to convert API event to calendar event
   const convertApiEventToCalendarEvent = (event: any): CalendarEvent => {
-    console.log("Converting event with structure:", Object.keys(event));
+    // TODO: Add proper event structure validation
     
     // Extract platforms from socialMediaContent if available
     const platforms: SocialPlatform[] = [];
@@ -950,6 +949,238 @@ export function ContentCalendar({
   const handleDateToday = useCallback(() => {
     setCurrentDate(new Date());
   }, []);
+
+  // Bulk selection handlers
+  const toggleSelectionMode = useCallback(() => {
+    setIsSelectionMode(!isSelectionMode);
+    setSelectedEvents(new Set());
+    setShowBulkActions(false);
+  }, [isSelectionMode]);
+
+  const toggleEventSelection = useCallback((eventId: string) => {
+    setSelectedEvents(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(eventId)) {
+        newSet.delete(eventId);
+      } else {
+        newSet.add(eventId);
+      }
+      setShowBulkActions(newSet.size > 0);
+      return newSet;
+    });
+  }, []);
+
+  const selectAllEvents = useCallback(() => {
+    const allEventIds = new Set(filteredEvents.map(event => event.id));
+    setSelectedEvents(allEventIds);
+    setShowBulkActions(allEventIds.size > 0);
+  }, [filteredEvents]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedEvents(new Set());
+    setShowBulkActions(false);
+  }, []);
+
+  const handleBulkDelete = useCallback(async () => {
+    if (!onEventDelete || selectedEvents.size === 0) return;
+    
+    try {
+      const eventIds = Array.from(selectedEvents);
+      await Promise.all(eventIds.map(id => onEventDelete(id)));
+      
+      setEvents(prev => prev.filter(event => !selectedEvents.has(event.id)));
+      setSelectedEvents(new Set());
+      setShowBulkActions(false);
+      
+      toast({
+        title: "Success",
+        description: `${eventIds.length} events deleted successfully`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete some events",
+        variant: "destructive",
+      });
+    }
+  }, [selectedEvents, onEventDelete, toast]);
+
+  const handleBulkStatusChange = useCallback(async (newStatus: string) => {
+    if (!onEventUpdate || selectedEvents.size === 0) return;
+    
+    try {
+      const eventsToUpdate = events.filter(event => selectedEvents.has(event.id));
+      const updatedEvents = await Promise.all(
+        eventsToUpdate.map(event => onEventUpdate({ ...event, status: newStatus as any }))
+      );
+      
+      setEvents(prev => prev.map(event => {
+        const updated = updatedEvents.find(u => u.id === event.id);
+        return updated || event;
+      }));
+      
+      setSelectedEvents(new Set());
+      setShowBulkActions(false);
+      
+      toast({
+        title: "Success",
+        description: `${updatedEvents.length} events updated successfully`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update some events",
+        variant: "destructive",
+      });
+    }
+  }, [selectedEvents, events, onEventUpdate, toast]);
+
+  // Keyboard navigation handlers
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    // Don't interfere with form inputs
+    if ((e.target as HTMLElement).tagName === 'INPUT' || 
+        (e.target as HTMLElement).tagName === 'TEXTAREA' ||
+        (e.target as HTMLElement).contentEditable === 'true') {
+      return;
+    }
+
+    switch (e.key) {
+      case 'ArrowLeft':
+        e.preventDefault();
+        if (e.ctrlKey || e.metaKey) {
+          // Ctrl/Cmd + Left = Previous period
+          handleDatePrev();
+        } else {
+          // Arrow navigation within current view
+          if (calendarView === 'month') {
+            setCurrentDate(prev => new Date(prev.getTime() - 24 * 60 * 60 * 1000));
+          } else if (calendarView === 'week') {
+            setCurrentDate(prev => new Date(prev.getTime() - 24 * 60 * 60 * 1000));
+          }
+        }
+        break;
+      
+      case 'ArrowRight':
+        e.preventDefault();
+        if (e.ctrlKey || e.metaKey) {
+          // Ctrl/Cmd + Right = Next period
+          handleDateNext();
+        } else {
+          // Arrow navigation within current view
+          if (calendarView === 'month') {
+            setCurrentDate(prev => new Date(prev.getTime() + 24 * 60 * 60 * 1000));
+          } else if (calendarView === 'week') {
+            setCurrentDate(prev => new Date(prev.getTime() + 24 * 60 * 60 * 1000));
+          }
+        }
+        break;
+
+      case 'ArrowUp':
+        e.preventDefault();
+        if (calendarView === 'month') {
+          setCurrentDate(prev => new Date(prev.getTime() - 7 * 24 * 60 * 60 * 1000));
+        } else if (calendarView === 'day') {
+          // Move up an hour in day view
+          setCurrentDate(prev => new Date(prev.getTime() - 60 * 60 * 1000));
+        }
+        break;
+
+      case 'ArrowDown':
+        e.preventDefault();
+        if (calendarView === 'month') {
+          setCurrentDate(prev => new Date(prev.getTime() + 7 * 24 * 60 * 60 * 1000));
+        } else if (calendarView === 'day') {
+          // Move down an hour in day view
+          setCurrentDate(prev => new Date(prev.getTime() + 60 * 60 * 1000));
+        }
+        break;
+
+      case 'Home':
+        e.preventDefault();
+        handleDateToday();
+        break;
+
+      case 'n':
+      case 'N':
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          // Ctrl/Cmd + N = New event
+          setNewEvent(prev => ({ ...prev, start: currentDate }));
+          setIsCreateDialogOpen(true);
+        }
+        break;
+
+      case '1':
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          setCalendarView('month');
+        }
+        break;
+
+      case '2':
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          setCalendarView('week');
+        }
+        break;
+
+      case '3':
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          setCalendarView('day');
+        }
+        break;
+
+      case '4':
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          setCalendarView('list');
+        }
+        break;
+
+      case 's':
+      case 'S':
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          // Ctrl/Cmd + S = Toggle selection mode
+          toggleSelectionMode();
+        }
+        break;
+
+      case 'a':
+      case 'A':
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          // Ctrl/Cmd + A = Select all events (when in selection mode)
+          if (isSelectionMode) {
+            selectAllEvents();
+          }
+        }
+        break;
+
+      case 'Delete':
+      case 'Backspace':
+        if (selectedEvents.size > 0) {
+          e.preventDefault();
+          // Delete selected events
+          handleBulkDelete();
+        }
+        break;
+
+      case 'Escape':
+        e.preventDefault();
+        // Close any open dialogs or exit selection mode
+        if (isSelectionMode) {
+          setIsSelectionMode(false);
+          clearSelection();
+        } else {
+          setIsCreateDialogOpen(false);
+          setIsEditDialogOpen(false);
+          setShowDeleteConfirm(false);
+        }
+        break;
+    }
+  }, [calendarView, currentDate, handleDatePrev, handleDateNext, handleDateToday, toggleSelectionMode, isSelectionMode, selectAllEvents, selectedEvents, handleBulkDelete, clearSelection]);
 
   const handleGestureEnd = useCallback((e: React.TouchEvent | React.PointerEvent) => {
     if (!gestureStateRef.current.isGesturing) return;
@@ -1480,6 +1711,11 @@ export function ContentCalendar({
           setNewEvent(prev => ({ ...prev, start: currentDate }));
           setIsCreateDialogOpen(true);
         }}
+        isSelectionMode={isSelectionMode}
+        selectedCount={selectedEvents.size}
+        onToggleSelection={toggleSelectionMode}
+        onSelectAll={selectAllEvents}
+        onClearSelection={clearSelection}
         onDebugFetch={async () => {
           try {
             setLoading(true);
@@ -1501,6 +1737,14 @@ export function ContentCalendar({
         loading={loading}
       />
 
+      {/* Keyboard shortcuts help (screen reader only) */}
+      <div id="calendar-help" className="sr-only">
+        Use arrow keys to navigate dates. Ctrl+Left/Right for previous/next period. 
+        Home key returns to today. Ctrl+N creates new event. Ctrl+1-4 switches views. 
+        Ctrl+S toggles selection mode. Ctrl+A selects all events. Delete key removes selected events.
+        Escape closes dialogs or exits selection mode.
+      </div>
+
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -1508,13 +1752,18 @@ export function ContentCalendar({
         onDragEnd={handleDragEnd}
         modifiers={[restrictToWindowEdges]}
       >
-        {/* Calendar Views with gesture support */}
+        {/* Calendar Views with gesture and keyboard support */}
         <div 
-          className="bg-background rounded-lg border touch-pan-y select-none"
+          className="bg-background rounded-lg border touch-pan-y select-none focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
           onTouchStart={handleGestureStart}
           onTouchEnd={handleGestureEnd}
           onPointerDown={handleGestureStart}
           onPointerUp={handleGestureEnd}
+          onKeyDown={handleKeyDown}
+          tabIndex={0}
+          role="application"
+          aria-label="Content Calendar"
+          aria-describedby="calendar-help"
           style={{ touchAction: 'pan-y' }}
         >
           {loading ? (
@@ -1576,12 +1825,34 @@ export function ContentCalendar({
               )}
               {calendarView === "list" && (
                 <div className="p-4">
-                  <ListView events={filteredEvents} onEventClick={handleEventClick} />
+                  <ListView 
+                    events={filteredEvents} 
+                    onEventClick={handleEventClick}
+                    isSelectionMode={isSelectionMode}
+                    selectedEvents={selectedEvents}
+                    onToggleSelection={toggleEventSelection}
+                  />
                 </div>
               )}
             </>
           )}
         </div>
+
+        {/* Floating Bulk Actions Button */}
+        {selectedEvents.size > 0 && (
+          <div className="fixed bottom-6 right-6 z-50">
+            <Button
+              onClick={() => setShowBulkActions(true)}
+              className="rounded-full shadow-lg h-12 w-12 p-0"
+              size="sm"
+            >
+              <div className="flex flex-col items-center">
+                <span className="text-xs font-medium">{selectedEvents.size}</span>
+                <span className="text-xs">Actions</span>
+              </div>
+            </Button>
+          </div>
+        )}
 
         <DragOverlay>
           {activeDragEvent && (
@@ -1605,6 +1876,65 @@ export function ContentCalendar({
       </DndContext>
 
       {/* Dialogs */}
+      {/* Bulk Actions Dialog */}
+      <Dialog open={showBulkActions} onOpenChange={setShowBulkActions}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Bulk Actions</DialogTitle>
+            <DialogDescription>
+              Perform actions on {selectedEvents.size} selected event{selectedEvents.size !== 1 ? 's' : ''}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="outline"
+                onClick={() => handleBulkStatusChange('draft')}
+                className="justify-start"
+              >
+                Set as Draft
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleBulkStatusChange('scheduled')}
+                className="justify-start"
+              >
+                Set as Scheduled
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleBulkStatusChange('sent')}
+                className="justify-start"
+              >
+                Set as Sent
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleBulkStatusChange('failed')}
+                className="justify-start"
+              >
+                Set as Failed
+              </Button>
+            </div>
+            <div className="border-t pt-4">
+              <Button
+                variant="destructive"
+                onClick={handleBulkDelete}
+                className="w-full"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Selected Events
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBulkActions(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Create Event Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
