@@ -29,7 +29,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { format, parseISO, isSameDay, isSameMonth, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, setHours, addMinutes } from 'date-fns';
+import { format, parseISO, isSameDay, isSameMonth, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, setHours, addMinutes, addMonths, subMonths } from 'date-fns';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -428,7 +428,7 @@ export function ContentCalendar({
   // Direct fetch function - moved up before it's used
   const fetchCalendarEventsDirectly = async () => {
     try {
-      console.log("==== DEBUGGING CALENDAR DATA ISSUES ====");
+      console.log("[Debug] Checking calendar data...");
       // Try the debug endpoint first to check if data exists
       const debugResponse = await fetch('/api/calendar/debug', {
         credentials: 'include'
@@ -436,9 +436,8 @@ export function ContentCalendar({
       
       if (debugResponse.ok) {
         const debugData = await debugResponse.json();
-        console.log("Debug API response:", debugData);
-        console.log("Calendar events count:", debugData.calendarEvents?.count);
-        console.log("Calendar events sample:", debugData.calendarEvents?.sample);
+        console.log("[Debug] API response:", debugData);
+        console.log("[Debug] Events count:", debugData.calendarEvents?.count);
         
         // If debug shows events exist but we're not getting them, try direct fetch
         if (debugData.calendarEvents?.count > 0) {
@@ -460,10 +459,10 @@ export function ContentCalendar({
           if (data.events && Array.isArray(data.events)) {
             try {
               const calendarEvents = data.events.map((event: any, index: number) => {
-                console.log(`Converting event ${index}:`, event);
+                // Converting event...
                 try {
                   const convertedEvent = convertApiEventToCalendarEvent(event);
-                  console.log(`Successfully converted event ${index}:`, convertedEvent);
+                  // Successfully converted event
                   return convertedEvent;
                 } catch (convErr: unknown) {
                   console.error(`Error converting event ${index}:`, convErr);
@@ -487,7 +486,7 @@ export function ContentCalendar({
                   };
                 }
               });
-              console.log(`Converted ${calendarEvents.length} events successfully`);
+              console.log(`[Debug] Converted ${calendarEvents.length} events successfully`);
               return calendarEvents;
             } catch (mapErr) {
               console.error("Error mapping API events to calendar events:", mapErr);
@@ -497,7 +496,7 @@ export function ContentCalendar({
             console.warn("No events array found in API response:", data);
           }
         } else {
-          console.log("Debug API shows no events exist in database");
+          console.log("[Debug] No events found in database");
         }
       } else {
         console.error("Debug API failed:", await debugResponse.text());
@@ -570,7 +569,7 @@ export function ContentCalendar({
   useEffect(() => {
     // Skip loading on initial render if we already have events
     if (events.length > 0 && initialEventsRef.current) {
-      console.log('[ContentCalendar] Skipping initial load as events are already provided');
+      // Skipping initial load as events are already provided
       return;
     }
     
@@ -878,14 +877,104 @@ export function ContentCalendar({
     }
   }, [activeDragEvent, onEventUpdate, toast]);
 
-  // Configure drag sensors
+  // Configure drag sensors with enhanced touch support and compatibility
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 12, // Increased for better touch compatibility
+        delay: 100,   // Short delay to distinguish from scrolling
+        tolerance: 5, // Allow slight movement during delay
       },
     })
   );
+
+  // Gesture handling for calendar navigation
+  const gestureStateRef = useRef({
+    startX: 0,
+    startY: 0,
+    isGesturing: false,
+    minSwipeDistance: 50, // Minimum distance for swipe recognition
+    maxVerticalMovement: 100 // Max vertical movement to allow horizontal swipe
+  });
+
+  const handleGestureStart = useCallback((e: React.TouchEvent | React.PointerEvent) => {
+    if ('touches' in e) {
+      const touch = e.touches[0];
+      gestureStateRef.current = {
+        ...gestureStateRef.current,
+        startX: touch.clientX,
+        startY: touch.clientY,
+        isGesturing: true
+      };
+    } else {
+      gestureStateRef.current = {
+        ...gestureStateRef.current,
+        startX: e.clientX,
+        startY: e.clientY,
+        isGesturing: true
+      };
+    }
+  }, []);
+
+  // Date navigation functions
+  const handleDatePrev = useCallback(() => {
+    setCurrentDate(prev => {
+      switch (calendarView) {
+        case 'month':
+          return subMonths(prev, 1);
+        case 'week':
+          return new Date(prev.getTime() - 7 * 24 * 60 * 60 * 1000);
+        case 'day':
+          return new Date(prev.getTime() - 24 * 60 * 60 * 1000);
+        default:
+          return subMonths(prev, 1);
+      }
+    });
+  }, [calendarView]);
+
+  const handleDateNext = useCallback(() => {
+    setCurrentDate(prev => {
+      switch (calendarView) {
+        case 'month':
+          return addMonths(prev, 1);
+        case 'week':
+          return new Date(prev.getTime() + 7 * 24 * 60 * 60 * 1000);
+        case 'day':
+          return new Date(prev.getTime() + 24 * 60 * 60 * 1000);
+        default:
+          return addMonths(prev, 1);
+      }
+    });
+  }, [calendarView]);
+
+  const handleDateToday = useCallback(() => {
+    setCurrentDate(new Date());
+  }, []);
+
+  const handleGestureEnd = useCallback((e: React.TouchEvent | React.PointerEvent) => {
+    if (!gestureStateRef.current.isGesturing) return;
+
+    const currentX = 'changedTouches' in e ? e.changedTouches[0].clientX : e.clientX;
+    const currentY = 'changedTouches' in e ? e.changedTouches[0].clientY : e.clientY;
+    
+    const deltaX = currentX - gestureStateRef.current.startX;
+    const deltaY = Math.abs(currentY - gestureStateRef.current.startY);
+    
+    // Check if it's a valid horizontal swipe
+    if (Math.abs(deltaX) >= gestureStateRef.current.minSwipeDistance && 
+        deltaY <= gestureStateRef.current.maxVerticalMovement) {
+      
+      if (deltaX > 0) {
+        // Swipe right - go to previous
+        handleDatePrev();
+      } else {
+        // Swipe left - go to next  
+        handleDateNext();
+      }
+    }
+
+    gestureStateRef.current.isGesturing = false;
+  }, [handleDatePrev, handleDateNext]);
 
   // View components
   const MonthViewDay = ({ 
@@ -1003,9 +1092,7 @@ export function ContentCalendar({
               onClick={(e) => {
                 e.stopPropagation();
                 // Show all events for this day
-                const dayEvents = events;
-                // You can implement a modal or expand the cell to show all events
-                console.log('Show all events for', formatInTimeZone(day, userTimezone, 'yyyy-MM-dd'), dayEvents);
+                // TODO: implement a modal or expand the cell to show all events
               }}
               aria-label={`Show all ${events.length} events for ${dateString}`}
             >
@@ -1149,144 +1236,6 @@ export function ContentCalendar({
     );
   };
 
-  const ListView = ({ 
-    events, 
-    onEventClick,
-  }: { 
-    events: CalendarEvent[];
-    onEventClick: (event: CalendarEvent) => void;
-  }) => {
-    const userTimezone = useTimezone();
-    
-    // Sort events by date and time
-    const sortedEvents = useMemo(() => {
-      return [...events].sort((a, b) => {
-        const dateA = new Date(`${a.date}T${a.time || '00:00'}`);
-        const dateB = new Date(`${b.date}T${b.time || '00:00'}`);
-        return dateA.getTime() - dateB.getTime();
-      });
-    }, [events]);
-
-    return (
-      <div className="space-y-4">
-        {/* Header row - responsive */}
-        <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 bg-muted/50 rounded-md font-medium text-sm">
-          <div className="col-span-3">Title</div>
-          <div className="col-span-2">Type</div>
-          <div className="col-span-2">Date & Time</div>
-          <div className="col-span-2">Status</div>
-          <div className="col-span-3">Platforms</div>
-        </div>
-        
-        {/* Mobile header */}
-        <div className="md:hidden flex justify-between p-4 bg-muted/50 rounded-md font-medium text-sm">
-          <div>Content</div>
-          <div>Details</div>
-        </div>
-        
-        {/* Event list */}
-        <div className="space-y-2 max-h-[50vh] overflow-y-auto">
-          {sortedEvents.map((event) => (
-            <div 
-              key={event.id} 
-              className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 border rounded-md hover:bg-muted/50 transition-colors cursor-pointer"
-              onClick={() => onEventClick(event)}
-            >
-              {/* Mobile view */}
-              <div className="md:hidden space-y-2">
-                <div className="font-medium">{event.title}</div>
-                <div className="text-sm text-muted-foreground">{event.description}</div>
-                <div className="flex flex-wrap gap-2 mt-2">
-                <span className={cn(
-                  "px-2 py-1 rounded-full text-xs font-medium",
-                    isValidContentType(event.type) ? eventTypeColorMap[event.type].bg : "bg-gray-100",
-                    isValidContentType(event.type) ? eventTypeColorMap[event.type].text : "text-gray-700"
-                )}>
-                  {event.type}
-                </span>
-                <span className={cn(
-                  "px-2 py-1 rounded-full text-xs font-medium",
-                  event.status === 'draft' && "bg-yellow-100 text-yellow-800",
-                  event.status === 'scheduled' && "bg-blue-100 text-blue-800",
-                  event.status === 'sent' && "bg-green-100 text-green-800",
-                  event.status === 'failed' && "bg-red-100 text-red-800"
-                )}>
-                  {event.status}
-                </span>
-                </div>
-              </div>
-              
-              {/* Desktop view */}
-              <div className="hidden md:block md:col-span-3">
-                <div className="font-medium truncate">{event.title}</div>
-                {event.description && (
-                  <div className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                    {event.description}
-                  </div>
-                )}
-              </div>
-              
-              <div className="hidden md:block md:col-span-2">
-                <span className={cn(
-                  "px-2 py-1 rounded-full text-xs font-medium",
-                  isValidContentType(event.type) ? eventTypeColorMap[event.type].bg : "bg-gray-100",
-                  isValidContentType(event.type) ? eventTypeColorMap[event.type].text : "text-gray-700"
-                )}>
-                  {event.type}
-                </span>
-              </div>
-              
-              {/* Date & Time column */}
-              <div className="hidden md:block md:col-span-2">
-                <div className="text-sm">
-                  {formatInTimeZone(new Date(`${event.date}T${event.time || '00:00'}`), userTimezone, "MMM d, yyyy")}
-                </div>
-                {event.time && (
-                  <div className="text-sm text-muted-foreground">
-                    {formatInTimeZone(new Date(`${event.date}T${event.time}`), userTimezone, "h:mm a")}
-                  </div>
-                )}
-              </div>
-
-              {/* Status column */}
-              <div className="hidden md:block md:col-span-2">
-                <span className={cn(
-                  "px-2 py-1 rounded-full text-xs font-medium",
-                  event.status === 'draft' && "bg-yellow-100 text-yellow-800",
-                  event.status === 'scheduled' && "bg-blue-100 text-blue-800",
-                  event.status === 'sent' && "bg-green-100 text-green-800",
-                  event.status === 'failed' && "bg-red-100 text-red-800"
-                )}>
-                  {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
-                </span>
-              </div>
-
-              {/* Platforms column */}
-              <div className="hidden md:block md:col-span-3">
-                {event.type === 'social' && event.socialMediaContent?.platforms?.length > 0 ? (
-                  <div className="flex gap-2">
-                    {event.socialMediaContent.platforms.map((platform: SocialPlatform) => (
-                      <span key={platform} className="text-sm">
-                        {platformColorMap[platform]?.icon}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <span className="text-sm text-muted-foreground">-</span>
-                )}
-              </div>
-            </div>
-          ))}
-
-          {sortedEvents.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              No events found
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
 
   // View render functions
   const renderMonthView = (
@@ -1511,13 +1460,16 @@ export function ContentCalendar({
   return (
     <div className="space-y-4 border rounded-xl p-4 bg-card shadow-sm">
       <CalendarHeader
-        calendarView={calendarView}
+        view={calendarView}
         onViewChange={(view) => {
           setCalendarView(view);
           onViewChange?.(view);
         }}
         currentDate={currentDate}
-        onDateChange={setCurrentDate}
+        onDatePrev={handleDatePrev}
+        onDateNext={handleDateNext}
+        onDateToday={handleDateToday}
+        userTimezone={userTimezone}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         selectedType={selectedType}
@@ -1528,7 +1480,7 @@ export function ContentCalendar({
           setNewEvent(prev => ({ ...prev, start: currentDate }));
           setIsCreateDialogOpen(true);
         }}
-        onDebug={async () => {
+        onDebugFetch={async () => {
           try {
             setLoading(true);
             await fetchCalendarEventsDirectly();
@@ -1556,8 +1508,15 @@ export function ContentCalendar({
         onDragEnd={handleDragEnd}
         modifiers={[restrictToWindowEdges]}
       >
-        {/* Calendar Views */}
-        <div className="bg-background rounded-lg border">
+        {/* Calendar Views with gesture support */}
+        <div 
+          className="bg-background rounded-lg border touch-pan-y select-none"
+          onTouchStart={handleGestureStart}
+          onTouchEnd={handleGestureEnd}
+          onPointerDown={handleGestureStart}
+          onPointerUp={handleGestureEnd}
+          style={{ touchAction: 'pan-y' }}
+        >
           {loading ? (
             <div className="flex flex-col items-center justify-center h-[50vh] p-8">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mb-4"></div>
@@ -1597,12 +1556,12 @@ export function ContentCalendar({
               )}
               {calendarView === "week" && (
                 <div className="p-4">
-                  {renderWeekView(
-                    currentDate,
-                    getEventsForDay,
-                    handleEventClick,
-                    userTimezone
-                  )}
+                  <WeekView
+                    currentDate={currentDate}
+                    getEventsForDay={getEventsForDay}
+                    onEventClick={handleEventClick}
+                    userTimezone={userTimezone}
+                  />
                 </div>
               )}
               {calendarView === "day" && (

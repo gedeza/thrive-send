@@ -102,7 +102,7 @@ const WeekViewTimeSlot: React.FC<{
     <div
       ref={setNodeRef}
       className={cn(
-        "h-20 border-b border-r p-1 relative transition-colors",
+        "h-16 sm:h-20 border-b border-r p-0.5 sm:p-1 relative transition-colors touch-manipulation",
         isOver && "bg-primary/10"
       )}
     >
@@ -115,14 +115,14 @@ const WeekViewTimeSlot: React.FC<{
             key={`${event.id}-${index}`}
             onClick={() => onEventClick(event)}
             className={cn(
-              "absolute left-1 right-1 rounded px-1 py-0.5 text-xs cursor-pointer transition-all hover:shadow-sm border",
+              "absolute left-0.5 sm:left-1 right-0.5 sm:right-1 rounded px-1 py-0.5 text-xs cursor-pointer transition-all hover:shadow-sm border touch-manipulation",
               typeColors.bg,
               typeColors.text,
               typeColors.border,
-              "min-h-[20px] flex items-center justify-between"
+              "min-h-[18px] sm:min-h-[20px] flex items-center justify-between"
             )}
             style={{
-              top: `${index * 22}px`,
+              top: `${index * 20}px`,
               zIndex: 10 + index
             }}
           >
@@ -132,12 +132,12 @@ const WeekViewTimeSlot: React.FC<{
                   {platformColors.icon}
                 </span>
               )}
-              <span className="truncate text-xs font-medium">
+              <span className="truncate text-[10px] sm:text-xs font-medium">
                 {event.title}
               </span>
             </div>
             {event.time && (
-              <span className="text-xs opacity-75 ml-1 flex-shrink-0">
+              <span className="hidden sm:inline text-xs opacity-75 ml-1 flex-shrink-0">
                 {event.time}
               </span>
             )}
@@ -176,16 +176,17 @@ export const WeekView: React.FC<WeekViewProps> = ({
 
   return (
     <div className="border rounded-md overflow-hidden">
-      <div className="grid grid-cols-8 divide-x divide-border">
+      <div className="grid grid-cols-8 divide-x divide-border text-xs sm:text-sm">
         {/* Time column */}
         <div className="text-center">
-          <div className="h-12 border-b bg-muted/50 flex items-center justify-center">
-            <span className="text-sm font-medium text-muted-foreground">Time</span>
+          <div className="h-10 sm:h-12 border-b bg-muted/50 flex items-center justify-center">
+            <span className="text-xs sm:text-sm font-medium text-muted-foreground">Time</span>
           </div>
           {hours.map((hour) => (
-            <div key={hour} className="h-20 border-b p-1 flex items-center justify-center">
-              <span className="text-xs text-muted-foreground">
-                {formatInTimeZone(setHours(currentDate, hour), userTimezone, "h:mm a")}
+            <div key={hour} className="h-16 sm:h-20 border-b p-0.5 sm:p-1 flex items-center justify-center">
+              <span className="text-[10px] sm:text-xs text-muted-foreground text-center">
+                <span className="hidden sm:inline">{formatInTimeZone(setHours(currentDate, hour), userTimezone, "h:mm a")}</span>
+                <span className="sm:hidden">{formatInTimeZone(setHours(currentDate, hour), userTimezone, "h a")}</span>
               </span>
             </div>
           ))}
@@ -201,17 +202,19 @@ export const WeekView: React.FC<WeekViewProps> = ({
             <div key={day.toISOString()} className="relative">
               {/* Day header */}
               <div className={cn(
-                "h-12 border-b p-2 text-center",
+                "h-10 sm:h-12 border-b p-1 sm:p-2 text-center",
                 isToday && "bg-primary/5"
               )}>
-                <div className="font-medium text-sm">
-                  {formatInTimeZone(day, userTimezone, "EEE")}
+                <div className="font-medium text-xs sm:text-sm">
+                  <span className="hidden sm:inline">{formatInTimeZone(day, userTimezone, "EEE")}</span>
+                  <span className="sm:hidden">{formatInTimeZone(day, userTimezone, "E")}</span>
                 </div>
                 <div className={cn(
-                  "text-sm",
+                  "text-xs sm:text-sm",
                   isToday ? "text-primary font-bold" : "text-muted-foreground"
                 )}>
-                  {formatInTimeZone(day, userTimezone, "MMM d")}
+                  <span className="hidden sm:inline">{formatInTimeZone(day, userTimezone, "MMM d")}</span>
+                  <span className="sm:hidden">{formatInTimeZone(day, userTimezone, "d")}</span>
                 </div>
               </div>
               

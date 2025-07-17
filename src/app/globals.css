@@ -135,6 +135,45 @@ html, body {
   }
 }
 
+/* Enhanced Touch Interactions for Calendar */
+.touch-manipulation {
+  touch-action: manipulation; /* Removes 300ms delay on mobile */
+  -webkit-touch-callout: none; /* Disable callout on iOS */
+  -webkit-user-select: none;   /* Disable text selection */
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.touch-pan-y {
+  touch-action: pan-y; /* Allow vertical scrolling only */
+}
+
+.touch-pan-x {
+  touch-action: pan-x; /* Allow horizontal scrolling only */
+}
+
+/* Calendar specific optimizations */
+@media (max-width: 640px) {
+  /* Calendar events need larger touch targets on mobile */
+  [data-calendar-event] {
+    min-height: 28px;
+    padding: 4px 8px;
+  }
+  
+  /* Calendar day cells need better spacing */
+  [data-calendar-day] {
+    min-height: 80px;
+    padding: 4px;
+  }
+  
+  /* Drag handles should be more prominent on touch */
+  [data-drag-handle] {
+    padding: 8px;
+    touch-action: none;
+  }
+}
+
 /* Responsive Typography */
 @media (max-width: 768px) {
   h1 { font-size: 2rem; }

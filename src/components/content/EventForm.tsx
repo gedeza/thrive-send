@@ -1211,10 +1211,10 @@ export function EventForm({
           </p>
         </div>
         
-        <div className="flex gap-4 mt-6">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-6">
           <Button 
             type="button" 
-            className="flex-1"
+            className="w-full sm:flex-1 h-11 sm:h-10 touch-manipulation"
             onClick={() => {
               if (!formData.date) {
                 setErrors(prev => ({
@@ -1250,7 +1250,8 @@ export function EventForm({
               onSchedule?.(scheduledDate);
             }}
           >
-            Schedule Content
+            <span className="hidden sm:inline">Schedule Content</span>
+            <span className="sm:hidden">Schedule</span>
           </Button>
         </div>
       </div>
@@ -1594,6 +1595,7 @@ export function EventForm({
                 value={formData.title}
                 onChange={handleChange}
                 placeholder="Enter event title"
+                className="h-11 sm:h-10 text-base sm:text-sm touch-manipulation"
                 required
               />
               {errors.title && (
@@ -1609,11 +1611,12 @@ export function EventForm({
                 value={formData.description}
                 onChange={handleChange}
                 placeholder="Enter event description"
+                className="min-h-[100px] sm:min-h-[80px] text-base sm:text-sm touch-manipulation resize-y"
                 rows={4}
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Date</Label>
                 <Popover>
@@ -1621,7 +1624,7 @@ export function EventForm({
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-full justify-start text-left font-normal",
+                        "w-full justify-start text-left font-normal h-11 sm:h-10 text-base sm:text-sm touch-manipulation",
                         !formData.date && "text-muted-foreground"
                       )}
                     >
@@ -1655,6 +1658,7 @@ export function EventForm({
                   type="time"
                   value={formData.time}
                   onChange={handleTimeChange}
+                  className="h-11 sm:h-10 text-base sm:text-sm touch-manipulation"
                   required
                 />
                 {errors.time && (
@@ -1669,7 +1673,7 @@ export function EventForm({
                 value={formData.type}
                 onValueChange={handleContentTypeChange}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-11 sm:h-10 text-base sm:text-sm touch-manipulation">
                   <SelectValue placeholder="Select content type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1742,14 +1746,15 @@ export function EventForm({
             )}
           </div>
 
-          <div className="flex gap-4 pt-4">
+          {/* Mobile-optimized button layout */}
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
             {onCancel && (
               <Button
                 type="button"
                 variant="outline"
                 onClick={onCancel}
                 disabled={isSubmitting}
-                className="flex-1"
+                className="w-full sm:flex-1 h-11 sm:h-10 touch-manipulation"
               >
                 Cancel
               </Button>
@@ -1762,29 +1767,37 @@ export function EventForm({
                 handleSubmit(new Event('submit') as any);
               }}
               disabled={isSubmitting}
-              className="flex-1"
+              className="w-full sm:flex-1 h-11 sm:h-10 touch-manipulation"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
+                  <span className="hidden sm:inline">Saving...</span>
+                  <span className="sm:hidden">Saving...</span>
                 </>
               ) : (
-                'Save as Draft'
+                <>
+                  <span className="hidden sm:inline">Save as Draft</span>
+                  <span className="sm:hidden">Draft</span>
+                </>
               )}
             </Button>
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1"
+              className="w-full sm:flex-1 h-11 sm:h-10 touch-manipulation"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {mode === 'edit' ? 'Updating...' : 'Creating...'}
+                  <span className="hidden sm:inline">{mode === 'edit' ? 'Updating...' : 'Creating...'}</span>
+                  <span className="sm:hidden">{mode === 'edit' ? 'Updating...' : 'Creating...'}</span>
                 </>
               ) : (
-                mode === 'edit' ? 'Update Event' : 'Create Event'
+                <>
+                  <span className="hidden sm:inline">{mode === 'edit' ? 'Update Event' : 'Create Event'}</span>
+                  <span className="sm:hidden">{mode === 'edit' ? 'Update' : 'Create'}</span>
+                </>
               )}
             </Button>
           </div>
