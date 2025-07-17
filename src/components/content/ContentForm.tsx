@@ -50,32 +50,11 @@ const tagSuggestions = [
   'feature',
 ];
 
-interface ContentFormData {
-  title: string;
-  contentType: ContentType;
-  content: string;
-  tags: string[];
-  mediaFiles: MediaFile[];
-  preheaderText: string;
-  publishDate?: string;
-  status: 'draft' | 'published';
-}
-
 interface FormErrors {
   title?: string;
   content?: string;
   preheaderText?: string;
 }
-
-const initialFormData: ContentFormData = {
-  title: '',
-  contentType: 'blog',
-  content: '',
-  tags: [],
-  mediaFiles: [],
-  preheaderText: '',
-  status: 'draft'
-};
 
 interface ContentFormProps {
   initialData?: Partial<ContentFormValues> & { id?: string };
@@ -189,7 +168,7 @@ export function ContentForm({ initialData, mode = 'create', contentListId }: Con
   };
 
   // Handle form submission
-  const onSubmit = async (data: ContentFormData) => {
+  const onSubmit: SubmitHandler<ContentFormValues> = async (data) => {
     try {
       setIsSubmitting(true);
       
@@ -197,17 +176,8 @@ export function ContentForm({ initialData, mode = 'create', contentListId }: Con
       if (mode === 'edit' && initialData?.id) {
         savedContent = await updateContent(initialData.id, data);
       } else {
-        savedContent = await saveContent(data); // Changed from createContent to saveContent
+        savedContent = await saveContent(data);
       }
-      
-      // Comment out calendar event creation until the function is properly imported
-      // if (savedContent.scheduledAt || savedContent.status === 'PUBLISHED' || savedContent.status === 'APPROVED') {
-      //   try {
-      //     await createCalendarEventFromContent(savedContent);
-      //   } catch (calendarError) {
-      //     console.error('Calendar event creation failed:', calendarError);
-      //   }
-      // }
       
       // Now invalidate all related caches
       await Promise.all([
@@ -217,9 +187,17 @@ export function ContentForm({ initialData, mode = 'create', contentListId }: Con
       ]);
       
       // Dispatch custom event for additional components
-      window.dispatchEvent(new CustomEvent('content-created', { 
-        detail: { content: savedContent } 
-      }));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('content-created', { 
+          detail: { content: savedContent } 
+        }));
+      }
+      
+      // Show success message
+      toast({
+        title: "Success",
+        description: mode === 'edit' ? 'Content updated successfully' : 'Content created successfully',
+      });
       
       // Navigate after everything is complete
       if (contentListId) {
@@ -229,7 +207,12 @@ export function ContentForm({ initialData, mode = 'create', contentListId }: Con
       }
       
     } catch (error) {
-      // ... error handling
+      console.error('Error saving content:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'Failed to save content',
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -257,10 +240,7 @@ export function ContentForm({ initialData, mode = 'create', contentListId }: Con
             Content Type
           </label>
           <Select
-            onValueChange={(value: ContentType) => {
-              // Use setTimeout to defer the state update
-              setTimeout(() => setValue('type', value), 0);
-            }}
+            onValueChange={(value: ContentType) => setValue('type', value)}
             defaultValue={watch('type')}
           >
             <SelectTrigger>
@@ -297,10 +277,7 @@ export function ContentForm({ initialData, mode = 'create', contentListId }: Con
           <label className="block text-sm font-medium mb-1">Tags</label>
           <TagInput
             tags={watch('tags') || []}
-            onChange={(tags) => {
-              // Use setTimeout to defer the state update
-              setTimeout(() => setValue('tags', tags), 0);
-            }}
+            onChange={(tags) => setValue('tags', tags)}
             suggestions={tagSuggestions}
           />
           {formErrors.tags && (
@@ -329,10 +306,7 @@ export function ContentForm({ initialData, mode = 'create', contentListId }: Con
           <label className="block text-sm font-medium mb-1">Content</label>
           <RichTextEditor
             value={watch('content') || ''}
-            onChange={(value: string) => {
-              // Use setTimeout to defer the state update
-              setTimeout(() => setValue('content', value), 0);
-            }}
+            onChange={(value: string) => setValue('content', value)}
             placeholder="Write your content here..."
           />
           {formErrors.content && (
@@ -364,8 +338,7 @@ export function ContentForm({ initialData, mode = 'create', contentListId }: Con
                 mode="single"
                 selected={watch('scheduledAt') ? new Date(watch('scheduledAt') as string) : undefined}
                 onSelect={(date: Date | undefined) => {
-                  // Use setTimeout to defer the state update
-                  setTimeout(() => setValue('scheduledAt', date ? date.toISOString() : undefined), 0);
+                  setValue('scheduledAt', date ? date.toISOString() : undefined);
                 }}
                 initialFocus
               />
