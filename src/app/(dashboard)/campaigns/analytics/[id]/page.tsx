@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
@@ -29,7 +29,24 @@ import { ABTestAnalytics } from '@/components/analytics/ABTestAnalytics';
 import { MultiChannelAttribution } from '@/components/analytics/MultiChannelAttribution';
 import { AudienceInsights } from '@/components/analytics/AudienceInsights';
 import { CampaignPerformance } from '@/components/analytics/CampaignPerformance';
+import { useAnalytics } from '@/lib/api/analytics-service';
 import { cn } from '@/lib/utils';
+
+// Helper function to get icon components
+const getIconComponent = (iconName: string) => {
+  const iconMap: { [key: string]: React.ReactNode } = {
+    'eye': <Eye className="h-5 w-5" />,
+    'mouse-pointer-click': <MousePointerClick className="h-5 w-5" />,
+    'users': <Users className="h-5 w-5" />,
+    'mail': <Mail className="h-5 w-5" />,
+    'alert-triangle': <AlertTriangle className="h-4 w-4" />,
+    'trending-up': <TrendingUp className="h-4 w-4" />,
+    'smartphone': <Smartphone className="h-4 w-4" />,
+    'monitor': <Monitor className="h-4 w-4" />,
+    'tablet': <Tablet className="h-4 w-4" />,
+  };
+  return iconMap[iconName] || <BarChart3 className="h-5 w-5" />;
+};
 
 // --- MOCK DATA, replace with real API calls as needed ---
 const mockDateRange = {
@@ -136,6 +153,47 @@ function MetricCard({ title, value, description, icon, change, isLoading, compac
 
 export default function CampaignAnalyticsPage({ params }: { params: { id: string } }) {
   const router = useRouter();
+  const analytics = useAnalytics();
+  
+  // State for dynamic data
+  const [metricsData, setMetricsData] = useState<any>(null);
+  const [deviceData, setDeviceData] = useState<any>(null);
+  const [linkData, setLinkData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Static date range to prevent infinite loops
+  const dateRange = {
+    start: "2023-11-01",
+    end: "2023-11-30"
+  };
+
+  // Manual refresh function
+  const refreshData = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch all analytics data in parallel
+      const [metrics, devices, links] = await Promise.all([
+        analytics.getCampaignOverviewMetrics(params.id, dateRange),
+        analytics.getDeviceAnalytics(params.id, dateRange),
+        analytics.getLinkAnalytics(params.id, dateRange)
+      ]);
+      
+      setMetricsData(metrics);
+      setDeviceData(devices);
+      setLinkData(links);
+    } catch (error) {
+      console.error('Error fetching analytics data:', error);
+      // Keep existing mock data as fallback
+    } finally {
+      setLoading(false);
+    }
+  }, [params.id]); // Only depend on campaign ID
+
+  // Fetch data only once on component mount
+  useEffect(() => {
+    refreshData();
+  }, [params.id]); // Simplified dependency
 
   return (
     <div className="space-y-4 p-4">
@@ -153,8 +211,8 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => router.refresh()}>
-            <RefreshCw className="mr-2 h-4 w-4" />
+          <Button variant="outline" size="sm" onClick={refreshData} disabled={loading}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
           <Button variant="outline" size="sm">
@@ -169,7 +227,7 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
         <CardContent className="p-3">
           <div className="flex items-center justify-between">
             <Badge variant="secondary" className="text-xs">
-              {new Date(mockDateRange.start).toLocaleDateString()} - {new Date(mockDateRange.end).toLocaleDateString()}
+              {new Date(dateRange.start).toLocaleDateString()} - {new Date(dateRange.end).toLocaleDateString()}
             </Badge>
             <span className="text-xs text-muted-foreground">Campaign ID: {params.id}</span>
           </div>
@@ -178,15 +236,31 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
 
       {/* Primary Metrics */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {mockMetrics.primary.map((metric, index) => (
-          <MetricCard key={index} {...metric} />
+        {(metricsData?.primary || mockMetrics.primary).map((metric: any, index: number) => (
+          <MetricCard 
+            key={index} 
+            title={metric.title}
+            value={metric.value}
+            description={metric.description}
+            icon={getIconComponent(metric.icon)}
+            change={metric.change}
+            isLoading={loading}
+          />
         ))}
       </div>
 
       {/* Secondary Metrics */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {mockMetrics.secondary.map((metric, index) => (
-          <MetricCard key={index} {...metric} compact />
+        {(metricsData?.secondary || mockMetrics.secondary).map((metric: any, index: number) => (
+          <MetricCard 
+            key={index} 
+            title={metric.title}
+            value={metric.value}
+            description={metric.description}
+            icon={getIconComponent(metric.icon)}
+            isLoading={loading}
+            compact 
+          />
         ))}
       </div>
 
@@ -214,7 +288,7 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 <div className="space-y-2">
-                  {funnelData.map((item, index) => (
+                  {(metricsData?.funnel || funnelData).map((item: any, index: number) => (
                     <div key={item.label} className="flex items-center justify-between py-1">
                       <div className="flex items-center gap-2">
                         <div className={cn("w-2 h-2 rounded-full", item.color)} />
@@ -270,8 +344,8 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
               <CampaignPerformance
                 campaignId={params.id}
                 dateRange={{
-                  start: new Date(mockDateRange.start),
-                  end: new Date(mockDateRange.end)
+                  start: new Date(dateRange.start),
+                  end: new Date(dateRange.end)
                 }}
               />
             </CardContent>
@@ -289,18 +363,26 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
             </CardHeader>
             <CardContent className="p-3 pt-0">
               <div className="grid gap-2 sm:grid-cols-3">
-                {mockDeviceData.map((device) => (
+                {(deviceData || mockDeviceData).map((device: any) => (
                   <div key={device.device} className="p-3 border rounded-lg hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-2 mb-2">
-                      {device.icon}
+                      {getIconComponent(device.icon)}
                       <span className="text-sm font-medium">{device.device}</span>
                     </div>
                     <div className="space-y-1">
                       <div className={cn("text-lg font-bold", device.color)}>
-                        {device.count.toLocaleString()}
+                        {loading ? (
+                          <Skeleton className="h-6 w-16" />
+                        ) : (
+                          device.count.toLocaleString()
+                        )}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {device.percentage}% of total opens
+                        {loading ? (
+                          <Skeleton className="h-3 w-20" />
+                        ) : (
+                          `${device.percentage}% of total opens`
+                        )}
                       </div>
                     </div>
                   </div>
@@ -321,23 +403,27 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
             </CardHeader>
             <CardContent className="p-3 pt-0">
               <div className="space-y-2">
-                {mockLinksClicked.map((link, index) => (
+                {(linkData || mockLinksClicked).map((link: any, index: number) => (
                   <div key={link.url} className="flex items-center justify-between p-2 border rounded hover:bg-muted/50 transition-colors">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground">#{index + 1}</span>
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium truncate">{link.label}</div>
-                          <div className="text-xs text-muted-foreground truncate">{link.url}</div>
+                          <div className="text-sm font-medium truncate">
+                            {loading ? <Skeleton className="h-4 w-32" /> : link.label}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate">
+                            {loading ? <Skeleton className="h-3 w-48" /> : link.url}
+                          </div>
                         </div>
                       </div>
                     </div>
                     <div className="text-right ml-2">
                       <div className="text-sm font-semibold text-blue-600">
-                        {link.clicks.toLocaleString()}
+                        {loading ? <Skeleton className="h-4 w-12" /> : link.clicks.toLocaleString()}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {link.percentage}%
+                        {loading ? <Skeleton className="h-3 w-8" /> : `${link.percentage}%`}
                       </div>
                     </div>
                   </div>
@@ -357,8 +443,8 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
               <ABTestAnalytics
                 testId={params.id}
                 dateRange={{
-                  start: new Date(mockDateRange.start),
-                  end: new Date(mockDateRange.end)
+                  start: new Date(dateRange.start),
+                  end: new Date(dateRange.end)
                 }}
               />
             </CardContent>
@@ -375,8 +461,8 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
               <MultiChannelAttribution
                 campaignId={params.id}
                 dateRange={{
-                  start: new Date(mockDateRange.start),
-                  end: new Date(mockDateRange.end)
+                  start: new Date(dateRange.start),
+                  end: new Date(dateRange.end)
                 }}
               />
             </CardContent>
@@ -393,8 +479,8 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
               <AudienceInsights
                 campaignId={params.id}
                 dateRange={{
-                  start: new Date(mockDateRange.start),
-                  end: new Date(mockDateRange.end)
+                  start: new Date(dateRange.start),
+                  end: new Date(dateRange.end)
                 }}
               />
             </CardContent>
