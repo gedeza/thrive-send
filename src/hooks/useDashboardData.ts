@@ -18,7 +18,7 @@ export function useDashboardData(dateRange?: string, customRange?: { from: strin
       const [analyticsResult, campaignsResult, contentResult] = await Promise.allSettled([
         fetch('/api/analytics').then(res => res.ok ? res.json() : null).catch(() => null),
         fetch('/api/campaigns').then(res => res.ok ? res.json() : null).catch(() => null),
-        fetch('/api/content?limit=3').then(res => res.ok ? res.json() : null).catch(() => null)
+        fetch('/api/content?limit=5&status=PUBLISHED,APPROVED&sortBy=updatedAt&sortOrder=desc').then(res => res.ok ? res.json() : null).catch(() => null)
       ]);
 
       return {

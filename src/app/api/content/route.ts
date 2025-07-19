@@ -43,9 +43,14 @@ const contentSchema = z.object({
 
 const querySchema = z.object({
   type: z.enum(['ARTICLE', 'BLOG', 'SOCIAL', 'EMAIL'] as const).optional(),
-  status: z.enum(['DRAFT', 'IN_REVIEW', 'PENDING_REVIEW', 'CHANGES_REQUESTED', 'APPROVED', 'REJECTED', 'PUBLISHED', 'ARCHIVED'] as const).optional(),
+  status: z.union([
+    z.enum(['DRAFT', 'IN_REVIEW', 'PENDING_REVIEW', 'CHANGES_REQUESTED', 'APPROVED', 'REJECTED', 'PUBLISHED', 'ARCHIVED'] as const),
+    z.string() // Allow comma-separated statuses
+  ]).optional(),
   page: z.string().optional(),
   limit: z.string().optional(),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
 // GET /api/content
@@ -89,11 +94,28 @@ export async function GET(request: Request) {
     const limit = parseInt(validatedQuery.limit || '10');
     const skip = (page - 1) * limit;
 
+    // Handle multiple statuses (comma-separated)
+    let statusFilter = {};
+    if (validatedQuery.status) {
+      if (validatedQuery.status.includes(',')) {
+        // Split comma-separated statuses and filter
+        const statuses = validatedQuery.status.split(',').map(s => s.trim());
+        statusFilter = { status: { in: statuses } };
+      } else {
+        statusFilter = { status: validatedQuery.status };
+      }
+    }
+
     const where = {
       authorId: { in: memberUserIds }, // Filter by organization members instead of just current user
       ...(validatedQuery.type && { type: validatedQuery.type }),
-      ...(validatedQuery.status && { status: validatedQuery.status }),
+      ...statusFilter,
     };
+
+    // Handle sorting
+    const sortField = validatedQuery.sortBy || 'createdAt';
+    const sortDirection = validatedQuery.sortOrder || 'desc';
+    const orderBy = { [sortField]: sortDirection };
 
     const [content, total] = await Promise.all([
       prisma.content.findMany({
@@ -130,7 +152,7 @@ export async function GET(request: Request) {
         },
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
       }),
       prisma.content.count({ where }),
     ]);

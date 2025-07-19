@@ -362,9 +362,14 @@ export function RecentContent({ content }: { content: { title: string, status: s
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="Draft">Draft</SelectItem>
-                <SelectItem value="Published">Published</SelectItem>
-                <SelectItem value="Review">In Review</SelectItem>
+                <SelectItem value="DRAFT">Draft</SelectItem>
+                <SelectItem value="PUBLISHED">Published</SelectItem>
+                <SelectItem value="APPROVED">Approved</SelectItem>
+                <SelectItem value="IN_REVIEW">In Review</SelectItem>
+                <SelectItem value="PENDING_REVIEW">Pending Review</SelectItem>
+                <SelectItem value="CHANGES_REQUESTED">Changes Requested</SelectItem>
+                <SelectItem value="REJECTED">Rejected</SelectItem>
+                <SelectItem value="ARCHIVED">Archived</SelectItem>
               </SelectContent>
             </Select>
             <input
@@ -389,11 +394,25 @@ export function RecentContent({ content }: { content: { title: string, status: s
               <span className="font-medium text-neutral-800 dark:text-neutral-100 truncate">{c.title}</span>
               <div className="flex items-center gap-2">
                 <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
-                  c.status === 'Published' ? 'bg-[var(--activity-success)]/10 text-[var(--activity-success)]' :
-                  c.status === 'Draft' ? 'bg-[var(--activity-warning)]/10 text-[var(--activity-warning)]' :
+                  c.status === 'PUBLISHED' ? 'bg-[var(--activity-success)]/10 text-[var(--activity-success)]' :
+                  c.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
+                  c.status === 'DRAFT' ? 'bg-[var(--activity-warning)]/10 text-[var(--activity-warning)]' :
+                  c.status === 'IN_REVIEW' ? 'bg-purple-100 text-purple-700' :
+                  c.status === 'PENDING_REVIEW' ? 'bg-yellow-100 text-yellow-700' :
+                  c.status === 'CHANGES_REQUESTED' ? 'bg-orange-100 text-orange-700' :
+                  c.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                  c.status === 'ARCHIVED' ? 'bg-gray-100 text-gray-700' :
                   'bg-[var(--activity-info)]/10 text-[var(--activity-info)]'
                 }`}>
-                  {c.status}
+                  {c.status === 'PUBLISHED' ? 'Published' :
+                   c.status === 'APPROVED' ? 'Approved' :
+                   c.status === 'DRAFT' ? 'Draft' :
+                   c.status === 'IN_REVIEW' ? 'In Review' :
+                   c.status === 'PENDING_REVIEW' ? 'Pending Review' :
+                   c.status === 'CHANGES_REQUESTED' ? 'Changes Requested' :
+                   c.status === 'REJECTED' ? 'Rejected' :
+                   c.status === 'ARCHIVED' ? 'Archived' :
+                   c.status}
                 </span>
                 <span className="text-xs text-neutral-500 dark:text-neutral-400">{c.createdAt}</span>
               </div>

@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from "next/server";
-import { getAuth } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { CalendarEvent } from "@/types/calendar";
 import { 
@@ -43,7 +43,7 @@ function prepareEventForResponse(event: any) {
 
 export async function GET(req: NextRequest) {
   try {
-    const { userId } = getAuth(req);
+    const { userId } = await auth();
 
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -131,7 +131,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = getAuth(req);
+    const { userId } = await auth();
     const body = await req.json();
 
     if (!userId) {
@@ -173,6 +173,7 @@ export async function POST(req: NextRequest) {
         // Extract necessary fields and discard the rest
         title: validationBody.title,
         description: validationBody.description,
+        contentId: validationBody.contentId,
         type: validationBody.type,
         status: validationBody.status || 'draft',
         // Use scheduledAt to set start and end times if available
@@ -182,11 +183,13 @@ export async function POST(req: NextRequest) {
         endTime: validationBody.scheduledAt 
           ? new Date(new Date(validationBody.scheduledAt).getTime() + 3600000) // Add 1 hour for end time
           : new Date(validationBody.endTime),
-        // Include the social media content if provided
-        socialMediaContent: validationBody.socialMediaContent,
+        // Include JSON fields properly
+        socialMediaContent: validationBody.socialMediaContent || null,
+        articleContent: validationBody.articleContent || null,
+        blogPost: validationBody.blogPost || null,
+        emailCampaign: validationBody.emailCampaign || null,
+        analytics: validationBody.analytics || null,
         // Set server-controlled fields
-        createdAt: new Date(),
-        updatedAt: new Date(),
         createdBy: user.id,
         organizationId,
       },
@@ -210,7 +213,7 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const { userId } = getAuth(req);
+    const { userId } = await auth();
     const body = await req.json();
 
     console.log("[CALENDAR_EVENTS_PUT] Request received:", {
@@ -315,7 +318,7 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const { userId } = getAuth(req);
+    const { userId } = await auth();
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 
