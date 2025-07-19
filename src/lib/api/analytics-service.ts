@@ -345,13 +345,23 @@ export function useAnalytics() {
   // Conversion Tracking
   const getConversionMetrics = async (
     dateRange: AnalyticsDateRange
-  ): Promise<ConversionMetrics> => {
-    const headers = await getAuthHeaders();
-    const response = await fetch(
-      `${baseUrl}/analytics/conversions?start=${dateRange.start}&end=${dateRange.end}`,
-      { headers }
-    );
-    return response.json();
+  ): Promise<any> => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(
+        `${baseUrl}/analytics/conversions?start=${dateRange.start}&end=${dateRange.end}`,
+        { headers }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch conversion metrics');
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Error fetching conversion metrics:', error);
+      throw error;
+    }
   };
 
   // Export Data
