@@ -55,6 +55,10 @@ export function CampaignPerformance({ campaignId, dateRange }: CampaignPerforman
     return <div>No performance data available</div>;
   }
 
+  // Safe access helpers
+  const metrics = performanceData?.metrics || [];
+  const timeSeriesData = performanceData?.timeSeriesData?.datasets?.[0]?.data || [];
+
   return (
     <Card className="p-6">
       <Tabs defaultValue="overview" className="space-y-4">
@@ -68,25 +72,34 @@ export function CampaignPerformance({ campaignId, dateRange }: CampaignPerforman
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {performanceData.metrics.map((metric: any) => (
-              <Card key={metric.title} className="p-4">
-                <h3 className="text-sm font-medium text-gray-500">{metric.title}</h3>
-                <p className="text-2xl font-bold mt-1">{metric.value}</p>
-                <div className="flex items-center mt-2">
-                  <span className={`text-sm ${metric.percentChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {metric.percentChange >= 0 ? '↑' : '↓'} {Math.abs(metric.percentChange)}%
-                  </span>
-                  <span className="text-sm text-gray-500 ml-2">vs previous period</span>
-                </div>
-              </Card>
-            ))}
+            {metrics.length > 0 ? (
+              metrics.map((metric: any) => (
+                <Card key={metric.title} className="p-4">
+                  <h3 className="text-sm font-medium text-gray-500">{metric.title || 'Unknown Metric'}</h3>
+                  <p className="text-2xl font-bold mt-1">{metric.value || 'N/A'}</p>
+                  {metric.percentChange !== undefined && (
+                    <div className="flex items-center mt-2">
+                      <span className={`text-sm ${metric.percentChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {metric.percentChange >= 0 ? '↑' : '↓'} {Math.abs(metric.percentChange)}%
+                      </span>
+                      <span className="text-sm text-gray-500 ml-2">vs previous period</span>
+                    </div>
+                  )}
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-full text-center py-8 text-gray-500">
+                <p>No performance metrics available</p>
+              </div>
+            )}
           </div>
 
           <div className="mt-6">
             <h3 className="text-lg font-semibold mb-4">Performance Trends</h3>
             <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={performanceData.timeSeriesData.datasets[0].data}>
+              {timeSeriesData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={timeSeriesData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis />
@@ -100,7 +113,12 @@ export function CampaignPerformance({ campaignId, dateRange }: CampaignPerforman
                     dot={false}
                   />
                 </LineChart>
-              </ResponsiveContainer>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <p>No performance trend data available</p>
+                </div>
+              )}
             </div>
           </div>
         </TabsContent>
@@ -112,7 +130,7 @@ export function CampaignPerformance({ campaignId, dateRange }: CampaignPerforman
               <h3 className="text-lg font-semibold mb-4">Engagement Rate Over Time</h3>
               <div className="h-[250px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={performanceData.timeSeriesData.datasets[0].data}>
+                  <LineChart data={timeSeriesData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis />
@@ -171,7 +189,7 @@ export function CampaignPerformance({ campaignId, dateRange }: CampaignPerforman
               <h3 className="text-lg font-semibold mb-4">Conversion Rate Trend</h3>
               <div className="h-[250px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={performanceData.timeSeriesData.datasets[0].data}>
+                  <LineChart data={timeSeriesData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis />
@@ -214,7 +232,7 @@ export function CampaignPerformance({ campaignId, dateRange }: CampaignPerforman
               <h3 className="text-lg font-semibold mb-4">ROI Trend</h3>
               <div className="h-[250px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={performanceData.timeSeriesData.datasets[0].data}>
+                  <LineChart data={timeSeriesData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis />
