@@ -28,7 +28,13 @@ const contentSchema = z.object({
   tags: z.array(z.string())
     .max(5, 'You can add up to 5 tags')
     .default([]),
+  platforms: z.array(z.string()).optional(),
   media: z.array(z.any()).optional(),
+  publishingOptions: z.object({
+    crossPost: z.boolean().default(true),
+    autoOptimize: z.boolean().default(true),
+    trackAnalytics: z.boolean().default(true)
+  }).optional(),
   status: z.enum(['DRAFT', 'IN_REVIEW', 'PENDING_REVIEW', 'CHANGES_REQUESTED', 'APPROVED', 'REJECTED', 'PUBLISHED', 'ARCHIVED'] as const).default('DRAFT'),
   scheduledAt: z.string().datetime().optional(),
   slug: z.string().min(1, 'Please enter a slug').optional(),
@@ -113,7 +119,9 @@ export async function GET(request: Request) {
               metadata: true,
             }
           },
+          publishingOptions: true,
           tags: true,
+          platforms: true,
           authorId: true,
           scheduledAt: true,
           publishedAt: true,
@@ -225,7 +233,9 @@ export async function POST(request: Request) {
               content: contentData.content,
               excerpt: contentData.excerpt,
               media: contentData.media ? JSON.stringify(contentData.media) : undefined,
+              publishingOptions: contentData.publishingOptions ? JSON.stringify(contentData.publishingOptions) : undefined,
               tags: contentData.tags,
+              platforms: contentData.platforms || [],
               authorId: user.id,
               scheduledAt: contentData.scheduledAt ? new Date(contentData.scheduledAt) : null,
             },

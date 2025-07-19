@@ -11,6 +11,7 @@ export interface ContentData {
   content: string;
   excerpt?: string;
   tags: string[];
+  platforms?: string[];
   media?: any;
   mediaItems?: Array<{
     id: string;
@@ -22,6 +23,11 @@ export interface ContentData {
     caption?: string;
     metadata?: any;
   }>;
+  publishingOptions?: {
+    crossPost: boolean;
+    autoOptimize: boolean;
+    trackAnalytics: boolean;
+  };
   status: 'DRAFT' | 'IN_REVIEW' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'APPROVED' | 'REJECTED' | 'PUBLISHED' | 'ARCHIVED';
   authorId: string;
   scheduledAt?: string;

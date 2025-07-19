@@ -434,6 +434,7 @@ model Content {
   updatedAt   DateTime          @updatedAt
   content     String
   tags        String[]
+  platforms   String[]
   authorId    String
   excerpt     String?
   media       Json?
@@ -441,6 +442,7 @@ model Content {
   scheduledAt DateTime?
   slug        String            @unique
   metadata    Json?
+  publishingOptions Json?
   templateId  String?
   status      ContentStatus
   type        ContentType

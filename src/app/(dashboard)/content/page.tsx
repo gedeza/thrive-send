@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChevronLeft, ChevronRight, Grid, List, MoreHorizontal, Plus, Search, Trash, RefreshCw, Edit, Eye, Calendar, Clock, Tag } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Grid, List, MoreHorizontal, Plus, Search, Trash, RefreshCw, Edit, Eye, Calendar, Clock, Tag, FileText, Newspaper, Share2, Mail } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { listContent, deleteContent, ContentData } from '@/lib/api/content-service';
@@ -19,6 +19,8 @@ import { toast } from '@/components/ui/use-toast';
 import { ContentCalendarSync } from '@/components/content/ContentCalendarSync';
 import { cn, debounce, formatDate, truncateText } from '@/lib/utils';
 import { MediaPreview } from '@/components/content/MediaPreview';
+import { PublishingOptionsIndicator } from '@/components/content/PublishingOptionsIndicator';
+import { PlatformIndicator } from '@/components/content/PlatformIndicator';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,12 +58,32 @@ type ContentTypeFilter = 'all' | 'article' | 'blog' | 'social' | 'email';
 const ITEMS_PER_PAGE = 12;
 const SEARCH_DEBOUNCE_MS = 300;
 
-// Content type configurations
+// Enhanced content type configurations with icons
 const CONTENT_TYPE_CONFIG = {
-  blog: { label: 'Blog Post', color: 'bg-blue-100 text-blue-800 border-blue-200' },
-  article: { label: 'Article', color: 'bg-green-100 text-green-800 border-green-200' },
-  social: { label: 'Social Media', color: 'bg-purple-100 text-purple-800 border-purple-200' },
-  email: { label: 'Email Campaign', color: 'bg-orange-100 text-orange-800 border-orange-200' },
+  blog: { 
+    label: 'Blog Post', 
+    color: 'bg-blue-100 text-blue-800 border-blue-200',
+    icon: Newspaper,
+    description: 'Long-form blog content'
+  },
+  article: { 
+    label: 'Article', 
+    color: 'bg-green-100 text-green-800 border-green-200',
+    icon: FileText,
+    description: 'Editorial or informational article'
+  },
+  social: { 
+    label: 'Social Media', 
+    color: 'bg-purple-100 text-purple-800 border-purple-200',
+    icon: Share2,
+    description: 'Social media post'
+  },
+  email: { 
+    label: 'Email Campaign', 
+    color: 'bg-orange-100 text-orange-800 border-orange-200',
+    icon: Mail,
+    description: 'Email newsletter or campaign'
+  },
 } as const;
 
 // Status configurations
@@ -787,7 +809,8 @@ function ContentCard({ item, isSelected, onSelect, onDelete }: ContentCardProps)
               </CardTitle>
               <div className="flex flex-wrap items-center gap-2">
                 {typeConfig && (
-                  <Badge variant="outline" className={cn("text-xs border", typeConfig.color)}>
+                  <Badge variant="outline" className={cn("text-xs border flex items-center gap-1", typeConfig.color)}>
+                    <typeConfig.icon className="h-3 w-3" />
                     {typeConfig.label}
                   </Badge>
                 )}
@@ -798,6 +821,14 @@ function ContentCard({ item, isSelected, onSelect, onDelete }: ContentCardProps)
                   </Badge>
                 )}
               </div>
+              
+              {/* Publishing Options Indicators */}
+              <PublishingOptionsIndicator 
+                publishingOptions={item.publishingOptions}
+                size="sm"
+                maxVisible={2}
+                className="mt-2"
+              />
             </div>
           </div>
           <DropdownMenu>
@@ -844,6 +875,14 @@ function ContentCard({ item, isSelected, onSelect, onDelete }: ContentCardProps)
           mediaItems={item.mediaItems}
           size="md" 
           maxItems={3}
+          className="mb-3"
+        />
+        
+        {/* Platform Indicators */}
+        <PlatformIndicator 
+          platforms={item.platforms}
+          size="sm"
+          maxVisible={4}
           className="mb-3"
         />
         
@@ -908,7 +947,8 @@ function ContentListItem({ item, isSelected, onSelect, onDelete }: ContentCardPr
                 </h3>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {typeConfig && (
-                    <Badge variant="outline" className={cn("text-xs border", typeConfig.color)}>
+                    <Badge variant="outline" className={cn("text-xs border flex items-center gap-1", typeConfig.color)}>
+                      <typeConfig.icon className="h-3 w-3" />
                       {typeConfig.label}
                     </Badge>
                   )}
@@ -918,6 +958,12 @@ function ContentListItem({ item, isSelected, onSelect, onDelete }: ContentCardPr
                       {statusConfig.label}
                     </Badge>
                   )}
+                  {/* Publishing Options Indicators */}
+                  <PublishingOptionsIndicator 
+                    publishingOptions={item.publishingOptions}
+                    size="sm"
+                    maxVisible={3}
+                  />
                 </div>
               </div>
               
@@ -941,6 +987,14 @@ function ContentListItem({ item, isSelected, onSelect, onDelete }: ContentCardPr
                 mediaItems={item.mediaItems}
                 size="sm" 
                 maxItems={4}
+                className="mt-2"
+              />
+              
+              {/* Platform Indicators */}
+              <PlatformIndicator 
+                platforms={item.platforms}
+                size="sm"
+                maxVisible={5}
                 className="mt-2"
               />
               
