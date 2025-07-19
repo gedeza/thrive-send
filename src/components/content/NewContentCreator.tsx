@@ -33,13 +33,46 @@ const steps = [
   { id: 'optimize', label: 'Optimize & Schedule', icon: Clock },
 ];
 
-export function NewContentCreator() {
+interface NewContentCreatorProps {
+  initialData?: any;
+  mode?: 'create' | 'edit';
+  contentId?: string;
+}
+
+export function NewContentCreator({ initialData, mode = 'create', contentId }: NewContentCreatorProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<Step>('quick-start');
-  const [contentData, setContentData] = useState<Partial<ContentData>>({
-    scheduleType: 'now',
-    tone: 'professional'
+  const [contentData, setContentData] = useState<Partial<ContentData>>(() => {
+    if (mode === 'edit' && initialData) {
+      // Map API data to our ContentData format
+      return {
+        type: mapApiTypeToContentType(initialData.type),
+        platforms: [], // You might need to derive this from initialData
+        title: initialData.title || '',
+        content: initialData.content || '',
+        scheduleType: initialData.status === 'PUBLISHED' ? 'now' : 
+                      initialData.scheduledAt ? 'later' : 'now',
+        scheduledDate: initialData.scheduledAt ? new Date(initialData.scheduledAt) : undefined,
+        tags: initialData.tags || [],
+        tone: 'professional' // Default, could be derived from initialData if available
+      };
+    }
+    return {
+      scheduleType: 'now',
+      tone: 'professional'
+    };
   });
+
+  // Helper function to map API types back to UI types
+  const mapApiTypeToContentType = (apiType: string): ContentType => {
+    const typeMap: Record<string, ContentType> = {
+      'SOCIAL': 'social-post',
+      'EMAIL': 'email',
+      'BLOG': 'blog',
+      'ARTICLE': 'blog'
+    };
+    return typeMap[apiType] || 'social-post';
+  };
 
   const currentStepIndex = steps.findIndex(step => step.id === currentStep);
   const progress = ((currentStepIndex + 1) / steps.length) * 100;
@@ -158,6 +191,8 @@ export function NewContentCreator() {
                 contentData={contentData}
                 onUpdate={updateContentData}
                 onPrevious={goToPreviousStep}
+                mode={mode}
+                contentId={contentId}
               />
             )}
           </div>

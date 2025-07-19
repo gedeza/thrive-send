@@ -807,7 +807,7 @@ function ContentCard({ item, isSelected, onSelect, onDelete }: ContentCardProps)
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link href={`/content/edit/${item.id}`} className="flex items-center">
+                <Link href={`/content/edit-new/${item.id}`} className="flex items-center">
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
                 </Link>
@@ -945,7 +945,7 @@ function ContentListItem({ item, isSelected, onSelect, onDelete }: ContentCardPr
           
           <div className="flex items-center gap-2 flex-shrink-0">
             <Button variant="ghost" size="sm" asChild>
-              <Link href={`/content/edit/${item.id}`}>
+              <Link href={`/content/edit-new/${item.id}`}>
                 <Edit className="h-4 w-4" />
               </Link>
             </Button>

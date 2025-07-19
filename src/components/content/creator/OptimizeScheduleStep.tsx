@@ -29,6 +29,8 @@ interface OptimizeScheduleStepProps {
   contentData: Partial<ContentData>;
   onUpdate: (updates: Partial<ContentData>) => void;
   onPrevious: () => void;
+  mode?: 'create' | 'edit';
+  contentId?: string;
 }
 
 const scheduleOptions = [
@@ -60,10 +62,17 @@ const suggestedTags = [
   '#strategy', '#content', '#digital', '#brand', '#engagement'
 ];
 
-export function OptimizeScheduleStep({ contentData, onUpdate, onPrevious }: OptimizeScheduleStepProps) {
+export function OptimizeScheduleStep({ contentData, onUpdate, onPrevious, mode = 'create', contentId }: OptimizeScheduleStepProps) {
   const router = useRouter();
   const [isPublishing, setIsPublishing] = useState(false);
   const [customTag, setCustomTag] = useState('');
+  
+  // Publishing Options State
+  const [publishingOptions, setPublishingOptions] = useState({
+    crossPost: true,
+    autoOptimize: true,
+    trackAnalytics: true
+  });
   
   const scheduleType = contentData.scheduleType || 'optimal';
   const tags = contentData.tags || [];
@@ -137,12 +146,17 @@ export function OptimizeScheduleStep({ contentData, onUpdate, onPrevious }: Opti
             ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // Tomorrow 9 AM
             : undefined,
         platforms: contentData.platforms,
-        tone: contentData.tone
+        tone: contentData.tone,
+        // Include publishing options
+        publishingOptions: publishingOptions
       };
 
-      // Create content in database
-      const response = await fetch('/api/content', {
-        method: 'POST',
+      // Create or update content in database
+      const url = mode === 'edit' && contentId ? `/api/content/${contentId}` : '/api/content';
+      const method = mode === 'edit' ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
         },
@@ -159,6 +173,12 @@ export function OptimizeScheduleStep({ contentData, onUpdate, onPrevious }: Opti
       // If content is scheduled, create calendar event
       if (scheduleType !== 'now' && createdContent.scheduledAt) {
         try {
+          console.log('Creating calendar event for scheduled content:', {
+            contentId: createdContent.id,
+            scheduledAt: createdContent.scheduledAt,
+            scheduleType
+          });
+
           const calendarEventPayload = {
             title: contentData.title,
             description: `${contentData.type} content: ${contentData.content?.substring(0, 100)}...`,
@@ -175,24 +195,43 @@ export function OptimizeScheduleStep({ contentData, onUpdate, onPrevious }: Opti
             }
           };
 
-          await fetch('/api/calendar/events', {
+          console.log('Calendar event payload:', calendarEventPayload);
+
+          const calendarResponse = await fetch('/api/calendar/events', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify(calendarEventPayload),
           });
+
+          if (!calendarResponse.ok) {
+            const calendarError = await calendarResponse.json();
+            console.error('Calendar API error:', calendarError);
+            throw new Error(`Calendar API failed: ${calendarError.error || 'Unknown error'}`);
+          }
+
+          const calendarEvent = await calendarResponse.json();
+          console.log('Calendar event created successfully:', calendarEvent);
+          
         } catch (calendarError) {
           console.error('Failed to create calendar event:', calendarError);
-          // Don't fail the whole operation if calendar fails
+          // Show user notification but don't fail the whole operation
+          alert(`Content created successfully, but failed to add to calendar: ${calendarError instanceof Error ? calendarError.message : 'Unknown error'}`);
         }
+      } else {
+        console.log('No calendar event needed:', {
+          scheduleType,
+          hasScheduledAt: !!createdContent.scheduledAt
+        });
       }
 
       // Dispatch custom event to refresh content list
       window.dispatchEvent(new CustomEvent('content-created'));
       
       // Show success message and redirect
-      const successMessage = scheduleType === 'now' ? 'published' : 'scheduled';
+      const successMessage = mode === 'edit' ? 'updated' : 
+                             scheduleType === 'now' ? 'published' : 'scheduled';
       router.push(`/content?success=${successMessage}`);
     } catch (error) {
       console.error('Error publishing content:', error);
@@ -420,15 +459,33 @@ export function OptimizeScheduleStep({ contentData, onUpdate, onPrevious }: Opti
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label htmlFor="cross-post" className="text-sm">Cross-post to all platforms</Label>
-                <Switch id="cross-post" defaultChecked />
+                <Switch 
+                  id="cross-post" 
+                  checked={publishingOptions.crossPost}
+                  onCheckedChange={(checked) => 
+                    setPublishingOptions(prev => ({ ...prev, crossPost: checked }))
+                  }
+                />
               </div>
               <div className="flex items-center justify-between">
                 <Label htmlFor="auto-optimize" className="text-sm">Auto-optimize for each platform</Label>
-                <Switch id="auto-optimize" defaultChecked />
+                <Switch 
+                  id="auto-optimize" 
+                  checked={publishingOptions.autoOptimize}
+                  onCheckedChange={(checked) => 
+                    setPublishingOptions(prev => ({ ...prev, autoOptimize: checked }))
+                  }
+                />
               </div>
               <div className="flex items-center justify-between">
                 <Label htmlFor="track-analytics" className="text-sm">Track performance</Label>
-                <Switch id="track-analytics" defaultChecked />
+                <Switch 
+                  id="track-analytics" 
+                  checked={publishingOptions.trackAnalytics}
+                  onCheckedChange={(checked) => 
+                    setPublishingOptions(prev => ({ ...prev, trackAnalytics: checked }))
+                  }
+                />
               </div>
             </CardContent>
           </Card>
