@@ -147,33 +147,36 @@ function ContentLibraryPage() {
     error,
     refetch
   } = useQuery({
-    queryKey: ['content', queryParams.toString()],
+    queryKey: ['content', Object.fromEntries(queryParams.entries())], // Use object instead of string for better key handling
     queryFn: () => listContent(Object.fromEntries(queryParams.entries())),
-    staleTime: 0,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    staleTime: 2 * 60 * 1000, // 2 minutes - balance between freshness and performance
+    cacheTime: 10 * 60 * 1000, // 10 minutes in memory
+    refetchOnMount: false, // Don't refetch on every mount - rely on cache
+    refetchOnWindowFocus: false, // Don't refetch on window focus - too aggressive
+    retry: 1, // Limit retries for failed requests
   });
 
-  // Add useEffect to refetch when component mounts
-  useEffect(() => {
-    refetch();
-  }, [refetch]);
+  // Remove aggressive manual refetch on mount - React Query handles this with proper cache settings
 
   // Prevent hydration mismatch
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Listen for content creation events
+  // Listen for content creation events and invalidate cache
   useEffect(() => {
     const handleContentCreated = () => {
-      console.log('Content created event received, refetching...');
-      refetch();
+      console.log('Content created event received, invalidating cache...');
+      // Use cache invalidation instead of manual refetch for better performance
+      queryClient.invalidateQueries({ queryKey: ['content'] });
+      // Also invalidate calendar cache since content and calendar are now connected
+      queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-data'] });
     };
 
     window.addEventListener('content-created', handleContentCreated);
     return () => window.removeEventListener('content-created', handleContentCreated);
-  }, [refetch]);
+  }, [queryClient]);
 
   // Filter content based on search query (now handled server-side via debounced search)
   const filteredContent = useMemo(() => {

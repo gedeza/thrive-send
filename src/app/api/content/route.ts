@@ -5,6 +5,7 @@ import { contentFormSchema } from '@/lib/validations/content';
 import { z } from 'zod';
 import { NextRequest } from 'next/server';
 import { Prisma } from '@prisma/client';
+import { createCalendarEventFromContent } from '@/lib/api/content-service';
 
 // Validation schemas
 const contentTypes = ['article', 'blog', 'social', 'email'] as const;
@@ -43,14 +44,16 @@ const contentSchema = z.object({
 
 const querySchema = z.object({
   type: z.enum(['ARTICLE', 'BLOG', 'SOCIAL', 'EMAIL'] as const).optional(),
+  contentType: z.enum(['ARTICLE', 'BLOG', 'SOCIAL', 'EMAIL'] as const).optional(), // Handle frontend parameter name
   status: z.union([
     z.enum(['DRAFT', 'IN_REVIEW', 'PENDING_REVIEW', 'CHANGES_REQUESTED', 'APPROVED', 'REJECTED', 'PUBLISHED', 'ARCHIVED'] as const),
     z.string() // Allow comma-separated statuses
   ]).optional(),
+  search: z.string().optional(), // Add search functionality
   page: z.string().optional(),
   limit: z.string().optional(),
-  sortBy: z.string().optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional(),
+  sortBy: z.string().default('createdAt'), // Add proper sorting support
+  sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 
 // GET /api/content
@@ -106,10 +109,24 @@ export async function GET(request: Request) {
       }
     }
 
+    // Handle both type and contentType parameters (frontend sends contentType, backend prefers type)
+    const contentTypeFilter = validatedQuery.type || validatedQuery.contentType;
+    
+    // Build search conditions
+    const searchConditions = validatedQuery.search ? {
+      OR: [
+        { title: { contains: validatedQuery.search, mode: 'insensitive' as const } },
+        { content: { contains: validatedQuery.search, mode: 'insensitive' as const } },
+        { excerpt: { contains: validatedQuery.search, mode: 'insensitive' as const } },
+        { tags: { has: validatedQuery.search } } // Search in tags array
+      ]
+    } : {};
+
     const where = {
       authorId: { in: memberUserIds }, // Filter by organization members instead of just current user
-      ...(validatedQuery.type && { type: validatedQuery.type }),
+      ...(contentTypeFilter && { type: contentTypeFilter }),
       ...statusFilter,
+      ...searchConditions,
     };
 
     // Handle sorting
@@ -282,6 +299,36 @@ export async function POST(request: Request) {
           return newContent;
         });
 
+        // CRITICAL FIX: Add calendar integration that was missing from API
+        // Create corresponding calendar event if content meets criteria
+        if (content.scheduledAt || content.status === 'PUBLISHED' || content.status === 'APPROVED') {
+          try {
+            console.log('API: Creating calendar event for content:', {
+              id: content.id,
+              title: content.title,
+              status: content.status,
+              scheduledAt: content.scheduledAt,
+              type: content.type
+            });
+            await createCalendarEventFromContent(content);
+            console.log('API: Calendar event created successfully for content:', content.id);
+          } catch (calendarError) {
+            console.error('API: Failed to create calendar event for content:', calendarError);
+            // Don't fail content creation if calendar event creation fails
+            // This is a non-blocking operation
+          }
+        } else {
+          console.log('API: Content does not meet criteria for calendar event:', {
+            title: content.title,
+            status: content.status,
+            scheduledAt: content.scheduledAt,
+            hasScheduledAt: !!content.scheduledAt
+          });
+        }
+
+        // Force cache invalidation for both content and calendar systems
+        // This ensures that React Query refetches data after content creation
+        console.log('API: Content created successfully, triggering cache invalidation');
         
         return NextResponse.json(content);
       } catch (prismaError) {

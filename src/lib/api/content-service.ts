@@ -220,7 +220,11 @@ export async function listContent(params: {
   page?: number;
   limit?: number;
   type?: string;
+  contentType?: string;
   status?: string;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: string;
 }): Promise<{
   content: ContentData[];
   total: number;
@@ -238,7 +242,11 @@ export async function listContent(params: {
     if (params.page) searchParams.set('page', params.page.toString());
     if (params.limit) searchParams.set('limit', params.limit.toString());
     if (params.type) searchParams.set('type', params.type.toUpperCase());
+    if (params.contentType) searchParams.set('contentType', params.contentType.toUpperCase());
     if (params.status) searchParams.set('status', params.status.toUpperCase());
+    if (params.search) searchParams.set('search', params.search);
+    if (params.sortBy) searchParams.set('sortBy', params.sortBy);
+    if (params.sortOrder) searchParams.set('sortOrder', params.sortOrder);
 
     const response = await fetch(`${API_URL}?${searchParams.toString()}`, {
       headers: {
