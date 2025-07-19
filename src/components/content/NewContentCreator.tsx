@@ -39,6 +39,17 @@ interface NewContentCreatorProps {
   contentId?: string;
 }
 
+// Helper function to map API types back to UI types (moved outside component)
+const mapApiTypeToContentType = (apiType: string): ContentType => {
+  const typeMap: Record<string, ContentType> = {
+    'SOCIAL': 'social-post',
+    'EMAIL': 'email',
+    'BLOG': 'blog',
+    'ARTICLE': 'blog'
+  };
+  return typeMap[apiType] || 'social-post';
+};
+
 export function NewContentCreator({ initialData, mode = 'create', contentId }: NewContentCreatorProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<Step>('quick-start');
@@ -62,17 +73,6 @@ export function NewContentCreator({ initialData, mode = 'create', contentId }: N
       tone: 'professional'
     };
   });
-
-  // Helper function to map API types back to UI types
-  const mapApiTypeToContentType = (apiType: string): ContentType => {
-    const typeMap: Record<string, ContentType> = {
-      'SOCIAL': 'social-post',
-      'EMAIL': 'email',
-      'BLOG': 'blog',
-      'ARTICLE': 'blog'
-    };
-    return typeMap[apiType] || 'social-post';
-  };
 
   const currentStepIndex = steps.findIndex(step => step.id === currentStep);
   const progress = ((currentStepIndex + 1) / steps.length) * 100;

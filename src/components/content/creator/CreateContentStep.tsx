@@ -21,6 +21,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { ContentData } from '../NewContentCreator';
+import { MediaUploader, type MediaFile } from '@/components/content/MediaUploader';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface CreateContentStepProps {
   contentData: Partial<ContentData>;
@@ -48,6 +50,8 @@ const platformLimits: Record<string, { min: number; max: number; optimal: number
 
 export function CreateContentStep({ contentData, onUpdate, onNext, onPrevious }: CreateContentStepProps) {
   const [showTips, setShowTips] = useState(false);
+  const [uploadedMedia, setUploadedMedia] = useState<MediaFile[]>([]);
+  const [showMediaUploader, setShowMediaUploader] = useState(false);
   
   const title = contentData.title || '';
   const content = contentData.content || '';
@@ -95,6 +99,19 @@ export function CreateContentStep({ contentData, onUpdate, onNext, onPrevious }:
 
   const handleToneChange = (newTone: typeof tone) => {
     onUpdate({ tone: newTone });
+  };
+
+  const handleMediaUpload = (files: MediaFile[]) => {
+    setUploadedMedia(prev => [...prev, ...files]);
+    // Update content data with media files
+    onUpdate({ media: [...uploadedMedia, ...files].map(f => f.file) });
+  };
+
+  const handleMediaRemove = (fileId: string) => {
+    setUploadedMedia(prev => prev.filter(f => f.id !== fileId));
+    // Update content data
+    const remainingFiles = uploadedMedia.filter(f => f.id !== fileId);
+    onUpdate({ media: remainingFiles.map(f => f.file) });
   };
 
   const canProceed = content.trim().length > 0 && title.trim().length > 0;
@@ -334,30 +351,10 @@ export function CreateContentStep({ contentData, onUpdate, onNext, onPrevious }:
                 variant="outline" 
                 size="sm" 
                 className="w-full justify-start gap-2"
-                onClick={() => {
-                  // Create a file input element
-                  const input = document.createElement('input');
-                  input.type = 'file';
-                  input.accept = 'image/*,video/*';
-                  input.multiple = true;
-                  
-                  input.onchange = (e) => {
-                    const files = (e.target as HTMLInputElement).files;
-                    if (files && files.length > 0) {
-                      // For now, just add a placeholder for media
-                      const mediaText = Array.from(files)
-                        .map(file => `[${file.type.startsWith('image/') ? '📷 Image' : '🎥 Video'}: ${file.name}]`)
-                        .join(' ');
-                      
-                      handleContentChange(content ? `${content}\n\n${mediaText}` : mediaText);
-                    }
-                  };
-                  
-                  input.click();
-                }}
+                onClick={() => setShowMediaUploader(true)}
               >
                 <Image className="h-4 w-4" />
-                Add Media
+                Add Media {uploadedMedia.length > 0 && `(${uploadedMedia.length})`}
               </Button>
             </CardContent>
           </Card>
@@ -380,6 +377,22 @@ export function CreateContentStep({ contentData, onUpdate, onNext, onPrevious }:
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
+
+      {/* Media Upload Dialog */}
+      <Dialog open={showMediaUploader} onOpenChange={setShowMediaUploader}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add Media Files</DialogTitle>
+          </DialogHeader>
+          <MediaUploader
+            onUpload={handleMediaUpload}
+            onRemove={handleMediaRemove}
+            maxFiles={10}
+            maxSize={10 * 1024 * 1024} // 10MB
+            acceptedFileTypes={['image/*', 'video/*']}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

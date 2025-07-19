@@ -40,3 +40,13 @@ export function validateImageFormat(buffer: Buffer): boolean {
     header.toUpperCase().includes(format)
   );
 }
+
+export async function generateThumbnail(
+  imageBuffer: Buffer,
+  options: { width?: number; height?: number } = {}
+): Promise<Buffer> {
+  // Placeholder implementation - returns original buffer
+  // In production, implement with sharp or similar library for thumbnail generation
+  console.log('Thumbnail generation requested:', options);
+  return imageBuffer;
+}
