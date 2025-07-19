@@ -18,6 +18,7 @@ import { listContent, deleteContent, ContentData } from '@/lib/api/content-servi
 import { toast } from '@/components/ui/use-toast';
 import { ContentCalendarSync } from '@/components/content/ContentCalendarSync';
 import { cn, debounce, formatDate, truncateText } from '@/lib/utils';
+import { MediaPreview } from '@/components/content/MediaPreview';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -837,6 +838,15 @@ function ContentCard({ item, isSelected, onSelect, onDelete }: ContentCardProps)
           </p>
         )}
         
+        {/* Media Preview */}
+        <MediaPreview 
+          media={item.media} 
+          mediaItems={item.mediaItems}
+          size="md" 
+          maxItems={3}
+          className="mb-3"
+        />
+        
         {item.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-3">
             <Tag className="h-3 w-3 text-muted-foreground mr-1" />
@@ -924,6 +934,15 @@ function ContentListItem({ item, isSelected, onSelect, onDelete }: ContentCardPr
                   )}
                 </div>
               </div>
+              
+              {/* Media Preview */}
+              <MediaPreview 
+                media={item.media} 
+                mediaItems={item.mediaItems}
+                size="sm" 
+                maxItems={4}
+                className="mt-2"
+              />
               
               {item.tags.length > 0 && (
                 <div className="flex items-center gap-2 mt-2">

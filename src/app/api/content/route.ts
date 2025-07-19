@@ -101,7 +101,20 @@ export async function GET(request: Request) {
           content: true,
           excerpt: true,
           media: true,
+          mediaItems: {
+            select: {
+              id: true,
+              type: true,
+              url: true,
+              title: true,
+              description: true,
+              altText: true,
+              caption: true,
+              metadata: true,
+            }
+          },
           tags: true,
+          authorId: true,
           scheduledAt: true,
           publishedAt: true,
           createdAt: true,

@@ -12,6 +12,16 @@ export interface ContentData {
   excerpt?: string;
   tags: string[];
   media?: any;
+  mediaItems?: Array<{
+    id: string;
+    type: string;
+    url: string;
+    title: string;
+    description?: string;
+    altText?: string;
+    caption?: string;
+    metadata?: any;
+  }>;
   status: 'DRAFT' | 'IN_REVIEW' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'APPROVED' | 'REJECTED' | 'PUBLISHED' | 'ARCHIVED';
   authorId: string;
   scheduledAt?: string;
@@ -209,6 +219,12 @@ export async function listContent(params: {
   content: ContentData[];
   total: number;
   pages: number;
+  pagination?: {
+    total: number;
+    pages: number;
+    page: number;
+    limit: number;
+  };
 }> {
   try {
     console.log('Listing content with params:', params);
@@ -233,7 +249,19 @@ export async function listContent(params: {
 
     const data = await response.json();
     console.log('Content list response:', data);
-    return data;
+    
+    // Handle both old and new API response formats
+    if (data.pagination) {
+      return {
+        content: data.content,
+        total: data.pagination.total,
+        pages: data.pagination.pages,
+        pagination: data.pagination
+      };
+    } else {
+      // Legacy format fallback
+      return data;
+    }
   } catch (error) {
     console.error('Error fetching content list:', error);
     throw error;
