@@ -150,6 +150,237 @@ const platforms = [
   }
 ];
 
+const contentTemplates = {
+  SOCIAL: [
+    {
+      id: 'question',
+      name: 'Question Post',
+      description: 'Boost engagement with thought-provoking questions',
+      template: `What's your take on [TOPIC]? 🤔
+
+I've been thinking about [YOUR_PERSPECTIVE] and would love to hear different viewpoints.
+
+Drop your thoughts in the comments! 👇
+
+#[HASHTAG1] #[HASHTAG2] #[HASHTAG3]`,
+      platforms: ['twitter', 'linkedin', 'facebook', 'instagram']
+    },
+    {
+      id: 'tip',
+      name: 'Quick Tip',
+      description: 'Share valuable insights in bite-sized format',
+      template: `💡 Pro tip: [YOUR_TIP]
+
+Here's why this works:
+• [REASON_1]
+• [REASON_2] 
+• [REASON_3]
+
+Try it out and let me know how it goes! ✨
+
+#[HASHTAG1] #[HASHTAG2]`,
+      platforms: ['twitter', 'linkedin', 'instagram', 'tiktok']
+    },
+    {
+      id: 'behind_scenes',
+      name: 'Behind the Scenes',
+      description: 'Show the human side of your work',
+      template: `Behind the scenes: [WHAT_YOU\'RE_WORKING_ON] 👀
+
+The process:
+1. [STEP_1]
+2. [STEP_2]
+3. [STEP_3]
+
+Not always glamorous, but always worth it! 💪
+
+#[HASHTAG1] #BehindTheScenes`,
+      platforms: ['instagram', 'tiktok', 'linkedin', 'facebook']
+    },
+    {
+      id: 'trend_reaction',
+      name: 'Trend Reaction',
+      description: 'Jump on trending topics with your unique perspective',
+      template: `Okay, let's talk about [TRENDING_TOPIC] 🔥
+
+My hot take: [YOUR_OPINION]
+
+Here's why I think this matters:
+[YOUR_REASONING]
+
+What's your perspective? Are you team [OPTION_A] or [OPTION_B]?
+
+#[TRENDING_HASHTAG] #[YOUR_HASHTAG]`,
+      platforms: ['tiktok', 'twitter', 'instagram']
+    }
+  ],
+  BLOG: [
+    {
+      id: 'how_to',
+      name: 'How-To Guide',
+      description: 'Step-by-step instructional content',
+      template: `# How to [ACHIEVE_GOAL]: A Complete Guide
+
+## Introduction
+[WHY_THIS_MATTERS]
+
+## What You'll Need
+- [REQUIREMENT_1]
+- [REQUIREMENT_2]
+- [REQUIREMENT_3]
+
+## Step-by-Step Process
+
+### Step 1: [FIRST_STEP]
+[DETAILED_EXPLANATION]
+
+### Step 2: [SECOND_STEP]
+[DETAILED_EXPLANATION]
+
+### Step 3: [THIRD_STEP]
+[DETAILED_EXPLANATION]
+
+## Common Mistakes to Avoid
+- [MISTAKE_1]
+- [MISTAKE_2]
+
+## Conclusion
+[SUMMARY_AND_NEXT_STEPS]
+
+---
+What challenges have you faced with [TOPIC]? Share your experience in the comments!`,
+      platforms: ['blog']
+    },
+    {
+      id: 'listicle',
+      name: 'List Article',
+      description: 'Engaging numbered list format',
+      template: `# [NUMBER] [ADJECTIVE] Ways to [ACHIEVE_SOMETHING]
+
+## Introduction
+[HOOK_ABOUT_TOPIC]
+
+## 1. [FIRST_METHOD]
+[EXPLANATION_AND_EXAMPLE]
+
+## 2. [SECOND_METHOD]
+[EXPLANATION_AND_EXAMPLE]
+
+## 3. [THIRD_METHOD]
+[EXPLANATION_AND_EXAMPLE]
+
+## 4. [FOURTH_METHOD]
+[EXPLANATION_AND_EXAMPLE]
+
+## 5. [FIFTH_METHOD]
+[EXPLANATION_AND_EXAMPLE]
+
+## Conclusion
+[RECAP_AND_ACTION_ITEMS]
+
+Which of these strategies will you try first? Let me know in the comments!`,
+      platforms: ['blog']
+    }
+  ],
+  EMAIL: [
+    {
+      id: 'newsletter',
+      name: 'Newsletter Template',
+      description: 'Weekly/monthly newsletter format',
+      template: `Subject: [COMPELLING_SUBJECT_LINE] 📧
+
+Hi [FIRST_NAME],
+
+Hope your [DAY_OF_WEEK] is going great! Here's what's new this week:
+
+## 🔥 What's Hot
+[MAIN_UPDATE_OR_NEWS]
+
+## 💡 Quick Tip
+[ACTIONABLE_ADVICE]
+
+## 📖 Worth Reading
+[INTERESTING_ARTICLE_OR_RESOURCE]
+
+## 🎉 Community Spotlight
+[HIGHLIGHT_CUSTOMER/COMMUNITY_MEMBER]
+
+---
+
+That's all for this week! Hit reply and let me know what you're working on.
+
+Best,
+[YOUR_NAME]
+
+P.S. [PERSONAL_NOTE_OR_CTA]`,
+      platforms: ['email']
+    },
+    {
+      id: 'promotion',
+      name: 'Product Promotion',
+      description: 'Sales email that doesn\'t feel salesy',
+      template: `Subject: [BENEFIT_FOCUSED_SUBJECT] ✨
+
+Hi [FIRST_NAME],
+
+I wanted to share something exciting with you...
+
+[PERSONAL_STORY_OR_CONTEXT]
+
+That's why I created [PRODUCT_NAME]. It helps you [PRIMARY_BENEFIT].
+
+Here's what makes it special:
+✅ [FEATURE_1]
+✅ [FEATURE_2]
+✅ [FEATURE_3]
+
+[CUSTOMER_TESTIMONIAL_OR_RESULT]
+
+Ready to [DESIRED_ACTION]?
+
+[CALL_TO_ACTION_BUTTON]
+
+Questions? Just hit reply - I read every email personally.
+
+[YOUR_NAME]
+
+P.S. [URGENCY_OR_BONUS_MENTION]`,
+      platforms: ['email']
+    }
+  ],
+  ARTICLE: [
+    {
+      id: 'opinion',
+      name: 'Opinion Piece',
+      description: 'Share your perspective on industry topics',
+      template: `# [CONTROVERSIAL_OR_THOUGHT_PROVOKING_TITLE]
+
+## The Current State
+[DESCRIBE_THE_SITUATION_OR_PROBLEM]
+
+## Why This Matters
+[EXPLAIN_THE_IMPORTANCE]
+
+## My Perspective
+[SHARE_YOUR_UNIQUE_VIEWPOINT]
+
+## The Evidence
+[SUPPORTING_DATA_OR_EXAMPLES]
+
+## What This Means for [AUDIENCE]
+[PRACTICAL_IMPLICATIONS]
+
+## Moving Forward
+[RECOMMENDATIONS_OR_PREDICTIONS]
+
+---
+
+*What's your take on this? I'd love to hear your perspective in the comments below.*`,
+      platforms: ['blog', 'linkedin']
+    }
+  ]
+};
+
 interface MediaFile {
   file: File;
   preview: string;
@@ -175,6 +406,8 @@ export default function NewContentPage() {
   const [isDragOver, setIsDragOver] = useState(false);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [showPlatformOptimization, setShowPlatformOptimization] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
 
   useEffect(() => {
     const words = formData.content.trim().split(/\s+/).filter(word => word.length > 0).length;
@@ -199,7 +432,36 @@ export default function NewContentPage() {
         setSelectedPlatforms([]);
         setShowPlatformOptimization(false);
       }
+      
+      // Show templates for all content types
+      setShowTemplates(true);
+      setSelectedTemplate(null);
     }
+  };
+
+  const getAvailableTemplates = () => {
+    return contentTemplates[selectedType.value as keyof typeof contentTemplates] || [];
+  };
+
+  const applyTemplate = (template: any) => {
+    setSelectedTemplate(template);
+    setFormData(prev => ({
+      ...prev,
+      content: template.template
+    }));
+    
+    // Show suggested platforms for this template
+    if (template.platforms.length > 0 && selectedType.value === 'SOCIAL') {
+      const suggestedPlatforms = template.platforms.filter((p: string) => 
+        platforms.find(platform => platform.id === p)
+      );
+      setSelectedPlatforms(suggestedPlatforms);
+    }
+    
+    toast({
+      title: 'Template Applied!',
+      description: `${template.name} template loaded. Customize the placeholders to make it yours.`,
+    });
   };
 
   const togglePlatform = (platformId: string) => {
@@ -569,6 +831,88 @@ export default function NewContentPage() {
                           platforms.find(p => p.id === id)?.name
                         ).join(', ')}
                       </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Content Templates */}
+            {showTemplates && getAvailableTemplates().length > 0 && (
+              <Card className="border-0 shadow-lg bg-white/70 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-yellow-600" />
+                    Content Templates
+                    <Badge variant="outline" className="ml-auto">Get Started Fast</Badge>
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Choose a proven template to kickstart your {selectedType.label.toLowerCase()}
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {getAvailableTemplates().map((template) => (
+                      <Card
+                        key={template.id}
+                        className={`cursor-pointer transition-all duration-200 border-2 ${
+                          selectedTemplate?.id === template.id
+                            ? 'border-yellow-500 bg-yellow-50 shadow-md'
+                            : 'border-gray-200 hover:border-yellow-300 hover:shadow-sm'
+                        }`}
+                        onClick={() => applyTemplate(template)}
+                      >
+                        <CardContent className="p-4">
+                          <div className="space-y-2">
+                            <div className="flex items-start justify-between">
+                              <h3 className="font-semibold text-sm">{template.name}</h3>
+                              {selectedTemplate?.id === template.id && (
+                                <div className="w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center">
+                                  <div className="w-2 h-2 bg-white rounded-full" />
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {template.description}
+                            </p>
+                            
+                            {/* Platform Compatibility */}
+                            {template.platforms && template.platforms.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {template.platforms.slice(0, 3).map((platformId: string) => {
+                                  const platform = platforms.find(p => p.id === platformId);
+                                  if (!platform) return null;
+                                  const Icon = platform.icon;
+                                  return (
+                                    <div key={platformId} className="flex items-center gap-1 bg-gray-100 rounded px-1.5 py-0.5">
+                                      <Icon className="h-3 w-3" />
+                                      <span className="text-xs">{platform.name.split('/')[0]}</span>
+                                    </div>
+                                  );
+                                })}
+                                {template.platforms.length > 3 && (
+                                  <span className="text-xs text-muted-foreground">+{template.platforms.length - 3}</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                  
+                  {selectedTemplate && (
+                    <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                      <div className="flex items-start gap-2">
+                        <Lightbulb className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                        <div className="text-sm text-yellow-800">
+                          <p className="font-medium">Template Applied: {selectedTemplate.name}</p>
+                          <p className="text-xs mt-1">
+                            Replace the placeholders in [BRACKETS] with your own content. 
+                            The template structure is optimized for engagement!
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </CardContent>
@@ -956,6 +1300,52 @@ export default function NewContentPage() {
                       <p>• Use charts and diagrams for complex data</p>
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Template Help */}
+            {selectedTemplate && (
+              <Card className="border-0 shadow-lg bg-white/70 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-yellow-500" />
+                    Template Guide
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  <div className="bg-yellow-50 p-3 rounded-lg">
+                    <p className="font-medium text-yellow-800 mb-2">Using: {selectedTemplate.name}</p>
+                    <p className="text-yellow-700 text-xs">{selectedTemplate.description}</p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-gray-900">How to customize:</h4>
+                    <div className="space-y-1 text-xs text-muted-foreground">
+                      <p>• Look for text in [BRACKETS] - these are placeholders</p>
+                      <p>• Replace placeholders with your specific content</p>
+                      <p>• Keep the overall structure for best results</p>
+                      <p>• Adjust emojis to match your brand voice</p>
+                    </div>
+                  </div>
+
+                  {selectedType.value === 'SOCIAL' && (
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-gray-900">Engagement tips:</h4>
+                      <div className="space-y-1 text-xs text-muted-foreground">
+                        <p>• Ask questions to boost comments</p>
+                        <p>• Use relevant hashtags for discovery</p>
+                        <p>• Post at optimal times for your audience</p>
+                        <p>• Include a clear call-to-action</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="bg-blue-50 p-2 rounded text-xs text-blue-700">
+                    <strong>Pro tip:</strong> This template works great with the selected platforms: {selectedTemplate.platforms?.map((p: string) => 
+                      platforms.find(platform => platform.id === p)?.name
+                    ).filter(Boolean).join(', ')}
+                  </div>
                 </CardContent>
               </Card>
             )}
