@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { z } from "zod";
+import { 
+  createSuccessResponse, 
+  createUnauthorizedResponse, 
+  createNotFoundResponse,
+  handleApiError 
+} from "@/lib/api-utils";
 
 // Validation schema
 const projectSchema = z.object({
@@ -20,7 +26,7 @@ export async function POST(
   try {
     const session = await auth();
     if (!session?.userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return createUnauthorizedResponse();
     }
 
     // Validate client exists and user has access
@@ -42,7 +48,7 @@ export async function POST(
     });
 
     if (!client) {
-      return NextResponse.json({ error: "Client not found" }, { status: 404 });
+      return createNotFoundResponse("Client");
     }
 
     if (client.organization.members.length === 0) {
@@ -88,13 +94,13 @@ export async function GET(
   try {
     const session = await auth();
     if (!session?.userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return createUnauthorizedResponse();
     }
 
     const clientId = params.id;
 
     // First verify the client exists and user has access to it
-    const client = await prisma.client.findUnique({
+    const client = await db.client.findUnique({
       where: { id: clientId },
       include: {
         organization: {
@@ -108,7 +114,7 @@ export async function GET(
     });
 
     if (!client) {
-      return NextResponse.json({ error: "Client not found" }, { status: 404 });
+      return createNotFoundResponse("Client");
     }
 
     // Skip membership check for now (following pattern from other APIs)
@@ -117,7 +123,7 @@ export async function GET(
     // }
 
     // Fetch projects for this client
-    const projects = await prisma.project.findMany({
+    const projects = await db.project.findMany({
       where: { 
         clientId: clientId,
         organizationId: client.organizationId
@@ -139,12 +145,8 @@ export async function GET(
 
     console.log(`Found ${projects.length} projects for client ${clientId}`);
     
-    return NextResponse.json(projects);
+    return createSuccessResponse(projects, 200, `Retrieved ${projects.length} projects for client`);
   } catch (error) {
-    console.error("Error fetching client projects:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch client projects" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 } 

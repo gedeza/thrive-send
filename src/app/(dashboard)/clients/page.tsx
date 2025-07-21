@@ -133,18 +133,15 @@ function MetricCard({ title, value, description, icon, change, isLoading, trend 
   }
 
   return (
-    <Card className="hover:shadow-sm transition-shadow">
-      <CardContent className="p-4">
+    <Card className="hover:shadow-md transition-shadow">
+      <CardContent className="p-6">
         <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">{title}</p>
-            <p className="text-xl font-bold">{typeof value === 'number' ? value.toLocaleString() : value}</p>
-            {description && (
-              <p className="text-xs text-muted-foreground">{description}</p>
-            )}
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <p className="text-3xl font-bold">{typeof value === 'number' ? value.toLocaleString() : value}</p>
             {change !== undefined && (
               <div className={cn(
-                "flex items-center text-xs font-medium",
+                "flex items-center text-xs font-medium mt-1",
                 change >= 0 ? 'text-green-600' : 'text-red-600'
               )}>
                 <TrendingUp className={cn(
@@ -155,8 +152,10 @@ function MetricCard({ title, value, description, icon, change, isLoading, trend 
               </div>
             )}
           </div>
-          <div className="text-primary p-2 bg-primary/10 rounded-lg">
-            {icon}
+          <div className="p-3 bg-primary/10 rounded-full">
+            <div className="h-6 w-6 text-primary">
+              {icon}
+            </div>
           </div>
         </div>
       </CardContent>
@@ -194,7 +193,9 @@ function ClientsPageContent() {
       }
       
       const data = await res.json();
-      setClients(Array.isArray(data) ? data : []);
+      // Handle both old direct array format and new standardized format
+      const clientsData = data.data ? data.data : data;
+      setClients(Array.isArray(clientsData) ? clientsData : []);
     } catch (err: any) {
       console.error("Failed to load clients:", err);
       setError(err.message || "Unable to load client data. Please try again later.");
@@ -218,7 +219,9 @@ function ClientsPageContent() {
       }
       
       const data = await res.json();
-      setStats(data);
+      // Handle both old direct data format and new standardized format  
+      const statsData = data.data ? data.data : data;
+      setStats(statsData);
     } catch (err: any) {
       console.error("Failed to load client statistics:", err);
     } finally {
@@ -280,144 +283,208 @@ function ClientsPageContent() {
   }, [clients]);
 
   return (
-    <div className="space-y-4 p-4">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Clients</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage your client relationships and track performance
+    <div className="container mx-auto py-8 space-y-8">
+        {/* Hero Section */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            Client Management
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Build and manage strong client relationships. Track engagement, monitor projects, and grow your business partnerships.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={loading || statsLoading}
-          >
-            <RefreshCcw className={cn("mr-2 h-4 w-4", (loading || statsLoading) && "animate-spin")} />
-            Refresh
-          </Button>
-          <Button asChild className="flex items-center gap-1">
+
+      {/* Metrics Overview */}
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Clients</p>
+                <p className="text-3xl font-bold">{stats?.totalClients || 0}</p>
+                {stats?.clientGrowth !== undefined && (
+                  <div className={cn(
+                    "flex items-center text-xs font-medium mt-1",
+                    stats.clientGrowth >= 0 ? 'text-green-600' : 'text-red-600'
+                  )}>
+                    <TrendingUp className={cn(
+                      "mr-1 h-3 w-3",
+                      stats.clientGrowth < 0 && "rotate-180"
+                    )} />
+                    {stats.clientGrowth >= 0 ? '+' : ''}{stats.clientGrowth}%
+                  </div>
+                )}
+              </div>
+              <div className="p-3 bg-primary/10 rounded-full">
+                <Users className="h-6 w-6 text-primary" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Active Clients</p>
+                <p className="text-3xl font-bold text-blue-600">{stats?.activeClients || 0}</p>
+              </div>
+              <div className="p-3 bg-blue-100 rounded-full">
+                <Activity className="h-6 w-6 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Active Projects</p>
+                <p className="text-3xl font-bold text-orange-600">{stats?.projects?.active || 0}</p>
+              </div>
+              <div className="p-3 bg-orange-100 rounded-full">
+                <Building2 className="h-6 w-6 text-orange-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Completion Rate</p>
+                <p className="text-3xl font-bold text-green-600">{stats?.projects?.completionRate || 0}%</p>
+              </div>
+              <div className="p-3 bg-green-100 rounded-full">
+                <CheckCircle2 className="h-6 w-6 text-green-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      {/* Search and Filter Bar */}
+      <div className="bg-muted/30 p-4 rounded-lg space-y-4">
+        {/* Mobile-first: Search and Primary Action */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+          <div className="flex-1 max-w-md">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="Search clients..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10 bg-background"
+              />
+            </div>
+          </div>
+          
+          {/* Primary Action Button - Always visible */}
+          <Button asChild className="bg-primary hover:bg-primary/90 shrink-0 w-full sm:w-auto">
             <Link href="/clients/new">
-              <Plus className="h-4 w-4" />
-              Add Client
+              <Plus className="h-4 w-4 mr-2" />
+              <span className="sm:hidden">Add Client</span>
+              <span className="hidden sm:inline">New Client</span>
             </Link>
           </Button>
         </div>
-      </div>
-
-      {/* Metrics Overview */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-          title="Total Clients"
-          value={stats?.totalClients || 0}
-          description="All client accounts"
-          icon={<Users className="h-6 w-6" />}
-          change={stats?.clientGrowth}
-          isLoading={statsLoading}
-        />
-        <MetricCard
-          title="Active Clients"
-          value={stats?.activeClients || 0}
-          description={`${stats?.activeClientPercentage || 0}% of total clients`}
-          icon={<Activity className="h-6 w-6" />}
-          isLoading={statsLoading}
-        />
-        <MetricCard
-          title="Active Projects"
-          value={stats?.projects?.active || 0}
-          description={`${stats?.projects?.total || 0} total projects`}
-          icon={<Building2 className="h-6 w-6" />}
-          isLoading={statsLoading}
-        />
-        <MetricCard
-          title="Completion Rate"
-          value={`${stats?.projects?.completionRate || 0}%`}
-          description="Project success rate"
-          icon={<CheckCircle2 className="h-6 w-6" />}
-          isLoading={statsLoading}
-        />
-      </div>
-      {/* Search and Filters */}
-      <Card>
-        <CardContent className="p-3">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="flex items-center gap-2 flex-1">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search clients by name, email, or industry..."
-                className="flex-1 h-8"
-              />
+        
+        {/* Secondary Controls */}
+        <div className="flex flex-wrap items-center gap-2 justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[130px] sm:w-[140px] bg-background">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-[130px] sm:w-[140px] bg-background">
+                <SelectValue placeholder="Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="MUNICIPALITY">Municipality</SelectItem>
+                <SelectItem value="BUSINESS">Business</SelectItem>
+                <SelectItem value="STARTUP">Startup</SelectItem>
+                <SelectItem value="INDIVIDUAL">Individual</SelectItem>
+                <SelectItem value="NONPROFIT">Nonprofit</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {uniqueIndustries.length > 0 && (
+              <Select value={industryFilter} onValueChange={setIndustryFilter}>
+                <SelectTrigger className="w-[130px] sm:w-[140px] bg-background">
+                  <SelectValue placeholder="Industry" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Industries</SelectItem>
+                  {uniqueIndustries.map(industry => (
+                    <SelectItem key={industry} value={industry}>
+                      {industry}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <div className="flex bg-muted rounded-md p-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('grid')}
+                    className="px-2 sm:px-3"
+                  >
+                    <Grid className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Grid View</TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('list')}
+                    className="px-2 sm:px-3"
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>List View</TooltipContent>
+              </Tooltip>
             </div>
             
-            <div className="flex items-center gap-2">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-24 h-8 text-xs">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-28 h-8 text-xs">
-                  <SelectValue placeholder="Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="MUNICIPALITY">Municipality</SelectItem>
-                  <SelectItem value="BUSINESS">Business</SelectItem>
-                  <SelectItem value="STARTUP">Startup</SelectItem>
-                  <SelectItem value="INDIVIDUAL">Individual</SelectItem>
-                  <SelectItem value="NONPROFIT">Nonprofit</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              {uniqueIndustries.length > 0 && (
-                <Select value={industryFilter} onValueChange={setIndustryFilter}>
-                  <SelectTrigger className="w-28 h-8 text-xs">
-                    <SelectValue placeholder="Industry" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Industries</SelectItem>
-                    {uniqueIndustries.map(industry => (
-                      <SelectItem key={industry} value={industry}>
-                        {industry}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              
-              <div className="flex items-center border rounded-md">
-                <Button
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('grid')}
-                  className="rounded-r-none border-r h-8 px-2"
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => window.location.reload()} 
+                  disabled={loading}
+                  className="shrink-0"
                 >
-                  <Grid className="h-3 w-3" />
+                  <RefreshCcw className={cn("h-4 w-4", loading && "animate-spin")} />
                 </Button>
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('list')}
-                  className="rounded-l-none h-8 px-2"
-                >
-                  <List className="h-3 w-3" />
-                </Button>
-              </div>
-            </div>
+              </TooltipTrigger>
+              <TooltipContent>Refresh Clients</TooltipContent>
+            </Tooltip>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Loading State */}
       {loading && (

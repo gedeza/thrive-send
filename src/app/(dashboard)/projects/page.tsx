@@ -1,12 +1,33 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ProjectCard, Project } from "@/components/projects/ProjectCard";
+import { ProjectCard, Project, PROJECT_STATUS_CONFIG } from "@/components/projects/ProjectCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
+import { 
+  Plus, 
+  Search, 
+  Grid, 
+  List, 
+  Filter, 
+  RefreshCw, 
+  FolderPlus,
+  Calendar,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  TrendingUp,
+  Building2,
+  Users
+} from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,8 +38,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { formatDistanceToNow } from 'date-fns';
+import { cn, debounce } from '@/lib/utils';
 
-const STATUS_OPTIONS = ["All", "PLANNED", "IN_PROGRESS", "COMPLETED"];
+const STATUS_OPTIONS = ["All", "PLANNED", "IN_PROGRESS", "COMPLETED"] as const;
+const ITEMS_PER_PAGE = 12;
+const SEARCH_DEBOUNCE_MS = 300;
+
+interface DropdownClient {
+  id: string;
+  name: string;
+}
 
 export default function ProjectsPage() {
   const router = useRouter();
@@ -26,18 +62,37 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("All");
+  const [clientFilter, setClientFilter] = useState<string>("All");
+  const [clients, setClients] = useState<DropdownClient[]>([]);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
 
-  // Filter button color sets from theme (for clarity)
-  const FILTER_BUTTON_VARIANTS = {
-    active: "bg-primary text-white border-primary hover:bg-primary/90",
-    inactive: "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
-  };
+  // Client-side mounting check
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Debounced search
+  const debouncedSearch = useCallback(
+    debounce((query: string) => {
+      setDebouncedSearchQuery(query);
+    }, SEARCH_DEBOUNCE_MS),
+    []
+  );
+
+  useEffect(() => {
+    debouncedSearch(searchQuery);
+  }, [searchQuery, debouncedSearch]);
 
   useEffect(() => {
     fetchProjects();
+    fetchClients();
   }, []);
 
   const fetchProjects = async () => {
@@ -59,6 +114,20 @@ export default function ProjectsPage() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchClients = async () => {
+    try {
+      const response = await fetch('/api/clients/dropdown');
+      if (!response.ok) {
+        throw new Error('Failed to fetch clients');
+      }
+      const data = await response.json();
+      setClients(data);
+    } catch (e) {
+      console.error('Error fetching clients:', e);
+      // Don't show error toast for clients since it's not critical
     }
   };
 
@@ -90,126 +159,479 @@ export default function ProjectsPage() {
     }
   };
 
-  // Search and Filter logic
+  // Enhanced filtering and sorting logic
   const filteredProjects = useMemo(() => {
     if (!projects) return [];
     let filtered = [...projects];
+    
+    // Apply status filter
     if (statusFilter !== "All") {
       filtered = filtered.filter((p) => p.status === statusFilter);
     }
-    if (search.trim()) {
-      const searchLower = search.toLowerCase();
+    
+    // Apply client filter
+    if (clientFilter !== "All") {
+      filtered = filtered.filter((p) => p.client?.id === clientFilter);
+    }
+    
+    // Apply search filter
+    if (debouncedSearchQuery.trim()) {
+      const searchLower = debouncedSearchQuery.toLowerCase();
       filtered = filtered.filter(
         (p) =>
           p.name.toLowerCase().includes(searchLower) ||
-          (p.description?.toLowerCase().includes(searchLower))
+          (p.description?.toLowerCase().includes(searchLower)) ||
+          (p.client?.name.toLowerCase().includes(searchLower))
       );
     }
+    
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let aValue, bValue;
+      
+      switch (sortBy) {
+        case 'name':
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case 'createdAt':
+          aValue = new Date(a.createdAt).getTime();
+          bValue = new Date(b.createdAt).getTime();
+          break;
+        case 'status':
+          aValue = a.status;
+          bValue = b.status;
+          break;
+        case 'client':
+          aValue = a.client?.name.toLowerCase() || 'zzz';
+          bValue = b.client?.name.toLowerCase() || 'zzz';
+          break;
+        default:
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+      }
+      
+      if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+    
     return filtered;
-  }, [projects, statusFilter, search]);
+  }, [projects, statusFilter, clientFilter, debouncedSearchQuery, sortBy, sortOrder]);
+
+  // Calculate project statistics
+  const projectStats = useMemo(() => {
+    if (!projects) return { total: 0, planned: 0, inProgress: 0, completed: 0 };
+    
+    const stats = projects.reduce((acc, project) => {
+      acc.total++;
+      switch (project.status) {
+        case 'PLANNED':
+          acc.planned++;
+          break;
+        case 'IN_PROGRESS':
+          acc.inProgress++;
+          break;
+        case 'COMPLETED':
+          acc.completed++;
+          break;
+      }
+      return acc;
+    }, { total: 0, planned: 0, inProgress: 0, completed: 0 });
+    
+    return stats;
+  }, [projects]);
+
+  if (!isClient) {
+    return <ProjectsPageSkeleton />;
+  }
 
   return (
-    <div className="space-y-6 p-6">
-      <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Projects</h1>
-          <p className="text-muted-foreground">
-            Manage and track all your projects
+    <TooltipProvider>
+      <div className="container mx-auto py-8 space-y-8">
+        {/* Hero Section */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            Project Management
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Track, organize, and manage all your projects in one place. Stay on top of deadlines and monitor progress.
           </p>
         </div>
-        <div className="flex flex-col gap-3 md:flex-row md:gap-3">
-          <Input
-            type="search"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search by name or description..."
-            className="max-w-xs"
-            aria-label="Search projects"
-            data-testid="search-projects"
-          />
-          <Button
-            asChild
-            variant="primary"
-            data-testid="create-project-main"
-            className="px-4 py-2"
-          >
-            <Link href="/projects/new">
-              <span className="mr-2 text-lg font-bold">+</span>
-              Create Project
-            </Link>
-          </Button>
+
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Projects</p>
+                  <p className="text-3xl font-bold">{projectStats.total}</p>
+                </div>
+                <div className="p-3 bg-primary/10 rounded-full">
+                  <Building2 className="h-6 w-6 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Planned</p>
+                  <p className="text-3xl font-bold text-yellow-600">{projectStats.planned}</p>
+                </div>
+                <div className="p-3 bg-yellow-100 rounded-full">
+                  <Calendar className="h-6 w-6 text-yellow-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">In Progress</p>
+                  <p className="text-3xl font-bold text-blue-600">{projectStats.inProgress}</p>
+                </div>
+                <div className="p-3 bg-blue-100 rounded-full">
+                  <Clock className="h-6 w-6 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Completed</p>
+                  <p className="text-3xl font-bold text-green-600">{projectStats.completed}</p>
+                </div>
+                <div className="p-3 bg-green-100 rounded-full">
+                  <CheckCircle2 className="h-6 w-6 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </header>
-      
-      <section aria-labelledby="projects-list-heading" className="space-y-4">
-        <nav className="flex flex-wrap gap-2" aria-label="Project Filters">
-          {STATUS_OPTIONS.map((status) => (
-            <button
-              key={status}
-              onClick={() => setStatusFilter(status)}
-              type="button"
-              className={`rounded-full px-4 py-1 text-xs font-semibold border transition-colors outline-none
-                ${statusFilter === status 
-                  ? FILTER_BUTTON_VARIANTS.active
-                  : FILTER_BUTTON_VARIANTS.inactive
-                }`}
-              aria-pressed={statusFilter === status}
-              tabIndex={0}
-            >
-              {status === "IN_PROGRESS" ? "In Progress" : status.charAt(0) + status.slice(1).toLowerCase()}
-            </button>
-          ))}
-        </nav>
-        
-        <h2 id="projects-list-heading" className="sr-only">Project List</h2>
-        
-        {loading && (
-          <div className="text-muted-foreground">Loading projects...</div>
-        )}
-        
-        {error && (
-          <div className="text-red-500" role="alert">{error}</div>
-        )}
-        
-        {filteredProjects && filteredProjects.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+
+        {/* Search and Filter Bar */}
+        <div className="bg-muted/30 p-4 rounded-lg space-y-4">
+          {/* Mobile-first: Search and Primary Action */}
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+            <div className="flex-1 max-w-md">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Search projects..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 bg-background"
+                />
+              </div>
+            </div>
+            
+            {/* Primary Action Button - Always visible */}
+            <Button asChild className="bg-primary hover:bg-primary/90 shrink-0 w-full sm:w-auto">
+              <Link href="/projects/new">
+                <Plus className="h-4 w-4 mr-2" />
+                <span className="sm:hidden">Create Project</span>
+                <span className="hidden sm:inline">New Project</span>
+              </Link>
+            </Button>
+          </div>
+          
+          {/* Secondary Controls */}
+          <div className="flex flex-wrap items-center gap-2 justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[130px] sm:w-[140px] bg-background">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_OPTIONS.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status === "All" ? "All Status" : PROJECT_STATUS_CONFIG[status as keyof typeof PROJECT_STATUS_CONFIG]?.label || status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={clientFilter} onValueChange={setClientFilter}>
+                <SelectTrigger className="w-[130px] sm:w-[160px] bg-background">
+                  <Users className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Client" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Clients</SelectItem>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-[100px] sm:w-[120px] bg-background">
+                  <SelectValue placeholder="Sort" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">Name</SelectItem>
+                  <SelectItem value="createdAt">Date</SelectItem>
+                  <SelectItem value="status">Status</SelectItem>
+                  <SelectItem value="client">Client</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                    className="bg-background shrink-0"
+                  >
+                    <TrendingUp className={cn("h-4 w-4 transition-transform", sortOrder === 'desc' && "rotate-180")} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Sort {sortOrder === 'asc' ? 'Descending' : 'Ascending'}
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <div className="flex bg-muted rounded-md p-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setViewMode('grid')}
+                      className="px-2 sm:px-3"
+                    >
+                      <Grid className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Grid View</TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={viewMode === 'list' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setViewMode('list')}
+                      className="px-2 sm:px-3"
+                    >
+                      <List className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>List View</TooltipContent>
+                </Tooltip>
+              </div>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={fetchProjects} 
+                    disabled={loading}
+                    className="shrink-0"
+                  >
+                    <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Refresh Projects</TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+        </div>
+        {/* Content Area */}
+        {loading ? (
+          <ProjectsContentSkeleton viewMode={viewMode} />
+        ) : error ? (
+          <Card className="p-8 text-center">
+            <CardContent>
+              <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Failed to Load Projects</h3>
+              <p className="text-muted-foreground mb-4">{error}</p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button onClick={fetchProjects} variant="outline" className="w-full sm:w-auto">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Try Again
+                </Button>
+                <Button asChild className="w-full sm:w-auto">
+                  <Link href="/projects/new">
+                    <Plus className="h-4 w-4 mr-2" />
+                    <span className="sm:hidden">Create Project</span>
+                    <span className="hidden sm:inline">Create New Project</span>
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : filteredProjects && filteredProjects.length > 0 ? (
+          <div className={cn(
+            "transition-all duration-200",
+            viewMode === 'grid' 
+              ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+              : "space-y-4"
+          )}>
             {filteredProjects.map(project => (
               <ProjectCard 
                 key={project.id} 
                 project={project}
+                viewMode={viewMode}
                 onDelete={(id) => setDeleteProjectId(id)}
               />
             ))}
           </div>
-        ) : !loading && (
-          <div className="text-center p-10 border rounded-lg text-muted-foreground">
-            <p className="mb-4">No projects found</p>
-            <p className="text-sm">
-              Try a different search or create a new project to get started.
-            </p>
-          </div>
+        ) : (
+          <Card className="p-12 text-center">
+            <CardContent>
+              <div className="max-w-md mx-auto">
+                <div className="mb-6">
+                  <div className="p-4 bg-muted/30 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <FolderPlus className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">
+                    {debouncedSearchQuery || statusFilter !== "All" || clientFilter !== "All"
+                      ? "No projects found" 
+                      : "No projects yet"}
+                  </h3>
+                  <p className="text-muted-foreground mb-6">
+                    {debouncedSearchQuery || statusFilter !== "All" || clientFilter !== "All"
+                      ? "Try adjusting your search or filters to find what you're looking for"
+                      : "Get started by creating your first project to organize and track your work"}
+                  </p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  {(debouncedSearchQuery || statusFilter !== "All" || clientFilter !== "All") && (
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setSearchQuery("");
+                        setDebouncedSearchQuery("");
+                        setStatusFilter("All");
+                        setClientFilter("All");
+                      }}
+                    >
+                      Clear Filters
+                    </Button>
+                  )}
+                  <Button asChild className="w-full sm:w-auto">
+                    <Link href="/projects/new">
+                      <Plus className="h-4 w-4 mr-2" />
+                      <span className="sm:hidden">Create Project</span>
+                      <span className="hidden sm:inline">Create Your First Project</span>
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
-      </section>
 
-      <AlertDialog open={!!deleteProjectId} onOpenChange={() => setDeleteProjectId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the project and all its data.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deleteProjectId && handleDeleteProject(deleteProjectId)}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!deleteProjectId} onOpenChange={() => setDeleteProjectId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Project</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this project? This action cannot be undone and will remove all project data permanently.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => deleteProjectId && handleDeleteProject(deleteProjectId)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete Project
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </TooltipProvider>
+  );
+}
+
+// Loading skeleton components
+function ProjectsPageSkeleton() {
+  return (
+    <div className="container mx-auto py-8 space-y-8">
+      <div className="text-center mb-8">
+        <Skeleton className="h-12 w-96 mx-auto mb-4" />
+        <Skeleton className="h-6 w-[600px] mx-auto" />
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-8 w-12" />
+                </div>
+                <Skeleton className="h-12 w-12 rounded-full" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      
+      <div className="bg-muted/30 p-4 rounded-lg">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-10 flex-1 max-w-md" />
+          <Skeleton className="h-10 w-32" />
+          <Skeleton className="h-10 w-24" />
+          <Skeleton className="h-10 w-10" />
+          <Skeleton className="h-10 w-20" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+      </div>
+      
+      <ProjectsContentSkeleton viewMode="grid" />
+    </div>
+  );
+}
+
+function ProjectsContentSkeleton({ viewMode }: { viewMode: 'grid' | 'list' }) {
+  return (
+    <div className={cn(
+      viewMode === 'grid' 
+        ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+        : "space-y-4"
+    )}>
+      {Array.from({ length: 8 }).map((_, i) => (
+        <Card key={i} className={cn(viewMode === 'list' && "flex items-center p-4")}>
+          <CardHeader className={cn(viewMode === 'list' && "pb-0")}>
+            <div className="flex items-start justify-between mb-2">
+              <Skeleton className="h-5 w-16" />
+              <Skeleton className="h-4 w-4" />
+            </div>
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-4 w-full" />
+          </CardHeader>
+          {viewMode === 'grid' && (
+            <CardContent>
+              <div className="flex items-center justify-between text-sm">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      ))}
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Copy, Edit, Trash, Loader2, Plus, Search, Filter, Sparkles, Mail, MessageSquare, FileText } from 'lucide-react';
+import { PlusCircle, Copy, Edit, Trash, Loader2, Plus, Search, Filter, Sparkles, Mail, MessageSquare, FileText, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
@@ -43,6 +43,7 @@ export default function TemplatesPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchTemplates() {
@@ -90,6 +91,44 @@ export default function TemplatesPage() {
         return <FileText className="h-4 w-4" />;
       default:
         return null;
+    }
+  };
+
+  const handleDuplicate = async (templateId: string, templateName: string, e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent navigation to template detail
+    
+    try {
+      setDuplicatingId(templateId);
+
+      const response = await fetch(`/api/templates/${templateId}/duplicate`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to duplicate template');
+      }
+
+      const duplicatedTemplate = await response.json();
+
+      toast({
+        title: "Success",
+        description: `Template "${templateName}" duplicated successfully`,
+      });
+
+      // Refresh templates list
+      const templatesResponse = await fetch("/api/templates");
+      if (templatesResponse.ok) {
+        const updatedTemplates = await templatesResponse.json();
+        setTemplates(updatedTemplates);
+      }
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to duplicate template",
+        variant: "destructive",
+      });
+    } finally {
+      setDuplicatingId(null);
     }
   };
 
@@ -161,29 +200,53 @@ export default function TemplatesPage() {
 
         {/* Template Cards */}
         {filteredTemplates.map((template) => (
-          <Link key={template.id} href={`/templates/editor/${template.id}`}>
-            <Card className="h-full hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-center justify-between mb-2">
-                  <Badge variant={template.status === 'published' ? 'default' : 'secondary'}>
-                    {template.status}
-                  </Badge>
-                  <div className="flex items-center text-muted-foreground">
-                    {getTypeIcon(template.type)}
-                    <span className="ml-2 text-sm capitalize">{template.type}</span>
-                  </div>
+          <Card key={template.id} className="h-full hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <div className="flex items-center justify-between mb-2">
+                <Badge variant={template.status === 'published' ? 'default' : 'secondary'}>
+                  {template.status}
+                </Badge>
+                <div className="flex items-center text-muted-foreground">
+                  {getTypeIcon(template.type)}
+                  <span className="ml-2 text-sm capitalize">{template.type}</span>
                 </div>
-                <CardTitle className="line-clamp-1">{template.name}</CardTitle>
-                <CardDescription className="line-clamp-2">{template.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>{template.category}</span>
-                  <span>Updated {new Date(template.updatedAt).toLocaleDateString()}</span>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
+              </div>
+              <CardTitle className="line-clamp-1">{template.name}</CardTitle>
+              <CardDescription className="line-clamp-2">{template.description}</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-grow">
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>{template.category}</span>
+                <span>Updated {new Date(template.updatedAt).toLocaleDateString()}</span>
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-between gap-2">
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`/templates/${template.id}`}>
+                  <Eye className="h-4 w-4 mr-2" />
+                  View
+                </Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`/templates/editor/${template.id}`}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Link>
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={(e) => handleDuplicate(template.id, template.name, e)}
+                disabled={duplicatingId === template.id}
+              >
+                {duplicatingId === template.id ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </Button>
+            </CardFooter>
+          </Card>
         ))}
       </div>
 

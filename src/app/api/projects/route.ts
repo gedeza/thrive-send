@@ -34,7 +34,13 @@ export async function GET(request: NextRequest) {
         clientId: true,
         organizationId: true,
         managerId: true,
-        createdAt: true
+        createdAt: true,
+        client: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
       },
       orderBy: {
         name: 'asc'

@@ -2,26 +2,71 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { Prisma } from "@prisma/client";
+import { 
+  createSuccessResponse, 
+  createUnauthorizedResponse, 
+  createValidationResponse,
+  createNotFoundResponse,
+  handleApiError 
+} from "@/lib/api-utils";
+import { 
+  CreateClientSchema, 
+  ClientFilterSchema,
+  PaginationSchema,
+  OrganizationIdSchema,
+  validateRequestAsync 
+} from "@/lib/validation";
+import type { ClientResponse, PaginatedResponse } from "@/types/api";
 
-// GET: List all clients for the user's organizations
+// GET: List all clients for the user's organizations with pagination and filtering
 export async function GET(request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return createUnauthorizedResponse();
     }
 
     const { searchParams } = new URL(request.url);
-    const organizationId = searchParams.get("organizationId");
-
-    if (!organizationId) {
-      return NextResponse.json(
-        { error: "organizationId is required" },
-        { status: 400 }
-      );
+    
+    // Validate organization ID
+    const organizationIdValidation = await validateRequestAsync(
+      OrganizationIdSchema,
+      searchParams.get("organizationId")
+    );
+    
+    if (!organizationIdValidation.success) {
+      return createValidationResponse("organizationId is required and must be valid");
     }
 
-    // Find the organization by either internal ID or Clerk ID
+    // Validate pagination parameters
+    const paginationValidation = await validateRequestAsync(PaginationSchema, {
+      page: searchParams.get("page") || "1",
+      limit: searchParams.get("limit") || "20",
+      sortBy: searchParams.get("sortBy") || "createdAt",
+      sortOrder: searchParams.get("sortOrder") || "desc",
+    });
+
+    if (!paginationValidation.success) {
+      return createValidationResponse("Invalid pagination parameters", paginationValidation.errors.errors);
+    }
+
+    // Validate filters
+    const filtersValidation = await validateRequestAsync(ClientFilterSchema, {
+      status: searchParams.get("status") || "all",
+      type: searchParams.get("type") || "all",
+      industry: searchParams.get("industry"),
+      search: searchParams.get("search"),
+    });
+
+    if (!filtersValidation.success) {
+      return createValidationResponse("Invalid filter parameters", filtersValidation.errors.errors);
+    }
+
+    const { page, limit, sortBy, sortOrder } = paginationValidation.data;
+    const filters = filtersValidation.data;
+    const organizationId = organizationIdValidation.data;
+
+    // Find the organization
     const organization = await db.organization.findFirst({
       where: {
         OR: [
@@ -32,38 +77,86 @@ export async function GET(request: NextRequest) {
     });
 
     if (!organization) {
-      return NextResponse.json(
-        { error: "Organization not found" },
-        { status: 404 }
-      );
+      return createNotFoundResponse("Organization");
     }
 
+    // Build where clause with filters
+    const whereClause: any = {
+      organizationId: organization.id,
+    };
+
+    if (filters.status !== 'all') {
+      whereClause.status = filters.status;
+    }
+
+    if (filters.type !== 'all') {
+      whereClause.type = filters.type;
+    }
+
+    if (filters.industry) {
+      whereClause.industry = {
+        contains: filters.industry,
+        mode: 'insensitive' as const,
+      };
+    }
+
+    if (filters.search) {
+      whereClause.OR = [
+        { name: { contains: filters.search, mode: 'insensitive' as const } },
+        { email: { contains: filters.search, mode: 'insensitive' as const } },
+        { industry: { contains: filters.search, mode: 'insensitive' as const } },
+      ];
+    }
+
+    // Get total count for pagination
+    const totalCount = await db.client.count({ where: whereClause });
+
+    // Fetch clients with pagination
     const clients = await db.client.findMany({
-      where: {
-        organizationId: organization.id, // Always use internal ID
-      },
+      where: whereClause,
       orderBy: {
-        createdAt: "desc",
+        [sortBy]: sortOrder,
       },
+      skip: (page - 1) * limit,
+      take: limit,
       include: {
-        socialAccounts: true,
+        socialAccounts: {
+          select: {
+            id: true,
+            platform: true,
+            handle: true,
+          },
+        },
         projects: {
           select: {
             id: true,
             name: true,
             status: true,
           },
+          take: 5, // Limit projects for performance
         },
       },
     });
 
-    return NextResponse.json(clients);
+    const totalPages = Math.ceil(totalCount / limit);
+    
+    const paginatedResponse: PaginatedResponse<ClientResponse> = {
+      data: clients as ClientResponse[],
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+      message: `Retrieved ${clients.length} clients`,
+      timestamp: new Date().toISOString(),
+    };
+
+    return NextResponse.json(paginatedResponse);
   } catch (error) {
-    console.error("Error fetching clients:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch clients" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 
@@ -120,17 +213,13 @@ export async function POST(request: Request) {
         }
       });
 
-      // Skip membership check for now since we're having issues with organization access
-      // If in production, you'd want to properly implement this check
-      /*
       if (!membership) {
-        console.error("User does not have access to organization:", { userId: session.userId, organizationId });
+        console.error("User does not have access to organization:", { userId: session.userId, organizationId: internalOrganizationId });
         return NextResponse.json(
           { error: "You don't have access to this organization" },
           { status: 403 }
         );
       }
-      */
 
       // Check for existing client with same email
       const existingClient = await db.client.findFirst({

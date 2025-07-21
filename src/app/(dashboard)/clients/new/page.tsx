@@ -96,7 +96,7 @@ export default function AddClientPage() {
   const onSubmit = async (data: ClientFormData) => {
     try {
       setIsSubmitting(true);
-      console.log(\"Form submission started with data:\", data);
+      console.log("Form submission started with data:", data);
       
       if (!organization?.id) {
         console.error("No organization found:", { organization });
