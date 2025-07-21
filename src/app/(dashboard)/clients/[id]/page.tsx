@@ -13,6 +13,7 @@ import BudgetSection from '@/components/clients/BudgetSection';
 import DocumentSection from '@/components/clients/DocumentSection';
 import FeedbackSection from '@/components/clients/FeedbackSection';
 import GoalsSection from '@/components/clients/GoalsSection';
+import ClientProjectsSection from '@/components/clients/ClientProjectsSection';
 
 export default async function ClientDashboard({
   params,
@@ -53,6 +54,7 @@ export default async function ClientDashboard({
         <Tabs defaultValue="overview" className="mt-8">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="projects">Projects</TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
             <TabsTrigger value="budget">Budget</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
@@ -84,6 +86,12 @@ export default async function ClientDashboard({
                 </Suspense>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="projects">
+            <Suspense fallback={<div>Loading projects...</div>}>
+              <ClientProjectsSection clientId={clientId} />
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="timeline">
