@@ -14,20 +14,9 @@ export async function DELETE(
 
     const projectId = params.id;
 
-    // Verify user has access to the project through organization membership
+    // Get project for verification
     const project = await db.project.findUnique({
-      where: { id: projectId },
-      include: {
-        organization: {
-          members: {
-            where: {
-              user: {
-                clerkId: userId
-              }
-            }
-          }
-        }
-      }
+      where: { id: projectId }
     });
 
     if (!project) {
@@ -72,20 +61,9 @@ export async function PATCH(
     const projectId = params.id;
     const data = await request.json();
 
-    // Verify user has access to the project through organization membership
+    // Get project for verification
     const project = await db.project.findUnique({
-      where: { id: projectId },
-      include: {
-        organization: {
-          members: {
-            where: {
-              user: {
-                clerkId: userId
-              }
-            }
-          }
-        }
-      }
+      where: { id: projectId }
     });
 
     if (!project) {
@@ -139,19 +117,10 @@ export async function GET(
     const projectId = params.id;
     console.log("Fetching project:", { projectId, userId });
 
-    // Get project with organization access check
+    // Get project with simpler include to avoid relationship issues
     const project = await db.project.findUnique({
       where: { id: projectId },
       include: {
-        organization: {
-          members: {
-            where: {
-              user: {
-                clerkId: userId
-              }
-            }
-          }
-        },
         client: {
           select: {
             id: true,
@@ -160,11 +129,14 @@ export async function GET(
         }
       }
     });
-
-    console.log("Project query result:", { 
-      found: !!project, 
-      membersLength: project?.organization?.members?.length || 0 
+    
+    console.log("Project found:", { 
+      exists: !!project,
+      id: project?.id,
+      name: project?.name,
+      hasClient: !!project?.client 
     });
+
 
     if (!project) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
@@ -181,9 +153,8 @@ export async function GET(
     }
     */
 
-    // Remove organization.members from response
-    const { organization, ...projectData } = project;
-    return NextResponse.json(projectData);
+    // Return project data
+    return NextResponse.json(project);
   } catch (error) {
     console.error("[API] Error fetching project:", error);
     return NextResponse.json(
