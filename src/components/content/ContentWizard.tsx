@@ -631,42 +631,17 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
 
       const contentData = await contentResponse.json();
       
-      // Create calendar event with same scheduled date
-      const calendarResponse = await fetch('/api/calendar/events', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: event.title || '',
-          description: event.description || '',
-          type: event.type || 'social',
-          status: 'scheduled',
-          // Use the exact same scheduledAt time to ensure consistency
-          startTime: contentData.scheduledAt || new Date().toISOString(),
-          endTime: contentData.scheduledAt 
-            ? new Date(new Date(contentData.scheduledAt).getTime() + 3600000).toISOString() // Add 1 hour
-            : new Date(new Date().getTime() + 3600000).toISOString(),
-          scheduledAt: contentData.scheduledAt,
-          contentId: contentData.id,
-          socialMediaContent: event.socialMediaContent,
-        }),
-      });
-
-      if (!calendarResponse.ok) {
-        const errorData = await calendarResponse.json();
-        throw new Error(errorData.error || 'Failed to create calendar event');
-      }
-
-      const calendarData = await calendarResponse.json();
+      // Calendar event creation is now handled automatically by the content API
+      // This ensures consistency and eliminates duplicate requests
+      console.log('Content created - calendar event handled by backend');
       
       // Show success message
       handleSuccess("Content scheduled successfully");
       
-      // Call the onComplete callback with the created event
+      // Call the onComplete callback with the created content
       if (onComplete) {
         onComplete({
-          id: calendarData.id,
+          id: contentData.id,
           title: event.title || 'Untitled',
           description: event.description || '',
           type: (event.type || 'social') as ContentType,

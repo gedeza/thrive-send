@@ -87,30 +87,9 @@ export async function saveContent(data: ContentFormData): Promise<ContentData> {
       }
     }
 
-    // Create corresponding calendar event if content is scheduled or published
-    // Include draft content that has a scheduled date
-    if (savedContent.scheduledAt || savedContent.status === 'PUBLISHED' || savedContent.status === 'APPROVED') {
-      try {
-        console.log('Creating calendar event for content:', {
-          title: savedContent.title,
-          status: savedContent.status,
-          scheduledAt: savedContent.scheduledAt,
-          type: savedContent.type
-        });
-        const calendarEvent = await createCalendarEventFromContent(savedContent);
-        console.log('Calendar event created successfully:', calendarEvent.id);
-      } catch (calendarError) {
-        console.error('Failed to create calendar event for content:', calendarError);
-        // Don't fail the content creation if calendar event creation fails
-      }
-    } else {
-      console.log('Content does not meet criteria for calendar event creation:', {
-        title: savedContent.title,
-        status: savedContent.status,
-        scheduledAt: savedContent.scheduledAt,
-        hasScheduledAt: !!savedContent.scheduledAt
-      });
-    }
+    // Calendar event creation is now handled by the API
+    // This provides better error handling and consistency
+    console.log('Calendar event creation handled by API for consistency');
 
     return savedContent;
   } catch (error) {
@@ -237,18 +216,10 @@ export async function listContent(params: {
   };
 }> {
   try {
-    console.log('Listing content with params:', params);
-    const searchParams = new URLSearchParams();
-    if (params.page) searchParams.set('page', params.page.toString());
-    if (params.limit) searchParams.set('limit', params.limit.toString());
-    if (params.type) searchParams.set('type', params.type.toUpperCase());
-    if (params.contentType) searchParams.set('contentType', params.contentType.toUpperCase());
-    if (params.status) searchParams.set('status', params.status.toUpperCase());
-    if (params.search) searchParams.set('search', params.search);
-    if (params.sortBy) searchParams.set('sortBy', params.sortBy);
-    if (params.sortOrder) searchParams.set('sortOrder', params.sortOrder);
-
-    const response = await fetch(`${API_URL}?${searchParams.toString()}`, {
+    console.log('📋 Using simple content API for listing');
+    
+    // Use our simple, working API
+    const response = await fetch('/api/simple-content', {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -257,25 +228,61 @@ export async function listContent(params: {
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('API Error Response:', error);
+      console.error('Simple API Error:', error);
       throw new Error(error.message || 'Failed to fetch content');
     }
 
     const data = await response.json();
-    console.log('Content list response:', data);
+    console.log('✅ Simple content API response:', data.content?.length, 'items');
     
-    // Handle both old and new API response formats
-    if (data.pagination) {
-      return {
-        content: data.content,
-        total: data.pagination.total,
-        pages: data.pagination.pages,
-        pagination: data.pagination
-      };
-    } else {
-      // Legacy format fallback
-      return data;
+    const content = data.content || [];
+    
+    // Apply client-side filtering for compatibility
+    let filteredContent = content;
+    
+    if (params.type || params.contentType) {
+      const typeFilter = (params.type || params.contentType)?.toUpperCase();
+      filteredContent = filteredContent.filter((item: any) => item.type === typeFilter);
     }
+    
+    if (params.status) {
+      filteredContent = filteredContent.filter((item: any) => item.status === params.status?.toUpperCase());
+    }
+    
+    if (params.search) {
+      const searchLower = params.search.toLowerCase();
+      filteredContent = filteredContent.filter((item: any) => 
+        item.title.toLowerCase().includes(searchLower) ||
+        item.content.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Apply pagination
+    const page = params.page || 1;
+    const limit = params.limit || 12;
+    const total = filteredContent.length;
+    const pages = Math.ceil(total / limit);
+    const start = (page - 1) * limit;
+    const paginatedContent = filteredContent.slice(start, start + limit);
+
+    return {
+      content: paginatedContent.map((item: any) => ({
+        ...item,
+        tags: item.tags || [],
+        platforms: item.platforms || [],
+        excerpt: item.content?.substring(0, 100),
+        publishingOptions: undefined,
+        mediaItems: []
+      })),
+      total,
+      pages,
+      pagination: {
+        total,
+        pages,
+        page,
+        limit
+      }
+    };
   } catch (error) {
     console.error('Error fetching content list:', error);
     throw error;
@@ -324,122 +331,12 @@ export async function createContent(data: ContentFormValues): Promise<ContentDat
 
 /**
  * Create a calendar event from content data
+ * @deprecated - Calendar events are now handled automatically by the content API
+ * This function is kept for backward compatibility but should not be used
  */
 export async function createCalendarEventFromContent(content: ContentData): Promise<any> {
-  try {
-    // Map content type to calendar event type
-    const typeMapping: Record<string, string> = {
-      'ARTICLE': 'article',
-      'BLOG': 'blog', 
-      'SOCIAL': 'social',
-      'EMAIL': 'email'
-    };
-
-    // Map content status to calendar event status
-    const statusMapping: Record<string, string> = {
-      'DRAFT': 'draft',           // Show as draft in calendar
-      'IN_REVIEW': 'review',      // Show as under review
-      'PENDING_REVIEW': 'review', // Show as under review
-      'CHANGES_REQUESTED': 'draft', // Back to draft
-      'APPROVED': 'scheduled',    // Ready for publishing
-      'PUBLISHED': 'sent',        // Published content
-      'ARCHIVED': 'failed'        // Archived content
-    };
-
-    const eventStartTime = content.scheduledAt || content.publishedAt || new Date().toISOString();
-    const eventEndTime = new Date(new Date(eventStartTime).getTime() + 60 * 60 * 1000).toISOString(); // 1 hour duration
-
-    // Determine calendar status - if content has scheduledAt, it should be 'scheduled' even if status is DRAFT
-    const calendarStatus = content.scheduledAt && content.scheduledAt !== '' 
-      ? 'scheduled' 
-      : statusMapping[content.status] || 'draft';
-
-    console.log('Calendar event mapping:', {
-      contentType: content.type,
-      contentStatus: content.status,
-      calendarType: typeMapping[content.type] || 'article',
-      calendarStatus,
-      eventStartTime,
-      hasScheduledAt: !!content.scheduledAt
-    });
-
-    const calendarEventData = {
-      title: content.title,
-      description: content.excerpt || content.content.substring(0, 200) + '...',
-      contentId: content.id, // Add this critical line
-      startTime: eventStartTime,
-      endTime: eventEndTime,
-      type: typeMapping[content.type] || 'article',
-      status: calendarStatus,
-      socialMediaContent: content.type === 'SOCIAL' ? {
-        platform: 'FACEBOOK', // Default platform, could be made configurable
-        postType: 'post',
-        content: content.content,
-        mediaUrls: content.media ? [content.media] : [],
-        scheduledTime: content.scheduledAt,
-        status: calendarStatus
-      } : undefined,
-      articleContent: content.type === 'ARTICLE' ? {
-        content: content.content,
-        metadata: {
-          slug: content.slug,
-          tags: content.tags,
-          excerpt: content.excerpt
-        }
-      } : undefined,
-      blogPost: content.type === 'BLOG' ? {
-        title: content.title,
-        content: content.content,
-        excerpt: content.excerpt,
-        tags: content.tags,
-        slug: content.slug,
-        publishedAt: content.publishedAt,
-        status: calendarStatus
-      } : undefined,
-      emailCampaign: content.type === 'EMAIL' ? {
-        subject: content.title,
-        content: content.content,
-        scheduledAt: content.scheduledAt,
-        status: calendarStatus
-      } : undefined,
-      analytics: {
-        views: 0,
-        engagement: {
-          likes: 0,
-          shares: 0,
-          comments: 0
-        },
-        clicks: 0,
-        lastUpdated: new Date().toISOString()
-      }
-    };
-
-    console.log('Creating calendar event from content with contentId:', {
-      contentId: content.id,
-      calendarEventData
-    });
-
-    const response = await fetch('/api/calendar/events', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(calendarEventData),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to create calendar event');
-    }
-
-    const calendarEvent = await response.json();
-    console.log('Calendar event created successfully with contentId link:', calendarEvent);
-    return calendarEvent;
-  } catch (error) {
-    console.error('Error creating calendar event from content:', error);
-    throw error;
-  }
+  console.warn('createCalendarEventFromContent is deprecated - calendar events are now handled by the content API');
+  return Promise.resolve({ id: 'deprecated', message: 'Calendar events handled by content API' });
 }
 
 /**

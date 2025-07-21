@@ -120,7 +120,7 @@ export function OptimizeScheduleStep({ contentData, onUpdate, onPrevious, mode =
     setIsPublishing(true);
     
     try {
-      // Map content types to API format
+      // Map content types to simple API format
       const mapContentType = (type: string) => {
         const typeMap: Record<string, string> = {
           'social-post': 'SOCIAL',
@@ -133,98 +133,38 @@ export function OptimizeScheduleStep({ contentData, onUpdate, onPrevious, mode =
         return typeMap[type] || 'SOCIAL';
       };
 
-      // Prepare content data for API
-      const contentPayload = {
+      // Prepare simple content data
+      const simplePayload = {
         title: contentData.title,
-        type: mapContentType(contentData.type || 'social-post'),
         content: contentData.content,
-        tags: contentData.tags || [],
-        status: scheduleType === 'now' ? 'PUBLISHED' : 'DRAFT',
+        type: mapContentType(contentData.type || 'social-post'),
         scheduledAt: scheduleType === 'later' && contentData.scheduledDate 
           ? contentData.scheduledDate.toISOString()
           : scheduleType === 'optimal' 
             ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // Tomorrow 9 AM
-            : undefined,
-        platforms: contentData.platforms,
-        tone: contentData.tone,
-        // Include publishing options
-        publishingOptions: publishingOptions
+            : undefined
       };
 
-      // Create or update content in database
-      const url = mode === 'edit' && contentId ? `/api/content/${contentId}` : '/api/content';
-      const method = mode === 'edit' ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method,
+      console.log('🚀 Using simple content API for:', simplePayload);
+
+      // Use the simple, reliable API
+      const response = await fetch('/api/simple-content', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(contentPayload),
+        body: JSON.stringify(simplePayload),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to create content');
+        throw new Error(error.details || error.error || 'Failed to create content');
       }
 
       const createdContent = await response.json();
 
-      // If content is scheduled, create calendar event
-      if (scheduleType !== 'now' && createdContent.scheduledAt) {
-        try {
-          console.log('Creating calendar event for scheduled content:', {
-            contentId: createdContent.id,
-            scheduledAt: createdContent.scheduledAt,
-            scheduleType
-          });
-
-          const calendarEventPayload = {
-            title: contentData.title,
-            description: `${contentData.type} content: ${contentData.content?.substring(0, 100)}...`,
-            type: 'content',
-            status: 'scheduled',
-            startTime: createdContent.scheduledAt,
-            endTime: new Date(new Date(createdContent.scheduledAt).getTime() + 60 * 60 * 1000).toISOString(), // 1 hour duration
-            contentId: createdContent.id,
-            socialMediaContent: {
-              platforms: contentData.platforms,
-              content: contentData.content,
-              tone: contentData.tone,
-              tags: contentData.tags
-            }
-          };
-
-          console.log('Calendar event payload:', calendarEventPayload);
-
-          const calendarResponse = await fetch('/api/calendar/events', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(calendarEventPayload),
-          });
-
-          if (!calendarResponse.ok) {
-            const calendarError = await calendarResponse.json();
-            console.error('Calendar API error:', calendarError);
-            throw new Error(`Calendar API failed: ${calendarError.error || 'Unknown error'}`);
-          }
-
-          const calendarEvent = await calendarResponse.json();
-          console.log('Calendar event created successfully:', calendarEvent);
-          
-        } catch (calendarError) {
-          console.error('Failed to create calendar event:', calendarError);
-          // Show user notification but don't fail the whole operation
-          alert(`Content created successfully, but failed to add to calendar: ${calendarError instanceof Error ? calendarError.message : 'Unknown error'}`);
-        }
-      } else {
-        console.log('No calendar event needed:', {
-          scheduleType,
-          hasScheduledAt: !!createdContent.scheduledAt
-        });
-      }
+      // Simple API automatically handles calendar events - no extra work needed!
+      console.log('✅ Content created with simple API - calendar event handled automatically');
 
       // Dispatch custom event to refresh content list
       window.dispatchEvent(new CustomEvent('content-created'));
@@ -533,7 +473,7 @@ export function OptimizeScheduleStep({ contentData, onUpdate, onPrevious, mode =
               }
 
               try {
-                // Use the same mapping function
+                // Use the same simple API mapping
                 const mapContentType = (type: string) => {
                   const typeMap: Record<string, string> = {
                     'social-post': 'SOCIAL',
@@ -548,15 +488,14 @@ export function OptimizeScheduleStep({ contentData, onUpdate, onPrevious, mode =
 
                 const draftPayload = {
                   title: contentData.title,
-                  type: mapContentType(contentData.type || 'social-post'),
                   content: contentData.content,
-                  tags: contentData.tags || [],
-                  status: 'DRAFT',
-                  platforms: contentData.platforms,
-                  tone: contentData.tone
+                  type: mapContentType(contentData.type || 'social-post'),
+                  // No scheduledAt for drafts
                 };
 
-                const response = await fetch('/api/content', {
+                console.log('💾 Saving draft with simple API:', draftPayload);
+
+                const response = await fetch('/api/simple-content', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify(draftPayload),
@@ -565,9 +504,14 @@ export function OptimizeScheduleStep({ contentData, onUpdate, onPrevious, mode =
                 if (response.ok) {
                   window.dispatchEvent(new CustomEvent('content-created'));
                   router.push('/content?success=saved');
+                } else {
+                  const error = await response.json();
+                  console.error('Draft save failed:', error);
+                  alert(error.details || error.error || 'Failed to save draft');
                 }
               } catch (error) {
                 console.error('Error saving draft:', error);
+                alert('Failed to save draft');
               }
             }}
           >

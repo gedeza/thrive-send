@@ -17,6 +17,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { listContent, deleteContent, ContentData } from '@/lib/api/content-service';
 import { toast } from '@/components/ui/use-toast';
 import { ContentCalendarSync } from '@/components/content/ContentCalendarSync';
+import { SystemMonitor } from '@/components/debug/SystemMonitor';
 import { cn, debounce, formatDate, truncateText } from '@/lib/utils';
 import { MediaPreview } from '@/components/content/MediaPreview';
 import { PublishingOptionsIndicator } from '@/components/content/PublishingOptionsIndicator';
@@ -192,8 +193,12 @@ function ContentLibraryPage() {
     if (!filteredContent.length) return null;
     
     const stats = filteredContent.reduce((acc, item) => {
-      acc[item.status] = (acc[item.status] || 0) + 1;
-      acc[item.type] = (acc[item.type] || 0) + 1;
+      // Convert status to lowercase for consistent key matching
+      const statusKey = item.status.toLowerCase();
+      const typeKey = item.type.toLowerCase();
+      
+      acc[statusKey] = (acc[statusKey] || 0) + 1;
+      acc[typeKey] = (acc[typeKey] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
     

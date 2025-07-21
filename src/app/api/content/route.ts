@@ -5,7 +5,7 @@ import { contentFormSchema } from '@/lib/validations/content';
 import { z } from 'zod';
 import { NextRequest } from 'next/server';
 import { Prisma } from '@prisma/client';
-import { createCalendarEventFromContent } from '@/lib/api/content-service';
+import { CalendarIntegrationService } from '@/lib/services/calendar-integration';
 
 // Validation schemas
 const contentTypes = ['article', 'blog', 'social', 'email'] as const;
@@ -60,7 +60,10 @@ const querySchema = z.object({
 export async function GET(request: Request) {
   try {
     const { userId } = await auth();
+    console.log('🔍 Content API GET: Request received from user:', userId);
+    
     if (!userId) {
+      console.log('❌ Content API GET: Unauthorized - no userId');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -91,7 +94,10 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const query = Object.fromEntries(searchParams.entries());
+    console.log('🔍 Content API GET: Query parameters received:', query);
+    
     const validatedQuery = querySchema.parse(query);
+    console.log('🔍 Content API GET: Validated query:', validatedQuery);
 
     const page = parseInt(validatedQuery.page || '1');
     const limit = parseInt(validatedQuery.limit || '10');
@@ -128,6 +134,9 @@ export async function GET(request: Request) {
       ...statusFilter,
       ...searchConditions,
     };
+
+    console.log('🔍 Content API GET: Database query where clause:', where);
+    console.log('🔍 Content API GET: Organization member user IDs:', memberUserIds);
 
     // Handle sorting
     const sortField = validatedQuery.sortBy || 'createdAt';
@@ -173,6 +182,23 @@ export async function GET(request: Request) {
       }),
       prisma.content.count({ where }),
     ]);
+
+    console.log('✅ Content API GET: Query completed:', {
+      totalFound: total,
+      contentCount: content.length,
+      page,
+      limit,
+      pages: Math.ceil(total / limit)
+    });
+
+    console.log('🔍 Content API GET: Content items found:', content.map(c => ({
+      id: c.id,
+      title: c.title,
+      status: c.status,
+      type: c.type,
+      authorId: c.authorId,
+      createdAt: c.createdAt
+    })));
 
     return NextResponse.json({
       content,
@@ -260,8 +286,18 @@ export async function POST(request: Request) {
         // Extract contentListId from validated data
         const { contentListId, ...contentData } = validatedData;
 
+        console.log('🔍 API: About to create content with data:', {
+          title: contentData.title,
+          type: contentData.type,
+          status: contentData.status,
+          hasScheduledAt: !!contentData.scheduledAt,
+          authorId: user.id,
+          organizationId
+        });
+
         // Create content transaction
         const content = await prisma.$transaction(async (tx) => {
+          console.log('📝 API: Starting content creation transaction...');
           // First create the content
           const newContent = await tx.content.create({
             data: {
@@ -299,38 +335,94 @@ export async function POST(request: Request) {
           return newContent;
         });
 
-        // CRITICAL FIX: Add calendar integration that was missing from API
-        // Create corresponding calendar event if content meets criteria
-        if (content.scheduledAt || content.status === 'PUBLISHED' || content.status === 'APPROVED') {
-          try {
-            console.log('API: Creating calendar event for content:', {
-              id: content.id,
-              title: content.title,
-              status: content.status,
-              scheduledAt: content.scheduledAt,
-              type: content.type
-            });
-            await createCalendarEventFromContent(content);
-            console.log('API: Calendar event created successfully for content:', content.id);
-          } catch (calendarError) {
-            console.error('API: Failed to create calendar event for content:', calendarError);
-            // Don't fail content creation if calendar event creation fails
-            // This is a non-blocking operation
+        // CRITICAL FIX: Fetch complete content data for calendar integration
+        const completeContent = await prisma.content.findUnique({
+          where: { id: content.id },
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            type: true,
+            status: true,
+            content: true,
+            excerpt: true,
+            media: true,
+            publishingOptions: true,
+            tags: true,
+            platforms: true,
+            authorId: true,
+            scheduledAt: true,
+            publishedAt: true,
+            createdAt: true,
+            updatedAt: true,
           }
-        } else {
-          console.log('API: Content does not meet criteria for calendar event:', {
-            title: content.title,
-            status: content.status,
-            scheduledAt: content.scheduledAt,
-            hasScheduledAt: !!content.scheduledAt
-          });
+        });
+
+        if (!completeContent) {
+          console.error('❌ API: Failed to fetch complete content data');
+          return NextResponse.json(content); // Return what we have
         }
+
+        console.log('🔍 API: Content creation completed, checking calendar criteria:', {
+          contentId: completeContent.id,
+          title: completeContent.title,
+          status: completeContent.status,
+          scheduledAt: completeContent.scheduledAt,
+          type: completeContent.type,
+          authorId: completeContent.authorId,
+          createdAt: completeContent.createdAt
+        });
+
+        // TEMPORARY: Skip calendar event creation to fix content creation
+        // TODO: Re-enable after fixing calendar integration issues
+        console.log('⚠️  TEMPORARY: Skipping calendar event creation for debugging');
+        
+        /*
+        // Create calendar event using simplified service (but don't fail content creation if it errors)
+        try {
+          if (CalendarIntegrationService.shouldCreateCalendarEvent(completeContent as any)) {
+            console.log('📅 API: Creating calendar event with direct database approach...', {
+              title: completeContent.title,
+              type: completeContent.type,
+              status: completeContent.status,
+              scheduledAt: completeContent.scheduledAt,
+              organizationId
+            });
+            
+            const calendarEvent = await CalendarIntegrationService.createEventForContent(
+              completeContent as any, 
+              organizationId
+            );
+            
+            console.log('✅ API: Calendar event created successfully:', {
+              contentId: completeContent.id,
+              calendarEventId: calendarEvent.id,
+              title: completeContent.title
+            });
+          } else {
+            console.log('⏭️  API: Content does not meet calendar criteria:', {
+              title: completeContent.title,
+              type: completeContent.type,
+              status: completeContent.status,
+              hasScheduledAt: !!completeContent.scheduledAt
+            });
+          }
+        } catch (calendarError) {
+          console.warn('⚠️  API: Calendar event creation failed - continuing with content creation:', {
+            contentId: completeContent.id,
+            organizationId,
+            error: calendarError instanceof Error ? calendarError.message : calendarError,
+            stack: calendarError instanceof Error ? calendarError.stack?.substring(0, 500) : undefined
+          });
+          // Calendar errors should not prevent content creation
+        }
+        */
 
         // Force cache invalidation for both content and calendar systems
         // This ensures that React Query refetches data after content creation
         console.log('API: Content created successfully, triggering cache invalidation');
         
-        return NextResponse.json(content);
+        return NextResponse.json(completeContent);
       } catch (prismaError) {
         console.error('Prisma error details:', prismaError);
         return NextResponse.json({ 

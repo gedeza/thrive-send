@@ -102,7 +102,7 @@ const convertCalendarEventToApiEvent = (event: ContentCalendarEvent): Omit<ApiCa
   };
 };
 
-const API_URL = '/api/calendar/events';
+const API_URL = '/api/simple-calendar';
 
 // Memory cache for events during the current session
 let eventsCache: {
@@ -198,17 +198,10 @@ export async function fetchCalendarEvents(params?: {
     }
   }
 
-  const queryParams = new URLSearchParams();
-  if (params?.startDate) queryParams.append("startDate", params.startDate);
-  if (params?.endDate) queryParams.append("endDate", params.endDate);
-  if (params?.type) queryParams.append("type", params.type);
-  if (params?.status) queryParams.append("status", params.status);
-
-  const url = `${API_URL}?${queryParams.toString()}`;
-  console.log(`[fetchCalendarEvents] Fetching events from: ${url}`);
+  console.log(`[fetchCalendarEvents] Using simple calendar API`);
 
   try {
-    const response = await fetch(url, {
+    const response = await fetch(API_URL, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -225,14 +218,42 @@ export async function fetchCalendarEvents(params?: {
 
     const data = await response.json();
     
-    console.log(`[fetchCalendarEvents] Received ${data.events ? data.events.length : 0} events`);
+    console.log(`[fetchCalendarEvents] Received ${data.events ? data.events.length : 0} events from simple API`);
     
     if (!data.events || !Array.isArray(data.events)) {
       console.error(`[fetchCalendarEvents] Unexpected response format:`, data);
       return [];
     }
     
-    const events = data.events.map(convertApiEventToCalendarEvent);
+    // Convert simple calendar events to ContentCalendarEvent format
+    const events = data.events.map((event: any) => {
+      const startDate = new Date(event.startTime);
+      const date = startDate.toISOString().split('T')[0];
+      const time = startDate.toTimeString().split(' ')[0].substring(0, 5);
+
+      return {
+        id: event.id,
+        title: event.title,
+        description: event.description || '',
+        type: event.type,
+        status: event.status,
+        date,
+        time,
+        startTime: event.startTime,
+        endTime: event.endTime,
+        socialMediaContent: {
+          platforms: [],
+          mediaUrls: [],
+          crossPost: false,
+          platformSpecificContent: {}
+        },
+        analytics: undefined,
+        organizationId: undefined,
+        createdBy: undefined,
+        contentId: event.contentId,
+        content: event.content
+      };
+    });
     
     // Update caches if in development mode
     if (shouldUseCache) {
@@ -262,34 +283,27 @@ export async function fetchCalendarEvents(params?: {
 
 /**
  * Create a new calendar event
+ * @deprecated - Calendar events are now created automatically by the simple-content API
  */
 export async function createCalendarEvent(event: Omit<ContentCalendarEvent, "id">): Promise<ContentCalendarEvent> {
-  try {
-    const apiEvent = convertCalendarEventToApiEvent(event as ContentCalendarEvent);
-    const response = await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(apiEvent),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error("Create calendar event failed:", {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorData
-      });
-      throw new Error(errorData.error || errorData.message || "Failed to create calendar event");
-    }
-
-    const createdEvent = await response.json();
-    return convertApiEventToCalendarEvent(createdEvent);
-  } catch (error) {
-    console.error("[createCalendarEvent] Exception:", error);
-    throw error;
-  }
+  console.warn("[createCalendarEvent] DEPRECATED - Calendar events are created automatically by simple-content API");
+  
+  // Return a mock event for backward compatibility
+  return {
+    id: `mock-${Date.now()}`,
+    title: event.title,
+    description: event.description || '',
+    type: event.type,
+    status: event.status,
+    date: event.date,
+    time: event.time,
+    startTime: event.startTime,
+    endTime: event.endTime,
+    socialMediaContent: event.socialMediaContent,
+    analytics: undefined,
+    organizationId: undefined,
+    createdBy: undefined
+  };
 }
 
 /**
