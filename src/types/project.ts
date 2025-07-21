@@ -17,6 +17,10 @@ export interface Project {
   organizationId: string;
   managerId: string | null;
   createdAt: string;
+  client?: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 export interface ProjectFormData {
