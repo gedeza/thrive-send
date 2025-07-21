@@ -17,19 +17,8 @@ interface TimelineItem {
 
 async function getTimelineData(clientId: string, limit?: number): Promise<TimelineItem[]> {
   try {
-    // Use absolute URL with origin to avoid Invalid URL errors
-    const baseUrl = typeof window !== 'undefined' 
-      ? window.location.origin 
-      : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-    
     const response = await fetch(
-      `${baseUrl}/api/clients/${clientId}/timeline${limit ? `?limit=${limit}` : ''}`,
-      { 
-        credentials: 'include', // Include cookies for auth
-        headers: {
-          'Accept': 'application/json',
-        },
-      }
+      `/api/clients/${clientId}/timeline${limit ? `?limit=${limit}` : ''}`
     );
 
     if (!response.ok) {
@@ -38,7 +27,9 @@ async function getTimelineData(clientId: string, limit?: number): Promise<Timeli
     }
 
     const data = await response.json();
-    return data.items;
+    // Handle both old direct data format and new standardized format
+    const timelineData = data.data ? data.data.items : data.items;
+    return timelineData || [];
   } catch (error) {
     console.error('Error fetching timeline data:', error);
     throw error;

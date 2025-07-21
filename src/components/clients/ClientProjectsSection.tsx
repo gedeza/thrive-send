@@ -89,9 +89,12 @@ export default function ClientProjectsSection({ clientId, limit }: ClientProject
           throw new Error(errorData.error || 'Failed to fetch projects');
         }
 
-        const data = await response.json();
-        // Handle both old direct data format and new standardized format
-        const projectsData = data.data ? data.data : data;
+        const projectsData = await response.json();
+        
+        if (!Array.isArray(projectsData)) {
+          throw new Error('Invalid response format');
+        }
+        
         setProjects(projectsData);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to load projects';

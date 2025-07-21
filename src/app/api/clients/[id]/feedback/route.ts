@@ -29,28 +29,33 @@ export async function GET(
 
     const clientId = params.id;
     const { searchParams } = new URL(request.url);
-    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined;
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 10;
 
-    // Get client feedback data
-    const feedback = await db.$queryRaw<Feedback[]>`
-      SELECT 
-        f.id,
-        f.rating,
-        f.comment,
-        f.category,
-        f.status,
-        f."createdAt",
-        f."updatedAt",
-        json_build_object(
-          'name', u.name,
-          'email', u.email
-        ) as "createdBy"
-      FROM "ClientFeedback" f
-      LEFT JOIN "User" u ON f."userId" = u.id
-      WHERE f."clientId" = ${clientId}
-      ORDER BY f."createdAt" DESC
-      ${limit ? Prisma.sql`LIMIT ${limit}` : Prisma.empty}
-    `;
+    // Verify client exists
+    const client = await db.client.findUnique({
+      where: { id: clientId },
+      select: { id: true, name: true }
+    });
+
+    if (!client) {
+      return new NextResponse('Client not found', { status: 404 });
+    }
+
+    // Get client feedback data using standard Prisma queries
+    const feedback = await db.clientFeedback.findMany({
+      where: { clientId },
+      select: {
+        id: true,
+        rating: true,
+        comment: true,
+        category: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
 
     // Calculate average rating
     const averageRating = feedback.length > 0
@@ -66,14 +71,14 @@ export async function GET(
 
     return NextResponse.json({
       feedback: transformedFeedback,
-      averageRating,
+      averageRating: Math.round(averageRating * 10) / 10, // Round to 1 decimal
       totalCount: feedback.length,
     });
   } catch (error) {
     console.error('Error fetching feedback data:', error);
     return new NextResponse(
-      error instanceof Error ? error.message : 'Internal Server Error',
-      { status: 500 }
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Internal Server Error' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 } 

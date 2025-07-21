@@ -92,19 +92,17 @@ export default function DocumentSection({
   async function fetchDocuments() {
     try {
       setLoading(true);
-      // Use absolute URL with origin to avoid Invalid URL errors
-      const baseUrl = typeof window !== 'undefined' 
-        ? window.location.origin 
-        : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
       
-      const response = await fetch(`${baseUrl}/api/clients/${clientId}/documents`);
+      const response = await fetch(`/api/clients/${clientId}/documents`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch documents: ${response.statusText}`);
       }
 
       const data = await response.json();
-      setDocuments(data.documents || []);
+      // Handle both old direct data format and new standardized format
+      const documentsData = data.data ? data.data.documents : data.documents;
+      setDocuments(documentsData || []);
       setError(null);
     } catch (err) {
       console.error('Error fetching documents:', err);
@@ -134,8 +132,7 @@ export default function DocumentSection({
     setUploading(true);
     
     try {
-      const baseUrl = window.location.origin;
-      const response = await fetch(`${baseUrl}/api/clients/${clientId}/documents`, {
+      const response = await fetch(`/api/clients/${clientId}/documents`, {
         method: 'POST',
         body: formData,
       });

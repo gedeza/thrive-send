@@ -1,132 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { z } from "zod";
-import { 
-  createSuccessResponse, 
-  createUnauthorizedResponse, 
-  createNotFoundResponse,
-  handleApiError 
-} from "@/lib/api-utils";
-
-// Validation schema
-const projectSchema = z.object({
-  name: z.string().min(2),
-  description: z.string().optional(),
-  status: z.enum(["PLANNING", "IN_PROGRESS", "ON_HOLD", "COMPLETED", "CANCELLED"]),
-  startDate: z.string(),
-  endDate: z.string().optional(),
-  budget: z.number().optional(),
-});
-
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const session = await auth();
-    if (!session?.userId) {
-      return createUnauthorizedResponse();
-    }
-
-    // Validate client exists and user has access
-    const client = await prisma.client.findUnique({
-      where: { id: params.id },
-      include: {
-        organization: {
-          include: {
-            members: {
-              where: {
-                user: {
-                  clerkId: session.userId,
-                },
-              },
-            },
-          },
-        },
-      },
-    });
-
-    if (!client) {
-      return createNotFoundResponse("Client");
-    }
-
-    if (client.organization.members.length === 0) {
-      return NextResponse.json(
-        { error: "You don't have access to this client" },
-        { status: 403 }
-      );
-    }
-
-    // Parse and validate request body
-    const body = await request.json();
-    const validatedData = projectSchema.parse(body);
-
-    // Create project
-    const project = await prisma.project.create({
-      data: {
-        ...validatedData,
-        clientId: params.id,
-        organizationId: client.organizationId,
-      },
-    });
-
-    return NextResponse.json(project, { status: 201 });
-  } catch (error) {
-    console.error("Error creating project:", error);
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Invalid request data", details: error.errors },
-        { status: 400 }
-      );
-    }
-    return NextResponse.json(
-      { error: "Failed to create project" },
-      { status: 500 }
-    );
-  }
-}
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    // Basic auth check
     const session = await auth();
     if (!session?.userId) {
-      return createUnauthorizedResponse();
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const clientId = params.id;
 
-    // First verify the client exists and user has access to it
+    // Verify client exists
     const client = await db.client.findUnique({
       where: { id: clientId },
-      include: {
-        organization: {
-          members: {
-            where: {
-              user: { clerkId: session.userId }
-            }
-          }
-        }
-      }
+      select: { id: true, organizationId: true }
     });
 
     if (!client) {
-      return createNotFoundResponse("Client");
+      return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
 
-    // Skip membership check for now (following pattern from other APIs)
-    // if (client.organization.members.length === 0) {
-    //   return NextResponse.json({ error: "Access denied" }, { status: 403 });
-    // }
-
-    // Fetch projects for this client
+    // Get projects - simple query
     const projects = await db.project.findMany({
       where: { 
-        clientId: clientId,
-        organizationId: client.organizationId
+        clientId: clientId
       },
       select: {
         id: true,
@@ -137,16 +39,66 @@ export async function GET(
         endDate: true,
         createdAt: true,
       },
-      orderBy: [
-        { status: 'asc' }, // Show active projects first
-        { createdAt: 'desc' }
-      ]
+      orderBy: { createdAt: 'desc' }
     });
 
-    console.log(`Found ${projects.length} projects for client ${clientId}`);
-    
-    return createSuccessResponse(projects, 200, `Retrieved ${projects.length} projects for client`);
+    return NextResponse.json(projects);
   } catch (error) {
-    return handleApiError(error);
+    console.error("Client projects API error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
-} 
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await auth();
+    if (!session?.userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const clientId = params.id;
+    const body = await request.json();
+
+    // Verify client exists
+    const client = await db.client.findUnique({
+      where: { id: clientId },
+      select: { id: true, organizationId: true }
+    });
+
+    if (!client) {
+      return NextResponse.json({ error: "Client not found" }, { status: 404 });
+    }
+
+    // Basic validation
+    if (!body.name) {
+      return NextResponse.json({ error: "Project name is required" }, { status: 400 });
+    }
+
+    // Create project
+    const project = await db.project.create({
+      data: {
+        name: body.name,
+        description: body.description || null,
+        status: body.status || "PLANNING",
+        startDate: body.startDate ? new Date(body.startDate) : new Date(),
+        endDate: body.endDate ? new Date(body.endDate) : null,
+        clientId: clientId,
+        organizationId: client.organizationId,
+      },
+    });
+
+    return NextResponse.json(project, { status: 201 });
+  } catch (error) {
+    console.error("Create project API error:", error);
+    return NextResponse.json(
+      { error: "Failed to create project" },
+      { status: 500 }
+    );
+  }
+}

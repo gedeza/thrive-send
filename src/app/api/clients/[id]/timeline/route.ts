@@ -55,79 +55,69 @@ export async function GET(
 
     const clientId = params.id;
     const { searchParams } = new URL(request.url);
-    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined;
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 10;
 
-    // Get client timeline data
-    const [milestones, goals, feedback, projects] = await Promise.all([
-      db.$queryRaw<Milestone[]>`
-        SELECT 
-          m.id,
-          m.name as title,
-          m.description,
-          m.status,
-          m."dueDate"
-        FROM "Milestone" m
-        INNER JOIN "ClientGoal" g ON m."goalId" = g.id
-        WHERE g."clientId" = ${clientId}
-        ORDER BY m."dueDate" DESC
-        ${limit ? Prisma.sql`LIMIT ${limit}` : Prisma.empty}
-      `,
-      db.$queryRaw<Goal[]>`
-        SELECT 
-          id,
-          title,
-          description,
-          status,
-          "createdAt"
-        FROM "ClientGoal"
-        WHERE "clientId" = ${clientId}
-        ORDER BY "createdAt" DESC
-        ${limit ? Prisma.sql`LIMIT ${limit}` : Prisma.empty}
-      `,
-      db.$queryRaw<Feedback[]>`
-        SELECT 
-          id,
-          comment,
-          status,
-          "createdAt"
-        FROM "ClientFeedback"
-        WHERE "clientId" = ${clientId}
-        ORDER BY "createdAt" DESC
-        ${limit ? Prisma.sql`LIMIT ${limit}` : Prisma.empty}
-      `,
-      db.$queryRaw<Project[]>`
-        SELECT 
-          id,
-          name as title,
-          description,
-          status,
-          "startDate"
-        FROM "Project"
-        WHERE "clientId" = ${clientId}
-        ORDER BY "startDate" DESC
-        ${limit ? Prisma.sql`LIMIT ${limit}` : Prisma.empty}
-      `,
+    // Verify client exists
+    const client = await db.client.findUnique({
+      where: { id: clientId },
+      select: { id: true, name: true }
+    });
+
+    if (!client) {
+      return new NextResponse('Client not found', { status: 404 });
+    }
+
+    // Get simplified timeline data using standard Prisma queries
+    const [goals, feedback, projects] = await Promise.all([
+      db.clientGoal.findMany({
+        where: { clientId },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          status: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+      }),
+      db.clientFeedback.findMany({
+        where: { clientId },
+        select: {
+          id: true,
+          comment: true,
+          status: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+      }),
+      db.project.findMany({
+        where: { clientId },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          status: true,
+          startDate: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+      }),
     ]);
 
     // Transform and combine the data
     const items: TimelineItem[] = [
-      ...milestones.map((m: Milestone) => ({
-        id: m.id,
-        type: 'milestone' as const,
-        title: m.title,
-        description: m.description,
-        status: m.status,
-        date: m.dueDate.toISOString(),
-      })),
-      ...goals.map((g: Goal) => ({
+      ...goals.map((g) => ({
         id: g.id,
         type: 'goal' as const,
-        title: g.title,
+        title: g.name,
         description: g.description,
         status: g.status,
         date: g.createdAt.toISOString(),
       })),
-      ...feedback.map((f: Feedback) => ({
+      ...feedback.map((f) => ({
         id: f.id,
         type: 'feedback' as const,
         title: 'Feedback Received',
@@ -135,25 +125,25 @@ export async function GET(
         status: f.status,
         date: f.createdAt.toISOString(),
       })),
-      ...projects.map((p: Project) => ({
+      ...projects.map((p) => ({
         id: p.id,
         type: 'project' as const,
-        title: p.title,
+        title: p.name,
         description: p.description,
         status: p.status,
-        date: p.startDate.toISOString(),
+        date: (p.startDate || p.createdAt).toISOString(),
       })),
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-    // Apply limit if specified
-    const limitedItems = limit ? items.slice(0, limit) : items;
+    // Apply final limit
+    const limitedItems = items.slice(0, limit);
 
     return NextResponse.json({ items: limitedItems });
   } catch (error) {
     console.error('Error fetching timeline data:', error);
     return new NextResponse(
-      error instanceof Error ? error.message : 'Internal Server Error',
-      { status: 500 }
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Internal Server Error' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 } 
