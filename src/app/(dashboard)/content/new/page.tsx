@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/use-toast';
-import { ArrowLeft, Clock, Calendar, Sparkles, Send, Globe, Hash, Tag, Users, TrendingUp, Eye, Lightbulb } from 'lucide-react';
+import { ArrowLeft, Clock, Calendar, Sparkles, Send, Globe, Hash, Tag, Users, TrendingUp, Eye, Lightbulb, Upload, X, Image, Video, FileText, Twitter, Linkedin, Instagram, Facebook, Youtube, Mail, MessageSquare, Music } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const contentTypes = [
@@ -48,8 +48,118 @@ const contentTypes = [
   }
 ];
 
+const platforms = [
+  {
+    id: 'twitter',
+    name: 'Twitter/X',
+    icon: Twitter,
+    color: 'bg-blue-100 text-blue-800 border-blue-200',
+    charLimit: 280,
+    hashtagLimit: 3,
+    mediaSpecs: { image: '1200x675px', video: '1280x720px, 2:20min' },
+    bestPractices: [
+      'Use 1-2 hashtags max',
+      'Tweet during peak hours (9am-3pm)',
+      'Add images for 150% more retweets'
+    ]
+  },
+  {
+    id: 'linkedin',
+    name: 'LinkedIn',
+    icon: Linkedin,
+    color: 'bg-blue-100 text-blue-800 border-blue-200',
+    charLimit: 3000,
+    hashtagLimit: 5,
+    mediaSpecs: { image: '1200x627px', video: '1280x720px, 10min' },
+    bestPractices: [
+      'Professional tone works best',
+      'Post Tuesday-Thursday 8am-2pm',
+      'Use 3-5 relevant hashtags'
+    ]
+  },
+  {
+    id: 'instagram',
+    name: 'Instagram',
+    icon: Instagram,
+    color: 'bg-pink-100 text-pink-800 border-pink-200',
+    charLimit: 2200,
+    hashtagLimit: 30,
+    mediaSpecs: { image: '1080x1080px', video: '1080x1080px, 60s' },
+    bestPractices: [
+      'High-quality visuals are essential',
+      'Use all 30 hashtags for reach',
+      'Post when followers are active'
+    ]
+  },
+  {
+    id: 'facebook',
+    name: 'Facebook',
+    icon: Facebook,
+    color: 'bg-blue-100 text-blue-800 border-blue-200',
+    charLimit: 63206,
+    hashtagLimit: 3,
+    mediaSpecs: { image: '1200x630px', video: '1280x720px, 240min' },
+    bestPractices: [
+      'Conversational tone works well',
+      'Post 1-2pm and 3-4pm weekdays',
+      'Ask questions to boost engagement'
+    ]
+  },
+  {
+    id: 'tiktok',
+    name: 'TikTok',
+    icon: Music,
+    color: 'bg-purple-100 text-purple-800 border-purple-200',
+    charLimit: 4000,
+    hashtagLimit: 20,
+    mediaSpecs: { image: '1080x1920px', video: '1080x1920px, 10min' },
+    bestPractices: [
+      'Vertical video format is essential',
+      'Hook viewers in first 3 seconds',
+      'Use trending sounds and effects',
+      'Post 6-10am and 7-9pm for best reach'
+    ]
+  },
+  {
+    id: 'youtube',
+    name: 'YouTube',
+    icon: Youtube,
+    color: 'bg-red-100 text-red-800 border-red-200',
+    charLimit: 5000,
+    hashtagLimit: 15,
+    mediaSpecs: { image: '1280x720px', video: '1920x1080px, unlimited' },
+    bestPractices: [
+      'Compelling thumbnails are crucial',
+      'Upload 2-5pm for best reach',
+      'Use 10-15 hashtags in description'
+    ]
+  },
+  {
+    id: 'email',
+    name: 'Email',
+    icon: Mail,
+    color: 'bg-green-100 text-green-800 border-green-200',
+    charLimit: 50000,
+    hashtagLimit: 0,
+    mediaSpecs: { image: '600px width', video: 'embedded links' },
+    bestPractices: [
+      'Subject line under 50 characters',
+      'Send Tuesday-Thursday 10am-2pm',
+      'Personalize when possible'
+    ]
+  }
+];
+
+interface MediaFile {
+  file: File;
+  preview: string;
+  type: 'image' | 'video' | 'document';
+  id: string;
+}
+
 export default function NewContentPage() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedType, setSelectedType] = useState(contentTypes[0]);
   const [formData, setFormData] = useState({
@@ -61,6 +171,10 @@ export default function NewContentPage() {
   const [publishNow, setPublishNow] = useState(true);
   const [wordCount, setWordCount] = useState(0);
   const [estimatedReadTime, setEstimatedReadTime] = useState(0);
+  const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+  const [showPlatformOptimization, setShowPlatformOptimization] = useState(false);
 
   useEffect(() => {
     const words = formData.content.trim().split(/\s+/).filter(word => word.length > 0).length;
@@ -73,7 +187,184 @@ export default function NewContentPage() {
     if (type) {
       setSelectedType(type);
       setFormData(prev => ({ ...prev, type: value as any }));
+      
+      // Auto-select relevant platforms based on content type
+      if (value === 'SOCIAL') {
+        setSelectedPlatforms(['twitter', 'linkedin', 'instagram', 'tiktok']);
+        setShowPlatformOptimization(true);
+      } else if (value === 'EMAIL') {
+        setSelectedPlatforms(['email']);
+        setShowPlatformOptimization(true);
+      } else {
+        setSelectedPlatforms([]);
+        setShowPlatformOptimization(false);
+      }
     }
+  };
+
+  const togglePlatform = (platformId: string) => {
+    setSelectedPlatforms(prev => 
+      prev.includes(platformId)
+        ? prev.filter(id => id !== platformId)
+        : [...prev, platformId]
+    );
+  };
+
+  const getCharacterLimits = () => {
+    if (selectedPlatforms.length === 0) return null;
+    
+    const limits = selectedPlatforms.map(id => {
+      const platform = platforms.find(p => p.id === id);
+      return { name: platform?.name, limit: platform?.charLimit };
+    }).filter(Boolean);
+
+    return limits;
+  };
+
+  const getMostRestrictiveLimit = () => {
+    const limits = getCharacterLimits();
+    if (!limits || limits.length === 0) return null;
+    
+    return Math.min(...limits.map(l => l.limit || Infinity));
+  };
+
+  const getHashtagSuggestions = () => {
+    if (selectedPlatforms.length === 0) return null;
+    
+    const maxHashtags = Math.max(...selectedPlatforms.map(id => {
+      const platform = platforms.find(p => p.id === id);
+      return platform?.hashtagLimit || 0;
+    }));
+
+    return maxHashtags;
+  };
+
+  const isContentOptimized = () => {
+    const limit = getMostRestrictiveLimit();
+    if (!limit) return true;
+    
+    return formData.content.length <= limit;
+  };
+
+  const getFileType = (file: File): 'image' | 'video' | 'document' => {
+    if (file.type.startsWith('image/')) return 'image';
+    if (file.type.startsWith('video/')) return 'video';
+    return 'document';
+  };
+
+  const validateFile = (file: File): string | null => {
+    // Size limit: 10MB for images, 100MB for videos, 5MB for documents
+    const maxSize = file.type.startsWith('image/') ? 10 * 1024 * 1024 :
+                   file.type.startsWith('video/') ? 100 * 1024 * 1024 : 
+                   5 * 1024 * 1024;
+    
+    if (file.size > maxSize) {
+      const sizeMB = Math.round(maxSize / (1024 * 1024));
+      return `File size must be less than ${sizeMB}MB`;
+    }
+
+    // Check file type
+    const allowedTypes = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'video/mp4', 'video/webm', 'video/quicktime',
+      'application/pdf', 'text/plain', 'application/msword'
+    ];
+    
+    if (!allowedTypes.includes(file.type)) {
+      return 'File type not supported';
+    }
+
+    return null;
+  };
+
+  const processFiles = (files: File[]) => {
+    const newMediaFiles: MediaFile[] = [];
+    
+    files.forEach(file => {
+      const error = validateFile(file);
+      if (error) {
+        toast({
+          title: 'Upload Error',
+          description: `${file.name}: ${error}`,
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      const id = Math.random().toString(36).substring(7);
+      const type = getFileType(file);
+      
+      // Create preview URL
+      const preview = type === 'image' || type === 'video' 
+        ? URL.createObjectURL(file) 
+        : '';
+
+      newMediaFiles.push({ file, preview, type, id });
+    });
+
+    setMediaFiles(prev => [...prev, ...newMediaFiles]);
+    
+    if (newMediaFiles.length > 0) {
+      toast({
+        title: 'Files Uploaded',
+        description: `${newMediaFiles.length} file(s) added successfully`,
+      });
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    processFiles(files);
+    // Reset input value to allow uploading same file again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const files = Array.from(e.dataTransfer.files);
+    processFiles(files);
+  };
+
+  const removeMediaFile = (id: string) => {
+    setMediaFiles(prev => {
+      const fileToRemove = prev.find(f => f.id === id);
+      if (fileToRemove?.preview) {
+        URL.revokeObjectURL(fileToRemove.preview);
+      }
+      return prev.filter(f => f.id !== id);
+    });
+  };
+
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      mediaFiles.forEach(file => {
+        if (file.preview) {
+          URL.revokeObjectURL(file.preview);
+        }
+      });
+    };
+  }, []);
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -214,6 +505,76 @@ export default function NewContentPage() {
               </CardContent>
             </Card>
 
+            {/* Platform Selection */}
+            {showPlatformOptimization && (
+              <Card className="border-0 shadow-lg bg-white/70 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Globe className="h-5 w-5 text-green-600" />
+                    Target Platforms
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Select platforms to optimize your content for better engagement
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {platforms.filter(platform => 
+                      selectedType.value === 'SOCIAL' ? platform.id !== 'email' :
+                      selectedType.value === 'EMAIL' ? platform.id === 'email' :
+                      true
+                    ).map((platform) => {
+                      const Icon = platform.icon;
+                      const isSelected = selectedPlatforms.includes(platform.id);
+                      return (
+                        <Card
+                          key={platform.id}
+                          className={`cursor-pointer transition-all duration-200 border-2 ${
+                            isSelected 
+                              ? 'border-green-500 bg-green-50 shadow-md' 
+                              : 'border-gray-200 hover:border-green-300 hover:shadow-sm'
+                          }`}
+                          onClick={() => togglePlatform(platform.id)}
+                        >
+                          <CardContent className="p-3">
+                            <div className="flex items-center gap-2">
+                              <div className={`p-1.5 rounded ${platform.color}`}>
+                                <Icon className="h-4 w-4" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">{platform.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {platform.charLimit > 1000 ? 
+                                    `${Math.round(platform.charLimit/1000)}k chars` : 
+                                    `${platform.charLimit} chars`
+                                  }
+                                </p>
+                              </div>
+                              {isSelected && (
+                                <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                                  <div className="w-2 h-2 bg-white rounded-full" />
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                  
+                  {selectedPlatforms.length > 0 && (
+                    <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                      <p className="text-sm text-blue-700">
+                        <strong>Selected:</strong> {selectedPlatforms.map(id => 
+                          platforms.find(p => p.id === id)?.name
+                        ).join(', ')}
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Main Form */}
             <Card className="border-0 shadow-lg bg-white/70 backdrop-blur-sm">
               <CardHeader>
@@ -266,9 +627,178 @@ export default function NewContentPage() {
                       value={formData.content}
                       onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
                       placeholder={`Write your ${selectedType.label.toLowerCase()} content here...`}
-                      className="mt-2 min-h-40 border-gray-300 focus:border-purple-500"
+                      className={`mt-2 min-h-40 border-gray-300 focus:border-purple-500 ${
+                        selectedPlatforms.length > 0 && !isContentOptimized() 
+                          ? 'border-orange-400 focus:border-orange-500' 
+                          : ''
+                      }`}
                       required
                     />
+                    
+                    {/* Platform Optimization Feedback */}
+                    {selectedPlatforms.length > 0 && (
+                      <div className="mt-2 space-y-2">
+                        {/* Character Limits */}
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          {getCharacterLimits()?.map(({ name, limit }) => {
+                            const remaining = limit - formData.content.length;
+                            const isOver = remaining < 0;
+                            return (
+                              <div 
+                                key={name}
+                                className={`px-2 py-1 rounded-full text-xs ${
+                                  isOver 
+                                    ? 'bg-red-100 text-red-700' 
+                                    : remaining < 50 
+                                      ? 'bg-orange-100 text-orange-700'
+                                      : 'bg-green-100 text-green-700'
+                                }`}
+                              >
+                                {name}: {remaining > 0 ? `${remaining} left` : `${Math.abs(remaining)} over`}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        
+                        {/* Hashtag Suggestions */}
+                        {getHashtagSuggestions() && getHashtagSuggestions() > 0 && (
+                          <div className="text-xs text-muted-foreground">
+                            💡 You can use up to {getHashtagSuggestions()} hashtags for selected platforms
+                          </div>
+                        )}
+                        
+                        {/* Optimization Status */}
+                        {!isContentOptimized() && (
+                          <div className="flex items-center gap-2 p-2 bg-orange-50 rounded text-xs text-orange-700">
+                            <MessageSquare className="h-4 w-4" />
+                            <span>Content exceeds character limit for some platforms. Consider shortening.</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Media Upload */}
+                  <div className="space-y-4">
+                    <Label className="text-sm font-medium flex items-center gap-2">
+                      <Upload className="h-4 w-4" />
+                      Media Upload
+                      <span className="text-xs text-muted-foreground ml-1">(Optional)</span>
+                    </Label>
+                    
+                    {/* Upload Area */}
+                    <div
+                      className={`
+                        border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200
+                        ${isDragOver 
+                          ? 'border-purple-500 bg-purple-50' 
+                          : 'border-gray-300 hover:border-purple-400 hover:bg-gray-50'
+                        }
+                      `}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                    >
+                      <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-600 mb-2">
+                        Drag and drop your files here, or{' '}
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="text-purple-600 hover:text-purple-700 font-medium"
+                        >
+                          browse files
+                        </button>
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Images (10MB), Videos (100MB), Documents (5MB)
+                      </p>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        accept="image/*,video/*,.pdf,.doc,.docx,.txt"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                      />
+                    </div>
+
+                    {/* Media Preview */}
+                    {mediaFiles.length > 0 && (
+                      <div className="space-y-3">
+                        <p className="text-sm font-medium text-gray-700">
+                          Uploaded Files ({mediaFiles.length})
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {mediaFiles.map((media) => (
+                            <Card key={media.id} className="border border-gray-200">
+                              <CardContent className="p-3">
+                                <div className="flex items-start gap-3">
+                                  {/* Media Preview */}
+                                  <div className="flex-shrink-0">
+                                    {media.type === 'image' && (
+                                      <div className="relative">
+                                        <img
+                                          src={media.preview}
+                                          alt={media.file.name}
+                                          className="w-12 h-12 object-cover rounded-lg border"
+                                        />
+                                        <div className="absolute -top-1 -right-1">
+                                          <Image className="h-4 w-4 text-green-600 bg-white rounded-full p-0.5" />
+                                        </div>
+                                      </div>
+                                    )}
+                                    {media.type === 'video' && (
+                                      <div className="relative">
+                                        <video
+                                          src={media.preview}
+                                          className="w-12 h-12 object-cover rounded-lg border"
+                                        />
+                                        <div className="absolute -top-1 -right-1">
+                                          <Video className="h-4 w-4 text-blue-600 bg-white rounded-full p-0.5" />
+                                        </div>
+                                      </div>
+                                    )}
+                                    {media.type === 'document' && (
+                                      <div className="w-12 h-12 bg-gray-100 rounded-lg border flex items-center justify-center relative">
+                                        <FileText className="h-6 w-6 text-gray-600" />
+                                        <div className="absolute -top-1 -right-1">
+                                          <FileText className="h-4 w-4 text-orange-600 bg-white rounded-full p-0.5" />
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                  
+                                  {/* File Info */}
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-gray-900 truncate">
+                                      {media.file.name}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                      {formatFileSize(media.file.size)}
+                                    </p>
+                                    <Badge variant="outline" className="text-xs mt-1">
+                                      {media.type}
+                                    </Badge>
+                                  </div>
+                                  
+                                  {/* Remove Button */}
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeMediaFile(media.id)}
+                                    className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Publishing Options */}
@@ -344,50 +874,115 @@ export default function NewContentPage() {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Content Tips */}
-            <Card className="border-0 shadow-lg bg-white/70 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Lightbulb className="h-5 w-5 text-yellow-500" />
-                  Tips for {selectedType.label}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <p className="text-muted-foreground">{selectedType.tips}</p>
-                
-                {selectedType.value === 'SOCIAL' && (
+            {/* Platform-Specific Tips */}
+            {selectedPlatforms.length > 0 ? (
+              <Card className="border-0 shadow-lg bg-white/70 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Globe className="h-5 w-5 text-green-500" />
+                    Platform Best Practices
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 text-sm">
+                  {selectedPlatforms.map(platformId => {
+                    const platform = platforms.find(p => p.id === platformId);
+                    if (!platform) return null;
+                    
+                    const Icon = platform.icon;
+                    return (
+                      <div key={platformId} className="border-l-4 border-green-400 pl-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Icon className="h-4 w-4" />
+                          <h4 className="font-medium">{platform.name}</h4>
+                        </div>
+                        <div className="space-y-1 text-xs text-muted-foreground">
+                          {platform.bestPractices.map((tip, index) => (
+                            <p key={index}>• {tip}</p>
+                          ))}
+                          <p className="text-blue-600">
+                            • Media: {platform.mediaSpecs.image}
+                            {platform.mediaSpecs.video && ` | Video: ${platform.mediaSpecs.video}`}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            ) : (
+              /* General Content Tips */
+              <Card className="border-0 shadow-lg bg-white/70 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Lightbulb className="h-5 w-5 text-yellow-500" />
+                    Tips for {selectedType.label}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  <p className="text-muted-foreground">{selectedType.tips}</p>
+                  
+                  {selectedType.value === 'SOCIAL' && (
+                    <div className="space-y-2">
+                      <p>• Use 1-3 hashtags for better reach</p>
+                      <p>• Ask questions to boost engagement</p>
+                      <p>• Post when your audience is most active</p>
+                      <p>• Add eye-catching visuals for 2x more engagement</p>
+                    </div>
+                  )}
+                  
+                  {selectedType.value === 'BLOG' && (
+                    <div className="space-y-2">
+                      <p>• Include a compelling introduction</p>
+                      <p>• Use subheadings for better readability</p>
+                      <p>• Add a clear call-to-action</p>
+                      <p>• Include relevant images to break up text</p>
+                    </div>
+                  )}
+                  
+                  {selectedType.value === 'EMAIL' && (
+                    <div className="space-y-2">
+                      <p>• Keep subject lines under 50 characters</p>
+                      <p>• Personalize when possible</p>
+                      <p>• Include social media links</p>
+                      <p>• Add images to increase click-through rates</p>
+                    </div>
+                  )}
+                  
+                  {selectedType.value === 'ARTICLE' && (
+                    <div className="space-y-2">
+                      <p>• Start with a strong hook</p>
+                      <p>• Support claims with data</p>
+                      <p>• End with key takeaways</p>
+                      <p>• Use charts and diagrams for complex data</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Media Upload Tips */}
+            {mediaFiles.length > 0 && (
+              <Card className="border-0 shadow-lg bg-white/70 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Image className="h-5 w-5 text-green-500" />
+                    Media Guidelines
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
                   <div className="space-y-2">
-                    <p>• Use 1-3 hashtags for better reach</p>
-                    <p>• Ask questions to boost engagement</p>
-                    <p>• Post when your audience is most active</p>
+                    <p>• <strong>Images:</strong> Use high-resolution (1080x1080px for social)</p>
+                    <p>• <strong>Videos:</strong> Keep under 60 seconds for social media</p>
+                    <p>• <strong>File formats:</strong> JPG, PNG, MP4, WebM recommended</p>
+                    <p>• <strong>Accessibility:</strong> Add alt text for screen readers</p>
                   </div>
-                )}
-                
-                {selectedType.value === 'BLOG' && (
-                  <div className="space-y-2">
-                    <p>• Include a compelling introduction</p>
-                    <p>• Use subheadings for better readability</p>
-                    <p>• Add a clear call-to-action</p>
+                  
+                  <div className="bg-blue-50 p-2 rounded text-xs text-blue-700">
+                    <strong>Pro tip:</strong> Visual content gets 94% more views than text-only posts!
                   </div>
-                )}
-                
-                {selectedType.value === 'EMAIL' && (
-                  <div className="space-y-2">
-                    <p>• Keep subject lines under 50 characters</p>
-                    <p>• Personalize when possible</p>
-                    <p>• Include social media links</p>
-                  </div>
-                )}
-                
-                {selectedType.value === 'ARTICLE' && (
-                  <div className="space-y-2">
-                    <p>• Start with a strong hook</p>
-                    <p>• Support claims with data</p>
-                    <p>• End with key takeaways</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Publishing Stats */}
             <Card className="border-0 shadow-lg bg-white/70 backdrop-blur-sm">
