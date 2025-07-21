@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await req.json();
+    console.log("Project creation request data:", data);
     
     // Validate required fields
     if (!data.name || !data.organizationId) {
@@ -68,10 +69,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Map Clerk organizationId to internal organization id
+    const organization = await db.organization.findUnique({
+      where: { clerkOrganizationId: data.organizationId },
+    });
+    if (!organization) {
+      console.error("No organization found for Clerk organizationId:", data.organizationId);
+      return NextResponse.json(
+        { error: "Organization not found" },
+        { status: 400 }
+      );
+    }
+    const internalOrganizationId = organization.id;
+    console.log("Mapped organization:", { clerkId: data.organizationId, internalId: internalOrganizationId });
+
     // Verify user has access to the organization
     const membership = await db.organizationMember.findFirst({
       where: {
-        organizationId: data.organizationId,
+        organizationId: internalOrganizationId,
         user: { clerkId: userId }
       }
     });
@@ -92,7 +107,7 @@ export async function POST(req: NextRequest) {
         startDate: data.startDate ? new Date(data.startDate) : null,
         endDate: data.endDate ? new Date(data.endDate) : null,
         clientId: data.clientId,
-        organizationId: data.organizationId,
+        organizationId: internalOrganizationId,
         managerId: data.managerId
       }
     });
