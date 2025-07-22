@@ -51,9 +51,41 @@ interface MetricCardProps {
 }
 
 function MetricCard({ title, value, description, icon, change, isLoading }: MetricCardProps) {
+  // Color patterns matching project management page
+  const getStyles = (title: string) => {
+    const lowerTitle = title.toLowerCase();
+    if (lowerTitle.includes('views') || lowerTitle.includes('reach')) {
+      return {
+        iconBg: 'p-3 bg-blue-100 rounded-full',
+        iconColor: 'h-6 w-6 text-blue-600',
+        numberColor: 'text-3xl font-bold text-blue-600'
+      };
+    } else if (lowerTitle.includes('engagement')) {
+      return {
+        iconBg: 'p-3 bg-pink-100 rounded-full',
+        iconColor: 'h-6 w-6 text-pink-600',
+        numberColor: 'text-3xl font-bold text-pink-600'
+      };
+    } else if (lowerTitle.includes('conversion') || lowerTitle.includes('revenue')) {
+      return {
+        iconBg: 'p-3 bg-green-100 rounded-full',
+        iconColor: 'h-6 w-6 text-green-600',
+        numberColor: 'text-3xl font-bold text-green-600'
+      };
+    } else {
+      return {
+        iconBg: 'p-3 bg-primary/10 rounded-full',
+        iconColor: 'h-6 w-6 text-primary',
+        numberColor: 'text-3xl font-bold'
+      };
+    }
+  };
+
+  const styles = getStyles(title);
+
   if (isLoading) {
     return (
-      <Card>
+      <Card className="hover:shadow-md transition-shadow">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div className="space-y-2">
@@ -61,7 +93,7 @@ function MetricCard({ title, value, description, icon, change, isLoading }: Metr
               <Skeleton className="h-8 w-20" />
               <Skeleton className="h-3 w-32" />
             </div>
-            <Skeleton className="h-8 w-8 rounded" />
+            <Skeleton className="h-12 w-12 rounded-full" />
           </div>
         </CardContent>
       </Card>
@@ -69,14 +101,14 @@ function MetricCard({ title, value, description, icon, change, isLoading }: Metr
   }
 
   return (
-    <Card>
+    <Card className="hover:shadow-md transition-shadow">
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="text-3xl font-bold">{typeof value === 'number' ? value.toLocaleString() : value}</p>
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <p className={styles.numberColor}>{typeof value === 'number' ? value.toLocaleString() : value}</p>
             {description && (
-              <p className="text-xs text-muted-foreground">{description}</p>
+              <p className="text-sm text-muted-foreground">{description}</p>
             )}
             {change !== undefined && (
               <div className={`flex items-center text-xs ${
@@ -87,8 +119,10 @@ function MetricCard({ title, value, description, icon, change, isLoading }: Metr
               </div>
             )}
           </div>
-          <div className="text-primary">
-            {icon}
+          <div className={styles.iconBg}>
+            <div className={styles.iconColor}>
+              {icon}
+            </div>
           </div>
         </div>
       </CardContent>
@@ -205,43 +239,47 @@ function AnalyticsPageContent() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-6">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Analytics Dashboard</h1>
-              <p className="text-muted-foreground mt-2">
-                Track your content performance and engagement metrics
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRefresh}
-                disabled={isLoading}
-              >
-                <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
-              <Select onValueChange={(value) => handleExport(value as 'csv' | 'pdf')}>
-                <SelectTrigger className="w-32">
-                  <FileDown className="mr-2 h-4 w-4" />
-                  Export
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="csv">CSV</SelectItem>
-                  <SelectItem value="pdf">PDF</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleScheduleReport}
-              >
-                <Calendar className="mr-2 h-4 w-4" />
-                Schedule
-              </Button>
-            </div>
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <BarChart3 className="h-8 w-8 text-primary" />
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+              Analytics Dashboard
+            </h1>
+          </div>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Track your content performance and engagement metrics across all platforms.
+          </p>
+        </div>
+        
+        <div className="flex items-center justify-end gap-2 mb-8">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isLoading}
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <Select onValueChange={(value) => handleExport(value as 'csv' | 'pdf')}>
+              <SelectTrigger className="w-32">
+                <FileDown className="mr-2 h-4 w-4" />
+                Export
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="csv">CSV</SelectItem>
+                <SelectItem value="pdf">PDF</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleScheduleReport}
+            >
+              <Calendar className="mr-2 h-4 w-4" />
+              Schedule
+            </Button>
           </div>
         </div>
 
@@ -359,7 +397,7 @@ function AnalyticsPageContent() {
 
             {/* Charts */}
             <div className="grid gap-6 md:grid-cols-2">
-              <Card>
+              <Card className="hover:shadow-lg transition-all duration-200 border-l-4" style={{ borderLeftColor: '#3b82f6' }}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <LineChart className="h-5 w-5" />
@@ -375,7 +413,7 @@ function AnalyticsPageContent() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="hover:shadow-lg transition-all duration-200 border-l-4" style={{ borderLeftColor: '#22c55e' }}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <BarChart3 className="h-5 w-5" />
@@ -393,7 +431,7 @@ function AnalyticsPageContent() {
             </div>
 
             {/* Activity Heatmap */}
-            <Card>
+            <Card className="hover:shadow-lg transition-all duration-200 border-l-4" style={{ borderLeftColor: '#f59e0b' }}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Activity className="h-5 w-5" />
@@ -413,7 +451,7 @@ function AnalyticsPageContent() {
           {/* Audience Tab */}
           <TabsContent value="audience" className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2">
-              <Card>
+              <Card className="hover:shadow-lg transition-all duration-200 border-l-4" style={{ borderLeftColor: '#8b5cf6' }}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <PieChart className="h-5 w-5" />
@@ -429,7 +467,7 @@ function AnalyticsPageContent() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="hover:shadow-lg transition-all duration-200 border-l-4" style={{ borderLeftColor: '#06b6d4' }}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <BarChart3 className="h-5 w-5" />
@@ -450,7 +488,7 @@ function AnalyticsPageContent() {
           {/* Engagement Tab */}
           <TabsContent value="engagement" className="space-y-6">
             <div className="grid gap-6">
-              <Card>
+              <Card className="hover:shadow-lg transition-all duration-200 border-l-4" style={{ borderLeftColor: '#ec4899' }}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <LineChart className="h-5 w-5" />
@@ -497,7 +535,7 @@ function AnalyticsPageContent() {
               />
             </div>
 
-            <Card>
+            <Card className="hover:shadow-lg transition-all duration-200 border-l-4" style={{ borderLeftColor: '#10b981' }}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <LineChart className="h-5 w-5" />

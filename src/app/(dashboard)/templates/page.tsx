@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Copy, Edit, Trash, Loader2, Plus, Search, Filter, Sparkles, Mail, MessageSquare, FileText, Eye } from 'lucide-react';
+import { PlusCircle, Copy, Edit, Trash, Loader2, Plus, Search, Filter, Sparkles, Mail, MessageSquare, FileText, Eye, Bookmark } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
@@ -136,8 +136,15 @@ export default function TemplatesPage() {
     <div className="container mx-auto py-8">
       {/* Hero Section */}
       <div className="mb-8 text-center">
-        <h1 className="text-4xl font-bold mb-4">Content Templates</h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+        <div className="flex justify-center items-center gap-3 mb-6">
+          <div className="p-3 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl">
+            <Bookmark className="h-8 w-8 text-white" />
+          </div>
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            Content Templates
+          </h1>
+        </div>
+        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
           Create, manage, and organize your content templates. Use AI-powered suggestions to enhance your content.
         </p>
       </div>

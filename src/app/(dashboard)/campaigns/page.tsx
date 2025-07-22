@@ -345,12 +345,19 @@ export default function CampaignsPage() {
 
   return (
     <div className="space-y-4 p-4">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Campaigns</h1>
-          <p className="text-sm text-muted-foreground">
-            Create and manage your marketing campaigns
-          </p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-8">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl">
+            <Target className="h-8 w-8 text-white" />
+          </div>
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 bg-clip-text text-transparent">
+              Campaigns
+            </h1>
+            <p className="text-gray-600 text-lg">
+              Create and manage your marketing campaigns
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Button

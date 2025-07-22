@@ -314,11 +314,18 @@ function ContentLibraryPage() {
       {/* Dashboard-style Header */}
       <div className="space-y-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight">Content Library</h1>
-            <p className="text-muted-foreground">
-              Create, manage, and schedule your content across all platforms
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-gradient-to-r from-violet-500 to-purple-600 rounded-xl">
+              <FileText className="h-8 w-8 text-white" />
+            </div>
+            <div className="space-y-1">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">
+                Content Library
+              </h1>
+              <p className="text-gray-600 text-lg">
+                Create, manage, and schedule your content across all platforms
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <TooltipProvider>

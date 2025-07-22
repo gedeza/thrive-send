@@ -175,28 +175,35 @@ export default function CalendarPage() {
     <div className="container mx-auto px-4 py-6 space-y-6">
       <WelcomeFlow isOpen={showWelcomeFlow} onClose={closeWelcomeFlow} />
       
-      {/* Page Header - Consistent with campaigns page */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold tracking-tight">Content Calendar</h1>
+      {/* Header */}
+      <div className="text-center mb-8">
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <CalendarIcon className="h-8 w-8 text-primary" />
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            Content Calendar
+          </h1>
         </div>
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          Schedule and manage your content across all platforms with powerful calendar features.
+        </p>
+      </div>
+      
+      <div className="flex items-center justify-end gap-2 mb-8">
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowSync(true)}
-            className="flex items-center gap-2"
           >
-            <RefreshCw className="h-4 w-4" />
+            <RefreshCw className="mr-2 h-4 w-4" />
             Sync Content
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={handleForceRefresh}
-            className="flex items-center gap-2"
           >
-            <RefreshCw className="h-4 w-4" />
+            <RefreshCw className="mr-2 h-4 w-4" />
             Force Refresh
           </Button>
           <div className="flex items-center gap-2 ml-2 px-2">
@@ -213,9 +220,8 @@ export default function CalendarPage() {
             variant="outline"
             size="sm"
             onClick={() => setShowSettings(true)}
-            className="flex items-center gap-2"
           >
-            <Settings className="h-4 w-4" />
+            <Settings className="mr-2 h-4 w-4" />
             Settings
           </Button>
         </div>

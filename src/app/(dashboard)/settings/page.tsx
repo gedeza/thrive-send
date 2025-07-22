@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MainLayout } from "@/components/layout/main-layout";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, RotateCcw } from "lucide-react";
+import { Loader2, RotateCcw, Settings } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -224,18 +224,30 @@ export default function SettingsPage() {
 
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-gradient-to-r from-slate-500 to-gray-600 rounded-xl">
+            <Settings className="h-8 w-8 text-white" />
+          </div>
+          <div>
+            <h2 className="text-4xl font-bold bg-gradient-to-r from-slate-600 via-gray-600 to-zinc-600 bg-clip-text text-transparent">
+              Settings
+            </h2>
+            <p className="text-gray-600 text-lg">
+              Manage your account preferences and configurations
+            </p>
+          </div>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="email">Email Preferences</TabsTrigger>
-          <TabsTrigger value="campaign">Campaign Defaults</TabsTrigger>
-          <TabsTrigger value="content">Content Library</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="organization">Organization</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="profile" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">Profile</TabsTrigger>
+          <TabsTrigger value="email" className="data-[state=active]:bg-green-500 data-[state=active]:text-white">Email</TabsTrigger>
+          <TabsTrigger value="campaign" className="data-[state=active]:bg-purple-500 data-[state=active]:text-white">Campaign</TabsTrigger>
+          <TabsTrigger value="content" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white">Content</TabsTrigger>
+          <TabsTrigger value="users" className="data-[state=active]:bg-pink-500 data-[state=active]:text-white">Users</TabsTrigger>
+          <TabsTrigger value="organization" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white">Organization</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">

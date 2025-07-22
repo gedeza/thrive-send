@@ -284,14 +284,28 @@ function ClientsPageContent() {
 
   return (
     <div className="container mx-auto py-8 space-y-8">
-        {/* Hero Section */}
+        {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-            Client Management
-          </h1>
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <Users className="h-8 w-8 text-primary" />
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+              Client Management
+            </h1>
+          </div>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Build and manage strong client relationships. Track engagement, monitor projects, and grow your business partnerships.
           </p>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 mb-8">
+          <div className="flex items-center gap-2">
+            <Button asChild>
+              <Link href="/clients/new">
+                <Plus className="mr-2 h-4 w-4" />
+                New Client
+              </Link>
+            </Button>
+          </div>
         </div>
 
       {/* Metrics Overview */}
@@ -380,15 +394,6 @@ function ClientsPageContent() {
               />
             </div>
           </div>
-          
-          {/* Primary Action Button - Always visible */}
-          <Button asChild className="bg-primary hover:bg-primary/90 shrink-0 w-full sm:w-auto">
-            <Link href="/clients/new">
-              <Plus className="h-4 w-4 mr-2" />
-              <span className="sm:hidden">Add Client</span>
-              <span className="hidden sm:inline">New Client</span>
-            </Link>
-          </Button>
         </div>
         
         {/* Secondary Controls */}
@@ -595,7 +600,9 @@ interface ClientCardProps {
 function ClientCard({ client, viewMode }: ClientCardProps) {
   if (viewMode === 'list') {
     return (
-      <Card className="hover:shadow-sm transition-shadow">
+      <Card className="hover:shadow-lg transition-all duration-200 border-l-4" style={{ 
+        borderLeftColor: client.status === 'active' ? '#22c55e' : '#6b7280' 
+      }}>
         <CardContent className="p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3 flex-1">
@@ -720,7 +727,9 @@ function ClientCard({ client, viewMode }: ClientCardProps) {
 
   // Grid view
   return (
-    <Card className="hover:shadow-sm transition-shadow group">
+    <Card className="hover:shadow-lg transition-all duration-200 group border-l-4" style={{ 
+      borderLeftColor: client.status === 'active' ? '#22c55e' : '#6b7280' 
+    }}>
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center space-x-2 flex-1 min-w-0 mr-2">
