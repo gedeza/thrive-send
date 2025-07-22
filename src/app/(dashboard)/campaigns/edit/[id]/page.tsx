@@ -91,7 +91,18 @@ export default function CampaignEditPage({ params }: { params: { id: string } })
       </div>
       
       {campaign ? (
-        <EditCampaign campaignId={params.id} initialData={campaign} />
+        <EditCampaign 
+          campaignId={params.id} 
+          initialData={campaign}
+          onSave={() => {
+            toast({
+              title: "Success",
+              description: "Campaign updated successfully. Redirecting...",
+            });
+            setTimeout(() => router.push('/campaigns'), 1000);
+          }}
+          onCancel={() => router.push('/campaigns')}
+        />
       ) : (
         <div className="text-center p-8">
           <p className="text-lg text-muted-foreground">Campaign not found or you don't have permission to edit it.</p>

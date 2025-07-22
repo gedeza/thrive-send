@@ -37,19 +37,45 @@ export default function EditCampaign({
     setLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch(`/api/campaigns/${campaignId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          description: formData.description,
+          status: formData.status,
+        }),
+      });
+
+      if (!response.ok) {
+        let errorMessage = 'Failed to update campaign';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+          console.error('API Error Response:', errorData);
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError);
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const updatedCampaign = await response.json();
       
       toast({
         title: "Campaign Updated",
         description: "Campaign has been successfully updated.",
       });
 
-      onSave?.(formData);
+      // Call onSave callback with the updated data
+      onSave?.(updatedCampaign);
     } catch (error) {
+      console.error('Error updating campaign:', error);
       toast({
         title: "Error",
-        description: "Failed to update campaign. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to update campaign. Please try again.",
         variant: "destructive",
       });
     } finally {

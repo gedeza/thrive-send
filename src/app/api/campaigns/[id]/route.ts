@@ -75,6 +75,7 @@ export async function PATCH(
   return withOrganization(req, async (authedRequest) => {
     try {
       const campaignId = params.id;
+      console.log('PATCH campaign - ID:', campaignId, 'OrgId:', authedRequest.auth.organizationId);
       
       // Check if campaign exists
       const existingCampaign = await db.campaign.findUnique({
@@ -104,13 +105,27 @@ export async function PATCH(
         );
       }
       
+      // Map status to lowercase for Prisma enum
+      let mappedStatus: CampaignStatus | undefined = undefined;
+      if (data.status !== undefined) {
+        const statusMap: Record<string, CampaignStatus> = {
+          'DRAFT': 'draft',
+          'ACTIVE': 'active', 
+          'COMPLETED': 'completed',
+          'PAUSED': 'paused',
+          'CANCELLED': 'cancelled',
+          'ARCHIVED': 'cancelled', // Map ARCHIVED to cancelled
+        };
+        mappedStatus = statusMap[data.status.toUpperCase()] || data.status.toLowerCase() as CampaignStatus;
+      }
+
       // Update campaign
       const updatedCampaign = await db.campaign.update({
         where: { id: campaignId },
         data: {
           name: data.name !== undefined ? data.name : undefined,
           description: data.description !== undefined ? data.description : undefined,
-          status: data.status !== undefined ? data.status as CampaignStatus : undefined,
+          status: mappedStatus,
           startDate: data.startDate ? new Date(data.startDate) : undefined,
           endDate: data.endDate ? new Date(data.endDate) : undefined,
           budget: data.budget !== undefined ? data.budget : undefined,
