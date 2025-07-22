@@ -64,7 +64,7 @@ export default function NewProjectPage() {
         }
 
         const data = await response.json();
-        setClients(data);
+        setClients(data.data || []);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to load clients';
         setClientsError(message);

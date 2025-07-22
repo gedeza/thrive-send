@@ -87,8 +87,10 @@ const WeekViewTimeSlot: React.FC<{
   hour: number;
   events: CalendarEvent[];
   onEventClick: (event: CalendarEvent) => void;
+  onEventHover?: (event: CalendarEvent, e: React.MouseEvent) => void;
+  onEventHoverEnd?: () => void;
   userTimezone: string;
-}> = ({ day, hour, events, onEventClick, userTimezone }) => {
+}> = ({ day, hour, events, onEventClick, onEventHover, onEventHoverEnd, userTimezone }) => {
   const dropId = `week-${day.toISOString().split('T')[0]}-${hour}`;
   const { isOver, setNodeRef } = useDroppable({
     id: dropId,
@@ -235,6 +237,8 @@ export const WeekView: React.FC<WeekViewProps> = ({
                     hour={hour}
                     events={eventsByHour[hour] || []}
                     onEventClick={onEventClick}
+                    onEventHover={onEventHover}
+                    onEventHoverEnd={onEventHoverEnd}
                     userTimezone={userTimezone}
                   />
                 ))}

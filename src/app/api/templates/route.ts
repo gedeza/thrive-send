@@ -14,7 +14,7 @@ const templateSchema = z.object({
   content: z.string().optional(),
 });
 
-// GET /api/templates - fetch all templates for the organization
+// GET /api/templates - fetch all templates for the organization with AI enhancements
 export async function GET(req: NextRequest) {
   try {
     const { userId, orgId } = getAuth(req);
@@ -22,16 +22,79 @@ export async function GET(req: NextRequest) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const templates = await prisma.template.findMany({
-      where: {
-        organizationId: orgId,
-      },
-      orderBy: {
-        lastUpdated: 'desc',
-      },
-    });
+    // Check for enhanced mode (includes AI data)
+    const { searchParams } = new URL(req.url);
+    const enhanced = searchParams.get('enhanced') === 'true';
+    const context = searchParams.get('context');
+    const limit = parseInt(searchParams.get('limit') || '50');
 
-    return NextResponse.json(templates);
+    let templates;
+    
+    if (enhanced) {
+      // Fetch templates with AI enhancements
+      templates = await prisma.template.findMany({
+        where: {
+          organizationId: orgId,
+        },
+        include: {
+          author: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+            }
+          },
+          _count: {
+            select: {
+              templateUsages: true
+            }
+          },
+          templateUsages: {
+            where: {
+              userId: userId, // User's own usage
+            },
+            take: 1,
+            orderBy: {
+              timestamp: 'desc'
+            }
+          }
+        },
+        orderBy: [
+          { aiRecommended: 'desc' }, // AI recommended first
+          { performanceScore: 'desc' }, // Then by performance
+          { lastUpdated: 'desc' } // Finally by recency
+        ],
+        take: limit,
+      });
+
+      // Transform data to include AI enhancements
+      const enhancedTemplates = templates.map(template => ({
+        ...template,
+        usageCount: template._count.templateUsages,
+        lastUsedByUser: template.templateUsages[0]?.timestamp || null,
+        engagementRate: template.performanceScore ? template.performanceScore * 0.2 : 0, // Simulated
+        aiRecommended: template.aiRecommended || false,
+        performanceScore: template.performanceScore || 0,
+        // Remove internal fields
+        _count: undefined,
+        templateUsages: undefined,
+      }));
+
+      return NextResponse.json(enhancedTemplates);
+    } else {
+      // Standard template fetch
+      templates = await prisma.template.findMany({
+        where: {
+          organizationId: orgId,
+        },
+        orderBy: {
+          lastUpdated: 'desc',
+        },
+        take: limit,
+      });
+
+      return NextResponse.json(templates);
+    }
   } catch (error) {
     console.error("Error fetching templates:", error);
     return new NextResponse("Internal Server Error", { status: 500 });

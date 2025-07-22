@@ -12,7 +12,8 @@ import { ContentCalendarSync } from "@/components/content/ContentCalendarSync";
 import { syncContentToCalendar } from "@/lib/api/content-service";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Search, Filter, Calendar as CalendarIcon, List, Grid, Settings, Edit, Trash2, X, RefreshCw, Plus } from "lucide-react";
+import { Search, Filter, Calendar as CalendarIcon, List, Grid, Settings, Edit, Trash2, X, RefreshCw, Plus, Sparkles, FileText, Bot } from "lucide-react";
+import { TemplateQuickPicker, useTemplateSelection } from '@/components/templates/TemplateQuickPicker';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,6 +66,7 @@ export default function CalendarPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { showWelcomeFlow, closeWelcomeFlow } = useOnboarding();
+  const { selectedTemplate, selectTemplate, clearSelection } = useTemplateSelection('calendar');
   const { 
     lastCacheInvalidation, 
     invalidateCache, 
@@ -107,8 +109,33 @@ export default function CalendarPage() {
   // Event handlers
   const handleEventCreate = async (event: Omit<ContentCalendarEvent, "id">) => {
     try {
-      const created = await createCalendarEvent(event);
+      const eventData = {
+        ...event,
+        templateId: selectedTemplate?.id, // Track template usage
+      };
+      
+      const created = await createCalendarEvent(eventData);
       setEvents(prev => [...prev, created]);
+      
+      // Track template usage for AI learning
+      if (selectedTemplate) {
+        fetch(`/api/templates/${selectedTemplate.id}/track-usage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            context: 'calendar',
+            action: 'schedule',
+            source: 'calendar-page',
+            metadata: {
+              event_type: event.type,
+              scheduled_date: event.date
+            }
+          })
+        }).catch(() => {}); // Non-blocking
+        
+        clearSelection(); // Clear after use
+      }
+      
       return created;
     } catch (error) {
       toast({
@@ -187,6 +214,60 @@ export default function CalendarPage() {
           Schedule and manage your content across all platforms with powerful calendar features.
         </p>
       </div>
+      
+      {/* AI Template Assistant for Calendar Events */}
+      <Card className="mb-6 bg-gradient-to-r from-indigo-50/80 to-blue-50/80 border-indigo-200">
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-indigo-100 rounded-lg">
+                <Bot className="h-5 w-5 text-indigo-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-indigo-900">Calendar Template Assistant</h3>
+                <p className="text-sm text-indigo-700">Quick templates for events, reminders, and scheduled content</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <TemplateQuickPicker
+                context="calendar"
+                onSelect={(template) => {
+                  selectTemplate(template);
+                  toast({
+                    title: "Template Ready for Calendar! 📅",
+                    description: `"${template.name}" selected for your next event`,
+                  });
+                }}
+                filters={{
+                  type: 'email', // Calendar events are typically email-based
+                }}
+                compact={true}
+                showAIRecommendations={true}
+                trigger={
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Event Templates
+                  </Button>
+                }
+              />
+              {selectedTemplate && (
+                <div className="flex items-center gap-2 px-3 py-1 bg-white/70 rounded-lg border border-indigo-200">
+                  <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                  <span className="text-sm text-indigo-800">{selectedTemplate.name}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearSelection}
+                    className="h-5 w-5 p-0 hover:bg-indigo-100"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
       
       <div className="flex items-center justify-end gap-2 mb-8">
         <div className="flex items-center gap-2">

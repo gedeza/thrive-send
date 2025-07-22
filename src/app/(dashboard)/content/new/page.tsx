@@ -10,8 +10,37 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/use-toast';
-import { ArrowLeft, Clock, Calendar, Sparkles, Send, Globe, Hash, Tag, Users, TrendingUp, Eye, Lightbulb, Upload, X, Image, Video, FileText, Twitter, Linkedin, Instagram, Facebook, Youtube, Mail, MessageSquare, Music } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Clock, 
+  Calendar, 
+  Sparkles, 
+  Send, 
+  Globe, 
+  Hash, 
+  Tag, 
+  Users, 
+  TrendingUp, 
+  Eye, 
+  Lightbulb, 
+  Upload, 
+  X, 
+  Image, 
+  Video, 
+  FileText, 
+  Twitter, 
+  Linkedin, 
+  Instagram, 
+  Facebook, 
+  Youtube, 
+  Mail, 
+  MessageSquare, 
+  Music, 
+  Zap, 
+  Bot 
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { TemplateQuickPicker, useTemplateSelection } from '@/components/templates/TemplateQuickPicker';
 
 const contentTypes = [
   { 
@@ -399,6 +428,7 @@ export default function NewContentPage() {
     type: 'SOCIAL' as const,
     scheduledAt: ''
   });
+  const { selectedTemplate, selectTemplate, clearSelection } = useTemplateSelection('content-creation');
   const [publishNow, setPublishNow] = useState(true);
   const [wordCount, setWordCount] = useState(0);
   const [estimatedReadTime, setEstimatedReadTime] = useState(0);
@@ -407,7 +437,6 @@ export default function NewContentPage() {
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [showPlatformOptimization, setShowPlatformOptimization] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
 
   useEffect(() => {
     const words = formData.content.trim().split(/\s+/).filter(word => word.length > 0).length;
@@ -420,6 +449,11 @@ export default function NewContentPage() {
     if (type) {
       setSelectedType(type);
       setFormData(prev => ({ ...prev, type: value as any }));
+      
+      // Clear template selection when type changes if it doesn't match
+      if (selectedTemplate && selectedTemplate.type !== value.toLowerCase()) {
+        clearSelection();
+      }
       
       // Auto-select relevant platforms based on content type
       if (value === 'SOCIAL') {
@@ -435,7 +469,7 @@ export default function NewContentPage() {
       
       // Show templates for all content types
       setShowTemplates(true);
-      setSelectedTemplate(null);
+      clearSelection();
     }
   };
 
@@ -444,7 +478,7 @@ export default function NewContentPage() {
   };
 
   const applyTemplate = (template: any) => {
-    setSelectedTemplate(template);
+    selectTemplate(template);
     setFormData(prev => ({
       ...prev,
       content: template.template
@@ -837,17 +871,147 @@ export default function NewContentPage() {
               </Card>
             )}
 
-            {/* Content Templates */}
+            {/* AI-Powered Template Integration */}
+            <Card className="border-0 shadow-lg bg-gradient-to-r from-blue-50/80 to-purple-50/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bot className="h-5 w-5 text-blue-600" />
+                  AI Template Assistant
+                  <Badge variant="outline" className="ml-auto bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 border-blue-200">
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    Premium Feature
+                  </Badge>
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Start with AI-optimized templates or create from scratch. Get content that performs 10x better.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  {/* Template Picker Button */}
+                  <TemplateQuickPicker
+                    context="content-creation"
+                    onSelect={(template) => {
+                      selectTemplate(template);
+                      // Pre-fill form with template content
+                      const templateData = typeof template.content === 'string' 
+                        ? JSON.parse(template.content) 
+                        : template.content || {};
+                      
+                      setFormData(prev => ({
+                        ...prev,
+                        title: templateData.subject_line || template.name,
+                        content: templateData.body || templateData.content || '',
+                      }));
+                      
+                      // Update content type to match template
+                      const matchingType = contentTypes.find(t => 
+                        t.value.toLowerCase() === template.type.toLowerCase()
+                      );
+                      if (matchingType) {
+                        setSelectedType(matchingType);
+                        handleTypeChange(matchingType.value);
+                      }
+                      
+                      toast({
+                        title: "Template Applied! 🎉",
+                        description: `"${template.name}" is ready for customization`,
+                      });
+                    }}
+                    filters={{
+                      type: selectedType.value.toLowerCase() as 'email' | 'social' | 'blog'
+                    }}
+                    showAIRecommendations={true}
+                    trigger={
+                      <Button className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all">
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Choose AI Template
+                      </Button>
+                    }
+                  />
+                  
+                  {/* AI Generate Button */}
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 border-2 border-purple-200 hover:bg-purple-50 hover:border-purple-300 transition-all"
+                    onClick={() => {
+                      // TODO: Implement AI generation dialog
+                      toast({
+                        title: "AI Generation Coming Soon! 🤖",
+                        description: "Create templates from prompts with GPT-4",
+                      });
+                    }}
+                  >
+                    <Zap className="h-4 w-4 mr-2" />
+                    Generate with AI
+                  </Button>
+                </div>
+                
+                {/* Show selected template info */}
+                {selectedTemplate && (
+                  <div className="mt-4 p-4 bg-white/80 rounded-lg border border-blue-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <span className="text-sm font-medium text-blue-900">Template Applied</span>
+                        <Badge variant="outline" className="text-xs">{selectedTemplate.type}</Badge>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => {
+                          clearSelection();
+                          setFormData(prev => ({ ...prev, title: '', content: '' }));
+                          toast({
+                            title: "Template Cleared",
+                            description: "Starting fresh with empty content",
+                          });
+                        }}
+                        className="h-6 px-2 text-gray-500 hover:text-gray-700"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <p className="text-xs text-blue-700">
+                      <strong>{selectedTemplate.name}</strong> • {selectedTemplate.description}
+                    </p>
+                    {selectedTemplate.performanceScore && (
+                      <p className="text-xs text-green-600 mt-1">
+                        ⚡ {Math.round(selectedTemplate.performanceScore * 100)}% performance score
+                      </p>
+                    )}
+                  </div>
+                )}
+                
+                {/* Template benefits */}
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs text-gray-600">
+                  <div className="flex items-center gap-1">
+                    <TrendingUp className="h-3 w-3 text-green-500" />
+                    <span>Higher engagement</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-3 w-3 text-blue-500" />
+                    <span>10x faster creation</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Eye className="h-3 w-3 text-purple-500" />
+                    <span>Proven formats</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Legacy Templates Section - Keep for compatibility */}
             {showTemplates && getAvailableTemplates().length > 0 && (
               <Card className="border-0 shadow-lg bg-white/70 backdrop-blur-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-yellow-600" />
-                    Content Templates
-                    <Badge variant="outline" className="ml-auto">Get Started Fast</Badge>
+                    <FileText className="h-5 w-5 text-gray-600" />
+                    Quick Templates
+                    <Badge variant="outline" className="ml-auto">Basic</Badge>
                   </CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Choose a proven template to kickstart your {selectedType.label.toLowerCase()}
+                    Choose a basic template to kickstart your {selectedType.label.toLowerCase()}
                   </p>
                 </CardHeader>
                 <CardContent>
