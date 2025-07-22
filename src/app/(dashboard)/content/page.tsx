@@ -310,93 +310,124 @@ function ContentLibraryPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Dashboard-style Header */}
-      <div className="space-y-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-gradient-to-r from-violet-500 to-purple-600 rounded-xl">
-              <FileText className="h-8 w-8 text-white" />
-            </div>
-            <div className="space-y-1">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">
-                Content Library
-              </h1>
-              <p className="text-gray-600 text-lg">
-                Create, manage, and schedule your content across all platforms
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleManualRefresh}
-                    disabled={isLoading}
-                  >
-                    <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
-                    <span className="hidden sm:inline ml-2">Refresh</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Refresh content list</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowSyncDialog(true)}
-            >
-              <Calendar className="h-4 w-4" />
-              <span className="hidden sm:inline ml-2">Sync Calendar</span>
-            </Button>
-            
-            <Button asChild>
-              <Link href="/content/new">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Content
-              </Link>
-            </Button>
-          </div>
+    <div className="space-y-4 p-4">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <FileText className="h-8 w-8 text-primary" />
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            Content Library
+          </h1>
         </div>
-
-        {/* Analytics-style Metric Cards */}
-        {contentStats && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {Object.entries(STATUS_CONFIG).map(([status, config]) => {
-              const count = contentStats[status] || 0;
-              const total = filteredContent.length;
-              const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : '0';
-              
-              return (
-                <Card key={status}>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">{config.label}</p>
-                        <p className="text-2xl font-bold">{count}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {percentage}% of total content
-                        </p>
-                      </div>
-                      <div className={cn("rounded-lg p-2", config.color)}>
-                        <config.icon className="h-5 w-5" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          Create, manage, and schedule your content across all channels and platforms.
+        </p>
       </div>
 
-      {/* Analytics-style Controls */}
+      <div className="flex items-center justify-end gap-2 mb-8">
+        <div className="flex items-center gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleManualRefresh}
+                  disabled={isLoading}
+                >
+                  <RefreshCw className={cn("mr-2 h-4 w-4", isLoading && "animate-spin")} />
+                  Refresh
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Refresh content list</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowSyncDialog(true)}
+          >
+            <Calendar className="mr-2 h-4 w-4" />
+            Sync Calendar
+          </Button>
+          
+          <Button asChild>
+            <Link href="/content/new">
+              <Plus className="mr-2 h-4 w-4" />
+              New Content
+            </Link>
+          </Button>
+        </div>
+      </div>
+
+      {/* Content Statistics */}
+      {contentStats && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {Object.entries(STATUS_CONFIG).map(([status, config]) => {
+            const count = contentStats[status] || 0;
+            const total = filteredContent.length;
+            const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : '0';
+            
+            // Dynamic colors based on status
+            const getStyles = (status: string) => {
+              switch(status) {
+                case 'draft':
+                  return {
+                    iconBg: 'p-3 bg-yellow-100 rounded-full',
+                    iconColor: 'h-6 w-6 text-yellow-600',
+                    numberColor: 'text-3xl font-bold text-yellow-600'
+                  };
+                case 'published':
+                  return {
+                    iconBg: 'p-3 bg-green-100 rounded-full',
+                    iconColor: 'h-6 w-6 text-green-600',
+                    numberColor: 'text-3xl font-bold text-green-600'
+                  };
+                case 'scheduled':
+                  return {
+                    iconBg: 'p-3 bg-blue-100 rounded-full',
+                    iconColor: 'h-6 w-6 text-blue-600',
+                    numberColor: 'text-3xl font-bold text-blue-600'
+                  };
+                default:
+                  return {
+                    iconBg: 'p-3 bg-primary/10 rounded-full',
+                    iconColor: 'h-6 w-6 text-primary',
+                    numberColor: 'text-3xl font-bold'
+                  };
+              }
+            };
+            
+            const styles = getStyles(status);
+            
+            return (
+              <Card key={status} className="hover:shadow-md transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-muted-foreground">{config.label}</p>
+                      <p className={styles.numberColor}>{count}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {percentage}% of total content
+                      </p>
+                    </div>
+                    <div className={styles.iconBg}>
+                      <div className={styles.iconColor}>
+                        <config.icon className="h-6 w-6" />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Search and Filters */}
       <Card>
         <CardContent className="p-6">
           <div className="space-y-4">
@@ -807,9 +838,15 @@ function ContentCard({ item, isSelected, onSelect, onDelete }: ContentCardProps)
   
   return (
     <Card className={cn(
-      "group hover:shadow-lg transition-all duration-200 cursor-pointer border-2",
-      isSelected ? "border-blue-500 bg-blue-50" : "border-transparent hover:border-gray-200"
-    )}>
+      "group hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4",
+      isSelected ? "border-l-blue-500 bg-blue-50" : "border-l-transparent hover:border-l-gray-300"
+    )} style={{ 
+      borderLeftColor: !isSelected ? (
+        item.status.toLowerCase() === 'published' ? '#22c55e' :
+        item.status.toLowerCase() === 'scheduled' ? '#3b82f6' :
+        item.status.toLowerCase() === 'draft' ? '#f59e0b' : '#6b7280'
+      ) : undefined
+    }}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3 flex-1">
@@ -944,9 +981,15 @@ function ContentListItem({ item, isSelected, onSelect, onDelete }: ContentCardPr
   
   return (
     <Card className={cn(
-      "group hover:shadow-md transition-all duration-200 border-2",
-      isSelected ? "border-blue-500 bg-blue-50" : "border-transparent hover:border-gray-200"
-    )}>
+      "group hover:shadow-lg transition-all duration-200 border-l-4",
+      isSelected ? "border-l-blue-500 bg-blue-50" : "border-l-transparent hover:border-l-gray-300"
+    )} style={{ 
+      borderLeftColor: !isSelected ? (
+        item.status.toLowerCase() === 'published' ? '#22c55e' :
+        item.status.toLowerCase() === 'scheduled' ? '#3b82f6' :
+        item.status.toLowerCase() === 'draft' ? '#f59e0b' : '#6b7280'
+      ) : undefined
+    }}>
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 flex-1 min-w-0">

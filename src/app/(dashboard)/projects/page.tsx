@@ -248,15 +248,29 @@ export default function ProjectsPage() {
 
   return (
     <TooltipProvider>
-      <div className="container mx-auto py-8 space-y-8">
-        {/* Hero Section */}
+      <div className="space-y-4 p-4">
+        {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-            Project Management
-          </h1>
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <Building2 className="h-8 w-8 text-primary" />
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+              Project Management
+            </h1>
+          </div>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Track, organize, and manage all your projects in one place. Stay on top of deadlines and monitor progress.
           </p>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 mb-8">
+          <div className="flex items-center gap-2">
+            <Button asChild>
+              <Link href="/projects/new">
+                <Plus className="mr-2 h-4 w-4" />
+                New Project
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {/* Statistics Cards */}
@@ -266,7 +280,7 @@ export default function ProjectsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Projects</p>
-                  <p className="text-3xl font-bold">{projectStats.total}</p>
+                  <p className="text-3xl font-bold text-primary">{projectStats.total}</p>
                 </div>
                 <div className="p-3 bg-primary/10 rounded-full">
                   <Building2 className="h-6 w-6 text-primary" />
@@ -319,37 +333,22 @@ export default function ProjectsPage() {
         </div>
 
         {/* Search and Filter Bar */}
-        <div className="bg-muted/30 p-4 rounded-lg space-y-4">
-          {/* Mobile-first: Search and Primary Action */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-            <div className="flex-1 max-w-md">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+        <Card>
+          <CardContent className="p-3">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex items-center gap-2 flex-1">
+                <Search className="h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search projects..."
+                  type="search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-background"
+                  placeholder="Search projects by name, description, or client..."
+                  className="flex-1 h-8"
                 />
               </div>
-            </div>
-            
-            {/* Primary Action Button - Always visible */}
-            <Button asChild className="bg-primary hover:bg-primary/90 shrink-0 w-full sm:w-auto">
-              <Link href="/projects/new">
-                <Plus className="h-4 w-4 mr-2" />
-                <span className="sm:hidden">Create Project</span>
-                <span className="hidden sm:inline">New Project</span>
-              </Link>
-            </Button>
-          </div>
-          
-          {/* Secondary Controls */}
-          <div className="flex flex-wrap items-center gap-2 justify-between">
-            <div className="flex flex-wrap items-center gap-2">
+              
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[130px] sm:w-[140px] bg-background">
-                  <Filter className="h-4 w-4 mr-2" />
+                <SelectTrigger className="w-24 h-8 text-xs">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -362,8 +361,7 @@ export default function ProjectsPage() {
               </Select>
 
               <Select value={clientFilter} onValueChange={setClientFilter}>
-                <SelectTrigger className="w-[130px] sm:w-[160px] bg-background">
-                  <Users className="h-4 w-4 mr-2" />
+                <SelectTrigger className="w-24 h-8 text-xs">
                   <SelectValue placeholder="Client" />
                 </SelectTrigger>
                 <SelectContent>
@@ -376,83 +374,27 @@ export default function ProjectsPage() {
                 </SelectContent>
               </Select>
               
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-[100px] sm:w-[120px] bg-background">
-                  <SelectValue placeholder="Sort" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="name">Name</SelectItem>
-                  <SelectItem value="createdAt">Date</SelectItem>
-                  <SelectItem value="status">Status</SelectItem>
-                  <SelectItem value="client">Client</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                    className="bg-background shrink-0"
-                  >
-                    <TrendingUp className={cn("h-4 w-4 transition-transform", sortOrder === 'desc' && "rotate-180")} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  Sort {sortOrder === 'asc' ? 'Descending' : 'Ascending'}
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <div className="flex bg-muted rounded-md p-1">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                      size="sm"
-                      onClick={() => setViewMode('grid')}
-                      className="px-2 sm:px-3"
-                    >
-                      <Grid className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Grid View</TooltipContent>
-                </Tooltip>
-                
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={viewMode === 'list' ? 'default' : 'ghost'}
-                      size="sm"
-                      onClick={() => setViewMode('list')}
-                      className="px-2 sm:px-3"
-                    >
-                      <List className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>List View</TooltipContent>
-                </Tooltip>
+              <div className="flex items-center border rounded-md">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                  className="h-8 px-2 border-0 rounded-r-none"
+                >
+                  <Grid className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                  className="h-8 px-2 border-0 rounded-l-none"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
               </div>
-              
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="icon"
-                    onClick={fetchProjects} 
-                    disabled={loading}
-                    className="shrink-0"
-                  >
-                    <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Refresh Projects</TooltipContent>
-              </Tooltip>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
         {/* Content Area */}
         {loading ? (
           <ProjectsContentSkeleton viewMode={viewMode} />
