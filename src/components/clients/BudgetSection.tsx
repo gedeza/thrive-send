@@ -3,6 +3,10 @@
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { Plus, Download, AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -31,26 +35,45 @@ interface Expense {
 
 async function getBudgetData(clientId: string): Promise<Budget[]> {
   try {
-    // Use absolute URL with origin to avoid Invalid URL errors
-    const baseUrl = typeof window !== 'undefined' 
-      ? window.location.origin 
-      : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-    
-    const response = await fetch(
-      `${baseUrl}/api/clients/${clientId}/budgets`,
-      { 
-        credentials: 'include' // Include cookies for auth
-      }
-    );
+    const response = await fetch(`/api/clients/${clientId}/budgets`);
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch budget data: ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Failed to fetch budget data: ${response.statusText}`);
     }
 
     const data = await response.json();
-    return data.budgets;
+    return data.budgets || [];
   } catch (error) {
     console.error('Error fetching budget data:', error);
+    throw error;
+  }
+}
+
+async function createBudget(clientId: string, budgetData: {
+  amount: number;
+  currency: string;
+  startDate: string;
+  endDate?: string;
+  status: string;
+}) {
+  try {
+    const response = await fetch(`/api/clients/${clientId}/budgets`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(budgetData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to create budget');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error creating budget:', error);
     throw error;
   }
 }
@@ -132,13 +155,163 @@ function BudgetLoadingState() {
   );
 }
 
-function BudgetErrorState({ error }: { error: string }) {
+function CreateBudgetModal({ clientId, onSuccess }: { clientId: string; onSuccess: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    amount: '',
+    currency: 'USD',
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: '',
+    status: 'ACTIVE'
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      await createBudget(clientId, {
+        amount: parseFloat(formData.amount),
+        currency: formData.currency,
+        startDate: formData.startDate,
+        endDate: formData.endDate || undefined,
+        status: formData.status,
+      });
+
+      setOpen(false);
+      setFormData({
+        amount: '',
+        currency: 'USD',
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: '',
+        status: 'ACTIVE'
+      });
+      onSuccess();
+    } catch (error) {
+      console.error('Error creating budget:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="p-6 text-center">
-      <AlertTriangle className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
-      <h3 className="text-lg font-medium mb-1">Unable to load budget data</h3>
-      <p className="text-sm text-gray-500">{error}</p>
-    </div>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild onOpenChange={setOpen}>
+        <Button size="sm">
+          <Plus className="mr-2 h-4 w-4" />
+          Add Budget
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Create New Budget</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="amount">Budget Amount *</Label>
+            <Input
+              id="amount"
+              type="number"
+              min="0"
+              step="0.01"
+              value={formData.amount}
+              onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+              placeholder="Enter budget amount"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="currency">Currency</Label>
+            <Select value={formData.currency} onValueChange={(value) => setFormData(prev => ({ ...prev, currency: value }))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="USD">USD</SelectItem>
+                <SelectItem value="EUR">EUR</SelectItem>
+                <SelectItem value="GBP">GBP</SelectItem>
+                <SelectItem value="CAD">CAD</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="startDate">Start Date *</Label>
+              <Input
+                id="startDate"
+                type="date"
+                value={formData.startDate}
+                onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="endDate">End Date</Label>
+              <Input
+                id="endDate"
+                type="date"
+                value={formData.endDate}
+                onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
+                min={formData.startDate}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="status">Status</Label>
+            <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ACTIVE">Active</SelectItem>
+                <SelectItem value="ON_HOLD">On Hold</SelectItem>
+                <SelectItem value="COMPLETED">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading || !formData.amount}>
+              {loading ? 'Creating...' : 'Create Budget'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function BudgetErrorState({ error, onRetry, clientId, onSuccess }: { 
+  error: string; 
+  onRetry?: () => void; 
+  clientId?: string;
+  onSuccess?: () => void;
+}) {
+  return (
+    <Card className="p-6">
+      <div className="text-center">
+        <AlertTriangle className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
+        <h3 className="text-lg font-medium mb-1">Unable to load budget data</h3>
+        <p className="text-sm text-gray-500 mb-4">{error}</p>
+        <div className="flex gap-2 justify-center">
+          {onRetry && (
+            <Button variant="outline" onClick={onRetry}>
+              Try Again
+            </Button>
+          )}
+          {clientId && onSuccess && (
+            <CreateBudgetModal clientId={clientId} onSuccess={onSuccess} />
+          )}
+        </div>
+      </div>
+    </Card>
   );
 }
 
@@ -147,27 +320,41 @@ export default function BudgetSection({ clientId }: { clientId: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const data = await getBudgetData(clientId);
-        setBudgets(data);
-        setError(null);
-      } catch (err) {
-        console.error('Error in budget component:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load budget data');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('Fetching budget data for client:', clientId);
+      const data = await getBudgetData(clientId);
+      console.log('Budget data received:', data);
+      setBudgets(data);
+    } catch (err) {
+      console.error('Error in budget component:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load budget data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchData();
   }, [clientId]);
 
   if (loading) return <BudgetLoadingState />;
-  if (error) return <BudgetErrorState error={error} />;
-  if (!budgets.length) return <BudgetErrorState error="No budget data available" />;
+  if (error) return <BudgetErrorState error={error} onRetry={fetchData} clientId={clientId} onSuccess={fetchData} />;
+  if (!budgets.length) {
+    return (
+      <Card className="p-8">
+        <div className="text-center">
+          <h3 className="text-lg font-medium mb-2">No budgets available</h3>
+          <p className="text-sm text-gray-500 mb-4">
+            Create your first budget to start tracking project expenses.
+          </p>
+          <CreateBudgetModal clientId={clientId} onSuccess={fetchData} />
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -178,10 +365,7 @@ export default function BudgetSection({ clientId }: { clientId: string }) {
             <Download className="mr-2 h-4 w-4" />
             Export
           </Button>
-          <Button size="sm">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Budget
-          </Button>
+          <CreateBudgetModal clientId={clientId} onSuccess={fetchData} />
         </div>
       </div>
 
