@@ -169,6 +169,7 @@ function ClientsPageContent() {
   const [loading, setLoading] = useState<boolean>(true);
   const [statsLoading, setStatsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [statsError, setStatsError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -193,9 +194,16 @@ function ClientsPageContent() {
       }
       
       const data = await res.json();
-      // Handle both old direct array format and new standardized format
-      const clientsData = data.data ? data.data : data;
-      setClients(Array.isArray(clientsData) ? clientsData : []);
+      // Handle paginated API response format
+      if (data.data && Array.isArray(data.data)) {
+        setClients(data.data);
+      } else if (Array.isArray(data)) {
+        // Fallback for legacy direct array format
+        setClients(data);
+      } else {
+        console.error("Unexpected API response format:", data);
+        setClients([]);
+      }
     } catch (err: any) {
       console.error("Failed to load clients:", err);
       setError(err.message || "Unable to load client data. Please try again later.");
@@ -206,6 +214,7 @@ function ClientsPageContent() {
 
   const fetchStats = useCallback(async () => {
     setStatsLoading(true);
+    setStatsError(null);
     
     try {
       if (!organization?.id) {
@@ -215,15 +224,24 @@ function ClientsPageContent() {
       const res = await fetch(`/api/clients/stats?organizationId=${organization.id}`);
       
       if (!res.ok) {
-        throw new Error(`Server responded with status: ${res.status}`);
+        const errorText = await res.text();
+        throw new Error(errorText || `Server responded with status: ${res.status}`);
       }
       
       const data = await res.json();
-      // Handle both old direct data format and new standardized format  
-      const statsData = data.data ? data.data : data;
-      setStats(statsData);
+      // Handle standardized API response format
+      if (data.data && typeof data.data === 'object') {
+        setStats(data.data);
+      } else if (typeof data === 'object' && data.totalClients !== undefined) {
+        // Fallback for legacy direct data format
+        setStats(data);
+      } else {
+        console.error("Unexpected stats API response format:", data);
+        setStats(null);
+      }
     } catch (err: any) {
       console.error("Failed to load client statistics:", err);
+      setStatsError(err.message || "Unable to load client statistics. Please try again later.");
     } finally {
       setStatsLoading(false);
     }

@@ -111,12 +111,21 @@ const GOAL_TYPE_DESCRIPTIONS = {
   [CampaignGoalType.RETENTION]: 'Keep existing customers engaged and loyal'
 };
 
+// --- Client Type ---
+interface Client {
+  id: string;
+  name: string;
+  status: string;
+}
+
 const CreateCampaign: React.FC = () => {
   const { organization } = useOrganization();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [isLoadingClients, setIsLoadingClients] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -147,8 +156,29 @@ const CreateCampaign: React.FC = () => {
   useEffect(() => {
     if (organization?.id) {
       form.setValue('organizationId', organization.id);
+      fetchClients();
     }
   }, [organization?.id, form]);
+
+  // Fetch clients for the organization
+  const fetchClients = async () => {
+    if (!organization?.id) return;
+    
+    setIsLoadingClients(true);
+    try {
+      const response = await fetch(`/api/clients?organizationId=${organization.id}&limit=100`);
+      if (response.ok) {
+        const data = await response.json();
+        setClients(data.data || []);
+      } else {
+        console.error('Failed to fetch clients');
+      }
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+    } finally {
+      setIsLoadingClients(false);
+    }
+  };
 
   // Calculate progress
   const totalSteps = WIZARD_STEPS.length;
@@ -218,7 +248,7 @@ const CreateCampaign: React.FC = () => {
         customGoal: data.customGoal || null,
         status: data.status || CampaignStatus.draft,
         organizationId: organization.id,
-        clientId: data.clientId || null,
+        clientId: data.clientId && data.clientId !== '' ? data.clientId : null,
         projectId: data.projectId || null,
         scheduleFrequency: data.scheduleFrequency || ScheduleFrequency.ONCE,
         timezone: data.timezone || 'UTC'
@@ -600,6 +630,58 @@ const CreateCampaign: React.FC = () => {
                   </FormControl>
                   <p className="text-xs text-muted-foreground mt-1">
                     Optional: Leave blank if budget is not yet determined
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="clientId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Client (Optional)</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Select a client (optional)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">No client selected</SelectItem>
+                      {isLoadingClients ? (
+                        <SelectItem value="" disabled>
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Loading clients...
+                          </div>
+                        </SelectItem>
+                      ) : (
+                        clients.map(client => (
+                          <SelectItem key={client.id} value={client.id} className="h-12 cursor-pointer">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-3 h-3 rounded-full ${
+                                client.status === 'ACTIVE' ? 'bg-green-500' : 
+                                client.status === 'INACTIVE' ? 'bg-gray-400' : 
+                                'bg-yellow-500'
+                              }`}></div>
+                              <div className="flex flex-col">
+                                <span className="font-medium text-foreground">
+                                  {client.name}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  Status: {client.status}
+                                </span>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Link this campaign to a specific client for better organization and reporting
                   </p>
                   <FormMessage />
                 </FormItem>

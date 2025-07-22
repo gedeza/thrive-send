@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Copy, Edit, Trash, Loader2, Plus, Search, Filter, Sparkles, Mail, MessageSquare, FileText, Eye, Bookmark, TrendingUp, RefreshCw } from 'lucide-react';
+import { PlusCircle, Copy, Edit, Trash, Loader2, Plus, Search, Filter, Sparkles, Mail, MessageSquare, FileText, Eye, Bookmark, TrendingUp, RefreshCw, Send, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from "@/components/ui/input";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,7 +20,7 @@ interface Template {
   description: string;
   type: 'email' | 'social' | 'blog';
   category: string;
-  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+  status: 'DRAFT' | 'PENDING_APPROVAL' | 'PUBLISHED' | 'ARCHIVED';
   createdAt: string;
   lastUpdated: string; // Match database field name
 }
@@ -28,6 +28,7 @@ interface Template {
 const statusBadgeMap: Record<string, { className: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   PUBLISHED: { className: "bg-green-100 text-green-800", variant: "default" },
   DRAFT: { className: "bg-yellow-100 text-yellow-900", variant: "secondary" },
+  PENDING_APPROVAL: { className: "bg-blue-100 text-blue-800", variant: "default" },
   ARCHIVED: { className: "bg-gray-100 text-gray-600", variant: "outline" }
 };
 
@@ -492,6 +493,7 @@ function TemplatesPageContent() {
           <Card key={template.id} className="hover:shadow-lg transition-all duration-200 border-l-4" style={{ 
             borderLeftColor: template.status === 'PUBLISHED' ? '#22c55e' : 
                            template.status === 'DRAFT' ? '#f59e0b' : 
+                           template.status === 'PENDING_APPROVAL' ? '#3b82f6' : 
                            template.status === 'ARCHIVED' ? '#6b7280' : '#6b7280'
           }}>
             <CardHeader className="p-4">
@@ -501,7 +503,9 @@ function TemplatesPageContent() {
                     variant={statusBadgeMap[template.status]?.variant || 'secondary'}
                     className={`text-xs font-medium ${statusBadgeMap[template.status]?.className || ''}`}
                   >
-                    {template.status === 'PUBLISHED' ? '✅ Live' : template.status === 'DRAFT' ? '🚧 Draft' : '📦 Archived'}
+                    {template.status === 'PUBLISHED' ? '✅ Live' : 
+                     template.status === 'DRAFT' ? '🚧 Draft' : 
+                     template.status === 'PENDING_APPROVAL' ? '⏳ Pending' : '📦 Archived'}
                   </Badge>
                   <Badge 
                     variant="outline"
@@ -532,6 +536,11 @@ function TemplatesPageContent() {
                     <div className="flex items-center gap-1 text-amber-600">
                       <Edit className="h-3 w-3" />
                       <span className="font-medium text-xs">In Progress</span>
+                    </div>
+                  ) : template.status === 'PENDING_APPROVAL' ? (
+                    <div className="flex items-center gap-1 text-blue-600">
+                      <Send className="h-3 w-3" />
+                      <span className="font-medium text-xs">Under Review</span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-1 text-gray-500">
@@ -584,12 +593,69 @@ function TemplatesPageContent() {
                   Preview
                 </Link>
               </Button>
-              <Button size="sm" asChild className="h-8 px-3 text-xs flex-1 bg-purple-600 hover:bg-purple-700">
-                <Link href={`/templates/editor/${template.id}`}>
-                  <Edit className="h-3 w-3 mr-1" />
-                  Edit
-                </Link>
-              </Button>
+              
+              {template.status === 'DRAFT' ? (
+                <>
+                  <Button size="sm" asChild className="h-8 px-3 text-xs flex-1 bg-purple-600 hover:bg-purple-700">
+                    <Link href={`/templates/editor/${template.id}`}>
+                      <Edit className="h-3 w-3 mr-1" />
+                      Edit
+                    </Link>
+                  </Button>
+                  <Button 
+                    size="sm"
+                    onClick={() => {
+                      toast({
+                        title: "Approval Request! 📋",
+                        description: `Go to Settings → Workflows to request approval for "${template.name}"`,
+                      });
+                    }}
+                    className="h-8 px-3 text-xs flex-1 bg-teal-600 hover:bg-teal-700"
+                    title="Request approval from team leads"
+                  >
+                    <Send className="h-3 w-3 mr-1" />
+                    Request Approval
+                  </Button>
+                </>
+              ) : template.status === 'PENDING_APPROVAL' ? (
+                <>
+                  <Button size="sm" disabled className="h-8 px-3 text-xs flex-1 bg-blue-500">
+                    <Send className="h-3 w-3 mr-1" />
+                    Under Review
+                  </Button>
+                  <Button 
+                    size="sm"
+                    onClick={() => {
+                      toast({
+                        title: "Review Status 📋",
+                        description: `Check Settings → Workflows to see approval progress for "${template.name}"`,
+                      });
+                    }}
+                    className="h-8 px-3 text-xs flex-1 bg-blue-600 hover:bg-blue-700"
+                    title="View approval status"
+                  >
+                    <Eye className="h-3 w-3 mr-1" />
+                    View Status
+                  </Button>
+                </>
+              ) : template.status === 'PUBLISHED' ? (
+                <>
+                  <Button size="sm" asChild className="h-8 px-3 text-xs flex-1 bg-green-600 hover:bg-green-700">
+                    <Link href={`/templates/editor/${template.id}`}>
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Published
+                    </Link>
+                  </Button>
+                </>
+              ) : (
+                <Button size="sm" asChild className="h-8 px-3 text-xs flex-1 bg-gray-600 hover:bg-gray-700">
+                  <Link href={`/templates/editor/${template.id}`}>
+                    <Edit className="h-3 w-3 mr-1" />
+                    View
+                  </Link>
+                </Button>
+              )}
+              
               <Button 
                 variant="outline" 
                 size="sm"

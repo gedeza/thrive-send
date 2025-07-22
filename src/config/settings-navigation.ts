@@ -36,12 +36,6 @@ export const settingsNavigation = {
         label: 'Members',
         href: '/settings/organization/members',
         description: 'Manage organization members and roles'
-      },
-      {
-        id: 'billing',
-        label: 'Billing',
-        href: '/settings/organization/billing',
-        description: 'Manage your organization\'s billing and subscription'
       }
     ]
   }

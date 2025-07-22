@@ -133,20 +133,20 @@ export class OrganizationService {
     const validatedPlan = subscriptionPlanSchema.parse(plan);
 
     const planPrices: Record<string, number> = {
-      free: 0,
-      pro: 29,
-      enterprise: 99,
+      starter: 29,
+      professional: 79,
+      enterprise: 149,
     };
 
     const features = {
-      free: {
+      starter: {
         ai: {
           enabled: false,
           usage: 0,
           limit: 0
         }
       },
-      pro: {
+      professional: {
         ai: {
           enabled: true,
           usage: 0,

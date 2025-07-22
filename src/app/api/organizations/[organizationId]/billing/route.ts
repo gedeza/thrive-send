@@ -18,7 +18,24 @@ export async function GET(
     const organizationService = new OrganizationService();
     const subscription = await organizationService.getSubscription(params.organizationId);
 
-    return NextResponse.json(subscription);
+    // Transform subscription data for frontend
+    const billingData = subscription ? {
+      plan: subscription.plan,
+      status: subscription.status,
+      nextBilling: subscription.currentPeriodEnd,
+      features: subscription.features,
+      createdAt: subscription.createdAt,
+      updatedAt: subscription.updatedAt
+    } : {
+      plan: 'professional',
+      status: 'active',
+      nextBilling: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+      features: {},
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    return NextResponse.json(billingData);
   } catch (error) {
     console.error("Error fetching subscription:", error);
     return NextResponse.json(

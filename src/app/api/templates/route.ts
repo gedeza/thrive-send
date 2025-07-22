@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
 import { getAuth } from '@clerk/nextjs/server';
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
     
     if (enhanced) {
       // Fetch templates with AI enhancements
-      templates = await prisma.template.findMany({
+      templates = await db.template.findMany({
         where: {
           organizationId: orgId,
         },
@@ -83,7 +83,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(enhancedTemplates);
     } else {
       // Standard template fetch
-      templates = await prisma.template.findMany({
+      templates = await db.template.findMany({
         where: {
           organizationId: orgId,
         },
@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
         ? validatedData.id 
         : nanoid();
 
-      const template = await prisma.template.create({
+      const template = await db.template.create({
         data: {
           id: templateId,
           name: validatedData.name,
@@ -171,7 +171,7 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
     const validatedData = templateSchema.parse(body);
 
-    const template = await prisma.template.update({
+    const template = await db.template.update({
       where: {
         id: body.id,
         organizationId: orgId,
@@ -204,7 +204,7 @@ export async function DELETE(req: NextRequest) {
       return new NextResponse("Template ID is required", { status: 400 });
     }
 
-    await prisma.template.delete({
+    await db.template.delete({
       where: {
         id,
         organizationId: orgId,
