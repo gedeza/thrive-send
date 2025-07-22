@@ -11,6 +11,8 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import { Plus, Download, AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect, useState } from 'react';
+import { SimpleBudgetModal } from './SimpleBudgetModal';
+import { ExpensesModal } from './ExpensesModal';
 
 interface Budget {
   id: string;
@@ -350,7 +352,7 @@ export default function BudgetSection({ clientId }: { clientId: string }) {
           <p className="text-sm text-gray-500 mb-4">
             Create your first budget to start tracking project expenses.
           </p>
-          <CreateBudgetModal clientId={clientId} onSuccess={fetchData} />
+          <SimpleBudgetModal clientId={clientId} onSuccess={fetchData} />
         </div>
       </Card>
     );
@@ -460,9 +462,7 @@ export default function BudgetSection({ clientId }: { clientId: string }) {
                   {formatDate(budget.startDate)} -{' '}
                   {budget.endDate ? formatDate(budget.endDate) : 'Ongoing'}
                 </span>
-                <Button variant="link" size="sm">
-                  View All Expenses
-                </Button>
+                <ExpensesModal budgetId={budget.id} clientId={clientId} />
               </div>
             </div>
           </Card>
