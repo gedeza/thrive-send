@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuth } from '@clerk/nextjs/server';
 import { z } from 'zod';
+import { nanoid } from 'nanoid';
 
 // Zod schema for template validation
 const templateSchema = z.object({
+  id: z.string().optional(), // Accept optional client-provided ID
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
   category: z.string().min(1, "Category is required"),
@@ -51,9 +53,14 @@ export async function POST(req: NextRequest) {
       const validatedData = templateSchema.parse(body);
       console.log("Validated template data:", validatedData); // Debug log
 
+      // Use client-provided ID if available and valid, otherwise generate with nanoid
+      const templateId = validatedData.id && validatedData.id.length > 0 
+        ? validatedData.id 
+        : nanoid();
+
       const template = await prisma.template.create({
         data: {
-          id: Math.random().toString(36).substring(2, 9), // Generate a random ID
+          id: templateId,
           name: validatedData.name,
           description: validatedData.description,
           category: validatedData.category,

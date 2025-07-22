@@ -287,7 +287,7 @@ async function postOptimizationAnalysis(): Promise<void> {
       {
         name: 'Campaign status filter',
         query: () => prisma.campaign.findMany({
-          where: { status: 'ACTIVE' },
+          where: { status: 'active' },
           take: 10,
         }),
       },
@@ -295,7 +295,6 @@ async function postOptimizationAnalysis(): Promise<void> {
         name: 'Content workflow',
         query: () => prisma.content.findMany({
           where: { 
-            organizationId: 'test-org',
             status: 'DRAFT',
           },
           take: 10,

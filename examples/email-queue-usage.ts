@@ -117,7 +117,7 @@ export async function POST(request: Request) {
   } catch (error) {
     return Response.json({ 
       error: 'Failed to queue email',
-      details: error.message 
+      details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }
