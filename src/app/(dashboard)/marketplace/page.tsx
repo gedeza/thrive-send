@@ -2,13 +2,15 @@
 
 import React, { useState } from 'react';
 import { useAuth, useOrganization } from '@clerk/nextjs';
-import { Plus, Search, Filter, TrendingUp, DollarSign, Eye, Heart } from 'lucide-react';
+import { Plus, Search, Filter, TrendingUp, DollarSign, Eye, Heart, Star, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ReviewForm } from '@/components/marketplace/ReviewForm';
+import { ReviewDisplay } from '@/components/marketplace/ReviewDisplay';
 import Link from 'next/link';
 
 // Mock data for marketplace listings

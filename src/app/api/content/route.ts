@@ -84,14 +84,6 @@ export async function GET(request: Request) {
     // Use the first organization membership
     const organizationId = user.organizationMemberships[0].organizationId;
 
-    // Get all users in the organization
-    const organizationMembers = await prisma.organizationMember.findMany({
-      where: { organizationId },
-      select: { userId: true }
-    });
-
-    const memberUserIds = organizationMembers.map(member => member.userId);
-
     const { searchParams } = new URL(request.url);
     const query = Object.fromEntries(searchParams.entries());
     console.log('🔍 Content API GET: Query parameters received:', query);
@@ -129,14 +121,17 @@ export async function GET(request: Request) {
     } : {};
 
     const where = {
-      authorId: { in: memberUserIds }, // Filter by organization members instead of just current user
+      author: {
+        organizationMemberships: {
+          some: { organizationId }
+        }
+      },
       ...(contentTypeFilter && { type: contentTypeFilter }),
       ...statusFilter,
       ...searchConditions,
     };
 
     console.log('🔍 Content API GET: Database query where clause:', where);
-    console.log('🔍 Content API GET: Organization member user IDs:', memberUserIds);
 
     // Handle sorting
     const sortField = validatedQuery.sortBy || 'createdAt';
@@ -155,6 +150,14 @@ export async function GET(request: Request) {
           content: true,
           excerpt: true,
           media: true,
+          author: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true
+            }
+          },
           mediaItems: {
             select: {
               id: true,

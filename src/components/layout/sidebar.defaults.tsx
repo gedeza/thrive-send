@@ -141,6 +141,13 @@ export const defaultSidebarItems: SidebarItemWithRoles[] = [
         icon: <TrendingUp size={16} />,
         href: "/marketplace/boosts",
         roles: ["admin", "user"], // Only admins and users can boost
+      },
+      {
+        key: "marketplace-moderation",
+        label: "Review Moderation",
+        icon: <CheckCircle size={16} />,
+        href: "/marketplace/moderation",
+        roles: ["admin"], // Only admins can moderate
       }
     ]
   },
@@ -165,7 +172,7 @@ export const defaultSidebarItems: SidebarItemWithRoles[] = [
  * based on user role
  */
 export const CRITICAL_ITEMS_BY_ROLE: Record<Role, string[]> = {
-  admin: ["dashboard", "templates", "projects", "marketplace", "settings"],
+  admin: ["dashboard", "templates", "projects", "marketplace", "marketplace-moderation", "settings"],
   manager: ["dashboard", "templates", "projects", "marketplace"],
   user: ["dashboard", "templates", "marketplace"],
   viewer: ["dashboard", "templates"],

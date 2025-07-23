@@ -25,21 +25,26 @@ import {
   BarChart3,
   PieChart,
   LineChart,
-  Activity
+  Activity,
+  Target,
+  Plus
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 
-// Chart components (to be created)
-import { RechartsBarChart } from '@/components/analytics/charts/RechartsBarChart';
-import { RechartsPieChart } from '@/components/analytics/charts/RechartsPieChart';
-import { RechartsLineChart } from '@/components/analytics/charts/RechartsLineChart';
-import { RechartsHeatMap } from '@/components/analytics/charts/RechartsHeatMap';
+// Lazy-loaded chart components for better performance
+import { 
+  RechartsBarChartLazy as RechartsBarChart,
+  RechartsPieChartLazy as RechartsPieChart,
+  RechartsLineChartLazy as RechartsLineChart,
+  RechartsHeatMapLazy as RechartsHeatMap,
+  ConversionFunnelLazy as ConversionFunnel
+} from '@/components/lazy/LazyComponents';
 import { useAnalyticsData } from '@/lib/hooks/useAnalyticsData';
 
 // Types
 type AnalyticsTimeframe = 'day' | 'week' | 'month' | 'year';
-type AnalyticsTab = 'overview' | 'audience' | 'engagement' | 'revenue';
+type AnalyticsTab = 'overview' | 'audience' | 'engagement' | 'revenue' | 'funnels';
 
 interface MetricCardProps {
   title: string;
@@ -338,7 +343,7 @@ function AnalyticsPageContent() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as AnalyticsTab)}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Activity className="h-4 w-4" />
               Overview
@@ -354,6 +359,10 @@ function AnalyticsPageContent() {
             <TabsTrigger value="revenue" className="flex items-center gap-2">
               <DollarSign className="h-4 w-4" />
               Revenue
+            </TabsTrigger>
+            <TabsTrigger value="funnels" className="flex items-center gap-2">
+              <Target className="h-4 w-4" />
+              Funnels
             </TabsTrigger>
           </TabsList>
 
@@ -550,6 +559,28 @@ function AnalyticsPageContent() {
                 />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Funnels Tab */}
+          <TabsContent value="funnels" className="space-y-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-semibold">Conversion Funnels</h3>
+                <p className="text-sm text-muted-foreground">
+                  Track user journey and optimize conversion paths
+                </p>
+              </div>
+              <Button className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Create Funnel
+              </Button>
+            </div>
+            
+            <ConversionFunnel 
+              campaignId={selectedCampaign !== 'all' ? selectedCampaign : undefined}
+              timeframe={timeframe === 'day' ? '7d' : timeframe === 'week' ? '30d' : timeframe === 'month' ? '90d' : '1y'}
+              showControls={true}
+            />
           </TabsContent>
         </Tabs>
       </div>
