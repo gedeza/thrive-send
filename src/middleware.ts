@@ -59,9 +59,10 @@ async function checkOrganizationAccess(userId: string) {
 // Define public routes that don't require authentication
 const publicRoutes = [
   '/landing',
-  '/sign-in(.*)',
+  '/sign-in(.*)', 
   '/sign-up(.*)',
   '/api/webhook(.*)',
+  '/api/webhooks(.*)',
   '/api/public(.*)'
 ];
 
@@ -91,6 +92,11 @@ export default clerkMiddleware(async (auth, req) => {
 
   // Handle authentication
   if (!userId && !isPublicRoute(req)) {
+    // For API routes, return 401 instead of redirecting
+    if (req.nextUrl.pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    
     const signInUrl = new URL('/sign-in', req.url);
     signInUrl.searchParams.set('redirect_url', req.url);
     return NextResponse.redirect(signInUrl);
@@ -106,6 +112,10 @@ export default clerkMiddleware(async (auth, req) => {
   if (userId && !isPublicRoute(req)) {
     const hasOrganization = await checkOrganizationAccess(userId);
     if (!hasOrganization) {
+      // For API routes, return 403 instead of redirecting
+      if (req.nextUrl.pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: "No organization access" }, { status: 403 });
+      }
       return NextResponse.redirect(new URL('/organization', req.url));
     }
   }

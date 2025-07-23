@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChevronLeft, ChevronRight, Grid, List, MoreHorizontal, Plus, Search, Trash, RefreshCw, Edit, Eye, Calendar, Clock, Tag, FileText, Newspaper, Share2, Mail, BarChart3, TrendingUp } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Grid, List, MoreHorizontal, Plus, Search, Trash, RefreshCw, Edit, Eye, Calendar, Clock, Tag, FileText, Newspaper, Share2, Mail, BarChart3 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { listContent, deleteContent, ContentData } from '@/lib/api/content-service';
@@ -193,19 +193,17 @@ function ContentLibraryPage() {
   const { analyticsMap, isLoading: analyticsLoading } = useBulkContentAnalytics(contentIds);
 
   // Real-time analytics updates
-  const realtimeAnalytics = useRealTimeAnalytics({
+  const { 
+    isConnected: realtimeConnected, 
+    lastUpdateTime, 
+    refreshAnalytics,
+    realtimeUpdates
+  } = useRealTimeAnalytics({
     contentIds,
     enabled: true,
     interval: 15000, // Update every 15 seconds
     simulateUpdates: true // Enable simulation in development
   });
-
-  // Extract with explicit null checking and guaranteed fallbacks
-  const realtimeConnected = realtimeAnalytics?.isConnected ?? false;
-  const lastUpdateTime = realtimeAnalytics?.lastUpdateTime ?? null;
-  const refreshAnalytics = realtimeAnalytics?.refreshAnalytics ?? (() => {});
-  const realtimeUpdates = realtimeAnalytics?.realtimeUpdates ?? {};
-
 
   // Filter and sort content based on search query and analytics
   const filteredContent = useMemo(() => {
@@ -851,7 +849,6 @@ function ContentLibraryPage() {
                   setItemToDelete(id);
                   setDeleteDialogOpen(true);
                 }}
-                realtimeUpdates={realtimeUpdates}
               />
             ) : (
               <ContentListItem
@@ -864,7 +861,6 @@ function ContentLibraryPage() {
                   setItemToDelete(id);
                   setDeleteDialogOpen(true);
                 }}
-                realtimeUpdates={realtimeUpdates}
               />
             )
           ))}
@@ -979,10 +975,9 @@ interface ContentCardProps {
   isSelected: boolean;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
-  realtimeUpdates?: Record<string, any>; // Real-time analytics updates
 }
 
-function ContentCard({ item, analytics, isSelected, onSelect, onDelete, realtimeUpdates = {} }: ContentCardProps) {
+function ContentCard({ item, analytics, isSelected, onSelect, onDelete }: ContentCardProps) {
   const typeConfig = CONTENT_TYPE_CONFIG[item.type.toLowerCase() as keyof typeof CONTENT_TYPE_CONFIG];
   const statusConfig = STATUS_CONFIG[item.status.toLowerCase() as keyof typeof STATUS_CONFIG];
   
@@ -1093,7 +1088,7 @@ function ContentCard({ item, analytics, isSelected, onSelect, onDelete, realtime
           contentId={item.id!}
           analytics={analytics ? {
             ...analytics,
-            ...(realtimeUpdates[item.id!] || {}) // Merge real-time updates safely
+            ...realtimeUpdates[item.id!] // Merge real-time updates
           } : undefined}
           size="sm"
           showPerformanceScore={true}
@@ -1138,7 +1133,7 @@ function ContentCard({ item, analytics, isSelected, onSelect, onDelete, realtime
 }
 
 // Enhanced List Item Component
-function ContentListItem({ item, analytics, isSelected, onSelect, onDelete, realtimeUpdates = {} }: ContentCardProps) {
+function ContentListItem({ item, analytics, isSelected, onSelect, onDelete }: ContentCardProps) {
   const typeConfig = CONTENT_TYPE_CONFIG[item.type.toLowerCase() as keyof typeof CONTENT_TYPE_CONFIG];
   const statusConfig = STATUS_CONFIG[item.status.toLowerCase() as keyof typeof STATUS_CONFIG];
   
@@ -1224,7 +1219,7 @@ function ContentListItem({ item, analytics, isSelected, onSelect, onDelete, real
                 contentId={item.id!}
                 analytics={analytics ? {
                   ...analytics,
-                  ...(realtimeUpdates[item.id!] || {}) // Merge real-time updates safely
+                  ...realtimeUpdates[item.id!] // Merge real-time updates
                 } : undefined}
                 size="sm"
                 showPerformanceScore={false}

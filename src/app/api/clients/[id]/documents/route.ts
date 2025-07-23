@@ -24,9 +24,9 @@ export async function GET(
           d.title,
           d."fileUrl",
           d."fileType",
-          COALESCE(d.size, 0) as size,
           d.status,
           d."createdAt",
+          d."updatedAt",
           json_build_object(
             'id', u.id,
             'name', COALESCE(u.name, CONCAT(u."firstName", ' ', u."lastName"))
@@ -81,7 +81,6 @@ export async function POST(
     // In production, this should be replaced with cloud storage (S3, etc.)
     const fileName = `${Date.now()}-${file.name}`;
     const fileType = file.name.split('.').pop() || '';
-    const size = file.size;
 
     // Create uploads directory if it doesn't exist
     const uploadDir = './public/uploads';
@@ -107,7 +106,6 @@ export async function POST(
             title,
             "fileUrl",
             "fileType",
-            size,
             "clientId",
             "uploadedById",
             status,
@@ -118,10 +116,9 @@ export async function POST(
             ${title || file.name},
             ${fileUrl},
             ${fileType},
-            ${size},
             ${clientId},
             ${userId},
-            'ACTIVE',
+            'DRAFT',
             NOW(),
             NOW()
           )

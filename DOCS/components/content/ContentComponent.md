@@ -30,27 +30,49 @@ graph TD
     A --> C[ContentWizard]
     A --> D[ContentScheduler]
     A --> E[ContentCalendar]
+    A --> F[ContentAnalytics]
+    A --> G[ContentLibrary]
     
-    B --> F[RichTextEditor]
-    B --> G[MediaUploader]
-    B --> H[TagInput]
+    B --> H[RichTextEditor]
+    B --> I[MediaUploader]
+    B --> J[TagInput]
     
-    C --> I[StepIndicator]
-    C --> J[ContentTypeSelector]
+    C --> K[StepIndicator]
+    C --> L[ContentTypeSelector]
     
-    D --> K[DateTimePicker]
-    D --> L[PlatformSelector]
+    D --> M[DateTimePicker]
+    D --> N[PlatformSelector]
     
-    E --> M[MonthView]
-    E --> N[WeekView]
-    E --> O[DayView]
-    E --> P[EventForm]
+    E --> O[MonthView]
+    E --> P[WeekView]
+    E --> Q[DayView]
+    E --> R[EventForm]
+    
+    F --> S[ContentAnalyticsMetrics]
+    F --> T[ContentPerformanceDashboard]
+    F --> U[RealTimeAnalyticsIndicator]
+    
+    G --> V[ContentCard]
+    G --> W[ContentListItem]
+    G --> X[BulkOperations]
+    G --> Y[AdvancedFiltering]
+    
+    S --> Z[PerformanceScore]
+    S --> AA[TrendingBadge]
+    S --> BB[MetricsDisplay]
+    
+    T --> CC[OverviewTab]
+    T --> DD[TopPerformersTab]
+    T --> EE[InsightsTab]
+    T --> FF[TrendsTab]
     
     style A fill:#f9f,stroke:#333,stroke-width:2px
     style B fill:#bbf,stroke:#333,stroke-width:1px
     style C fill:#bbf,stroke:#333,stroke-width:1px
     style D fill:#bbf,stroke:#333,stroke-width:1px
     style E fill:#bbf,stroke:#333,stroke-width:1px
+    style F fill:#bfb,stroke:#333,stroke-width:2px
+    style G fill:#bfb,stroke:#333,stroke-width:2px
 ```
 
 ## Data Flow
@@ -76,6 +98,7 @@ sequenceDiagram
 
 ## Features
 
+### Core Content Management
 - **Rich text editing** with Tiptap editor
 - **Media upload and management**
 - **Content scheduling** and calendar integration
@@ -86,6 +109,27 @@ sequenceDiagram
 - **Real-time collaboration**
 - **Version control** and history
 - **SEO optimization** tools
+
+### Analytics & Performance Tracking
+- **Real-time analytics** with WebSocket updates
+- **Performance scoring** (0-100 algorithmic rating)
+- **Trending content detection** with visual indicators
+- **Comprehensive metrics** (views, likes, shares, engagement)
+- **Performance dashboard** with tabbed insights
+- **Bulk analytics processing** for multiple content items
+- **Analytics-based sorting** (performance, views, engagement)
+- **Historical trend analysis** and forecasting
+- **Automated insights generation** with AI recommendations
+- **Export capabilities** (CSV, PDF, JSON formats)
+
+### Enhanced Content Library
+- **Grid and list view modes** with analytics integration
+- **Advanced filtering and search** with performance criteria
+- **Bulk operations** with multi-select functionality
+- **Real-time connection indicators** showing data freshness
+- **Content performance optimization** suggestions
+- **Comparative analysis** across content types
+- **Success pattern identification** from high-performers
 
 ## Props
 
@@ -160,23 +204,74 @@ type ContentStatus = 'draft' | 'review' | 'approved' | 'published' | 'archived';
 
 ## Components
 
-### ContentForm
+### Core Content Components
+
+#### ContentForm
 Main form component for content creation and editing with validation and rich text editing.
 
-### ContentWizard
+#### ContentWizard
 Multi-step guided content creation process with calendar integration.
 
-### RichTextEditor
+#### RichTextEditor
 Tiptap-based rich text editor with formatting tools and media embedding.
 
-### MediaUploader
+#### MediaUploader
 Drag-and-drop media upload with progress tracking and file validation.
 
-### TagInput
+#### TagInput
 Tag management with autocomplete suggestions and validation.
 
-### ContentScheduler
+#### ContentScheduler
 Scheduling interface with calendar integration and platform selection.
+
+### Analytics Components
+
+#### ContentAnalyticsMetrics
+Individual content performance metrics display with tooltips, performance scoring, and trending indicators. Supports real-time updates and multiple size variants.
+
+**Key Features:**
+- Views, likes, shares, comments tracking
+- Performance score calculation (0-100)
+- Trending content detection
+- Interactive tooltips with detailed metrics
+- Real-time data synchronization
+- Color-coded performance indicators
+
+#### ContentPerformanceDashboard
+Comprehensive analytics dashboard with tabbed interface providing overview metrics, top performers analysis, performance insights, and trend visualization.
+
+**Key Features:**
+- Tabbed navigation (Overview, Top Performers, Insights, Trends)
+- Data export capabilities (CSV, PDF, JSON)
+- Real-time updates with WebSocket integration
+- Advanced filtering and date range selection
+- AI-generated insights and recommendations
+- Performance distribution analysis
+
+#### RealTimeAnalyticsIndicator
+Connection status indicator showing real-time analytics connectivity, last update time, and manual refresh capabilities.
+
+**Key Features:**
+- WebSocket connection status monitoring
+- Last update timestamp display
+- Manual refresh controls
+- Update counter with visual indicators
+- Multiple size variants and positioning modes
+- Tooltip information and accessibility support
+
+### Enhanced Library Components
+
+#### ContentCard
+Enhanced content card component with integrated analytics metrics, performance indicators, and interactive features for grid view display.
+
+#### ContentListItem
+List view component with comprehensive analytics integration, bulk selection support, and optimized layout for table-style content display.
+
+#### BulkOperations
+Multi-select functionality with bulk actions including delete, status updates, and analytics-based operations.
+
+#### AdvancedFiltering
+Sophisticated filtering system supporting analytics-based criteria, content type filtering, and performance-based sorting options.
 
 ## Styling
 
@@ -212,6 +307,7 @@ The component uses Tailwind CSS with the project's design system:
 
 ## Dependencies
 
+### Core Dependencies
 - **@tiptap/react** - Rich text editor
 - **react-dropzone** - File upload
 - **react-hook-form** - Form management
@@ -219,11 +315,37 @@ The component uses Tailwind CSS with the project's design system:
 - **date-fns** - Date manipulation
 - **lucide-react** - Icons
 
+### Analytics Dependencies
+- **@tanstack/react-query** - Data fetching and caching
+- **recharts** - Chart visualization components
+- **@radix-ui/react-tooltip** - Interactive tooltips
+- **@radix-ui/react-tabs** - Tabbed interfaces
+- **socket.io-client** - WebSocket real-time connections
+
+### UI Enhancement Dependencies
+- **@radix-ui/react-checkbox** - Multi-select functionality
+- **@radix-ui/react-select** - Advanced filtering dropdowns
+- **react-virtual** - Virtualized lists for performance
+- **framer-motion** - Smooth animations and transitions
+
 ## Related Components
 
-- **Calendar Component**
-- **Media Library**
-- **Form Components**
+### Core Components
+- **Calendar Component** - Content scheduling and timeline management
+- **Media Library** - Asset management and organization
+- **Form Components** - Input, select, and validation components
+
+### Analytics Components
+- **ContentAnalyticsMetrics** - Individual content performance metrics
+- **ContentPerformanceDashboard** - Comprehensive analytics dashboard
+- **RealTimeAnalyticsIndicator** - Connection status and real-time updates
+- **Analytics Charts** - Various chart components for data visualization
+
+### Integration Components
+- **Campaign Manager** - Content distribution and promotion
+- **Approval Workflow** - Content review and approval process
+- **Template Library** - Pre-built content templates
+- **SEO Optimizer** - Content optimization tools
 
 ## Examples
 
@@ -272,6 +394,118 @@ const EditContentPage = ({ contentId }: { contentId: string }) => {
       initialData={content}
       onSave={(data) => contentService.updateContent(contentId, data)}
     />
+  );
+};
+```
+
+### Content Library with Analytics Integration
+
+```typescript
+import { ContentAnalyticsMetrics } from '@/components/content/ContentAnalyticsMetrics';
+import { RealTimeAnalyticsIndicator } from '@/components/content/RealTimeAnalyticsIndicator';
+import { useBulkContentAnalytics } from '@/lib/hooks/useContentAnalytics';
+import { useRealTimeAnalytics } from '@/lib/hooks/useRealTimeAnalytics';
+
+const ContentLibraryWithAnalytics = () => {
+  const { data: contentData } = useQuery(['content'], listContent);
+  const contentIds = contentData?.content.map(item => item.id) || [];
+  
+  // Fetch bulk analytics for all content
+  const { analyticsMap, isLoading: analyticsLoading } = useBulkContentAnalytics(contentIds);
+  
+  // Real-time analytics updates
+  const { 
+    isConnected, 
+    lastUpdateTime, 
+    refreshAnalytics,
+    realtimeUpdates 
+  } = useRealTimeAnalytics({
+    contentIds,
+    enabled: true,
+    interval: 15000
+  });
+  
+  return (
+    <div className="content-library">
+      {/* Header with real-time indicator */}
+      <div className="library-header">
+        <h1>Content Library</h1>
+        <RealTimeAnalyticsIndicator
+          isConnected={isConnected}
+          lastUpdateTime={lastUpdateTime}
+          onRefresh={refreshAnalytics}
+          hasRecentUpdates={Object.keys(realtimeUpdates).length > 0}
+        />
+      </div>
+      
+      {/* Content grid with analytics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {contentData?.content.map(item => (
+          <div key={item.id} className="content-card">
+            <h3>{item.title}</h3>
+            <p>{item.excerpt}</p>
+            
+            {/* Integrated analytics metrics */}
+            <ContentAnalyticsMetrics
+              contentId={item.id}
+              analytics={analyticsMap[item.id] ? {
+                ...analyticsMap[item.id],
+                ...realtimeUpdates[item.id] // Merge real-time updates
+              } : undefined}
+              size="sm"
+              showPerformanceScore={true}
+              showTrendingBadge={true}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+```
+
+### Performance Dashboard Integration
+
+```typescript
+import { ContentPerformanceDashboard } from '@/components/content/ContentPerformanceDashboard';
+
+const AnalyticsPage = () => {
+  const { data: contentData } = useQuery(['content'], () => 
+    listContent({ status: 'published', limit: 100 })
+  );
+  
+  const contentIds = contentData?.content.map(item => item.id) || [];
+  
+  const handleInsightAction = (action: InsightAction) => {
+    switch (action.type) {
+      case 'optimize_content':
+        router.push(`/content/edit/${action.contentId}`);
+        break;
+      case 'boost_promotion':
+        router.push(`/campaigns/boost/${action.contentId}`);
+        break;
+      case 'analyze_audience':
+        router.push(`/analytics/audience/${action.contentId}`);
+        break;
+    }
+  };
+  
+  return (
+    <div className="analytics-page">
+      <div className="page-header">
+        <h1>Content Performance Analytics</h1>
+        <p>Comprehensive insights into your content performance</p>
+      </div>
+      
+      <ContentPerformanceDashboard
+        contentIds={contentIds}
+        dateRange={{ start: thirtyDaysAgo, end: today }}
+        defaultTab="overview"
+        enableExport={true}
+        enableRealTime={true}
+        onInsightAction={handleInsightAction}
+      />
+    </div>
   );
 };
 ```
