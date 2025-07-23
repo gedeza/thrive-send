@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, ReactNode, useRef } from 'react';
 import { CalendarEvent } from '@/components/content/content-calendar';
-import { CalendarCache, CacheConfig, CacheStats } from '@/lib/cache/calendar-cache';
+import { calendarCache, CacheConfig, CacheStats } from '@/lib/cache/calendar-cache';
 
 interface CalendarCacheContextType {
   lastCacheInvalidation: number;
@@ -61,14 +61,9 @@ export const CalendarCacheProvider = ({ children }: CalendarCacheProviderProps) 
   const [isCachingEnabled, setIsCachingEnabled] = useState<boolean>(
     process.env.NODE_ENV === 'development' // Enable by default in development
   );
-  const cacheRef = useRef<CalendarCache | null>(null);
-
-  // Initialize cache instance
+  // Use the exported cache instance
   const getCache = useCallback(() => {
-    if (!cacheRef.current) {
-      cacheRef.current = new CalendarCache();
-    }
-    return cacheRef.current;
+    return calendarCache;
   }, []);
 
   const invalidateCache = useCallback(() => {

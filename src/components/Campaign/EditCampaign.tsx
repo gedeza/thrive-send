@@ -36,7 +36,7 @@ export default function EditCampaign({
     name: initialData?.name || '',
     description: initialData?.description || '',
     status: initialData?.status || 'DRAFT',
-    clientId: initialData?.clientId || '',
+    clientId: initialData?.clientId && initialData.clientId !== '' ? initialData.clientId : 'none',
     ...initialData
   });
   const [loading, setLoading] = useState(false);
@@ -81,7 +81,7 @@ export default function EditCampaign({
           name: formData.name,
           description: formData.description,
           status: formData.status,
-          clientId: formData.clientId && formData.clientId !== '' ? formData.clientId : null,
+          clientId: formData.clientId && formData.clientId !== '' && formData.clientId !== 'none' ? formData.clientId : null,
         }),
       });
 
@@ -155,16 +155,16 @@ export default function EditCampaign({
           <div className="space-y-2">
             <Label htmlFor="client">Client (Optional)</Label>
             <Select 
-              value={formData.clientId || ''} 
+              value={formData.clientId || 'none'} 
               onValueChange={(value) => handleChange('clientId', value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select a client (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No client selected</SelectItem>
+                <SelectItem value="none">No client selected</SelectItem>
                 {isLoadingClients ? (
-                  <SelectItem value="" disabled>
+                  <SelectItem value="loading" disabled>
                     <div className="flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Loading clients...

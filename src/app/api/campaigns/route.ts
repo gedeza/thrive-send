@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
         'campaigns', 
         cacheKey,
         async () => {
-          return db.campaign.findMany({
+          const dbCampaigns = await db.campaign.findMany({
             where,
             orderBy: { createdAt: "desc" },
             include: {
@@ -85,9 +85,29 @@ export async function GET(req: NextRequest) {
                 }
               }
             },
-          }) as Promise<CampaignWithRelations[]>;
+          }) as CampaignWithRelations[];
+          
+          // Ensure dates are properly serialized for cache
+          return dbCampaigns.map(campaign => ({
+            ...campaign,
+            createdAt: typeof campaign.createdAt === 'string' ? campaign.createdAt : campaign.createdAt?.toISOString() || new Date().toISOString(),
+            updatedAt: campaign.updatedAt instanceof Date ? campaign.updatedAt.toISOString() : campaign.updatedAt,
+            startDate: campaign.startDate instanceof Date ? campaign.startDate.toISOString() : campaign.startDate,
+            endDate: campaign.endDate instanceof Date ? campaign.endDate.toISOString() : campaign.endDate,
+          }));
         }
-      ) as CampaignWithRelations[];
+      );
+      
+      // Add debugging for campaign data types
+      if (campaigns.length > 0) {
+        console.log('DEBUG: Campaigns data from cache/db:', {
+          count: campaigns.length,
+          sampleId: campaigns[0]?.id,
+          createdAtType: typeof campaigns[0]?.createdAt,
+          createdAtValue: campaigns[0]?.createdAt,
+          isDate: campaigns[0]?.createdAt instanceof Date
+        });
+      }
       
       // Format campaign data for frontend consumption
       const formattedCampaigns: CampaignResponse[] = campaigns.map(campaign => ({
@@ -98,7 +118,7 @@ export async function GET(req: NextRequest) {
         audience: "All Subscribers",
         sentDate: null,
         openRate: null,
-        createdAt: campaign.createdAt.toISOString(),
+        createdAt: typeof campaign.createdAt === 'string' ? campaign.createdAt : campaign.createdAt?.toISOString() || new Date().toISOString(),
         clientName: campaign.client?.name || null,
         clientId: campaign.clientId,
         organizationId: campaign.organizationId,
@@ -127,7 +147,7 @@ export async function GET(req: NextRequest) {
         'campaigns',
         cacheKey,
         async () => {
-          return db.campaign.findMany({
+          const dbCampaigns = await db.campaign.findMany({
             where,
             orderBy: { createdAt: "desc" },
             include: {
@@ -141,9 +161,29 @@ export async function GET(req: NextRequest) {
                 }
               }
             },
-          }) as Promise<CampaignWithRelations[]>;
+          }) as CampaignWithRelations[];
+          
+          // Ensure dates are properly serialized for cache
+          return dbCampaigns.map(campaign => ({
+            ...campaign,
+            createdAt: typeof campaign.createdAt === 'string' ? campaign.createdAt : campaign.createdAt?.toISOString() || new Date().toISOString(),
+            updatedAt: campaign.updatedAt instanceof Date ? campaign.updatedAt.toISOString() : campaign.updatedAt,
+            startDate: campaign.startDate instanceof Date ? campaign.startDate.toISOString() : campaign.startDate,
+            endDate: campaign.endDate instanceof Date ? campaign.endDate.toISOString() : campaign.endDate,
+          }));
         }
-      ) as CampaignWithRelations[];
+      );
+      
+      // Add debugging for campaign data types
+      if (campaigns.length > 0) {
+        console.log('DEBUG: Campaigns data from cache/db:', {
+          count: campaigns.length,
+          sampleId: campaigns[0]?.id,
+          createdAtType: typeof campaigns[0]?.createdAt,
+          createdAtValue: campaigns[0]?.createdAt,
+          isDate: campaigns[0]?.createdAt instanceof Date
+        });
+      }
       
       // Format campaign data for frontend consumption
       const formattedCampaigns: CampaignResponse[] = campaigns.map(campaign => ({
@@ -154,7 +194,7 @@ export async function GET(req: NextRequest) {
         audience: "All Subscribers",
         sentDate: null,
         openRate: null,
-        createdAt: campaign.createdAt.toISOString(),
+        createdAt: typeof campaign.createdAt === 'string' ? campaign.createdAt : campaign.createdAt?.toISOString() || new Date().toISOString(),
         clientName: campaign.client?.name || null,
         clientId: campaign.clientId,
         organizationId: campaign.organizationId,
@@ -224,6 +264,26 @@ export async function POST(req: NextRequest) {
           }
         }) as CampaignWithRelations;
 
+        // Invalidate campaign caches to ensure fresh data on next fetch
+        try {
+          // Invalidate all campaigns cache for this organization
+          await cacheService.invalidateAPIResponse('campaigns', `org:${campaign.organizationId}`);
+          
+          // Invalidate user-specific campaigns cache
+          await cacheService.invalidateAPIResponse('campaigns', `user:${authedRequest.auth.userId}`);
+          
+          // Also invalidate any specific cache keys that might exist
+          await cacheService.invalidateAPIResponse('campaigns');
+          
+          // Invalidate campaign stats cache (future-proofing)
+          await cacheService.invalidateAPIResponse('campaigns/stats');
+          
+          console.log('Successfully invalidated campaign caches after creation');
+        } catch (cacheError) {
+          // Don't fail the request if cache invalidation fails, just log it
+          console.warn('Failed to invalidate campaign cache after creation:', cacheError);
+        }
+
         // Format response for frontend
         const formattedCampaign: CampaignResponse = {
           id: campaign.id,
@@ -233,7 +293,7 @@ export async function POST(req: NextRequest) {
           audience: "All Subscribers",
           sentDate: null,
           openRate: null,
-          createdAt: campaign.createdAt.toISOString(),
+          createdAt: typeof campaign.createdAt === 'string' ? campaign.createdAt : campaign.createdAt?.toISOString() || new Date().toISOString(),
           clientName: campaign.client?.name || null,
           clientId: campaign.clientId,
           organizationId: campaign.organizationId,

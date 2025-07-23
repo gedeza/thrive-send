@@ -55,7 +55,7 @@ const campaignFormSchema = z.object({
   customGoal: z.string().nullable(),
   status: z.nativeEnum(CampaignStatus),
   organizationId: z.string(),
-  clientId: z.string().optional(),
+  clientId: z.string().default('none'),
   projectId: z.string().optional(),
   scheduleFrequency: z.nativeEnum(ScheduleFrequency),
   timezone: z.string()
@@ -119,7 +119,7 @@ interface Client {
 }
 
 const CreateCampaign: React.FC = () => {
-  const { organization } = useOrganization();
+  const { organization, isLoaded } = useOrganization();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [currentStep, setCurrentStep] = useState(0);
@@ -146,7 +146,7 @@ const CreateCampaign: React.FC = () => {
       customGoal: null,
       status: SMART_DEFAULTS.status,
       organizationId: organization?.id || '',
-      clientId: '',
+      clientId: 'none',
       projectId: '',
       scheduleFrequency: SMART_DEFAULTS.scheduleFrequency,
       timezone: SMART_DEFAULTS.timezone
@@ -191,6 +191,10 @@ const CreateCampaign: React.FC = () => {
     
     return currentStepConfig.fields.every(field => {
       const value = fieldValues[field as keyof CampaignFormData];
+      // Handle optional fields like clientId (can be 'none')
+      if (field === 'clientId' || field === 'budget' || field === 'customGoal' || field === 'description') {
+        return true; // These fields are optional
+      }
       return value !== '' && value !== null && value !== undefined;
     });
   };
@@ -248,7 +252,7 @@ const CreateCampaign: React.FC = () => {
         customGoal: data.customGoal || null,
         status: data.status || CampaignStatus.draft,
         organizationId: organization.id,
-        clientId: data.clientId && data.clientId !== '' ? data.clientId : null,
+        clientId: data.clientId && data.clientId !== '' && data.clientId !== 'none' ? data.clientId : null,
         projectId: data.projectId || null,
         scheduleFrequency: data.scheduleFrequency || ScheduleFrequency.ONCE,
         timezone: data.timezone || 'UTC'
@@ -649,9 +653,9 @@ const CreateCampaign: React.FC = () => {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">No client selected</SelectItem>
+                      <SelectItem value="none">No client selected</SelectItem>
                       {isLoadingClients ? (
-                        <SelectItem value="" disabled>
+                        <SelectItem value="loading" disabled>
                           <div className="flex items-center gap-2">
                             <Loader2 className="h-4 w-4 animate-spin" />
                             Loading clients...
@@ -739,6 +743,20 @@ const CreateCampaign: React.FC = () => {
         return null;
     }
   };
+
+  // Show loading while organization is loading
+  if (!isLoaded) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading organization...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
