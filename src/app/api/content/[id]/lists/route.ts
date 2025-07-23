@@ -16,22 +16,24 @@ export async function GET(
 
     const contentId = params.id;
     
-    // Verify that the content exists and belongs to the user
+    // Get the user to check organization membership
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      include: { organizationMemberships: true },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Get organization IDs the user belongs to
+    const organizationIds = user.organizationMemberships.map(m => m.organizationId);
+
+    // Verify that the content exists and user has access
     const content = await prisma.content.findFirst({
       where: {
         id: contentId,
-        OR: [
-          { authorId: userId },
-          { 
-            organization: {
-              members: {
-                some: {
-                  userId
-                }
-              }
-            } 
-          }
-        ]
+        authorId: user.id, // Use internal user ID, not Clerk ID
       },
     });
 
@@ -39,14 +41,24 @@ export async function GET(
       return NextResponse.json({ error: 'Content not found or access denied' }, { status: 404 });
     }
 
-    // Get all lists that contain this content
+    // Get all lists that contain this content and belong to user's organizations
     const contentLists = await prisma.contentList.findMany({
       where: {
-        items: {
-          some: {
-            contentId: contentId,
+        AND: [
+          {
+            items: {
+              some: {
+                contentId: contentId,
+              },
+            },
           },
-        },
+          {
+            OR: [
+              { ownerId: user.id }, // Lists owned by the user
+              { organizationId: { in: organizationIds } }, // Lists in user's organizations
+            ],
+          },
+        ],
       },
       select: {
         id: true,
@@ -67,7 +79,15 @@ export async function GET(
       totalCount: contentLists.length,
     });
   } catch (error) {
-    console.error('Error fetching content lists for content:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error fetching content lists for content:', {
+      contentId: params.id,
+      userId,
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }

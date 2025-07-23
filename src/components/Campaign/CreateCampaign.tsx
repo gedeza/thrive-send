@@ -9,10 +9,24 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { toast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { CalendarIcon, Loader2 } from 'lucide-react';
+import { 
+  CalendarIcon, 
+  Loader2, 
+  ArrowRight, 
+  ArrowLeft, 
+  Target, 
+  Calendar as CalendarIconSolid,
+  DollarSign,
+  Settings,
+  Check,
+  Info,
+  Lightbulb
+} from 'lucide-react';
 import { createCampaign } from '@/lib/api';
 import { CampaignStatus, CampaignGoalType, ScheduleFrequency } from '@prisma/client';
 import { useOrganization } from '@clerk/nextjs';
@@ -49,29 +63,69 @@ const campaignFormSchema = z.object({
 
 type CampaignFormData = z.infer<typeof campaignFormSchema>;
 
-// --- Styled Components ---
-const StyledPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  [theme.breakpoints.up('md')]: {
-    padding: theme.spacing(4),
+// --- Multi-Step Wizard Configuration ---
+const WIZARD_STEPS = [
+  {
+    id: 'basics',
+    title: 'Campaign Basics',
+    description: 'Give your campaign a name and description',
+    icon: Target,
+    fields: ['name', 'description']
   },
-  boxShadow: theme.shadows[2],
-  borderRadius: theme.shape.borderRadius * 2,
-}));
+  {
+    id: 'goals',
+    title: 'Goals & Objectives',
+    description: 'Define what you want to achieve',
+    icon: Target,
+    fields: ['goalType', 'customGoal']
+  },
+  {
+    id: 'schedule',
+    title: 'Timeline & Schedule',
+    description: 'Set when your campaign will run',
+    icon: CalendarIconSolid,
+    fields: ['startDate', 'endDate', 'scheduleFrequency', 'timezone']
+  },
+  {
+    id: 'budget',
+    title: 'Budget & Settings',
+    description: 'Configure budget and final settings',
+    icon: DollarSign,
+    fields: ['budget', 'status']
+  }
+];
 
-const FormSection = styled(Box)(({ theme }) => ({
-  marginBottom: theme.spacing(4),
-}));
+// --- Smart Defaults ---
+const SMART_DEFAULTS = {
+  status: CampaignStatus.draft,
+  goalType: CampaignGoalType.ENGAGEMENT,
+  scheduleFrequency: ScheduleFrequency.ONCE,
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+};
 
-const SectionTitle = styled(Typography)(({ theme }) => ({
-  fontWeight: 600,
-  marginBottom: theme.spacing(2),
-}));
+// --- Goal Type Descriptions ---
+const GOAL_TYPE_DESCRIPTIONS = {
+  [CampaignGoalType.AWARENESS]: 'Increase brand visibility and reach new audiences',
+  [CampaignGoalType.ENGAGEMENT]: 'Drive interactions, likes, shares, and comments',
+  [CampaignGoalType.CONVERSION]: 'Generate leads, sales, or specific actions',
+  [CampaignGoalType.RETENTION]: 'Keep existing customers engaged and loyal'
+};
+
+// --- Client Type ---
+interface Client {
+  id: string;
+  name: string;
+  status: string;
+}
 
 const CreateCampaign: React.FC = () => {
   const { organization } = useOrganization();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [currentStep, setCurrentStep] = useState(0);
+  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [isLoadingClients, setIsLoadingClients] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -88,22 +142,87 @@ const CreateCampaign: React.FC = () => {
       startDate: '',
       endDate: '',
       budget: '',
-      goalType: CampaignGoalType.ENGAGEMENT,
+      goalType: SMART_DEFAULTS.goalType,
       customGoal: null,
-      status: CampaignStatus.draft,
+      status: SMART_DEFAULTS.status,
       organizationId: organization?.id || '',
       clientId: '',
       projectId: '',
-      scheduleFrequency: ScheduleFrequency.ONCE,
-      timezone: 'UTC'
+      scheduleFrequency: SMART_DEFAULTS.scheduleFrequency,
+      timezone: SMART_DEFAULTS.timezone
     }
   });
 
   useEffect(() => {
     if (organization?.id) {
       form.setValue('organizationId', organization.id);
+      fetchClients();
     }
   }, [organization?.id, form]);
+
+  // Fetch clients for the organization
+  const fetchClients = async () => {
+    if (!organization?.id) return;
+    
+    setIsLoadingClients(true);
+    try {
+      const response = await fetch(`/api/clients?organizationId=${organization.id}&limit=100`);
+      if (response.ok) {
+        const data = await response.json();
+        setClients(data.data || []);
+      } else {
+        console.error('Failed to fetch clients');
+      }
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+    } finally {
+      setIsLoadingClients(false);
+    }
+  };
+
+  // Calculate progress
+  const totalSteps = WIZARD_STEPS.length;
+  const progressPercentage = ((currentStep + 1) / totalSteps) * 100;
+
+  // Check if current step is valid
+  const isCurrentStepValid = () => {
+    const currentStepConfig = WIZARD_STEPS[currentStep];
+    const fieldValues = form.getValues();
+    
+    return currentStepConfig.fields.every(field => {
+      const value = fieldValues[field as keyof CampaignFormData];
+      return value !== '' && value !== null && value !== undefined;
+    });
+  };
+
+  // Move to next step
+  const nextStep = () => {
+    if (isCurrentStepValid()) {
+      setCompletedSteps(prev => [...prev, currentStep]);
+      setCurrentStep(prev => Math.min(prev + 1, totalSteps - 1));
+    }
+  };
+
+  // Move to previous step
+  const prevStep = () => {
+    setCurrentStep(prev => Math.max(prev - 1, 0));
+  };
+
+  // Generate smart suggestions based on context
+  const generateSuggestions = () => {
+    const orgName = organization?.name || 'Your Organization';
+    const currentDate = new Date();
+    const nextWeek = new Date(currentDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+    
+    return {
+      name: `${orgName} Marketing Campaign ${format(currentDate, 'MMM yyyy')}`,
+      startDate: format(nextWeek, 'yyyy-MM-dd'),
+      endDate: format(new Date(nextWeek.getTime() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
+      budget: '5000'
+    };
+  };
+
+  const suggestions = generateSuggestions();
 
   const onSubmit = async (data: CampaignFormData) => {
     setIsSubmitting(true);
@@ -129,7 +248,7 @@ const CreateCampaign: React.FC = () => {
         customGoal: data.customGoal || null,
         status: data.status || CampaignStatus.draft,
         organizationId: organization.id,
-        clientId: data.clientId || null,
+        clientId: data.clientId && data.clientId !== '' ? data.clientId : null,
         projectId: data.projectId || null,
         scheduleFrequency: data.scheduleFrequency || ScheduleFrequency.ONCE,
         timezone: data.timezone || 'UTC'
@@ -183,244 +302,575 @@ const CreateCampaign: React.FC = () => {
     }
   };
 
+  // Helper function to apply smart suggestions
+  const applySuggestion = (field: keyof CampaignFormData, value: string) => {
+    form.setValue(field, value);
+  };
+
+  // Render step content
+  const renderStepContent = () => {
+    const currentStepConfig = WIZARD_STEPS[currentStep];
+    
+    switch (currentStepConfig.id) {
+      case 'basics':
+        return (
+          <div className="space-y-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Lightbulb className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-800">Smart Suggestion</span>
+              </div>
+              <p className="text-sm text-blue-700 mb-3">
+                Based on your organization, we suggest: "{suggestions.name}"
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => applySuggestion('name', suggestions.name)}
+                className="text-blue-600 border-blue-300"
+              >
+                Use Suggestion
+              </Button>
+            </div>
+            
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Campaign Name *</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Enter a descriptive name for your campaign" 
+                      {...field} 
+                      className="text-lg"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Describe what this campaign is about, who it targets, and what you hope to achieve..."
+                      {...field} 
+                      value={field.value || ''}
+                      className="min-h-[100px]"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        );
+
+      case 'goals':
+        return (
+          <div className="space-y-6">
+            <FormField
+              control={form.control}
+              name="goalType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Campaign Goal Type *</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your primary goal" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.values(CampaignGoalType).map(type => (
+                        <SelectItem key={type} value={type}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">
+                              {type.charAt(0).toUpperCase() + type.slice(1)}
+                            </span>
+                            <span className="text-sm text-muted-foreground">
+                              {GOAL_TYPE_DESCRIPTIONS[type]}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="customGoal"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Custom Goal Description</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Describe your specific goals and success metrics..."
+                      {...field} 
+                      value={field.value || ''}
+                      className="min-h-[80px]"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        );
+
+      case 'schedule':
+        return (
+          <div className="space-y-6">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Info className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium text-green-800">Recommended Timeline</span>
+              </div>
+              <p className="text-sm text-green-700 mb-3">
+                Start next week and run for 30 days for optimal results
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => applySuggestion('startDate', suggestions.startDate)}
+                  className="text-green-600 border-green-300"
+                >
+                  Use Start Date
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => applySuggestion('endDate', suggestions.endDate)}
+                  className="text-green-600 border-green-300"
+                >
+                  Use End Date
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="startDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Start Date *</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(new Date(field.value), "PPP")
+                            ) : (
+                              <span>Pick a start date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value ? new Date(field.value) : undefined}
+                          onSelect={(date) => field.onChange(date?.toISOString() || '')}
+                          disabled={(date) => date < new Date()}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="endDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>End Date *</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(new Date(field.value), "PPP")
+                            ) : (
+                              <span>Pick an end date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value ? new Date(field.value) : undefined}
+                          onSelect={(date) => field.onChange(date?.toISOString() || '')}
+                          disabled={(date) => date < new Date()}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="scheduleFrequency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Schedule Frequency</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="How often to run" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.values(ScheduleFrequency).map(freq => (
+                          <SelectItem key={freq} value={freq}>
+                            {freq.charAt(0).toUpperCase() + freq.slice(1)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="timezone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Timezone</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., America/New_York" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+        );
+
+      case 'budget':
+        return (
+          <div className="space-y-6">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <DollarSign className="h-4 w-4 text-yellow-600" />
+                <span className="text-sm font-medium text-yellow-800">Budget Recommendation</span>
+              </div>
+              <p className="text-sm text-yellow-700 mb-3">
+                Based on similar campaigns, we recommend a budget of ${suggestions.budget}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => applySuggestion('budget', suggestions.budget)}
+                className="text-yellow-600 border-yellow-300"
+              >
+                Use Suggested Budget
+              </Button>
+            </div>
+
+            <FormField
+              control={form.control}
+              name="budget"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Budget ($)</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        type="number" 
+                        placeholder="Enter your budget (e.g., 5000)"
+                        className="pl-10 text-lg"
+                        min="0"
+                        step="100"
+                        {...field} 
+                      />
+                    </div>
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Optional: Leave blank if budget is not yet determined
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="clientId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Client (Optional)</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Select a client (optional)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">No client selected</SelectItem>
+                      {isLoadingClients ? (
+                        <SelectItem value="" disabled>
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Loading clients...
+                          </div>
+                        </SelectItem>
+                      ) : (
+                        clients.map(client => (
+                          <SelectItem key={client.id} value={client.id} className="h-12 cursor-pointer">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-3 h-3 rounded-full ${
+                                client.status === 'ACTIVE' ? 'bg-green-500' : 
+                                client.status === 'INACTIVE' ? 'bg-gray-400' : 
+                                'bg-yellow-500'
+                              }`}></div>
+                              <div className="flex flex-col">
+                                <span className="font-medium text-foreground">
+                                  {client.name}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  Status: {client.status}
+                                </span>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Link this campaign to a specific client for better organization and reporting
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Initial Status</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Select initial status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.values(CampaignStatus).map(status => (
+                        <SelectItem key={status} value={status} className="h-12 cursor-pointer">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-3 h-3 rounded-full ${
+                              status === 'active' ? 'bg-green-500' : 
+                              status === 'draft' ? 'bg-gray-400' : 
+                              status === 'completed' ? 'bg-blue-500' :
+                              status === 'paused' ? 'bg-yellow-500' :
+                              'bg-red-500'
+                            }`}></div>
+                            <div className="flex flex-col">
+                              <span className="font-medium text-foreground">
+                                {status.charAt(0).toUpperCase() + status.slice(1)}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {status === 'draft' && 'Campaign is being prepared'}
+                                {status === 'active' && 'Campaign is currently running'}
+                                {status === 'completed' && 'Campaign has finished'}
+                                {status === 'paused' && 'Campaign is temporarily stopped'}
+                                {status === 'cancelled' && 'Campaign has been cancelled'}
+                              </span>
+                            </div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <StyledPaper>
-            <Typography variant="h5" gutterBottom>
-              Create New Campaign
-            </Typography>
-            <Typography variant="body2" color="text.secondary" paragraph>
-              Fill out the details below to create a new marketing campaign. Required fields are marked with an asterisk (*).
-            </Typography>
-            <Divider sx={{ my: 2 }} />
-
-            {submitError && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {submitError}
-              </Alert>
-            )}
-
-            <FormSection>
-              <SectionTitle variant="h6">Basic Information</SectionTitle>
-              <Typography variant="body2" color="text.secondary" paragraph>
-                Start with the essential details about your campaign.
-              </Typography>
-
-              <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' } }}>
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Campaign Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter campaign name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+          {/* Progress Header */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h1 className="text-3xl font-bold">Create New Campaign</h1>
+              <Badge variant="outline" className="text-sm">
+                Step {currentStep + 1} of {totalSteps}
+              </Badge>
+            </div>
+            
+            <Progress value={progressPercentage} className="mb-6" />
+            
+            {/* Step Navigation */}
+            <div className="flex items-center justify-between">
+              {WIZARD_STEPS.map((step, index) => (
+                <div key={step.id} className="flex items-center">
+                  <div
+                    className={cn(
+                      "flex items-center justify-center w-10 h-10 rounded-full border-2 transition-colors",
+                      index === currentStep
+                        ? "bg-blue-500 text-white border-blue-500"
+                        : completedSteps.includes(index)
+                        ? "bg-green-500 text-white border-green-500"
+                        : "bg-gray-100 text-gray-500 border-gray-300"
+                    )}
+                  >
+                    {completedSteps.includes(index) ? (
+                      <Check className="h-5 w-5" />
+                    ) : (
+                      React.createElement(step.icon, { className: "h-5 w-5" })
+                    )}
+                  </div>
+                  <div className="ml-3 hidden sm:block">
+                    <p className={cn(
+                      "text-sm font-medium",
+                      index === currentStep ? "text-blue-600" : "text-gray-500"
+                    )}>
+                      {step.title}
+                    </p>
+                    <p className="text-xs text-gray-400">{step.description}</p>
+                  </div>
+                  {index < WIZARD_STEPS.length - 1 && (
+                    <ArrowRight className="h-4 w-4 text-gray-400 mx-4" />
                   )}
-                />
+                </div>
+              ))}
+            </div>
+          </div>
 
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Enter campaign description" 
-                          {...field} 
-                          value={field.value || ''}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          {/* Step Content */}
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                {React.createElement(WIZARD_STEPS[currentStep].icon, { className: "h-5 w-5" })}
+                {WIZARD_STEPS[currentStep].title}
+              </CardTitle>
+              <p className="text-muted-foreground">
+                {WIZARD_STEPS[currentStep].description}
+              </p>
+            </CardHeader>
+            <CardContent>
+              {submitError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-6">
+                  {submitError}
+                </div>
+              )}
+              
+              {renderStepContent()}
+            </CardContent>
+          </Card>
 
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <MuiFormControl fullWidth error={!!form.formState.errors.status} required>
-                        <InputLabel>Status</InputLabel>
-                        <Select
-                          {...field}
-                          label="Status"
-                        >
-                          {Object.values(CampaignStatus).map(status => (
-                            <MenuItem key={status} value={status}>
-                              {status.charAt(0).toUpperCase() + status.slice(1)}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                        {form.formState.errors.status && <FormHelperText>{form.formState.errors.status.message}</FormHelperText>}
-                      </MuiFormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="startDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Start Date</FormLabel>
-                      <DatePicker
-                        value={field.value ? new Date(field.value) : null}
-                        onChange={(date) => field.onChange(date?.toISOString() || '')}
-                        slotProps={{
-                          textField: {
-                            fullWidth: true,
-                            error: !!form.formState.errors.startDate,
-                            helperText: form.formState.errors.startDate?.message
-                          }
-                        }}
-                      />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="endDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>End Date</FormLabel>
-                      <DatePicker
-                        value={field.value ? new Date(field.value) : null}
-                        onChange={(date) => field.onChange(date?.toISOString() || '')}
-                        slotProps={{
-                          textField: {
-                            fullWidth: true,
-                            error: !!form.formState.errors.endDate,
-                            helperText: form.formState.errors.endDate?.message
-                          }
-                        }}
-                      />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="budget"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Budget</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="Enter budget" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="goalType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Goal Type</FormLabel>
-                      <Select
-                        {...field}
-                        label="Goal Type"
-                      >
-                        {Object.values(CampaignGoalType).map(type => (
-                          <MenuItem key={type} value={type}>
-                            {type.charAt(0).toUpperCase() + type.slice(1)}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="customGoal"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Custom Goal</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Enter custom goal" 
-                          {...field} 
-                          value={field.value || ''}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="scheduleFrequency"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Schedule Frequency</FormLabel>
-                      <Select
-                        {...field}
-                        label="Schedule Frequency"
-                      >
-                        {Object.values(ScheduleFrequency).map(freq => (
-                          <MenuItem key={freq} value={freq}>
-                            {freq.charAt(0).toUpperCase() + freq.slice(1)}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="timezone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Timezone</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter timezone" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </Box>
-            </FormSection>
-
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 4 }}>
+          {/* Navigation Buttons */}
+          <div className="flex justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={prevStep}
+              disabled={currentStep === 0}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            
+            <div className="flex gap-2">
               <Button
-                variant="outlined"
+                type="button"
+                variant="outline"
                 onClick={() => form.reset()}
                 disabled={isSubmitting}
               >
                 Reset
               </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={isSubmitting}
-                startIcon={isSubmitting ? <CircularProgress size={20} /> : null}
-              >
-                {isSubmitting ? 'Creating...' : 'Create Campaign'}
-              </Button>
-            </Box>
-          </StyledPaper>
+              
+              {currentStep < totalSteps - 1 ? (
+                <Button
+                  type="button"
+                  onClick={nextStep}
+                  disabled={!isCurrentStepValid()}
+                  className="flex items-center gap-2"
+                >
+                  Next
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || !isCurrentStepValid()}
+                  className="flex items-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Creating Campaign...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-4 w-4" />
+                      Create Campaign
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+          </div>
         </form>
       </Form>
-    </LocalizationProvider>
+    </div>
   );
 };
 

@@ -22,7 +22,10 @@ export function MultiChannelAttribution({ campaignId, dateRange }: MultiChannelA
   React.useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await getConversionMetrics(dateRange);
+        const data = await getConversionMetrics({
+          start: dateRange.start.toISOString().split('T')[0],
+          end: dateRange.end.toISOString().split('T')[0]
+        });
         setAttributionData(data);
       } catch (error) {
         console.error('Error fetching attribution data:', error);
@@ -32,7 +35,7 @@ export function MultiChannelAttribution({ campaignId, dateRange }: MultiChannelA
     };
 
     fetchData();
-  }, [campaignId, dateRange, getConversionMetrics]);
+  }, [campaignId, dateRange]); // Only depend on actual data parameters
 
   if (loading) {
     return <div>Loading attribution data...</div>;
@@ -43,7 +46,14 @@ export function MultiChannelAttribution({ campaignId, dateRange }: MultiChannelA
   }
 
   const renderAttributionModel = (model: string) => {
+    if (!attributionData?.models?.[model]) {
+      return <div>No data available for {model} attribution model</div>;
+    }
+
     const data = attributionData.models[model];
+    const channels = data.channels || [];
+    const totalConversions = channels.reduce((sum: number, ch: any) => sum + (ch.conversions || 0), 0);
+
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="p-4">
@@ -51,7 +61,10 @@ export function MultiChannelAttribution({ campaignId, dateRange }: MultiChannelA
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
-                data={data.channels}
+                data={channels.map((ch: any) => ({
+                  name: ch.channel || ch.name,
+                  value: ch.conversions || ch.value || 0
+                }))}
                 dataKey="value"
                 nameKey="name"
                 cx="50%"
@@ -59,7 +72,7 @@ export function MultiChannelAttribution({ campaignId, dateRange }: MultiChannelA
                 outerRadius={100}
                 label
               >
-                {data.channels.map((entry: any, index: number) => (
+                {channels.map((entry: any, index: number) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
@@ -72,22 +85,29 @@ export function MultiChannelAttribution({ campaignId, dateRange }: MultiChannelA
         <Card className="p-4">
           <h4 className="text-lg font-semibold mb-4">Channel Performance</h4>
           <div className="space-y-4">
-            {data.channels.map((channel: any) => (
-              <div key={channel.name} className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">{channel.name}</span>
-                  <span className="text-sm text-gray-500">
-                    {channel.value.toLocaleString()} conversions
-                  </span>
+            {channels.map((channel: any) => {
+              const channelName = channel.channel || channel.name || 'Unknown';
+              const conversions = channel.conversions || channel.value || 0;
+              const revenue = channel.revenue || 0;
+              
+              return (
+                <div key={channelName} className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">{channelName}</span>
+                    <div className="text-sm text-gray-500 text-right">
+                      <div>{conversions.toLocaleString()} conversions</div>
+                      {revenue > 0 && <div>${revenue.toLocaleString()} revenue</div>}
+                    </div>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full"
+                      style={{ width: `${totalConversions > 0 ? (conversions / totalConversions) * 100 : 0}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-blue-600 h-2 rounded-full"
-                    style={{ width: `${(channel.value / data.total) * 100}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Card>
       </div>
@@ -100,26 +120,21 @@ export function MultiChannelAttribution({ campaignId, dateRange }: MultiChannelA
       
       <Tabs defaultValue="last_touch">
         <TabsList>
-          <TabsTrigger value="last_touch">Last Touch</TabsTrigger>
-          <TabsTrigger value="first_touch">First Touch</TabsTrigger>
-          <TabsTrigger value="linear">Linear</TabsTrigger>
-          <TabsTrigger value="time_decay">Time Decay</TabsTrigger>
+          <TabsTrigger value="lastClick">Last Click</TabsTrigger>
+          <TabsTrigger value="firstClick">First Click</TabsTrigger>
+          <TabsTrigger value="multiTouch">Multi-Touch</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="last_touch">
-          {renderAttributionModel('last_touch')}
+        <TabsContent value="lastClick">
+          {renderAttributionModel('lastClick')}
         </TabsContent>
 
-        <TabsContent value="first_touch">
-          {renderAttributionModel('first_touch')}
+        <TabsContent value="firstClick">
+          {renderAttributionModel('firstClick')}
         </TabsContent>
 
-        <TabsContent value="linear">
-          {renderAttributionModel('linear')}
-        </TabsContent>
-
-        <TabsContent value="time_decay">
-          {renderAttributionModel('time_decay')}
+        <TabsContent value="multiTouch">
+          {renderAttributionModel('multiTouch')}
         </TabsContent>
       </Tabs>
 
@@ -128,15 +143,19 @@ export function MultiChannelAttribution({ campaignId, dateRange }: MultiChannelA
         <div className="space-y-2">
           <div className="flex justify-between">
             <span>Total Conversions:</span>
-            <span className="font-medium">{attributionData.total.toLocaleString()}</span>
+            <span className="font-medium">{attributionData?.totalConversions?.toLocaleString() || 'N/A'}</span>
           </div>
           <div className="flex justify-between">
-            <span>Average Path Length:</span>
-            <span className="font-medium">{attributionData.averagePathLength}</span>
+            <span>Conversion Rate:</span>
+            <span className="font-medium">{attributionData?.conversionRate || 'N/A'}%</span>
           </div>
           <div className="flex justify-between">
-            <span>Most Common Path:</span>
-            <span className="font-medium">{attributionData.mostCommonPath}</span>
+            <span>Total Revenue:</span>
+            <span className="font-medium">${attributionData?.revenue?.toLocaleString() || 'N/A'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Average Order Value:</span>
+            <span className="font-medium">${attributionData?.averageOrderValue?.toFixed(2) || 'N/A'}</span>
           </div>
         </div>
       </div>

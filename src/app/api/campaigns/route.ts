@@ -10,6 +10,7 @@ import {
 } from "@/types/campaign";
 import { withOrganization } from "@/middleware/auth";
 import { z } from "zod";
+import { cacheService } from "@/lib/cache";
 
 // Define the campaign with relations type
 type CampaignWithRelations = Prisma.CampaignGetPayload<{
@@ -43,39 +44,50 @@ export async function GET(req: NextRequest) {
       projectId: url.searchParams.get("projectId") || undefined,
     };
 
-    // If no organizationId provided, get all organizations the user is part of
+    // If no organizationId provided, get all campaigns for user's organizations in single query
     if (!query.organizationId) {
-      const memberships = await db.organizationMember.findMany({
-        where: { user: { clerkId: userId } },
-        select: { organizationId: true },
-      });
-      
-      // If user has no organizations, return empty array
-      if (memberships.length === 0) {
-        return NextResponse.json([]);
-      }
-      
       // Validate remaining query params
       const filters = CampaignsQuerySchema.parse(query);
       
-      // Build WHERE filter for Prisma
+      // Build WHERE filter with single optimized query - no N+1 issue
       const where: any = {
-        organizationId: { in: memberships.map(m => m.organizationId) }
+        organization: {
+          members: {
+            some: { 
+              user: { clerkId: userId } 
+            }
+          }
+        }
       };
       
       if (filters.status) where.status = filters.status;
       if (filters.clientId) where.clientId = filters.clientId;
       if (filters.projectId) where.projectId = filters.projectId;
       
-      const campaigns = await db.campaign.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        include: {
-          organization: { select: { id: true, name: true } },
-          client: { select: { id: true, name: true } },
-          project: { select: { id: true, name: true } },
-        },
-      }) as CampaignWithRelations[];
+      // Create cache key based on filters
+      const cacheKey = `campaigns:user:${userId}:${JSON.stringify(filters)}`;
+      
+      const campaigns = await cacheService.getAPIResponse(
+        'campaigns', 
+        cacheKey,
+        async () => {
+          return db.campaign.findMany({
+            where,
+            orderBy: { createdAt: "desc" },
+            include: {
+              organization: { select: { id: true, name: true } },
+              client: { select: { id: true, name: true } },
+              project: { select: { id: true, name: true } },
+              _count: {
+                select: { 
+                  analytics: true,
+                  abTests: true 
+                }
+              }
+            },
+          }) as Promise<CampaignWithRelations[]>;
+        }
+      ) as CampaignWithRelations[];
       
       // Format campaign data for frontend consumption
       const formattedCampaigns: CampaignResponse[] = campaigns.map(campaign => ({
@@ -108,15 +120,30 @@ export async function GET(req: NextRequest) {
       if (filters.clientId) where.clientId = filters.clientId;
       if (filters.projectId) where.projectId = filters.projectId;
       
-      const campaigns = await db.campaign.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        include: {
-          organization: { select: { id: true, name: true } },
-          client: { select: { id: true, name: true } },
-          project: { select: { id: true, name: true } },
-        },
-      }) as CampaignWithRelations[];
+      // Create cache key based on filters
+      const cacheKey = `campaigns:org:${filters.organizationId}:${JSON.stringify(filters)}`;
+      
+      const campaigns = await cacheService.getAPIResponse(
+        'campaigns',
+        cacheKey,
+        async () => {
+          return db.campaign.findMany({
+            where,
+            orderBy: { createdAt: "desc" },
+            include: {
+              organization: { select: { id: true, name: true } },
+              client: { select: { id: true, name: true } },
+              project: { select: { id: true, name: true } },
+              _count: {
+                select: { 
+                  analytics: true,
+                  abTests: true 
+                }
+              }
+            },
+          }) as Promise<CampaignWithRelations[]>;
+        }
+      ) as CampaignWithRelations[];
       
       // Format campaign data for frontend consumption
       const formattedCampaigns: CampaignResponse[] = campaigns.map(campaign => ({

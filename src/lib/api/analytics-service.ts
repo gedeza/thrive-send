@@ -345,13 +345,23 @@ export function useAnalytics() {
   // Conversion Tracking
   const getConversionMetrics = async (
     dateRange: AnalyticsDateRange
-  ): Promise<ConversionMetrics> => {
-    const headers = await getAuthHeaders();
-    const response = await fetch(
-      `${baseUrl}/analytics/conversions?start=${dateRange.start}&end=${dateRange.end}`,
-      { headers }
-    );
-    return response.json();
+  ): Promise<any> => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(
+        `${baseUrl}/analytics/conversions?start=${dateRange.start}&end=${dateRange.end}`,
+        { headers }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch conversion metrics');
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Error fetching conversion metrics:', error);
+      throw error;
+    }
   };
 
   // Export Data
@@ -559,6 +569,75 @@ export function useAnalytics() {
     }
   };
 
+  // Campaign Overview Metrics
+  const getCampaignOverviewMetrics = async (
+    campaignId: string,
+    dateRange: AnalyticsDateRange
+  ): Promise<any> => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(
+        `${baseUrl}/analytics/campaign-metrics?campaignId=${campaignId}&start=${dateRange.start}&end=${dateRange.end}`,
+        { headers }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch campaign overview metrics');
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Error fetching campaign overview metrics:', error);
+      throw error;
+    }
+  };
+
+  // Device Analytics
+  const getDeviceAnalytics = async (
+    campaignId: string,
+    dateRange: AnalyticsDateRange
+  ): Promise<any> => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(
+        `${baseUrl}/analytics/devices?campaignId=${campaignId}&start=${dateRange.start}&end=${dateRange.end}`,
+        { headers }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch device analytics');
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Error fetching device analytics:', error);
+      throw error;
+    }
+  };
+
+  // Link Analytics
+  const getLinkAnalytics = async (
+    campaignId: string,
+    dateRange: AnalyticsDateRange
+  ): Promise<any> => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(
+        `${baseUrl}/analytics/links?campaignId=${campaignId}&start=${dateRange.start}&end=${dateRange.end}`,
+        { headers }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch link analytics');
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Error fetching link analytics:', error);
+      throw error;
+    }
+  };
+
   return {
     isLoading,
     error,
@@ -576,6 +655,9 @@ export function useAnalytics() {
     fetchPerformanceTrendData,
     getCampaignPerformance,
     getAudienceInsights,
+    getCampaignOverviewMetrics,
+    getDeviceAnalytics,
+    getLinkAnalytics,
   };
 }
 

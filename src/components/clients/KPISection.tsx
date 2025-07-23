@@ -4,11 +4,12 @@ import { Card } from '@/components/ui/card';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import Alert from '@/components/ui/Alert';
 
 interface KPIData {
   activeProjects: number;
+  totalProjects: number;
   totalBudget: number;
   totalSpent: number;
   budgetUtilization: number;
@@ -16,60 +17,37 @@ interface KPIData {
   totalGoals: number;
   goalCompletion: number;
   averageFeedback: number;
+  feedbackCount: number;
 }
 
 // Default KPI data to use as fallback
 const defaultKPIData: KPIData = {
   activeProjects: 0,
+  totalProjects: 0,
   totalBudget: 0,
   totalSpent: 0,
   budgetUtilization: 0,
   completedGoals: 0,
   totalGoals: 0,
   goalCompletion: 0,
-  averageFeedback: 0
+  averageFeedback: 0,
+  feedbackCount: 0
 };
 
 async function getKPIData(clientId: string): Promise<KPIData> {
   try {
-    // Check if we're running on the client or server
-    const isClient = typeof window !== 'undefined';
-    
-    // Construct a proper absolute URL that works in both environments
-    let url: URL;
-    
-    if (isClient) {
-      // On client, use the current origin
-      url = new URL(`/api/clients/${clientId}/kpi`, window.location.origin);
-    } else {
-      // On server, use the environment variable or default to relative path
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-      if (baseUrl) {
-        url = new URL(`/api/clients/${clientId}/kpi`, baseUrl);
-      } else {
-        // If no base URL is available, use a relative path
-        // This will be handled by Next.js API routes
-        url = new URL(`/api/clients/${clientId}/kpi`, 'http://localhost');
-      }
-    }
-
-    const response = await fetch(url.toString(), {
-      next: { revalidate: 60 }, // Revalidate every minute
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    const response = await fetch(`/api/clients/${clientId}/kpi`);
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch KPI data: ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Failed to fetch KPI data: ${response.statusText}`);
     }
 
     const data = await response.json();
-    return data.kpis;
+    return data;
   } catch (error) {
     console.error('Error fetching KPI data:', error);
-    // Return default data instead of throwing
-    return defaultKPIData;
+    throw error;
   }
 }
 
@@ -136,7 +114,7 @@ export default function KPISection({ clientId }: { clientId: string }) {
 
 function KPIContent({ clientId }: { clientId: string }) {
   const [error, setError] = useState<Error | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [kpis, setKpis] = useState<KPIData>(defaultKPIData);
 
   const loadData = async () => {
@@ -152,10 +130,9 @@ function KPIContent({ clientId }: { clientId: string }) {
     }
   };
 
-  // Load data on mount
-  if (!loading && !error && kpis === defaultKPIData) {
+  useEffect(() => {
     loadData();
-  }
+  }, [clientId]);
 
   if (loading) {
     return <KPILoadingState />;

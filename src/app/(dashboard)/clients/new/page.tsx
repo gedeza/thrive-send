@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -70,6 +70,7 @@ export default function AddClientPage() {
     register,
     handleSubmit,
     formState: { errors },
+    setValue,
   } = useForm<ClientFormData>({
     resolver: zodResolver(clientSchema),
     defaultValues: {
@@ -81,19 +82,30 @@ export default function AddClientPage() {
       website: "",
       industry: "",
       logoUrl: "",
-      organizationId: organization?.id || "",
+      organizationId: "",
     },
   });
+
+  // Update organization ID when it becomes available
+  useEffect(() => {
+    if (organization?.id) {
+      setValue('organizationId', organization.id);
+    }
+  }, [organization?.id, setValue]);
 
   const onSubmit = async (data: ClientFormData) => {
     try {
       setIsSubmitting(true);
+      console.log("Form submission started with data:", data);
       
       if (!organization?.id) {
+        console.error("No organization found:", { organization });
         toast.error("No organization selected. Please select an organization first.");
         return;
       }
 
+      console.log("Organization found:", organization.id);
+      
       // Clean up the data before sending
       const cleanData = {
         ...data,
@@ -105,6 +117,7 @@ export default function AddClientPage() {
         organizationId: organization.id,
       };
 
+      console.log("Sending data to API:", cleanData);
       const response = await fetch("/api/clients", {
         method: "POST",
         headers: {
@@ -113,6 +126,7 @@ export default function AddClientPage() {
         body: JSON.stringify(cleanData),
       });
 
+      console.log("API response status:", response.status);
       let responseData;
       const textData = await response.text();
       

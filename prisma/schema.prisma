@@ -33,10 +33,10 @@ model User {
   comments                Comment[]             @relation("CommentCreator")
   contactLists            ContactList[]         @relation("ContactListCreator")
   content                 Content[]
-  contentLists            ContentList[]
   assignedApprovals       ContentApproval[]     @relation("AssignedApprovals")
   createdApprovals        ContentApproval[]     @relation("CreatedApprovals")
   contentItems            ContentItem[]
+  contentLists            ContentList[]
   createdContent          ContentPiece[]
   integrations            Integration[]
   marketplaceListings     MarketplaceListing[]  @relation("MarketplaceListingCreator")
@@ -117,6 +117,8 @@ model Client {
   industry       String?
   type           String
   website        String?
+  status         ClientStatus     @default(ACTIVE)
+  logoUrl        String?
   analytics      Analytics[]
   budgets        Budget[]
   campaigns      Campaign[]
@@ -235,10 +237,6 @@ model Engagement {
 model Analytics {
   id                String    @id @default(cuid())
   clientId          String
-  impressions       Int       @default(0)
-  engagements       Int       @default(0)
-  conversions       Int       @default(0)
-  revenue           Float     @default(0)
   projectCount      Int       @default(0)
   activeProjects    Int       @default(0)
   completedProjects Int       @default(0)
@@ -254,15 +252,18 @@ model Analytics {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   campaignId        String?
-  // Add missing fields required by metrics API
-  views             Int       @default(0)
-  shares            Int       @default(0)
-  likes             Int       @default(0)
-  comments          Int       @default(0)
-  clicks            Int       @default(0)
-  openRate          Float     @default(0)
-  clickRate         Float     @default(0)
+  conversions       Int       @default(0)
+  engagements       Int       @default(0)
+  impressions       Int       @default(0)
+  revenue           Float     @default(0)
   bounceRate        Float     @default(0)
+  clickRate         Float     @default(0)
+  clicks            Int       @default(0)
+  comments          Int       @default(0)
+  likes             Int       @default(0)
+  openRate          Float     @default(0)
+  shares            Int       @default(0)
+  views             Int       @default(0)
   campaign          Campaign? @relation(fields: [campaignId], references: [id])
   client            Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
@@ -361,7 +362,7 @@ model Campaign {
   project                Project?                 @relation(fields: [projectId], references: [id], onUpdate: NoAction)
   template               CampaignTemplate?        @relation(fields: [templateId], references: [id])
   contentPieces          ContentPiece[]
-  conversionFunnels        ConversionFunnel[]
+  conversionFunnels      ConversionFunnel[]
   crossCampaignAnalytics CrossCampaignAnalytics[]
   roiTracking            ROITracking[]
   reports                Report[]
@@ -428,31 +429,33 @@ model VerificationToken {
 }
 
 model Content {
-  id          String            @id @default(cuid())
-  title       String
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  content     String
-  tags        String[]
-  authorId    String
-  excerpt     String?
-  media       Json?
-  publishedAt DateTime?
-  scheduledAt DateTime?
-  slug        String            @unique
-  metadata    Json?
-  templateId  String?
-  status      ContentStatus
-  type        ContentType
-  author      User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  template    Template?         @relation(fields: [templateId], references: [id])
-  analytics   ContentAnalytics?
-  approval    ContentApproval?
-  mediaItems  MediaItem[]
-  seo         SEO?
-  schedule    Schedule?
-  contentListItems ContentListItem[]
-  calendarEvents   CalendarEvent[]
+  id                String            @id @default(cuid())
+  title             String
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  content           String
+  tags              String[]
+  authorId          String
+  excerpt           String?
+  media             Json?
+  publishedAt       DateTime?
+  scheduledAt       DateTime?
+  slug              String            @unique
+  metadata          Json?
+  templateId        String?
+  status            ContentStatus
+  type              ContentType
+  platforms         String[]
+  publishingOptions Json?
+  calendarEvents    CalendarEvent[]
+  author            User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  template          Template?         @relation(fields: [templateId], references: [id])
+  analytics         ContentAnalytics?
+  approval          ContentApproval?
+  contentListItems  ContentListItem[]
+  mediaItems        MediaItem[]
+  seo               SEO?
+  schedule          Schedule?
 
   @@index([authorId])
   @@index([type])
@@ -559,7 +562,6 @@ model CalendarEvent {
   type               String
   status             String
   organizationId     String
-  contentId          String?
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
   socialMediaContent Json?
@@ -571,7 +573,8 @@ model CalendarEvent {
   emailCampaign      Json?
   endTime            DateTime
   startTime          DateTime
-  content            Content?     @relation(fields: [contentId], references: [id], onDelete: SetNull)
+  contentId          String?
+  content            Content?     @relation(fields: [contentId], references: [id])
   creator            User         @relation(fields: [createdBy], references: [id])
   organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -1029,19 +1032,19 @@ model APIKey {
 }
 
 model Report {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  name      String
-  sections  Json     // Store report sections as JSON
-  campaign  Campaign @relation(fields: [campaignId], references: [id])
-  campaignId String
-  createdBy User     @relation(fields: [createdById], references: [id])
-  createdById String
-  organization Organization @relation(fields: [organizationId], references: [id])
+  id             String         @id @default(cuid())
+  name           String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
   organizationId String
-  exports   ReportExport[]
-  shares    ReportShare[]
+  createdById    String
+  campaignId     String
+  sections       Json
+  campaign       Campaign       @relation(fields: [campaignId], references: [id])
+  createdBy      User           @relation(fields: [createdById], references: [id])
+  organization   Organization   @relation(fields: [organizationId], references: [id])
+  exports        ReportExport[]
+  shares         ReportShare[]
 
   @@index([campaignId])
   @@index([createdById])
@@ -1050,23 +1053,23 @@ model Report {
 
 model ReportExport {
   id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
+  reportId  String
   format    String
   url       String
+  createdAt DateTime @default(now())
   status    String   @default("COMPLETED")
   report    Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
-  reportId  String
 
   @@index([reportId])
 }
 
 model ReportShare {
   id        String   @id @default(cuid())
+  reportId  String
+  userId    String
   createdAt DateTime @default(now())
   report    Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
-  reportId  String
   user      User     @relation(fields: [userId], references: [id])
-  userId    String
 
   @@index([reportId])
   @@index([userId])
@@ -1364,15 +1367,15 @@ model Expense {
 }
 
 model ContentList {
-  id             String           @id @default(cuid())
+  id             String            @id @default(cuid())
   name           String
   description    String?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
   ownerId        String
   organizationId String
-  owner          User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  owner          User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   items          ContentListItem[]
 
   @@index([ownerId])
@@ -1595,4 +1598,11 @@ enum ExpenseStatus {
   APPROVED
   REJECTED
   PAID
+}
+
+enum ClientStatus {
+  ACTIVE
+  INACTIVE
+  LEAD
+  ARCHIVED
 }

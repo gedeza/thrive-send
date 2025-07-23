@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getAuth } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { NextRequest } from 'next/server';
 
 export async function GET(req: NextRequest) {
   try {
-    const { userId } = getAuth(req);
+    const { userId } = await auth();
     if (!userId) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
@@ -103,10 +103,14 @@ function generateMockPerformanceData(campaignId: string, startDate: Date, endDat
     { title: 'ROI', value: ((totals.revenue - totals.investment) / totals.investment) * 100, percentChange: 14.2 },
   ];
 
-  return {
+  return [{
     id: campaignId,
     metrics,
-    timeSeriesData,
+    timeSeriesData: {
+      datasets: [{
+        data: timeSeriesData
+      }]
+    },
     channelBreakdown: [
       { channel: 'Email', value: 65 },
       { channel: 'Social', value: 35 }
@@ -116,5 +120,5 @@ function generateMockPerformanceData(campaignId: string, startDate: Date, endDat
       { device: 'Desktop', value: 42 },
       { device: 'Tablet', value: 10 }
     ]
-  };
+  }];
 } 

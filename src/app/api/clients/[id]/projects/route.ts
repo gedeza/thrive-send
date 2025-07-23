@@ -1,17 +1,56 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { prisma } from "@/lib/prisma";
-import { z } from "zod";
+import { db } from "@/lib/db";
 
-// Validation schema
-const projectSchema = z.object({
-  name: z.string().min(2),
-  description: z.string().optional(),
-  status: z.enum(["PLANNING", "IN_PROGRESS", "ON_HOLD", "COMPLETED", "CANCELLED"]),
-  startDate: z.string(),
-  endDate: z.string().optional(),
-  budget: z.number().optional(),
-});
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    // Basic auth check
+    const session = await auth();
+    if (!session?.userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const clientId = params.id;
+
+    // Verify client exists
+    const client = await db.client.findUnique({
+      where: { id: clientId },
+      select: { id: true, organizationId: true }
+    });
+
+    if (!client) {
+      return NextResponse.json({ error: "Client not found" }, { status: 404 });
+    }
+
+    // Get projects - simple query
+    const projects = await db.project.findMany({
+      where: { 
+        clientId: clientId
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        status: true,
+        startDate: true,
+        endDate: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return NextResponse.json(projects);
+  } catch (error) {
+    console.error("Client projects API error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(
   request: NextRequest,
@@ -23,85 +62,43 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Validate client exists and user has access
-    const client = await prisma.client.findUnique({
-      where: { id: params.id },
-      include: {
-        organization: {
-          include: {
-            members: {
-              where: {
-                user: {
-                  clerkId: session.userId,
-                },
-              },
-            },
-          },
-        },
-      },
+    const clientId = params.id;
+    const body = await request.json();
+
+    // Verify client exists
+    const client = await db.client.findUnique({
+      where: { id: clientId },
+      select: { id: true, organizationId: true }
     });
 
     if (!client) {
       return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
 
-    if (client.organization.members.length === 0) {
-      return NextResponse.json(
-        { error: "You don't have access to this client" },
-        { status: 403 }
-      );
+    // Basic validation
+    if (!body.name) {
+      return NextResponse.json({ error: "Project name is required" }, { status: 400 });
     }
 
-    // Parse and validate request body
-    const body = await request.json();
-    const validatedData = projectSchema.parse(body);
-
     // Create project
-    const project = await prisma.project.create({
+    const project = await db.project.create({
       data: {
-        ...validatedData,
-        clientId: params.id,
+        name: body.name,
+        description: body.description || null,
+        status: body.status || "PLANNING",
+        startDate: body.startDate ? new Date(body.startDate) : new Date(),
+        endDate: body.endDate ? new Date(body.endDate) : null,
+        clientId: clientId,
         organizationId: client.organizationId,
       },
     });
 
     return NextResponse.json(project, { status: 201 });
   } catch (error) {
-    console.error("Error creating project:", error);
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Invalid request data", details: error.errors },
-        { status: 400 }
-      );
-    }
+    console.error("Create project API error:", error);
     return NextResponse.json(
       { error: "Failed to create project" },
       { status: 500 }
     );
   }
 }
-
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const session = await auth();
-    if (!session?.userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const projects = await prisma.project.findMany({
-      where: { clientId: params.id },
-      orderBy: { createdAt: "desc" },
-    });
-
-    return NextResponse.json(projects);
-  } catch (error) {
-    console.error("Error fetching projects:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch projects" },
-      { status: 500 }
-    );
-  }
-} 

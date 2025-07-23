@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { ContentCalendar, ContentType, SocialPlatform, CalendarEvent as ContentCalendarEvent } from "@/components/content/content-calendar";
 import { WelcomeFlow } from "@/components/onboarding/welcome-flow";
@@ -11,7 +12,8 @@ import { ContentCalendarSync } from "@/components/content/ContentCalendarSync";
 import { syncContentToCalendar } from "@/lib/api/content-service";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Search, Filter, Calendar as CalendarIcon, List, Grid, Settings, Edit, Trash2, X, RefreshCw, Plus } from "lucide-react";
+import { Search, Filter, Calendar as CalendarIcon, List, Grid, Settings, Edit, Trash2, X, RefreshCw, Plus, Sparkles, FileText, Bot } from "lucide-react";
+import { TemplateQuickPicker, useTemplateSelection } from '@/components/templates/TemplateQuickPicker';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -66,6 +68,7 @@ function CalendarPageContent() {
   const router = useRouter();
   const { toast } = useToast();
   const { showWelcomeFlow, closeWelcomeFlow } = useOnboarding();
+  const { selectedTemplate, selectTemplate, clearSelection } = useTemplateSelection('calendar');
   const { 
     lastCacheInvalidation, 
     invalidateCache, 
@@ -110,8 +113,33 @@ function CalendarPageContent() {
   // Event handlers
   const handleEventCreate = async (event: Omit<ContentCalendarEvent, "id">) => {
     try {
-      const created = await createCalendarEvent(event);
+      const eventData = {
+        ...event,
+        templateId: selectedTemplate?.id, // Track template usage
+      };
+      
+      const created = await createCalendarEvent(eventData);
       setEvents(prev => [...prev, created]);
+      
+      // Track template usage for AI learning
+      if (selectedTemplate) {
+        fetch(`/api/templates/${selectedTemplate.id}/track-usage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            context: 'calendar',
+            action: 'schedule',
+            source: 'calendar-page',
+            metadata: {
+              event_type: event.type,
+              scheduled_date: event.date
+            }
+          })
+        }).catch(() => {}); // Non-blocking
+        
+        clearSelection(); // Clear after use
+      }
+      
       return created;
     } catch (error) {
       toast({
@@ -175,60 +203,112 @@ function CalendarPageContent() {
   }, [clearAllCaches, loadEvents, toast]);
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto px-4 py-6 space-y-6">
       <WelcomeFlow isOpen={showWelcomeFlow} onClose={closeWelcomeFlow} />
       
-      {/* Header with actions */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--color-chart-blue)]">Content Calendar</h1>
-          <div className="h-6 w-px bg-border" />
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowSync(true)}
-              className="flex items-center gap-2 hover:bg-muted/80 transition-colors"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Sync Content
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleForceRefresh}
-              className="flex items-center gap-2 hover:bg-muted/80 transition-colors"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Force Refresh
-            </Button>
-            <div className="flex items-center gap-2 ml-2">
-              <Label htmlFor="cache-toggle" className="text-sm font-medium">
-                Caching {isCachingEnabled ? 'On' : 'Off'}
-              </Label>
-              <Switch 
-                id="cache-toggle" 
-                checked={isCachingEnabled} 
-                onCheckedChange={setCachingEnabled} 
-              />
+      {/* Header */}
+      <div className="text-center mb-8">
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <CalendarIcon className="h-8 w-8 text-primary" />
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            Content Calendar
+          </h1>
+        </div>
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          Schedule and manage your content across all platforms with powerful calendar features.
+        </p>
+      </div>
+      
+      {/* AI Template Assistant for Calendar Events */}
+      <Card className="mb-6 bg-gradient-to-r from-indigo-50/80 to-blue-50/80 border-indigo-200">
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-indigo-100 rounded-lg">
+                <Bot className="h-5 w-5 text-indigo-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-indigo-900">Calendar Template Assistant</h3>
+                <p className="text-sm text-indigo-700">Quick templates for events, reminders, and scheduled content</p>
+              </div>
             </div>
-            <div className="flex items-center gap-2 ml-2">
-              <Label htmlFor="performance-toggle" className="text-sm font-medium">
-                Performance Mode {isOptimizedMode ? 'On' : 'Off'}
-              </Label>
-              <Switch 
-                id="performance-toggle" 
-                checked={isOptimizedMode} 
-                onCheckedChange={setOptimizedMode} 
+            <div className="flex items-center gap-2">
+              <TemplateQuickPicker
+                context="calendar"
+                onSelect={(template) => {
+                  selectTemplate(template);
+                  toast({
+                    title: "Template Ready for Calendar! 📅",
+                    description: `"${template.name}" selected for your next event`,
+                  });
+                }}
+                filters={{
+                  type: 'email', // Calendar events are typically email-based
+                }}
+                compact={true}
+                showAIRecommendations={true}
+                trigger={
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Event Templates
+                  </Button>
+                }
               />
+              {selectedTemplate && (
+                <div className="flex items-center gap-2 px-3 py-1 bg-white/70 rounded-lg border border-indigo-200">
+                  <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                  <span className="text-sm text-indigo-800">{selectedTemplate.name}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearSelection}
+                    className="h-5 w-5 p-0 hover:bg-indigo-100"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
             </div>
-            <Button
-              variant="outline"
-              onClick={() => setShowSettings(true)}
-              className="flex items-center gap-2 hover:bg-muted/80 transition-colors"
-            >
-              <Settings className="h-4 w-4" />
-              Settings
-            </Button>
           </div>
+        </CardContent>
+      </Card>
+      
+      <div className="flex items-center justify-end gap-2 mb-8">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowSync(true)}
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Sync Content
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleForceRefresh}
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Force Refresh
+          </Button>
+          <div className="flex items-center gap-2 ml-2 px-2">
+            <Label htmlFor="cache-toggle" className="text-sm font-medium">
+              Caching {isCachingEnabled ? 'On' : 'Off'}
+            </Label>
+            <Switch 
+              id="cache-toggle" 
+              checked={isCachingEnabled} 
+              onCheckedChange={setCachingEnabled} 
+            />
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowSettings(true)}
+          >
+            <Settings className="mr-2 h-4 w-4" />
+            Settings
+          </Button>
         </div>
       </div>
 
@@ -251,20 +331,8 @@ function CalendarPageContent() {
       )}
 
       {/* Main calendar view */}
-      <div className="space-y-4 border rounded-xl p-4 bg-card shadow-sm">
-        {isOptimizedMode ? (
-          <DynamicProgressiveCalendar
-            events={events}
-            onEventCreate={handleEventCreate}
-            onEventUpdate={handleEventUpdate}
-            onEventDelete={handleEventDelete}
-            fetchEvents={loadEvents}
-            defaultView={calendarView}
-            onViewChange={handleViewChange}
-            selectedDate={new Date()}
-            onDateChange={() => {}}
-          />
-        ) : (
+      <Card className="shadow-sm">
+        <CardContent className="p-6">
           <ContentCalendar
             events={events}
             onEventCreate={handleEventCreate}
@@ -276,8 +344,8 @@ function CalendarPageContent() {
             onSyncClick={() => setShowSync(true)}
             onSettingsClick={() => setShowSettings(true)}
           />
-        )}
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Sync Dialog */}
       <Dialog open={showSync} onOpenChange={setShowSync}>

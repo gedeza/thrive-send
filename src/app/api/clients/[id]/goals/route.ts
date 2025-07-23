@@ -48,45 +48,48 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined;
 
-    // Get client goals data
-    const goals = await db.$queryRaw<Goal[]>`
-      SELECT 
-        g.*,
-        COALESCE(
-          json_agg(
-            DISTINCT jsonb_build_object(
-              'id', m.id,
-              'name', m.name,
-              'description', m.description,
-              'dueDate', m."dueDate",
-              'completedDate', m."completedDate",
-              'status', m.status
-            )
-          ) FILTER (WHERE m.id IS NOT NULL),
-          '[]'
-        ) as milestones,
-        COALESCE(
-          json_agg(
-            DISTINCT jsonb_build_object(
-              'id', mt.id,
-              'name', mt.name,
-              'description', mt.description,
-              'metricType', mt."metricType",
-              'targetValue', mt."targetValue",
-              'currentValue', mt."currentValue",
-              'unit', mt.unit
-            )
-          ) FILTER (WHERE mt.id IS NOT NULL),
-          '[]'
-        ) as metrics
-      FROM "ClientGoal" g
-      LEFT JOIN "Milestone" m ON m."goalId" = g.id
-      LEFT JOIN "SuccessMetric" mt ON mt."goalId" = g.id
-      WHERE g."clientId" = ${clientId}
-      GROUP BY g.id
-      ORDER BY g.status ASC, g."startDate" DESC
-      ${limit ? Prisma.sql`LIMIT ${limit}` : Prisma.empty}
-    `;
+    // Verify client exists first
+    const client = await db.client.findUnique({
+      where: { id: clientId },
+      select: { id: true, name: true }
+    });
+
+    if (!client) {
+      return new NextResponse('Client not found', { status: 404 });
+    }
+
+    // Get client goals data using standard Prisma queries
+    const goals = await db.clientGoal.findMany({
+      where: { clientId },
+      include: {
+        milestones: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            dueDate: true,
+            completedDate: true,
+            status: true,
+          },
+        },
+        metrics: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            metricType: true,
+            targetValue: true,
+            currentValue: true,
+            unit: true,
+          },
+        },
+      },
+      orderBy: [
+        { status: 'asc' },
+        { startDate: 'desc' }
+      ],
+      take: limit || 10,
+    });
 
     // Calculate completion statistics
     const totalGoals = goals.length;

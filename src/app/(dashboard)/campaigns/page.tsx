@@ -150,17 +150,55 @@ export default function CampaignsPage() {
   }
 
   function MetricCard({ title, value, description, icon, change, isLoading }: MetricCardProps) {
+    // Color patterns matching project management page
+    const getStyles = (title: string) => {
+      const lowerTitle = title.toLowerCase();
+      if (lowerTitle.includes('total') || lowerTitle.includes('campaigns')) {
+        return {
+          iconBg: 'p-3 bg-primary/10 rounded-full',
+          iconColor: 'h-6 w-6 text-primary',
+          numberColor: 'text-3xl font-bold text-primary'
+        };
+      } else if (lowerTitle.includes('active')) {
+        return {
+          iconBg: 'p-3 bg-blue-100 rounded-full',
+          iconColor: 'h-6 w-6 text-blue-600',
+          numberColor: 'text-3xl font-bold text-blue-600'
+        };
+      } else if (lowerTitle.includes('success') || lowerTitle.includes('rate')) {
+        return {
+          iconBg: 'p-3 bg-green-100 rounded-full',
+          iconColor: 'h-6 w-6 text-green-600',
+          numberColor: 'text-3xl font-bold text-green-600'
+        };
+      } else if (lowerTitle.includes('reach') || lowerTitle.includes('audience')) {
+        return {
+          iconBg: 'p-3 bg-orange-100 rounded-full',
+          iconColor: 'h-6 w-6 text-orange-600',
+          numberColor: 'text-3xl font-bold text-orange-600'
+        };
+      } else {
+        return {
+          iconBg: 'p-3 bg-primary/10 rounded-full',
+          iconColor: 'h-6 w-6 text-primary',
+          numberColor: 'text-3xl font-bold'
+        };
+      }
+    };
+
+    const styles = getStyles(title);
+
     if (isLoading) {
       return (
-        <Card>
-          <CardContent className="p-4">
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="space-y-2">
-                <Skeleton className="h-3 w-20" />
-                <Skeleton className="h-6 w-16" />
-                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-8 w-20" />
+                <Skeleton className="h-3 w-32" />
               </div>
-              <Skeleton className="h-6 w-6 rounded" />
+              <Skeleton className="h-12 w-12 rounded-full" />
             </div>
           </CardContent>
         </Card>
@@ -168,14 +206,14 @@ export default function CampaignsPage() {
     }
 
     return (
-      <Card>
-        <CardContent className="p-4">
+      <Card className="hover:shadow-md transition-shadow">
+        <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">{title}</p>
-              <p className="text-2xl font-bold">{typeof value === 'number' ? value.toLocaleString() : value}</p>
+              <p className="text-sm font-medium text-muted-foreground">{title}</p>
+              <p className={styles.numberColor}>{typeof value === 'number' ? value.toLocaleString() : value}</p>
               {description && (
-                <p className="text-xs text-muted-foreground">{description}</p>
+                <p className="text-sm text-muted-foreground">{description}</p>
               )}
               {change !== undefined && (
                 <div className={`flex items-center text-xs ${
@@ -186,8 +224,10 @@ export default function CampaignsPage() {
                 </div>
               )}
             </div>
-            <div className="text-primary">
-              {icon}
+            <div className={styles.iconBg}>
+              <div className={styles.iconColor}>
+                {icon}
+              </div>
             </div>
           </div>
         </CardContent>
@@ -345,13 +385,20 @@ export default function CampaignsPage() {
 
   return (
     <div className="space-y-4 p-4">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Campaigns</h1>
-          <p className="text-sm text-muted-foreground">
-            Create and manage your marketing campaigns
-          </p>
+      {/* Header */}
+      <div className="text-center mb-8">
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <Target className="h-8 w-8 text-primary" />
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            Campaigns
+          </h1>
         </div>
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          Create and manage your marketing campaigns across all channels and platforms.
+        </p>
+      </div>
+
+      <div className="flex items-center justify-end gap-2 mb-8">
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -362,10 +409,10 @@ export default function CampaignsPage() {
             <RefreshCcw className={cn("mr-2 h-4 w-4", (loading || statsLoading) && "animate-spin")} />
             Refresh
           </Button>
-          <Button asChild className="flex items-center gap-1">
+          <Button asChild>
             <Link href="/campaigns/new">
-              <Plus className="h-4 w-4" />
-              Add Campaign
+              <Plus className="mr-2 h-4 w-4" />
+              New Campaign
             </Link>
           </Button>
         </div>
@@ -584,7 +631,12 @@ interface CampaignCardProps {
 function CampaignCard({ campaign, viewMode }: CampaignCardProps) {
   if (viewMode === 'list') {
     return (
-      <Card className="hover:shadow-sm transition-shadow">
+      <Card className="hover:shadow-lg transition-all duration-200 border-l-4" style={{ 
+        borderLeftColor: campaign.status === 'Sent' ? '#22c55e' : 
+                         campaign.status === 'Scheduled' ? '#3b82f6' :
+                         campaign.status === 'Draft' ? '#f59e0b' :
+                         campaign.status === 'Paused' ? '#f97316' : '#6b7280'
+      }}>
         <CardContent className="p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3 flex-1">
@@ -671,7 +723,12 @@ function CampaignCard({ campaign, viewMode }: CampaignCardProps) {
   
   // Grid view
   return (
-    <Card className="hover:shadow-md transition-all duration-200 cursor-pointer group">
+    <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer group border-l-4" style={{ 
+      borderLeftColor: campaign.status === 'Sent' ? '#22c55e' : 
+                       campaign.status === 'Scheduled' ? '#3b82f6' :
+                       campaign.status === 'Draft' ? '#f59e0b' :
+                       campaign.status === 'Paused' ? '#f97316' : '#6b7280'
+    }}>
       <CardContent className="p-4">
         <div className="space-y-3">
           <div className="flex items-start justify-between">

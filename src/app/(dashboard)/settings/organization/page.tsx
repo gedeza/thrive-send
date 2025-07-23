@@ -11,7 +11,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { OrganizationMembers } from "@/components/organization/organization-members";
-import { OrganizationBilling } from "@/components/organization/organization-billing";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useOrganization } from "@clerk/nextjs";
@@ -31,7 +30,6 @@ const defaultOrganizationSettings = {
 const tabs = [
   { id: 'general', label: 'General' },
   { id: 'members', label: 'Members & Roles' },
-  { id: 'billing', label: 'Billing & Subscription' },
 ];
 
 export default function OrganizationSettingsPage() {
@@ -151,8 +149,21 @@ export default function OrganizationSettingsPage() {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Organization Settings</h1>
           <p className="text-sm md:text-base text-muted-foreground">
-            Manage your organization's settings, members, and billing.
+            Manage your organization's general settings and team members.
           </p>
+          <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-700">
+              💡 <strong>Looking for billing?</strong> Visit the{' '}
+              <Button 
+                variant="link" 
+                className="p-0 h-auto font-semibold text-blue-700 hover:text-blue-800"
+                onClick={() => router.push('/settings?tab=billing')}
+              >
+                Billing & Subscription tab
+              </Button>{' '}
+              in the main settings page.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -240,9 +251,6 @@ export default function OrganizationSettingsPage() {
           <OrganizationMembers />
         </TabsContent>
 
-        <TabsContent value="billing">
-          <OrganizationBilling />
-        </TabsContent>
       </Tabs>
     </div>
   );

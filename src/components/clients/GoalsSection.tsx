@@ -52,19 +52,8 @@ interface GoalsResponse {
 
 async function getGoalsData(clientId: string, limit?: number): Promise<GoalsResponse> {
   try {
-    // Use absolute URL with origin to avoid Invalid URL errors
-    const baseUrl = typeof window !== 'undefined' 
-      ? window.location.origin 
-      : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-    
     const response = await fetch(
-      `${baseUrl}/api/clients/${clientId}/goals${limit ? `?limit=${limit}` : ''}`,
-      { 
-        credentials: 'include', // Include cookies for auth
-        headers: {
-          'Accept': 'application/json',
-        },
-      }
+      `/api/clients/${clientId}/goals${limit ? `?limit=${limit}` : ''}`
     );
 
     if (!response.ok) {
@@ -72,7 +61,9 @@ async function getGoalsData(clientId: string, limit?: number): Promise<GoalsResp
       throw new Error(errorData.message || `Failed to fetch goals data: ${response.statusText}`);
     }
 
-    return response.json();
+    const data = await response.json();
+    // Handle both old direct data format and new standardized format
+    return data.data ? data.data : data;
   } catch (error) {
     console.error('Error fetching goals data:', error);
     throw error;

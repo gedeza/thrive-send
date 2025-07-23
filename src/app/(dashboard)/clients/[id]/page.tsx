@@ -1,9 +1,10 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LoadingPage, LoadingSkeleton } from '@/components/common/LoadingSpinner';
 
 // Components
 import ClientHeader, { ClientHeaderSkeleton } from '@/components/clients/ClientHeader';
@@ -13,6 +14,7 @@ import BudgetSection from '@/components/clients/BudgetSection';
 import DocumentSection from '@/components/clients/DocumentSection';
 import FeedbackSection from '@/components/clients/FeedbackSection';
 import GoalsSection from '@/components/clients/GoalsSection';
+import ClientProjectsSection from '@/components/clients/ClientProjectsSection';
 
 export default async function ClientDashboard({
   params,
@@ -28,7 +30,7 @@ export default async function ClientDashboard({
 
   try {
     // Fetch initial client data
-    const client = await prisma.client.findUnique({
+    const client = await db.client.findUnique({
       where: { id: clientId },
       select: {
         id: true,
@@ -53,6 +55,7 @@ export default async function ClientDashboard({
         <Tabs defaultValue="overview" className="mt-8">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="projects">Projects</TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
             <TabsTrigger value="budget">Budget</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
@@ -67,51 +70,105 @@ export default async function ClientDashboard({
               </Suspense>
 
               <Card className="col-span-full">
-                <Suspense fallback={<div>Loading timeline...</div>}>
+                <Suspense fallback={
+                  <Card className="p-6">
+                    <LoadingSkeleton rows={4} showAvatar={false} />
+                  </Card>
+                }>
                   <TimelineView clientId={clientId} limit={5} />
                 </Suspense>
               </Card>
 
               <Card className="col-span-full md:col-span-2">
-                <Suspense fallback={<div>Loading goals...</div>}>
+                <Suspense fallback={
+                  <Card className="p-6">
+                    <LoadingSkeleton rows={3} showAvatar={false} />
+                  </Card>
+                }>
                   <GoalsSection clientId={clientId} limit={3} />
                 </Suspense>
               </Card>
 
               <Card>
-                <Suspense fallback={<div>Loading feedback...</div>}>
+                <Suspense fallback={
+                  <Card className="p-6">
+                    <LoadingSkeleton rows={2} showAvatar={true} />
+                  </Card>
+                }>
                   <FeedbackSection clientId={clientId} limit={3} />
                 </Suspense>
               </Card>
             </div>
           </TabsContent>
 
+          <TabsContent value="projects">
+            <Suspense fallback={
+              <LoadingPage 
+                title="Loading Projects..." 
+                description="Fetching client project data"
+                size="md" 
+              />
+            }>
+              <ClientProjectsSection clientId={clientId} />
+            </Suspense>
+          </TabsContent>
+
           <TabsContent value="timeline">
-            <Suspense fallback={<div>Loading timeline...</div>}>
+            <Suspense fallback={
+              <LoadingPage 
+                title="Loading Timeline..." 
+                description="Building client activity timeline"
+                size="md" 
+              />
+            }>
               <TimelineView clientId={clientId} />
             </Suspense>
           </TabsContent>
 
           <TabsContent value="budget">
-            <Suspense fallback={<div>Loading budget...</div>}>
+            <Suspense fallback={
+              <LoadingPage 
+                title="Loading Budget..." 
+                description="Calculating budget information"
+                size="md" 
+              />
+            }>
               <BudgetSection clientId={clientId} />
             </Suspense>
           </TabsContent>
 
           <TabsContent value="documents">
-            <Suspense fallback={<div>Loading documents...</div>}>
+            <Suspense fallback={
+              <LoadingPage 
+                title="Loading Documents..." 
+                description="Preparing document library"
+                size="md" 
+              />
+            }>
               <DocumentSection clientId={clientId} />
             </Suspense>
           </TabsContent>
 
           <TabsContent value="feedback">
-            <Suspense fallback={<div>Loading feedback...</div>}>
+            <Suspense fallback={
+              <LoadingPage 
+                title="Loading Feedback..." 
+                description="Gathering client feedback data"
+                size="md" 
+              />
+            }>
               <FeedbackSection clientId={clientId} />
             </Suspense>
           </TabsContent>
 
           <TabsContent value="goals">
-            <Suspense fallback={<div>Loading goals...</div>}>
+            <Suspense fallback={
+              <LoadingPage 
+                title="Loading Goals..." 
+                description="Loading goal progress data"
+                size="md" 
+              />
+            }>
               <GoalsSection clientId={clientId} />
             </Suspense>
           </TabsContent>

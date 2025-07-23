@@ -17,12 +17,12 @@ import { CircularProgress } from '@mui/material';
 import Tabs, { TabItem } from '@/components/Tabs/Tabs';
 
 // Example of dynamically importing components
-const CreateCampaign = dynamic(() => import('@/components/CreateCampaign'), {
+const CreateCampaign = dynamic(() => import('@/components/Campaign/CreateCampaign'), {
   loading: () => <CircularProgress size={24} />,
   ssr: false
 });
 
-const ContentForm = dynamic(() => import('@/components/ContentForm'), {
+const ContentForm = dynamic(() => import('@/components/content/ContentForm'), {
   loading: () => <CircularProgress size={24} />,
   ssr: false
 });

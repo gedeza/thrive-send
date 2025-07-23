@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
 import { getAuth } from '@clerk/nextjs/server';
 import { z } from 'zod';
+import { nanoid } from 'nanoid';
 
 // Zod schema for template validation
 const templateSchema = z.object({
+  id: z.string().optional(), // Accept optional client-provided ID
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
   category: z.string().min(1, "Category is required"),
@@ -12,7 +14,7 @@ const templateSchema = z.object({
   content: z.string().optional(),
 });
 
-// GET /api/templates - fetch all templates for the organization
+// GET /api/templates - fetch all templates for the organization with AI enhancements
 export async function GET(req: NextRequest) {
   try {
     const { userId, orgId } = getAuth(req);
@@ -20,16 +22,79 @@ export async function GET(req: NextRequest) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const templates = await prisma.template.findMany({
-      where: {
-        organizationId: orgId,
-      },
-      orderBy: {
-        lastUpdated: 'desc',
-      },
-    });
+    // Check for enhanced mode (includes AI data)
+    const { searchParams } = new URL(req.url);
+    const enhanced = searchParams.get('enhanced') === 'true';
+    const context = searchParams.get('context');
+    const limit = parseInt(searchParams.get('limit') || '50');
 
-    return NextResponse.json(templates);
+    let templates;
+    
+    if (enhanced) {
+      // Fetch templates with AI enhancements
+      templates = await db.template.findMany({
+        where: {
+          organizationId: orgId,
+        },
+        include: {
+          author: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+            }
+          },
+          _count: {
+            select: {
+              templateUsages: true
+            }
+          },
+          templateUsages: {
+            where: {
+              userId: userId, // User's own usage
+            },
+            take: 1,
+            orderBy: {
+              timestamp: 'desc'
+            }
+          }
+        },
+        orderBy: [
+          { aiRecommended: 'desc' }, // AI recommended first
+          { performanceScore: 'desc' }, // Then by performance
+          { lastUpdated: 'desc' } // Finally by recency
+        ],
+        take: limit,
+      });
+
+      // Transform data to include AI enhancements
+      const enhancedTemplates = templates.map(template => ({
+        ...template,
+        usageCount: template._count.templateUsages,
+        lastUsedByUser: template.templateUsages[0]?.timestamp || null,
+        engagementRate: template.performanceScore ? template.performanceScore * 0.2 : 0, // Simulated
+        aiRecommended: template.aiRecommended || false,
+        performanceScore: template.performanceScore || 0,
+        // Remove internal fields
+        _count: undefined,
+        templateUsages: undefined,
+      }));
+
+      return NextResponse.json(enhancedTemplates);
+    } else {
+      // Standard template fetch
+      templates = await db.template.findMany({
+        where: {
+          organizationId: orgId,
+        },
+        orderBy: {
+          lastUpdated: 'desc',
+        },
+        take: limit,
+      });
+
+      return NextResponse.json(templates);
+    }
   } catch (error) {
     console.error("Error fetching templates:", error);
     return new NextResponse("Internal Server Error", { status: 500 });
@@ -51,9 +116,14 @@ export async function POST(req: NextRequest) {
       const validatedData = templateSchema.parse(body);
       console.log("Validated template data:", validatedData); // Debug log
 
-      const template = await prisma.template.create({
+      // Use client-provided ID if available and valid, otherwise generate with nanoid
+      const templateId = validatedData.id && validatedData.id.length > 0 
+        ? validatedData.id 
+        : nanoid();
+
+      const template = await db.template.create({
         data: {
-          id: Math.random().toString(36).substring(2, 9), // Generate a random ID
+          id: templateId,
           name: validatedData.name,
           description: validatedData.description,
           category: validatedData.category,
@@ -101,7 +171,7 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
     const validatedData = templateSchema.parse(body);
 
-    const template = await prisma.template.update({
+    const template = await db.template.update({
       where: {
         id: body.id,
         organizationId: orgId,
@@ -134,7 +204,7 @@ export async function DELETE(req: NextRequest) {
       return new NextResponse("Template ID is required", { status: 400 });
     }
 
-    await prisma.template.delete({
+    await db.template.delete({
       where: {
         id,
         organizationId: orgId,

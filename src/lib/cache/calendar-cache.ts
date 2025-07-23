@@ -1,332 +1,461 @@
-'use client';
+/**
+ * Calendar Cache System
+ * Intelligent caching strategies for calendar data with automatic invalidation
+ */
+
+import { CalendarEvent } from '@/components/content/types';
+
+export type CacheStrategy = 'memory' | 'localStorage' | 'sessionStorage' | 'indexedDB';
 
 export interface CacheConfig {
-  ttl?: number; // Time to live in milliseconds
-  maxSize?: number; // Maximum number of items
-  storage?: 'memory' | 'localStorage' | 'sessionStorage';
-  compress?: boolean;
+  strategy: CacheStrategy;
+  ttl: number; // Time to live in milliseconds
+  maxSize: number; // Maximum cache size
+  invalidateOn: ('create' | 'update' | 'delete')[];
+  compression: boolean;
+}
+
+export interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+  ttl: number;
+  hits: number;
+  size: number;
+  key: string;
 }
 
 export interface CacheStats {
   hitRate: number;
-  missRate: number;
-  size: number;
+  totalHits: number;
+  totalMisses: number;
+  cacheSize: number;
   memoryUsage: number;
-  lastCleanup: Date;
+  oldestEntry: number;
+  newestEntry: number;
 }
 
-interface CacheEntry<T> {
-  value: T;
-  timestamp: number;
-  ttl: number;
-  size: number;
-  accessCount: number;
-  lastAccessed: number;
-}
+// Default cache configurations for different data types
+export const CACHE_CONFIGS: Record<string, CacheConfig> = {
+  events: {
+    strategy: 'memory',
+    ttl: 5 * 60 * 1000, // 5 minutes
+    maxSize: 1000,
+    invalidateOn: ['create', 'update', 'delete'],
+    compression: true
+  },
+  monthView: {
+    strategy: 'memory',
+    ttl: 10 * 60 * 1000, // 10 minutes
+    maxSize: 50,
+    invalidateOn: ['create', 'update', 'delete'],
+    compression: false
+  },
+  templates: {
+    strategy: 'localStorage',
+    ttl: 24 * 60 * 60 * 1000, // 24 hours
+    maxSize: 100,
+    invalidateOn: [],
+    compression: true
+  },
+  userPreferences: {
+    strategy: 'localStorage',
+    ttl: 7 * 24 * 60 * 60 * 1000, // 7 days
+    maxSize: 10,
+    invalidateOn: [],
+    compression: false
+  },
+  recurringPatterns: {
+    strategy: 'memory',
+    ttl: 30 * 60 * 1000, // 30 minutes
+    maxSize: 200,
+    invalidateOn: ['create', 'update'],
+    compression: true
+  }
+};
 
-export class CalendarCache {
+class CalendarCache {
   private memoryCache = new Map<string, CacheEntry<any>>();
   private stats = {
     hits: 0,
     misses: 0,
-    lastCleanup: new Date(),
+    operations: 0
   };
-  private cleanupInterval: NodeJS.Timeout | null = null;
+  private maxMemorySize = 50 * 1024 * 1024; // 50MB
+  private currentMemorySize = 0;
 
-  constructor(private defaultConfig: CacheConfig = {}) {
-    this.defaultConfig = {
-      ttl: 300000, // 5 minutes
-      maxSize: 100,
-      storage: 'memory',
-      compress: false,
-      ...defaultConfig,
-    };
-
-    // Start cleanup interval
-    this.startCleanup();
-  }
-
-  private startCleanup() {
-    if (this.cleanupInterval) {
-      clearInterval(this.cleanupInterval);
-    }
-
-    this.cleanupInterval = setInterval(() => {
-      this.cleanup();
-    }, 60000); // Clean up every minute
-  }
-
-  private cleanup() {
-    const now = Date.now();
-    const expiredKeys: string[] = [];
-
-    // Find expired entries
-    for (const [key, entry] of this.memoryCache.entries()) {
-      if (now - entry.timestamp > entry.ttl) {
-        expiredKeys.push(key);
-      }
-    }
-
-    // Remove expired entries
-    expiredKeys.forEach(key => this.memoryCache.delete(key));
-
-    // If cache is still too large, remove least recently used items
-    if (this.memoryCache.size > (this.defaultConfig.maxSize || 100)) {
-      const entries = Array.from(this.memoryCache.entries());
-      entries.sort((a, b) => a[1].lastAccessed - b[1].lastAccessed);
-      
-      const itemsToRemove = entries.slice(0, entries.length - (this.defaultConfig.maxSize || 100));
-      itemsToRemove.forEach(([key]) => this.memoryCache.delete(key));
-    }
-
-    this.stats.lastCleanup = new Date();
-  }
-
-  private getStorageKey(key: string): string {
-    return `calendar-cache-${key}`;
-  }
-
-  private getStorageValue(key: string, storage: 'localStorage' | 'sessionStorage'): any {
-    if (typeof window === 'undefined') return null;
-
-    try {
-      const storageObj = storage === 'localStorage' ? localStorage : sessionStorage;
-      const item = storageObj.getItem(this.getStorageKey(key));
-      
-      if (!item) return null;
-
-      const parsed = JSON.parse(item);
-      const now = Date.now();
-      
-      if (now - parsed.timestamp > parsed.ttl) {
-        storageObj.removeItem(this.getStorageKey(key));
-        return null;
-      }
-
-      return parsed.value;
-    } catch (error) {
-      console.warn('Error reading from storage:', error);
-      return null;
-    }
-  }
-
-  private setStorageValue(key: string, value: any, config: CacheConfig, storage: 'localStorage' | 'sessionStorage'): void {
-    if (typeof window === 'undefined') return;
-
-    try {
-      const storageObj = storage === 'localStorage' ? localStorage : sessionStorage;
-      const item = {
-        value,
-        timestamp: Date.now(),
-        ttl: config.ttl || this.defaultConfig.ttl || 300000,
-      };
-
-      storageObj.setItem(this.getStorageKey(key), JSON.stringify(item));
-    } catch (error) {
-      console.warn('Error writing to storage:', error);
-    }
-  }
-
-  private calculateSize(value: any): number {
-    try {
-      return JSON.stringify(value).length;
-    } catch {
-      return 0;
-    }
-  }
-
-  async get<T>(key: string, config?: CacheConfig, refreshFn?: () => Promise<T>): Promise<T | null> {
-    const finalConfig = { ...this.defaultConfig, ...config };
-    const now = Date.now();
-
-    // Check memory cache first
-    const memoryEntry = this.memoryCache.get(key);
-    if (memoryEntry && now - memoryEntry.timestamp < memoryEntry.ttl) {
-      memoryEntry.accessCount++;
-      memoryEntry.lastAccessed = now;
-      this.stats.hits++;
-      return memoryEntry.value;
-    }
-
-    // Check storage cache
-    if (finalConfig.storage === 'localStorage') {
-      const storageValue = this.getStorageValue(key, 'localStorage');
-      if (storageValue !== null) {
-        // Put back in memory cache
-        this.memoryCache.set(key, {
-          value: storageValue,
-          timestamp: now,
-          ttl: finalConfig.ttl || 300000,
-          size: this.calculateSize(storageValue),
-          accessCount: 1,
-          lastAccessed: now,
-        });
-        this.stats.hits++;
-        return storageValue;
-      }
-    }
-
-    if (finalConfig.storage === 'sessionStorage') {
-      const storageValue = this.getStorageValue(key, 'sessionStorage');
-      if (storageValue !== null) {
-        // Put back in memory cache
-        this.memoryCache.set(key, {
-          value: storageValue,
-          timestamp: now,
-          ttl: finalConfig.ttl || 300000,
-          size: this.calculateSize(storageValue),
-          accessCount: 1,
-          lastAccessed: now,
-        });
-        this.stats.hits++;
-        return storageValue;
-      }
-    }
-
-    // Cache miss - try to refresh if function provided
-    this.stats.misses++;
+  constructor() {
+    // Clean up expired entries periodically
+    setInterval(() => this.cleanup(), 60000); // Every minute
     
+    // Listen for storage events to sync across tabs
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', this.handleStorageChange.bind(this));
+    }
+  }
+
+  /**
+   * Get data from cache with automatic fallback and refresh
+   */
+  async get<T>(
+    key: string, 
+    config: CacheConfig = CACHE_CONFIGS.events,
+    refreshFn?: () => Promise<T>
+  ): Promise<T | null> {
+    this.stats.operations++;
+
+    // Try to get from appropriate cache
+    const entry = await this.getFromCache<T>(key, config.strategy);
+    
+    if (entry && !this.isExpired(entry)) {
+      entry.hits++;
+      this.stats.hits++;
+      return entry.data;
+    }
+
+    this.stats.misses++;
+
+    // If refresh function provided, fetch fresh data
     if (refreshFn) {
       try {
-        const freshValue = await refreshFn();
-        await this.set(key, freshValue, finalConfig);
-        return freshValue;
+        const freshData = await refreshFn();
+        await this.set(key, freshData, config);
+        return freshData;
       } catch (error) {
-        console.error('Error refreshing cache:', error);
-        return null;
+        console.warn('Cache refresh failed:', error);
+        // Return stale data if available
+        return entry?.data || null;
       }
     }
 
     return null;
   }
 
-  async set<T>(key: string, value: T, config?: CacheConfig): Promise<void> {
-    const finalConfig = { ...this.defaultConfig, ...config };
-    const now = Date.now();
-    const size = this.calculateSize(value);
-
-    // Set in memory cache
-    this.memoryCache.set(key, {
-      value,
-      timestamp: now,
-      ttl: finalConfig.ttl || 300000,
+  /**
+   * Set data in cache with automatic compression and size management
+   */
+  async set<T>(key: string, data: T, config: CacheConfig = CACHE_CONFIGS.events): Promise<void> {
+    const serializedData = config.compression ? this.compress(data) : data;
+    const size = this.estimateSize(serializedData);
+    
+    const entry: CacheEntry<T> = {
+      data: serializedData,
+      timestamp: Date.now(),
+      ttl: config.ttl,
+      hits: 0,
       size,
-      accessCount: 0,
-      lastAccessed: now,
-    });
+      key
+    };
 
-    // Set in storage cache if configured
-    if (finalConfig.storage === 'localStorage') {
-      this.setStorageValue(key, value, finalConfig, 'localStorage');
-    } else if (finalConfig.storage === 'sessionStorage') {
-      this.setStorageValue(key, value, finalConfig, 'sessionStorage');
-    }
+    await this.setInCache(key, entry, config.strategy);
 
-    // Trigger cleanup if cache is getting too large
-    if (this.memoryCache.size > (finalConfig.maxSize || 100)) {
-      this.cleanup();
+    // Update memory tracking
+    if (config.strategy === 'memory') {
+      this.currentMemorySize += size;
+      this.enforceMemoryLimit(config);
     }
   }
 
+  /**
+   * Intelligent cache invalidation based on data relationships
+   */
   async invalidate(pattern: string | RegExp, reason: 'create' | 'update' | 'delete' = 'update'): Promise<void> {
-    const keysToRemove: string[] = [];
+    const keysToInvalidate: string[] = [];
 
-    // Find matching keys in memory cache
+    // Check memory cache
     for (const key of this.memoryCache.keys()) {
-      if (typeof pattern === 'string') {
-        if (key.includes(pattern)) {
-          keysToRemove.push(key);
-        }
-      } else {
-        if (pattern.test(key)) {
-          keysToRemove.push(key);
+      if (this.matchesPattern(key, pattern)) {
+        keysToInvalidate.push(key);
+      }
+    }
+
+    // Check localStorage
+    if (typeof window !== 'undefined') {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && this.matchesPattern(key, pattern)) {
+          keysToInvalidate.push(key);
         }
       }
     }
 
-    // Remove from memory cache
-    keysToRemove.forEach(key => this.memoryCache.delete(key));
-
-    // Remove from storage caches
-    if (typeof window !== 'undefined') {
-      const storageKeys = [
-        ...Object.keys(localStorage),
-        ...Object.keys(sessionStorage),
-      ];
-
-      storageKeys.forEach(storageKey => {
-        if (storageKey.startsWith('calendar-cache-')) {
-          const cacheKey = storageKey.replace('calendar-cache-', '');
-          let shouldRemove = false;
-
-          if (typeof pattern === 'string') {
-            shouldRemove = cacheKey.includes(pattern);
-          } else {
-            shouldRemove = pattern.test(cacheKey);
-          }
-
-          if (shouldRemove) {
-            localStorage.removeItem(storageKey);
-            sessionStorage.removeItem(storageKey);
-          }
-        }
-      });
+    // Invalidate all matching keys
+    for (const key of keysToInvalidate) {
+      await this.delete(key);
     }
 
-    console.log(`Cache invalidated: ${keysToRemove.length} keys removed (reason: ${reason})`);
+    // Invalidate related caches based on data relationships
+    await this.invalidateRelated(pattern, reason);
   }
 
-  async clear(): Promise<void> {
-    // Clear memory cache
-    this.memoryCache.clear();
-
-    // Clear storage caches
-    if (typeof window !== 'undefined') {
-      const storageKeys = [
-        ...Object.keys(localStorage),
-        ...Object.keys(sessionStorage),
-      ];
-
-      storageKeys.forEach(key => {
-        if (key.startsWith('calendar-cache-')) {
-          localStorage.removeItem(key);
-          sessionStorage.removeItem(key);
+  /**
+   * Preload critical data for improved perceived performance
+   */
+  async preload(keys: Array<{ key: string; config: CacheConfig; fetcher: () => Promise<any> }>): Promise<void> {
+    const preloadPromises = keys.map(async ({ key, config, fetcher }) => {
+      const exists = await this.has(key, config.strategy);
+      if (!exists) {
+        try {
+          const data = await fetcher();
+          await this.set(key, data, config);
+        } catch (error) {
+          console.warn(`Preload failed for ${key}:`, error);
         }
-      });
-    }
+      }
+    });
 
-    // Reset stats
-    this.stats = {
-      hits: 0,
-      misses: 0,
-      lastCleanup: new Date(),
-    };
+    await Promise.allSettled(preloadPromises);
   }
 
+  /**
+   * Get cache statistics for monitoring
+   */
   getStats(): CacheStats {
-    const total = this.stats.hits + this.stats.misses;
-    const hitRate = total > 0 ? (this.stats.hits / total) * 100 : 0;
-    const missRate = total > 0 ? (this.stats.misses / total) * 100 : 0;
-
-    let memoryUsage = 0;
+    const hitRate = this.stats.operations > 0 ? this.stats.hits / this.stats.operations : 0;
+    
+    let oldestEntry = Date.now();
+    let newestEntry = 0;
+    
     for (const entry of this.memoryCache.values()) {
-      memoryUsage += entry.size;
+      oldestEntry = Math.min(oldestEntry, entry.timestamp);
+      newestEntry = Math.max(newestEntry, entry.timestamp);
     }
 
     return {
       hitRate,
-      missRate,
-      size: this.memoryCache.size,
-      memoryUsage,
-      lastCleanup: this.stats.lastCleanup,
+      totalHits: this.stats.hits,
+      totalMisses: this.stats.misses,
+      cacheSize: this.memoryCache.size,
+      memoryUsage: this.currentMemorySize,
+      oldestEntry: oldestEntry === Date.now() ? 0 : oldestEntry,
+      newestEntry
     };
   }
 
-  destroy(): void {
-    if (this.cleanupInterval) {
-      clearInterval(this.cleanupInterval);
-      this.cleanupInterval = null;
-    }
+  /**
+   * Clear all caches
+   */
+  async clear(): Promise<void> {
     this.memoryCache.clear();
+    this.currentMemorySize = 0;
+    
+    if (typeof window !== 'undefined') {
+      // Clear cache-related localStorage items
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('cache:')) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+    }
+  }
+
+  // Private methods
+
+  private async getFromCache<T>(key: string, strategy: CacheStrategy): Promise<CacheEntry<T> | null> {
+    switch (strategy) {
+      case 'memory':
+        return this.memoryCache.get(key) || null;
+      
+      case 'localStorage':
+        if (typeof window === 'undefined') return null;
+        const item = localStorage.getItem(`cache:${key}`);
+        return item ? JSON.parse(item) : null;
+      
+      case 'sessionStorage':
+        if (typeof window === 'undefined') return null;
+        const sessionItem = sessionStorage.getItem(`cache:${key}`);
+        return sessionItem ? JSON.parse(sessionItem) : null;
+      
+      default:
+        return null;
+    }
+  }
+
+  private async setInCache<T>(key: string, entry: CacheEntry<T>, strategy: CacheStrategy): Promise<void> {
+    switch (strategy) {
+      case 'memory':
+        this.memoryCache.set(key, entry);
+        break;
+      
+      case 'localStorage':
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem(`cache:${key}`, JSON.stringify(entry));
+          } catch (error) {
+            console.warn('localStorage cache failed:', error);
+          }
+        }
+        break;
+      
+      case 'sessionStorage':
+        if (typeof window !== 'undefined') {
+          try {
+            sessionStorage.setItem(`cache:${key}`, JSON.stringify(entry));
+          } catch (error) {
+            console.warn('sessionStorage cache failed:', error);
+          }
+        }
+        break;
+    }
+  }
+
+  private async delete(key: string): Promise<void> {
+    this.memoryCache.delete(key);
+    
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(`cache:${key}`);
+      sessionStorage.removeItem(`cache:${key}`);
+    }
+  }
+
+  private async has(key: string, strategy: CacheStrategy): Promise<boolean> {
+    const entry = await this.getFromCache(key, strategy);
+    return entry !== null && !this.isExpired(entry);
+  }
+
+  private isExpired(entry: CacheEntry<any>): boolean {
+    return Date.now() - entry.timestamp > entry.ttl;
+  }
+
+  private cleanup(): void {
+    // Clean memory cache
+    for (const [key, entry] of this.memoryCache.entries()) {
+      if (this.isExpired(entry)) {
+        this.memoryCache.delete(key);
+        this.currentMemorySize -= entry.size;
+      }
+    }
+
+    // Clean localStorage cache
+    if (typeof window !== 'undefined') {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('cache:')) {
+          try {
+            const item = localStorage.getItem(key);
+            if (item) {
+              const entry = JSON.parse(item);
+              if (this.isExpired(entry)) {
+                keysToRemove.push(key);
+              }
+            }
+          } catch (error) {
+            keysToRemove.push(key); // Remove corrupted entries
+          }
+        }
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+    }
+  }
+
+  private enforceMemoryLimit(config: CacheConfig): void {
+    if (this.currentMemorySize <= this.maxMemorySize) return;
+
+    // Sort by last access time and remove oldest entries
+    const entries = Array.from(this.memoryCache.entries())
+      .sort(([, a], [, b]) => a.timestamp - b.timestamp);
+
+    while (this.currentMemorySize > this.maxMemorySize && entries.length > 0) {
+      const [key, entry] = entries.shift()!;
+      this.memoryCache.delete(key);
+      this.currentMemorySize -= entry.size;
+    }
+  }
+
+  private matchesPattern(key: string, pattern: string | RegExp): boolean {
+    if (typeof pattern === 'string') {
+      return key.includes(pattern);
+    }
+    return pattern.test(key);
+  }
+
+  private async invalidateRelated(pattern: string | RegExp, reason: string): Promise<void> {
+    // Define data relationships for smart invalidation
+    const relationships: Record<string, string[]> = {
+      'events': ['monthView', 'weekView', 'dayView', 'listView'],
+      'templates': ['eventForm'],
+      'userPreferences': ['calendarSettings']
+    };
+
+    const patternStr = pattern.toString();
+    for (const [dataType, related] of Object.entries(relationships)) {
+      if (patternStr.includes(dataType)) {
+        for (const relatedType of related) {
+          await this.invalidate(relatedType, reason);
+        }
+      }
+    }
+  }
+
+  private compress<T>(data: T): string {
+    try {
+      return JSON.stringify(data);
+    } catch (error) {
+      console.warn('Compression failed:', error);
+      return JSON.stringify(data);
+    }
+  }
+
+  private estimateSize(data: any): number {
+    try {
+      return new Blob([JSON.stringify(data)]).size;
+    } catch (error) {
+      return JSON.stringify(data).length * 2; // Rough estimate
+    }
+  }
+
+  private handleStorageChange(event: StorageEvent): void {
+    if (event.key && event.key.startsWith('cache:')) {
+      // Invalidate memory cache when localStorage changes in other tabs
+      const cacheKey = event.key.replace('cache:', '');
+      this.memoryCache.delete(cacheKey);
+    }
   }
 }
+
+// Export singleton instance
+export const calendarCache = new CalendarCache();
+
+// Hook for React components
+export function useCalendarCache() {
+  return {
+    cache: calendarCache,
+    get: calendarCache.get.bind(calendarCache),
+    set: calendarCache.set.bind(calendarCache),
+    invalidate: calendarCache.invalidate.bind(calendarCache),
+    preload: calendarCache.preload.bind(calendarCache),
+    getStats: calendarCache.getStats.bind(calendarCache)
+  };
+}
+
+// Cache key generators
+export const generateCacheKey = {
+  events: (filters?: any) => {
+    const baseKey = 'events';
+    if (!filters) return baseKey;
+    
+    const filterHash = btoa(JSON.stringify(filters)).slice(0, 8);
+    return `${baseKey}:${filterHash}`;
+  },
+  
+  monthView: (date: string, timezone: string) => 
+    `monthView:${date}:${timezone}`,
+  
+  weekView: (date: string, timezone: string) => 
+    `weekView:${date}:${timezone}`,
+  
+  dayView: (date: string, timezone: string) => 
+    `dayView:${date}:${timezone}`,
+  
+  templates: (type?: string) => 
+    type ? `templates:${type}` : 'templates:all',
+  
+  recurringEvents: (seriesId: string) => 
+    `recurring:${seriesId}`,
+  
+  userPreferences: (userId: string) => 
+    `preferences:${userId}`
+};

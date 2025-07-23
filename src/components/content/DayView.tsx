@@ -106,17 +106,17 @@ const DayViewTimeSlot = ({
     <div
       ref={setNodeRef}
       className={cn(
-        "grid grid-cols-2 min-h-[60px]",
+        "grid grid-cols-1 sm:grid-cols-2 min-h-[50px] sm:min-h-[60px] touch-manipulation",
         isOver && "bg-muted/80"
       )}
     >
       {/* Time column */}
-      <div className="p-2 text-sm text-muted-foreground border-r">
+      <div className="hidden sm:block p-2 text-sm text-muted-foreground border-r">
         {formatInTimeZone(setHours(date, hour), userTimezone, "h:mm a")}
       </div>
 
-      {/* Events column */}
-      <div className="relative p-2">
+      {/* Events column - mobile takes full width */}
+      <div className="relative p-1 sm:p-2">
         {events.map((event: CalendarEvent) => {
           const [hours, minutes] = event.time?.split(':').map(Number) || [0, 0];
           const duration = event.duration || DEFAULT_DURATIONS[event.type] || 60;
@@ -129,10 +129,10 @@ const DayViewTimeSlot = ({
             <div
               key={event.id}
               className={cn(
-                "absolute left-2 right-2 p-2 rounded-md text-sm cursor-pointer hover:opacity-80 transition-opacity",
+                "absolute left-1 sm:left-2 right-1 sm:right-2 p-1.5 sm:p-2 rounded-md text-sm cursor-pointer hover:opacity-80 transition-opacity touch-manipulation",
                 isValidContentType(event.type) ? eventTypeColorMap[event.type].bg : "bg-gray-100 dark:bg-gray-700/30",
                 isValidContentType(event.type) ? eventTypeColorMap[event.type].text : "text-foreground",
-                "shadow-sm"
+                "shadow-sm min-h-[36px] sm:min-h-[40px]"
               )}
               style={{
                 top: `${(minutes / 60) * DAY_VIEW_SLOT_HEIGHT}px`,
@@ -143,16 +143,20 @@ const DayViewTimeSlot = ({
             >
               <div className="flex items-start justify-between h-full">
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">{event.title}</div>
+                  <div className="font-medium truncate text-sm">{event.title}</div>
+                  {/* Show time on mobile since time column is hidden */}
                   <div className="text-xs text-muted-foreground mt-1">
-                    {event.time?.substring(0, 5)} - {formatInTimeZone(
-                      addMinutes(
-                        parseISO(`${event.date}T${event.time}`),
-                        duration
-                      ),
-                      userTimezone,
-                      "h:mm a"
-                    )}
+                    <span className="sm:hidden">{event.time?.substring(0, 5)}</span>
+                    <span className="hidden sm:inline">
+                      {event.time?.substring(0, 5)} - {formatInTimeZone(
+                        addMinutes(
+                          parseISO(`${event.date}T${event.time}`),
+                          duration
+                        ),
+                        userTimezone,
+                        "h:mm a"
+                      )}
+                    </span>
                   </div>
                 </div>
                 {event.type === 'social' && event.socialMediaContent?.platforms?.length > 0 && (
@@ -179,13 +183,17 @@ export interface DayViewProps {
   getEventsForDay: (day: Date) => CalendarEvent[];
   onEventClick: (event: CalendarEvent) => void;
   userTimezone: string;
+  onEventHover?: (event: CalendarEvent, e: React.MouseEvent) => void;
+  onEventHoverEnd?: () => void;
 }
 
 export const DayView: React.FC<DayViewProps> = ({
   date,
   getEventsForDay,
   onEventClick,
-  userTimezone
+  userTimezone,
+  onEventHover,
+  onEventHoverEnd
 }) => {
   const eventsByHour = useMemo(() => {
     return groupEventsByHour(getEventsForDay(date));
@@ -195,14 +203,18 @@ export const DayView: React.FC<DayViewProps> = ({
 
   return (
     <div className="space-y-0 border rounded-lg overflow-hidden">
-      <div className="bg-muted/50 p-4 border-b">
-        <h3 className="font-semibold text-lg">
-          {formatInTimeZone(date, userTimezone, "EEEE, MMMM d, yyyy")}
+      <div className="bg-muted/50 p-2 sm:p-4 border-b">
+        <h3 className="font-semibold text-base sm:text-lg">
+          <span className="hidden sm:inline">{formatInTimeZone(date, userTimezone, "EEEE, MMMM d, yyyy")}</span>
+          <span className="sm:hidden">{formatInTimeZone(date, userTimezone, "EEE, MMM d")}</span>
         </h3>
       </div>
       
-      <div className="max-h-[600px] overflow-y-auto">
-        {hours.map(hour => (
+      <div className="max-h-[500px] sm:max-h-[600px] overflow-y-auto touch-pan-y">
+        {hours.filter(hour => {
+          // Show hours with events or business hours (9-17)
+          return eventsByHour[hour]?.length > 0 || (hour >= 9 && hour <= 17);
+        }).map(hour => (
           <div key={hour} className="border-b last:border-b-0">
             <DayViewTimeSlot
               hour={hour}

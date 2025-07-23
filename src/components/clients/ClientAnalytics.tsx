@@ -59,7 +59,9 @@ export default function ClientAnalytics({ clientId }: ClientAnalyticsProps) {
           throw new Error("Failed to fetch analytics");
         }
         const data = await response.json();
-        setData(data);
+        // Handle both old direct data format and new standardized format
+        const analyticsData = data.data ? data.data : data;
+        setData(analyticsData);
       } catch (error) {
         console.error("Error fetching analytics:", error);
         setError("Failed to load analytics data");

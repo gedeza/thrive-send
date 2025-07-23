@@ -5,6 +5,7 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { cn } from '@/lib/utils';
 import { useTimezone } from '@/hooks/use-timezone';
 import { CalendarEvent, ContentType, SocialPlatform } from '@/types/calendar';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Color mappings for event types
 const eventTypeColorMap: Record<ContentType, { bg: string; text: string; border: string }> = {
@@ -55,11 +56,21 @@ function isValidContentType(type: any): type is ContentType {
 export interface ListViewProps {
   events: CalendarEvent[];
   onEventClick: (event: CalendarEvent) => void;
+  isSelectionMode?: boolean;
+  selectedEvents?: Set<string>;
+  onToggleSelection?: (eventId: string) => void;
+  onEventHover?: (event: CalendarEvent, e: React.MouseEvent) => void;
+  onEventHoverEnd?: () => void;
 }
 
 export const ListView: React.FC<ListViewProps> = ({
   events,
-  onEventClick
+  onEventClick,
+  isSelectionMode = false,
+  selectedEvents = new Set(),
+  onToggleSelection,
+  onEventHover,
+  onEventHoverEnd
 }) => {
   const userTimezone = useTimezone();
   
@@ -75,7 +86,11 @@ export const ListView: React.FC<ListViewProps> = ({
   return (
     <div className="space-y-4">
       {/* Header row - responsive */}
-      <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 bg-muted/50 rounded-md font-medium text-sm">
+      <div className={cn(
+        "hidden md:grid gap-4 p-4 bg-muted/50 rounded-md font-medium text-sm",
+        isSelectionMode ? "md:grid-cols-13" : "md:grid-cols-12"
+      )}>
+        {isSelectionMode && <div className="col-span-1"></div>}
         <div className="col-span-3">Title</div>
         <div className="col-span-2">Type</div>
         <div className="col-span-2">Date & Time</div>
@@ -90,17 +105,60 @@ export const ListView: React.FC<ListViewProps> = ({
       </div>
       
       {/* Event list */}
-      <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+      <div className="space-y-2 max-h-[50vh] overflow-y-auto touch-pan-y">
         {sortedEvents.map((event) => (
           <div 
             key={event.id} 
-            className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 border rounded-md hover:bg-muted/50 transition-colors cursor-pointer"
-            onClick={() => onEventClick(event)}
+            className={cn(
+              "grid gap-4 p-3 sm:p-4 border rounded-md hover:bg-muted/50 transition-colors cursor-pointer touch-manipulation",
+              isSelectionMode ? "grid-cols-1 md:grid-cols-13" : "grid-cols-1 md:grid-cols-12"
+            )}
+            onClick={() => {
+              if (isSelectionMode && onToggleSelection) {
+                onToggleSelection(event.id);
+              } else {
+                onEventClick(event);
+              }
+            }}
+            onMouseEnter={(e) => onEventHover?.(event, e)}
+            onMouseLeave={onEventHoverEnd}
+            onFocus={(e) => onEventHover?.(event, e as any)}
+            onBlur={onEventHoverEnd}
           >
+            {/* Checkbox column (desktop only) */}
+            {isSelectionMode && (
+              <div className="hidden md:block md:col-span-1 flex items-center justify-center">
+                <Checkbox
+                  checked={selectedEvents.has(event.id)}
+                  onCheckedChange={() => onToggleSelection?.(event.id)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            )}
             {/* Mobile view */}
             <div className="md:hidden space-y-2">
-              <div className="font-medium">{event.title}</div>
-              <div className="text-sm text-muted-foreground">{event.description}</div>
+              <div className="flex items-start justify-between gap-2">
+                {isSelectionMode && (
+                  <Checkbox
+                    checked={selectedEvents.has(event.id)}
+                    onCheckedChange={() => onToggleSelection?.(event.id)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="mt-1"
+                  />
+                )}
+                <div className="font-medium flex-1">{event.title}</div>
+                <div className="text-xs text-muted-foreground flex-shrink-0">
+                  {formatInTimeZone(new Date(`${event.date}T${event.time || '00:00'}`), userTimezone, "MMM d")}
+                  {event.time && (
+                    <div className="text-xs">
+                      {formatInTimeZone(new Date(`${event.date}T${event.time}`), userTimezone, "h:mm a")}
+                    </div>
+                  )}
+                </div>
+              </div>
+              {event.description && (
+                <div className="text-sm text-muted-foreground line-clamp-2">{event.description}</div>
+              )}
               <div className="flex flex-wrap gap-2 mt-2">
                 <span className={cn(
                   "px-2 py-1 rounded-full text-xs font-medium",
@@ -118,6 +176,16 @@ export const ListView: React.FC<ListViewProps> = ({
                 )}>
                   {event.status}
                 </span>
+                {/* Social platforms on mobile */}
+                {event.type === 'social' && event.socialMediaContent?.platforms?.length > 0 && (
+                  <div className="flex gap-1">
+                    {event.socialMediaContent.platforms.map((platform: SocialPlatform) => (
+                      <span key={platform} className="text-sm">
+                        {platformColorMap[platform]?.icon}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             
@@ -185,7 +253,9 @@ export const ListView: React.FC<ListViewProps> = ({
 
         {sortedEvents.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
-            No events found
+            <div className="text-lg mb-2">📅</div>
+            <div>No events found</div>
+            <div className="text-sm mt-1">Create your first event to get started</div>
           </div>
         )}
       </div>

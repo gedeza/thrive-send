@@ -68,6 +68,8 @@ interface MonthViewProps {
   handleEventClick: (event: CalendarEvent) => void;
   handleDateClick: (day: Date) => void;
   userTimezone: string;
+  onEventHover?: (event: CalendarEvent, e: React.MouseEvent) => void;
+  onEventHoverEnd?: () => void;
 }
 
 // Helper functions
@@ -92,7 +94,9 @@ const MonthViewDay = ({
   isCurrentMonth, 
   onEventClick, 
   onClick,
-  userTimezone 
+  userTimezone,
+  onEventHover,
+  onEventHoverEnd
 }: { 
   day: Date; 
   events: CalendarEvent[];
@@ -100,6 +104,8 @@ const MonthViewDay = ({
   onEventClick: (event: CalendarEvent) => void;
   onClick: () => void;
   userTimezone: string;
+  onEventHover?: (event: CalendarEvent, e: React.MouseEvent) => void;
+  onEventHoverEnd?: () => void;
 }) => {
   const { setNodeRef, isOver } = useDroppable({
     id: formatInTimeZone(day, userTimezone, 'yyyy-MM-dd'),
@@ -117,11 +123,11 @@ const MonthViewDay = ({
     <div
       ref={setNodeRef}
       className={cn(
-        "relative min-h-[120px] p-2 border rounded-md hover:bg-muted/50 transition-colors",
+        "relative min-h-[100px] sm:min-h-[120px] p-1 sm:p-2 border rounded-md hover:bg-muted/50 transition-colors touch-manipulation",
         isToday && "bg-primary/5",
         !isCurrentMonth && "opacity-50",
         isOver && "bg-muted/80",
-        "flex flex-col h-full"
+        "flex flex-col h-full cursor-pointer"
       )}
       onClick={onClick}
       onKeyDown={(e) => {
@@ -137,14 +143,19 @@ const MonthViewDay = ({
       {/* Day number */}
       <div className="flex justify-between items-center mb-1">
         <span className={cn(
-          "text-sm font-medium",
+          "text-sm sm:text-base font-medium",
           isToday && "text-primary font-bold"
         )}>
           {formatInTimeZone(day, userTimezone, "d")}
         </span>
         {events.length > 0 && (
-          <span className="text-xs text-muted-foreground">
+          <span className="hidden sm:inline text-xs text-muted-foreground">
             {events.length} {events.length === 1 ? 'event' : 'events'}
+          </span>
+        )}
+        {events.length > 0 && (
+          <span className="sm:hidden text-xs text-muted-foreground">
+            {events.length}
           </span>
         )}
       </div>
@@ -158,15 +169,19 @@ const MonthViewDay = ({
                 key={event.id}
                 id={`event-${event.id}`}
                 className={cn(
-                  "text-xs p-1.5 px-2 rounded-md truncate cursor-pointer hover:opacity-80 transition-opacity",
+                  "text-xs p-1 sm:p-1.5 px-1.5 sm:px-2 rounded-md truncate cursor-pointer hover:opacity-80 transition-opacity touch-manipulation",
                   isValidContentType(event.type) ? eventTypeColorMap[event.type].bg : "bg-gray-100 dark:bg-gray-700/30",
                   isValidContentType(event.type) ? eventTypeColorMap[event.type].text : "text-foreground",
-                  "flex items-center gap-1.5"
+                  "flex items-center gap-1.5 min-h-[28px] sm:min-h-[32px]"
                 )}
                 onClick={(e) => {
                   e.stopPropagation();
                   onEventClick(event);
                 }}
+                onMouseEnter={(e) => {
+                  onEventHover?.(event, e);
+                }}
+                onMouseLeave={onEventHoverEnd}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
@@ -174,12 +189,16 @@ const MonthViewDay = ({
                     onEventClick(event);
                   }
                 }}
+                onFocus={(e) => {
+                  onEventHover?.(event, e as any);
+                }}
+                onBlur={onEventHoverEnd}
                 tabIndex={0}
                 role="button"
                 aria-label={`${event.title}, ${event.type} event${event.time ? ` at ${event.time}` : ''}`}
               >
                 {event.time && (
-                  <span className="text-[10px] font-medium opacity-70 whitespace-nowrap">
+                  <span className="hidden sm:inline text-[10px] font-medium opacity-70 whitespace-nowrap">
                     {event.time.substring(0, 5)}
                   </span>
                 )}
@@ -197,7 +216,7 @@ const MonthViewDay = ({
         {/* More events button */}
         {hasMoreEvents && (
           <button
-            className="text-xs text-primary hover:underline w-full text-left mt-1"
+            className="text-xs text-primary hover:underline w-full text-left mt-1 touch-manipulation min-h-[24px] flex items-center"
             onClick={(e) => {
               e.stopPropagation();
               // Remove this console.log - it's causing render-phase updates
@@ -210,9 +229,9 @@ const MonthViewDay = ({
         )}
       </div>
 
-      {/* Quick add button */}
+      {/* Quick add button - hidden on mobile, shown on hover for desktop */}
       <button
-        className="absolute bottom-1 right-1 p-1 rounded-full hover:bg-muted opacity-0 group-hover:opacity-100 transition-opacity"
+        className="hidden sm:block absolute bottom-1 right-1 p-1 rounded-full hover:bg-muted opacity-0 group-hover:opacity-100 transition-opacity touch-manipulation"
         onClick={(e) => {
           e.stopPropagation();
           onClick();
@@ -232,22 +251,24 @@ export function MonthView({
   getEventsForDay,
   handleEventClick,
   handleDateClick,
-  userTimezone
+  userTimezone,
+  onEventHover,
+  onEventHoverEnd
 }: MonthViewProps) {
   return (
-    <div className="p-4">
+    <div className="p-2 sm:p-4">
       {/* Day headers */}
-      <div className="grid grid-cols-7 gap-1 mb-2">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-2">
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-          <div key={day} className="text-center font-medium py-1 text-muted-foreground">
+          <div key={day} className="text-center font-medium py-1 text-muted-foreground text-sm">
             <span className="hidden sm:inline">{day}</span>
             <span className="sm:hidden">{day.charAt(0)}</span>
           </div>
         ))}
       </div>
 
-      {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-1 auto-rows-fr" style={{ minHeight: "calc(50vh)" }}>
+      {/* Calendar grid - responsive */}
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1 auto-rows-fr" style={{ minHeight: "calc(40vh)" }}>
         {daysInMonth.map((day) => {
           const dayEvents = getEventsForDay(day);
           const isCurrentMonth = isSameMonth(day, currentDate);
@@ -267,6 +288,8 @@ export function MonthView({
                 onEventClick={handleEventClick}
                 onClick={() => handleDateClick(day)}
                 userTimezone={userTimezone}
+                onEventHover={onEventHover}
+                onEventHoverEnd={onEventHoverEnd}
               />
             </div>
           );

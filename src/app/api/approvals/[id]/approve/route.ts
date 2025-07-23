@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 import { ContentStatus, ApprovalStep } from '@prisma/client';
+import { CampaignEmailService } from '@/lib/services/campaign-email-service';
 
 export async function POST(
   request: NextRequest,
@@ -60,6 +61,19 @@ export async function POST(
         createdBy: user.id,
       },
     });
+
+    // 🚀 NEW: Trigger email queue integration when content is approved
+    try {
+      await CampaignEmailService.onContentApproved(approval.content.id, {
+        id: approval.id,
+        userId: user.id,
+        approvedAt: new Date(),
+        contentType: approval.content.type,
+      });
+    } catch (emailError) {
+      // Log error but don't fail the approval
+      console.error('Failed to trigger email queue after approval:', emailError);
+    }
 
     return NextResponse.json(approval);
   } catch (error) {

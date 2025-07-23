@@ -383,6 +383,120 @@ async function getRevenueData(
   };
 }
 
+export async function GET(request: Request) {
+  try {
+    // Extract URL search params for GET request
+    const { searchParams } = new URL(request.url);
+    const timeframe = searchParams.get('timeframe') || 'week';
+    const startDate = searchParams.get('startDate') || format(subWeeks(new Date(), 1), 'yyyy-MM-dd');
+    const endDate = searchParams.get('endDate') || format(new Date(), 'yyyy-MM-dd');
+    const platform = searchParams.get('platform') || undefined;
+    const includeMetrics = searchParams.get('include.metrics') !== 'false';
+    const includeCharts = searchParams.get('include.charts') !== 'false';
+    const includeAudience = searchParams.get('include.audience') !== 'false';
+    const includeEngagement = searchParams.get('include.engagement') !== 'false';
+    const includeRevenue = searchParams.get('include.revenue') !== 'false';
+
+    const requestData: AnalyticsRequest = {
+      timeframe: timeframe as any,
+      dateRange: {
+        startDate,
+        endDate
+      },
+      platform,
+      include: {
+        metrics: includeMetrics,
+        charts: includeCharts,
+        audience: includeAudience,
+        engagement: includeEngagement,
+        revenue: includeRevenue
+      }
+    };
+
+    const user = await getAuthenticatedUser();
+    const organizationIds = user.organizationMemberships.map(m => m.organizationId);
+    
+    if (organizationIds.length === 0) {
+      return NextResponse.json({
+        error: 'No organization access',
+        success: false
+      }, { status: 403 });
+    }
+
+    const startDateTime = new Date(requestData.dateRange.startDate);
+    const endDateTime = new Date(requestData.dateRange.endDate);
+
+    const result: any = {
+      success: true,
+      data: {}
+    };
+
+    // Fetch requested data sections
+    if (requestData.include.metrics) {
+      result.data.metrics = await getAnalyticsMetrics(
+        organizationIds,
+        startDateTime,
+        endDateTime,
+        requestData.platform
+      );
+    }
+
+    if (requestData.include.charts) {
+      result.data.charts = await getChartData(
+        organizationIds,
+        startDateTime,
+        endDateTime,
+        requestData.timeframe,
+        requestData.platform
+      );
+    }
+
+    if (requestData.include.audience) {
+      result.data.audience = await getAudienceData(
+        organizationIds,
+        startDateTime,
+        endDateTime
+      );
+    }
+
+    if (requestData.include.engagement) {
+      result.data.engagement = await getEngagementData(
+        organizationIds,
+        startDateTime,
+        endDateTime,
+        requestData.timeframe
+      );
+    }
+
+    if (requestData.include.revenue) {
+      result.data.revenue = await getRevenueData(
+        organizationIds,
+        startDateTime,
+        endDateTime,
+        requestData.timeframe
+      );
+    }
+
+    result.metadata = {
+      timeframe: requestData.timeframe,
+      dateRange: requestData.dateRange,
+      platform: requestData.platform,
+      organizationCount: organizationIds.length,
+      timestamp: new Date().toISOString()
+    };
+
+    return NextResponse.json(result);
+
+  } catch (error) {
+    console.error('Comprehensive analytics GET error:', error);
+    return NextResponse.json({
+      error: 'Internal server error',
+      success: false,
+      details: error instanceof Error ? error.message : String(error)
+    }, { status: 500 });
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const user = await getAuthenticatedUser();

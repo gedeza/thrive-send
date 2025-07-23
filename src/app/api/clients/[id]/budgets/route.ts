@@ -1,92 +1,129 @@
-import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
-import { db } from '@/lib/db';
-import { Prisma } from '@prisma/client';
-
-interface Budget {
-  id: string;
-  amount: number;
-  spent: number;
-  currency: string;
-  startDate: Date;
-  endDate: Date | null;
-  status: string;
-  expenses: Expense[];
-}
-
-interface Expense {
-  id: string;
-  description: string;
-  amount: number;
-  date: Date;
-  category: string;
-  status: string;
-}
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
+import { db } from "@/lib/db";
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const { userId, orgId } = await auth();
-    if (!userId || !orgId) {
-      return new NextResponse('Unauthorized', { status: 401 });
+    const session = await auth();
+    if (!session?.userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const clientId = params.id;
 
-    // Get client budget data
-    const budgets = await db.$queryRaw<Budget[]>`
-      SELECT 
-        b.id,
-        b.amount,
-        b.spent,
-        b.currency,
-        b.start_date as "startDate",
-        b.end_date as "endDate",
-        b.status,
-        COALESCE(
-          (
-            SELECT json_agg(
-              json_build_object(
-                'id', e.id,
-                'description', e.description,
-                'amount', e.amount,
-                'date', e.date,
-                'category', e.category,
-                'status', e.status
-              )
-            )
-            FROM (
-              SELECT *
-              FROM "Expense"
-              WHERE "budgetId" = b.id
-              ORDER BY date DESC
-              LIMIT 3
-            ) e
-          ),
-          '[]'::json
-        ) as expenses
-      FROM "Budget" b
-      WHERE b."clientId" = ${clientId}
-      ORDER BY b.start_date DESC
-    `;
+    // Verify client exists
+    const client = await db.client.findUnique({
+      where: { id: clientId },
+      select: { id: true }
+    });
 
-    // Calculate remaining budget for each budget
-    const budgetsWithRemaining = budgets.map((budget: Budget) => ({
-      ...budget,
+    if (!client) {
+      return NextResponse.json({ error: "Client not found" }, { status: 404 });
+    }
+
+    // Get budgets with expenses
+    const budgets = await db.budget.findMany({
+      where: { clientId },
+      include: {
+        expenses: {
+          orderBy: { date: 'desc' },
+          take: 3,
+          select: {
+            id: true,
+            description: true,
+            amount: true,
+            date: true,
+            category: true,
+            status: true,
+          }
+        }
+      },
+      orderBy: { startDate: 'desc' }
+    });
+
+    // Format response
+    const formattedBudgets = budgets.map(budget => ({
+      id: budget.id,
+      amount: budget.amount,
+      spent: budget.spent,
       remaining: budget.amount - budget.spent,
+      currency: budget.currency,
       startDate: budget.startDate.toISOString(),
       endDate: budget.endDate?.toISOString() || null,
-      expenses: budget.expenses.map((expense: Expense) => ({
-        ...expense,
+      status: budget.status,
+      expenses: budget.expenses.map(expense => ({
+        id: expense.id,
+        description: expense.description,
+        amount: expense.amount,
         date: expense.date.toISOString(),
-      })),
+        category: expense.category,
+        status: expense.status,
+      }))
     }));
 
-    return NextResponse.json({ budgets: budgetsWithRemaining });
+    return NextResponse.json({ budgets: formattedBudgets });
   } catch (error) {
-    console.error('Error fetching budget data:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    console.error("Budget API error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
-} 
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await auth();
+    if (!session?.userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const clientId = params.id;
+    const body = await request.json();
+
+    // Verify client exists
+    const client = await db.client.findUnique({
+      where: { id: clientId },
+      select: { id: true }
+    });
+
+    if (!client) {
+      return NextResponse.json({ error: "Client not found" }, { status: 404 });
+    }
+
+    // Basic validation
+    if (!body.amount || body.amount <= 0) {
+      return NextResponse.json({ error: "Valid budget amount is required" }, { status: 400 });
+    }
+
+    // Create budget
+    const budget = await db.budget.create({
+      data: {
+        amount: body.amount,
+        currency: body.currency || "USD",
+        startDate: body.startDate ? new Date(body.startDate) : new Date(),
+        endDate: body.endDate ? new Date(body.endDate) : null,
+        status: body.status || "ACTIVE",
+        clientId,
+        projectId: body.projectId || null,
+      },
+      include: {
+        expenses: true
+      }
+    });
+
+    return NextResponse.json(budget, { status: 201 });
+  } catch (error) {
+    console.error("Create budget API error:", error);
+    return NextResponse.json(
+      { error: "Failed to create budget" },
+      { status: 500 }
+    );
+  }
+}

@@ -5,7 +5,7 @@ import { EventRescheduleSchema } from "../../validation";
 import { NextRequest } from "next/server";
 import { ZodError } from "zod";
 
-export async function POST(req: NextRequest) {
+export async function PATCH(req: NextRequest) {
   try {
     const { userId, orgId } = getAuth(req);
     const body = await req.json();
@@ -42,8 +42,8 @@ export async function POST(req: NextRequest) {
       },
       select: {
         id: true,
-        date: true,
-        time: true,
+        startTime: true,
+        endTime: true,
         organizationId: true,
       },
     });
@@ -52,9 +52,16 @@ export async function POST(req: NextRequest) {
       return new NextResponse("Event not found", { status: 404 });
     }
 
-    // Calculate new date and time
-    const newDate = date;
-    const newTime = time || event.time;
+    // Calculate new start and end times
+    const newStartTime = new Date(date);
+    if (time) {
+      const [hours, minutes] = time.split(':').map(Number);
+      newStartTime.setHours(hours, minutes, 0, 0);
+    }
+
+    // Calculate end time (preserve original duration)
+    const originalDuration = event.endTime.getTime() - event.startTime.getTime();
+    const newEndTime = new Date(newStartTime.getTime() + originalDuration);
 
     // Update the event
     const updatedEvent = await db.calendarEvent.update({
@@ -63,9 +70,9 @@ export async function POST(req: NextRequest) {
         organizationId: orgId,
       },
       data: {
-        date: newDate,
-        time: newTime,
-        updatedAt: new Date().toISOString(),
+        startTime: newStartTime,
+        endTime: newEndTime,
+        updatedAt: new Date(),
       },
     });
 

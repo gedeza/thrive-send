@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,8 @@ import { ContentType, SocialPlatform, CalendarEvent, SocialMediaContent, DEFAULT
 import { Checkbox } from '@/components/ui/checkbox';
 import { useTimezone } from "@/hooks/use-timezone";
 import { DialogFooter } from '@/components/ui/dialog';
+import { RecurrenceSelector } from './RecurrenceSelector';
+import { RecurrencePattern } from '@/lib/utils/recurring-events';
 // import * as React from 'react'; //
 import type {
   SocialPlatform,
@@ -74,6 +76,27 @@ const platformContentLimits = {
     supportedMediaTypes: ['image', 'video', 'carousel']
   },
   LINKEDIN: {
+    maxTextLength: 3000,
+    maxMediaCount: 9,
+    supportedMediaTypes: ['image', 'video', 'document']
+  },
+  // Support lowercase versions for template compatibility
+  facebook: {
+    maxTextLength: 63206,
+    maxMediaCount: 10,
+    supportedMediaTypes: ['image', 'video', 'link']
+  },
+  twitter: {
+    maxTextLength: 280,
+    maxMediaCount: 4,
+    supportedMediaTypes: ['image', 'video', 'gif']
+  },
+  instagram: {
+    maxTextLength: 2200,
+    maxMediaCount: 10,
+    supportedMediaTypes: ['image', 'video', 'carousel']
+  },
+  linkedin: {
     maxTextLength: 3000,
     maxMediaCount: 9,
     supportedMediaTypes: ['image', 'video', 'document']
@@ -490,7 +513,7 @@ const validateSocialContent = (content: string, platform: SocialPlatform): Valid
   }
   
   // Length check
-  const maxLength = platformContentLimits[platform].maxTextLength;
+  const maxLength = platformContentLimits[platform]?.maxTextLength || 1000;
   if (content.length > maxLength) {
     return {
       code: 'CONTENT_TOO_LONG',
@@ -527,7 +550,7 @@ const validateSocialContent = (content: string, platform: SocialPlatform): Valid
   return null;
 };
 
-export function EventForm({
+function EventForm({
   initialData,
   mode = 'create',
   onPlatformsChange,
@@ -585,26 +608,20 @@ export function EventForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Add new state for enhancements
-  const [recurrence, setRecurrence] = useState<RecurrenceState>({
-    enabled: false,
+  const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern | null>(
+    initialData?.recurringData?.pattern || null
+  );
+  
+  // Add recurrence state for RecurrenceSettings component
+  const [recurrence, setRecurrence] = useState({
+    enabled: !!initialData?.recurringData?.pattern,
     pattern: {
-      type: 'none',
-      interval: 1
+      type: 'weekly' as RecurrencePattern['type'],
+      interval: 1,
+      endDate: null as string | null,
+      occurrences: null as number | null
     },
-    previewDates: []
-  });
-  
-  const [templates, setTemplates] = useState<TemplateState>({
-    templates: [],
-    showTemplateDialog: false,
-    saveAsTemplate: false
-  });
-  
-  const [bulkCreation, setBulkCreation] = useState<BulkCreationState>({
-    enabled: false,
-    baseContent: {},
-    variations: [],
-    previewMode: false
+    previewDates: [] as string[]
   });
   
   const [autoSave, setAutoSave] = useState({
@@ -613,47 +630,16 @@ export function EventForm({
     isDirty: false
   });
 
-  // Update recurrence preview dates when form date changes
+  // Auto-save functionality
   React.useEffect(() => {
-    if (recurrence.enabled && formData.date) {
-      const generatePreviewDates = (pattern: RecurrencePattern, startDate: string): string[] => {
-        const dates: string[] = [];
-        const start = new Date(startDate);
-        const maxDates = 10;
-        
-        for (let i = 0; i < maxDates; i++) {
-          let nextDate = new Date(start);
-          
-          switch (pattern.type) {
-            case 'daily':
-              nextDate.setDate(start.getDate() + (i * pattern.interval));
-              break;
-            case 'weekly':
-              nextDate.setDate(start.getDate() + (i * pattern.interval * 7));
-              break;
-            case 'monthly':
-              nextDate.setMonth(start.getMonth() + (i * pattern.interval));
-              break;
-            case 'yearly':
-              nextDate.setFullYear(start.getFullYear() + (i * pattern.interval));
-              break;
-          }
-          
-          if (pattern.endDate && nextDate > new Date(pattern.endDate)) break;
-          if (pattern.occurrences && i >= pattern.occurrences) break;
-          
-          dates.push(format(nextDate, 'yyyy-MM-dd'));
-        }
-        
-        return dates;
-      };
+    if (autoSave.enabled) {
+      const timer = setTimeout(() => {
+        setAutoSave(prev => ({ ...prev, lastSaved: new Date(), isDirty: false }));
+      }, 2000);
       
-      setRecurrence(prev => ({
-        ...prev,
-        previewDates: generatePreviewDates(prev.pattern, formData.date)
-      }));
+      return () => clearTimeout(timer);
     }
-  }, [formData.date, recurrence.enabled, recurrence.pattern]);
+  }, [formData, autoSave.enabled]);
 
   const formatDate = (date: Date, format: string) => {
     return formatInTimeZone(date, userTimezone, format);
@@ -904,10 +890,11 @@ export function EventForm({
         }
         
         const mediaCount = content?.mediaUrls?.length || 0;
-        if (mediaCount > platformContentLimits[platform].maxMediaCount) {
+        const maxMediaCount = platformContentLimits[platform]?.maxMediaCount || 5;
+        if (mediaCount > maxMediaCount) {
           const mediaError: ValidationError = {
             code: 'TOO_MANY_MEDIA',
-            message: `You can add up to ${platformContentLimits[platform].maxMediaCount} media files for ${platform}`,
+            message: `You can add up to ${maxMediaCount} media files for ${platform}`,
             field: 'mediaUrls',
             validationType: 'count'
           };
@@ -977,8 +964,13 @@ export function EventForm({
       }
       
       // Add recurrence data if enabled
-      if (recurrence.enabled) {
-        submissionData.recurrence = recurrence.pattern;
+      if (recurrencePattern) {
+        submissionData.recurringData = {
+          pattern: recurrencePattern,
+          seriesId: crypto.randomUUID(),
+          isRecurring: true,
+          occurrenceNumber: 0
+        };
       }
       
       // Submit the form
@@ -1211,10 +1203,10 @@ export function EventForm({
           </p>
         </div>
         
-        <div className="flex gap-4 mt-6">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-6">
           <Button 
             type="button" 
-            className="flex-1"
+            className="w-full sm:flex-1 h-11 sm:h-10 touch-manipulation"
             onClick={() => {
               if (!formData.date) {
                 setErrors(prev => ({
@@ -1250,7 +1242,8 @@ export function EventForm({
               onSchedule?.(scheduledDate);
             }}
           >
-            Schedule Content
+            <span className="hidden sm:inline">Schedule Content</span>
+            <span className="sm:hidden">Schedule</span>
           </Button>
         </div>
       </div>
@@ -1394,38 +1387,40 @@ export function EventForm({
     );
   };
 
-  const RecurrenceSettings = () => {
-    const generatePreviewDates = (pattern: RecurrencePattern, startDate: string): string[] => {
-      const dates: string[] = [];
-      const start = new Date(startDate);
-      const maxDates = 10; // Show up to 10 preview dates
+  // Move generatePreviewDates outside of component to avoid recreation on each render
+  const generatePreviewDates = useCallback((pattern: RecurrencePattern, startDate: string): string[] => {
+    const dates: string[] = [];
+    const start = new Date(startDate);
+    const maxDates = 10; // Show up to 10 preview dates
+    
+    for (let i = 0; i < maxDates; i++) {
+      let nextDate = new Date(start);
       
-      for (let i = 0; i < maxDates; i++) {
-        let nextDate = new Date(start);
-        
-        switch (pattern.type) {
-          case 'daily':
-            nextDate.setDate(start.getDate() + (i * pattern.interval));
-            break;
-          case 'weekly':
-            nextDate.setDate(start.getDate() + (i * pattern.interval * 7));
-            break;
-          case 'monthly':
-            nextDate.setMonth(start.getMonth() + (i * pattern.interval));
-            break;
-          case 'yearly':
-            nextDate.setFullYear(start.getFullYear() + (i * pattern.interval));
-            break;
-        }
-        
-        if (pattern.endDate && nextDate > new Date(pattern.endDate)) break;
-        if (pattern.occurrences && i >= pattern.occurrences) break;
-        
-        dates.push(format(nextDate, 'yyyy-MM-dd'));
+      switch (pattern.type) {
+        case 'daily':
+          nextDate.setDate(start.getDate() + (i * pattern.interval));
+          break;
+        case 'weekly':
+          nextDate.setDate(start.getDate() + (i * pattern.interval * 7));
+          break;
+        case 'monthly':
+          nextDate.setMonth(start.getMonth() + (i * pattern.interval));
+          break;
+        case 'yearly':
+          nextDate.setFullYear(start.getFullYear() + (i * pattern.interval));
+          break;
       }
       
-      return dates;
-    };
+      if (pattern.endDate && nextDate > new Date(pattern.endDate)) break;
+      if (pattern.occurrences && i >= pattern.occurrences) break;
+      
+      dates.push(format(nextDate, 'yyyy-MM-dd'));
+    }
+    
+    return dates;
+  }, []);
+
+  const RecurrenceSettings = () => {
 
     return (
       <div className="space-y-4 p-4 border rounded-lg">
@@ -1433,13 +1428,13 @@ export function EventForm({
           <Checkbox
             id="enable-recurrence"
             checked={recurrence.enabled}
-            onCheckedChange={(checked) => {
+            onCheckedChange={useCallback((checked) => {
               setRecurrence(prev => ({
                 ...prev,
                 enabled: !!checked,
                 previewDates: checked ? generatePreviewDates(prev.pattern, formData.date || '') : []
               }));
-            }}
+            }, [generatePreviewDates, formData.date])}
           />
           <Label htmlFor="enable-recurrence" className="font-medium">
             Make this a recurring event
@@ -1453,14 +1448,14 @@ export function EventForm({
                 <Label>Repeat</Label>
                 <Select
                   value={recurrence.pattern.type}
-                  onValueChange={(value: RecurrencePattern['type']) => {
+                  onValueChange={useCallback((value: RecurrencePattern['type']) => {
                     const newPattern = { ...recurrence.pattern, type: value };
                     setRecurrence(prev => ({
                       ...prev,
                       pattern: newPattern,
                       previewDates: generatePreviewDates(newPattern, formData.date || '')
                     }));
-                  }}
+                  }, [recurrence.pattern, generatePreviewDates, formData.date])}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -1482,7 +1477,7 @@ export function EventForm({
                     min="1"
                     max="365"
                     value={recurrence.pattern.interval}
-                    onChange={(e) => {
+                    onChange={useCallback((e) => {
                       const interval = parseInt(e.target.value) || 1;
                       const newPattern = { ...recurrence.pattern, interval };
                       setRecurrence(prev => ({
@@ -1490,7 +1485,7 @@ export function EventForm({
                         pattern: newPattern,
                         previewDates: generatePreviewDates(newPattern, formData.date || '')
                       }));
-                    }}
+                    }, [recurrence.pattern, generatePreviewDates, formData.date])}
                     className="w-20"
                   />
                   <span className="text-sm text-muted-foreground">
@@ -1582,8 +1577,6 @@ export function EventForm({
             </div>
           )}
           
-          {/* Template Manager */}
-          <TemplateManager />
           
           <div className="space-y-4">
             <div className="space-y-2">
@@ -1594,6 +1587,7 @@ export function EventForm({
                 value={formData.title}
                 onChange={handleChange}
                 placeholder="Enter event title"
+                className="h-11 sm:h-10 text-base sm:text-sm touch-manipulation"
                 required
               />
               {errors.title && (
@@ -1609,11 +1603,12 @@ export function EventForm({
                 value={formData.description}
                 onChange={handleChange}
                 placeholder="Enter event description"
+                className="min-h-[100px] sm:min-h-[80px] text-base sm:text-sm touch-manipulation resize-y"
                 rows={4}
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Date</Label>
                 <Popover>
@@ -1621,7 +1616,7 @@ export function EventForm({
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-full justify-start text-left font-normal",
+                        "w-full justify-start text-left font-normal h-11 sm:h-10 text-base sm:text-sm touch-manipulation",
                         !formData.date && "text-muted-foreground"
                       )}
                     >
@@ -1655,6 +1650,7 @@ export function EventForm({
                   type="time"
                   value={formData.time}
                   onChange={handleTimeChange}
+                  className="h-11 sm:h-10 text-base sm:text-sm touch-manipulation"
                   required
                 />
                 {errors.time && (
@@ -1669,7 +1665,7 @@ export function EventForm({
                 value={formData.type}
                 onValueChange={handleContentTypeChange}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-11 sm:h-10 text-base sm:text-sm touch-manipulation">
                   <SelectValue placeholder="Select content type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1725,8 +1721,8 @@ export function EventForm({
                     )}
                     <MediaUploader
                       platform={platform}
-                      maxCount={platformContentLimits[platform].maxMediaCount}
-                      supportedTypes={platformContentLimits[platform].supportedMediaTypes}
+                      maxCount={platformContentLimits[platform]?.maxMediaCount || 5}
+                      supportedTypes={platformContentLimits[platform]?.supportedMediaTypes || ['image']}
                       currentMedia={formData.socialMediaContent.platformSpecificContent[platform]?.mediaUrls || []}
                       onUpload={(files) => handleMediaUpload(platform, files)}
                       onRemove={(index) => handleMediaRemove(platform, index)}
@@ -1742,14 +1738,28 @@ export function EventForm({
             )}
           </div>
 
-          <div className="flex gap-4 pt-4">
+          {/* Recurrence Settings */}
+          {mode === 'create' && (
+            <div className="space-y-4">
+              <RecurrenceSelector
+                value={recurrencePattern}
+                onChange={setRecurrencePattern}
+                contentType={formData.type}
+                startDate={formData.date || format(new Date(), 'yyyy-MM-dd')}
+                showPreview={true}
+              />
+            </div>
+          )}
+
+          {/* Mobile-optimized button layout */}
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
             {onCancel && (
               <Button
                 type="button"
                 variant="outline"
                 onClick={onCancel}
                 disabled={isSubmitting}
-                className="flex-1"
+                className="w-full sm:flex-1 h-11 sm:h-10 touch-manipulation"
               >
                 Cancel
               </Button>
@@ -1762,29 +1772,37 @@ export function EventForm({
                 handleSubmit(new Event('submit') as any);
               }}
               disabled={isSubmitting}
-              className="flex-1"
+              className="w-full sm:flex-1 h-11 sm:h-10 touch-manipulation"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
+                  <span className="hidden sm:inline">Saving...</span>
+                  <span className="sm:hidden">Saving...</span>
                 </>
               ) : (
-                'Save as Draft'
+                <>
+                  <span className="hidden sm:inline">Save as Draft</span>
+                  <span className="sm:hidden">Draft</span>
+                </>
               )}
             </Button>
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1"
+              className="w-full sm:flex-1 h-11 sm:h-10 touch-manipulation"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {mode === 'edit' ? 'Updating...' : 'Creating...'}
+                  <span className="hidden sm:inline">{mode === 'edit' ? 'Updating...' : 'Creating...'}</span>
+                  <span className="sm:hidden">{mode === 'edit' ? 'Updating...' : 'Creating...'}</span>
                 </>
               ) : (
-                mode === 'edit' ? 'Update Event' : 'Create Event'
+                <>
+                  <span className="hidden sm:inline">{mode === 'edit' ? 'Update Event' : 'Create Event'}</span>
+                  <span className="sm:hidden">{mode === 'edit' ? 'Update' : 'Create'}</span>
+                </>
               )}
             </Button>
           </div>
@@ -1793,3 +1811,5 @@ export function EventForm({
     </form>
   );
 }
+export default EventForm;
+export { EventForm };

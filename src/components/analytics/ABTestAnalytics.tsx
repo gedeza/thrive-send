@@ -30,7 +30,7 @@ export function ABTestAnalytics({ testId, dateRange }: ABTestAnalyticsProps) {
     };
 
     fetchResults();
-  }, [testId, getABTestResults]);
+  }, [testId, dateRange]); // Only depend on actual data parameters
 
   if (loading) {
     return <div>Loading A/B test results...</div>;
@@ -40,10 +40,39 @@ export function ABTestAnalytics({ testId, dateRange }: ABTestAnalyticsProps) {
     return <div>No test results available</div>;
   }
 
+  // Safe access helpers
+  const variantAMetrics = testResults?.variantA?.metrics || [];
+  const variantBMetrics = testResults?.variantB?.metrics || [];
+  const timeSeriesData = testResults?.timeSeriesData || [];
+  const timeline = testResults?.timeline || [];
+
   const calculateConfidence = (variantA: any, variantB: any) => {
-    // Implement statistical significance calculation
-    // This is a placeholder for the actual calculation
-    return 95;
+    // Basic statistical significance calculation using sample proportions
+    // In a real implementation, you would use proper statistical tests
+    if (!variantA?.metrics || !variantB?.metrics) return 0;
+    
+    try {
+      // Extract conversion rates (assuming they're percentages)
+      const conversionA = variantA.metrics.find((m: any) => m.name === 'Conversion Rate');
+      const conversionB = variantB.metrics.find((m: any) => m.name === 'Conversion Rate');
+      
+      if (!conversionA || !conversionB) return 0;
+      
+      // Simple confidence calculation based on difference
+      const rateA = parseFloat(conversionA.value?.replace('%', '') || '0');
+      const rateB = parseFloat(conversionB.value?.replace('%', '') || '0');
+      const difference = Math.abs(rateA - rateB);
+      
+      // Basic confidence estimation (not statistically rigorous)
+      if (difference > 5) return 99;
+      if (difference > 2) return 95;
+      if (difference > 1) return 90;
+      if (difference > 0.5) return 85;
+      return 70;
+    } catch (error) {
+      console.error('Error calculating confidence:', error);
+      return 0;
+    }
   };
 
   return (
@@ -62,24 +91,32 @@ export function ABTestAnalytics({ testId, dateRange }: ABTestAnalyticsProps) {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Variant A</h3>
               <div className="space-y-2">
-                {testResults.variantA.metrics.map((metric: any) => (
-                  <div key={metric.name} className="flex justify-between">
-                    <span>{metric.name}</span>
-                    <span className="font-medium">{metric.value}</span>
-                  </div>
-                ))}
+                {variantAMetrics.length > 0 ? (
+                  variantAMetrics.map((metric: any) => (
+                    <div key={metric.name} className="flex justify-between">
+                      <span>{metric.name}</span>
+                      <span className="font-medium">{metric.value}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-gray-500">No metrics available for Variant A</div>
+                )}
               </div>
             </div>
 
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Variant B</h3>
               <div className="space-y-2">
-                {testResults.variantB.metrics.map((metric: any) => (
-                  <div key={metric.name} className="flex justify-between">
-                    <span>{metric.name}</span>
-                    <span className="font-medium">{metric.value}</span>
-                  </div>
-                ))}
+                {variantBMetrics.length > 0 ? (
+                  variantBMetrics.map((metric: any) => (
+                    <div key={metric.name} className="flex justify-between">
+                      <span>{metric.name}</span>
+                      <span className="font-medium">{metric.value}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-gray-500">No metrics available for Variant B</div>
+                )}
               </div>
             </div>
           </div>
@@ -89,15 +126,17 @@ export function ABTestAnalytics({ testId, dateRange }: ABTestAnalyticsProps) {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span>Winner:</span>
-                <span className="font-medium">{testResults.winner === 'none' ? 'No clear winner' : `Variant ${testResults.winner}`}</span>
+                <span className="font-medium">
+                  {testResults?.winner === 'none' ? 'No clear winner' : `Variant ${testResults?.winner || 'TBD'}`}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Confidence Level:</span>
-                <span className="font-medium">{testResults.confidence}%</span>
+                <span className="font-medium">{testResults?.confidence || 0}%</span>
               </div>
               <div className="flex justify-between">
                 <span>Sample Size:</span>
-                <span className="font-medium">{testResults.sampleSize}</span>
+                <span className="font-medium">{testResults?.sampleSize?.toLocaleString() || 'N/A'}</span>
               </div>
             </div>
           </div>
@@ -105,36 +144,42 @@ export function ABTestAnalytics({ testId, dateRange }: ABTestAnalyticsProps) {
 
         <TabsContent value="metrics">
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {['open_rate', 'click_rate', 'conversion_rate'].map((metric) => (
-                <Card key={metric} className="p-4">
-                  <h4 className="text-lg font-semibold mb-4 capitalize">
-                    {metric.replace('_', ' ')}
-                  </h4>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={testResults.timeSeriesData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Line
-                        type="monotone"
-                        dataKey={`variantA_${metric}`}
-                        stroke="#8884d8"
-                        name="Variant A"
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey={`variantB_${metric}`}
-                        stroke="#82ca9d"
-                        name="Variant B"
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </Card>
-              ))}
-            </div>
+            {timeSeriesData.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {['open_rate', 'click_rate', 'conversion_rate'].map((metric) => (
+                  <Card key={metric} className="p-4">
+                    <h4 className="text-lg font-semibold mb-4 capitalize">
+                      {metric.replace('_', ' ')}
+                    </h4>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={timeSeriesData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Line
+                          type="monotone"
+                          dataKey={`variantA_${metric}`}
+                          stroke="#8884d8"
+                          name="Variant A"
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey={`variantB_${metric}`}
+                          stroke="#82ca9d"
+                          name="Variant B"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <p>No time series data available for detailed metrics</p>
+              </div>
+            )}
           </div>
         </TabsContent>
 
@@ -142,17 +187,23 @@ export function ABTestAnalytics({ testId, dateRange }: ABTestAnalyticsProps) {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Test Timeline</h3>
             <div className="space-y-2">
-              {testResults.timeline.map((event: any) => (
-                <div key={event.date} className="flex items-start gap-4">
-                  <div className="w-24 text-sm text-gray-500">
-                    {new Date(event.date).toLocaleDateString()}
+              {timeline.length > 0 ? (
+                timeline.map((event: any) => (
+                  <div key={event.date} className="flex items-start gap-4">
+                    <div className="w-24 text-sm text-gray-500">
+                      {event.date ? new Date(event.date).toLocaleDateString() : 'N/A'}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium">{event.title || 'Untitled Event'}</div>
+                      <div className="text-sm text-gray-600">{event.description || 'No description available'}</div>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <div className="font-medium">{event.title}</div>
-                    <div className="text-sm text-gray-600">{event.description}</div>
-                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No timeline events available</p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </TabsContent>

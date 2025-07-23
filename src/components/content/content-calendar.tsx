@@ -1,8 +1,15 @@
 "use client";
 
 import * as React from "react";
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Search, Filter, LayoutGrid, LayoutList, Clock, Facebook, Twitter, Instagram, Linkedin, Upload, X, Settings as SettingsIcon, RefreshCw, Bug } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from "react";
+// Temporarily disable bundle optimizer import to fix lazy loading issue
+// import { 
+//   preloadCriticalComponents, 
+//   progressiveEnhancement, 
+//   usePerformanceMonitoring
+// } from "@/lib/utils/bundle-optimizer";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Search, Filter, LayoutGrid, LayoutList, Clock, Facebook, Twitter, Instagram, Linkedin, Upload, X, Settings as SettingsIcon, RefreshCw, Bug, Trash2 } from "lucide-react";
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useSensor, useSensors, PointerSensor, closestCenter } from "@dnd-kit/core";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import { Button } from "@/components/ui/button";
@@ -29,7 +36,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { format, parseISO, isSameDay, isSameMonth, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, setHours, addMinutes } from 'date-fns';
+import { format, parseISO, isSameDay, isSameMonth, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, setHours, addMinutes, addMonths, subMonths } from 'date-fns';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -50,7 +57,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { EventForm } from './EventForm';
+// Lazy load heavy components
+const EventForm = React.lazy(() => import('./EventForm'));
 import { EventDetails } from './EventDetails';
 import { useTimezone } from "@/hooks/use-timezone";
 import { CSS } from '@dnd-kit/utilities';
@@ -64,6 +72,7 @@ import { DayView } from './DayView';
 import { ListView } from './ListView';
 import { WeekView } from './WeekView';
 import { CalendarHeader } from './CalendarHeader';
+const TemplateSelector = React.lazy(() => import('./TemplateSelector'));
 // Add these constants at the top of the file, after the imports
 export const DEFAULT_DURATIONS: Record<ContentType, number> = {
   social: 30, // 30 minutes for social posts
@@ -205,6 +214,115 @@ interface NewEventState {
       };
     };
   };
+}
+
+// Event Preview Component
+function EventPreview({ event, position }: { event: CalendarEvent; position: { x: number; y: number } }) {
+  const userTimezone = useTimezone();
+  
+  const formatEventTime = (date: string, time?: string) => {
+    if (!time) return formatInTimeZone(new Date(date), userTimezone, "MMM d, yyyy");
+    return formatInTimeZone(new Date(`${date}T${time}`), userTimezone, "MMM d, yyyy 'at' h:mm a");
+  };
+
+  const getPlatformIcon = (platform: SocialPlatform) => {
+    const icons = {
+      facebook: <Facebook className="h-3 w-3 text-blue-600" />,
+      twitter: <Twitter className="h-3 w-3 text-sky-500" />,
+      instagram: <Instagram className="h-3 w-3 text-pink-600" />,
+      linkedin: <Linkedin className="h-3 w-3 text-blue-700" />,
+      youtube: "🎥",
+      tiktok: "🎵",
+      pinterest: "📌"
+    };
+    return icons[platform] || "📱";
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'draft': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'scheduled': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'sent': return 'bg-green-100 text-green-800 border-green-200';
+      case 'failed': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  return (
+    <div
+      className="fixed z-50 max-w-sm bg-white dark:bg-gray-800 border rounded-lg shadow-lg p-4 pointer-events-none"
+      style={{
+        left: Math.min(position.x + 10, window.innerWidth - 300),
+        top: Math.min(position.y + 10, window.innerHeight - 200)
+      }}
+    >
+      <div className="space-y-3">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="font-semibold text-sm leading-tight">{event.title}</h3>
+          <span className={cn(
+            "px-2 py-1 rounded-full text-xs font-medium border",
+            getStatusColor(event.status)
+          )}>
+            {event.status}
+          </span>
+        </div>
+
+        {/* Time and Type */}
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Clock className="h-3 w-3" />
+            <span>{formatEventTime(event.date, event.time)}</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className={cn(
+              "px-2 py-1 rounded-full text-xs font-medium",
+              isValidContentType(event.type) ? eventTypeColorMap[event.type].bg : "bg-gray-100",
+              isValidContentType(event.type) ? eventTypeColorMap[event.type].text : "text-gray-700"
+            )}>
+              {event.type}
+            </span>
+          </div>
+        </div>
+
+        {/* Description */}
+        {event.description && (
+          <p className="text-xs text-muted-foreground line-clamp-3">
+            {event.description}
+          </p>
+        )}
+
+        {/* Social Media Platforms */}
+        {event.type === 'social' && event.socialMediaContent?.platforms && event.socialMediaContent.platforms.length > 0 && (
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-muted-foreground">Platforms:</span>
+            <div className="flex gap-1">
+              {event.socialMediaContent.platforms.map((platform, index) => (
+                <span key={index} className="inline-flex items-center">
+                  {getPlatformIcon(platform)}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Media Count */}
+        {event.socialMediaContent?.mediaUrls && event.socialMediaContent.mediaUrls.length > 0 && (
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Upload className="h-3 w-3" />
+            <span>{event.socialMediaContent.mediaUrls.length} media file{event.socialMediaContent.mediaUrls.length !== 1 ? 's' : ''}</span>
+          </div>
+        )}
+
+        {/* Quick Actions */}
+        <div className="flex gap-2 pt-2 border-t">
+          <span className="text-xs text-muted-foreground">
+            Click to view details
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // Add this component for media upload
@@ -383,6 +501,18 @@ export function ContentCalendar({
 }: ContentCalendarProps) {
   const { toast } = useToast();
   const userTimezone = useTimezone();
+  // Temporarily disable performance monitoring to fix lazy loading issue
+  // const { measurePerformance, getBundleReport } = usePerformanceMonitoring();
+  
+  // Performance optimization: Check if we should use optimized mode
+  // const useOptimizedMode = useMemo(() => {
+  //   return progressiveEnhancement.shouldUseOptimizedMode();
+  // }, []);
+  
+  // Preload critical components on mount
+  // useEffect(() => {
+  //   preloadCriticalComponents();
+  // }, []);
   
   // State
   const [events, setEvents] = useState<CalendarEvent[]>(initialEvents);
@@ -419,16 +549,44 @@ export function ContentCalendar({
   const [showEventDetails, setShowEventDetails] = useState(false);
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
   const [pendingDialogClose, setPendingDialogClose] = useState(false);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedEvents, setSelectedEvents] = useState<Set<string>>(new Set());
+  const [showBulkActions, setShowBulkActions] = useState(false);
+  const [hoveredEvent, setHoveredEvent] = useState<CalendarEvent | null>(null);
+  const [previewPosition, setPreviewPosition] = useState<{ x: number; y: number } | null>(null);
+  const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false);
+  const [pendingEventDate, setPendingEventDate] = useState<string | null>(null);
+  const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isFetchingRef = useRef<boolean>(false);
   const initialEventsRef = useRef<boolean>(false);
 
   // Add a ref to track if we're already fetching
   const lastFetchTime = useRef(0);
   
+  // Template selection handler
+  const handleTemplateSelect = (eventData: Partial<CalendarEvent>) => {
+    const templateDate = eventData.date || pendingEventDate || new Date().toISOString().split('T')[0];
+    const startDate = new Date(templateDate);
+    const endDate = new Date(startDate);
+    endDate.setHours(startDate.getHours() + 1); // Default 1 hour duration
+    
+    setNewEvent(prev => ({
+      ...prev,
+      title: eventData.title || "",
+      description: eventData.description || "",
+      start: startDate,
+      end: endDate,
+      type: eventData.type || "email",
+      socialMediaContent: eventData.socialMediaContent || prev.socialMediaContent
+    }));
+    setIsTemplateSelectorOpen(false);
+    setIsCreateDialogOpen(true);
+  };
+  
   // Direct fetch function - moved up before it's used
   const fetchCalendarEventsDirectly = async () => {
     try {
-      console.log("==== DEBUGGING CALENDAR DATA ISSUES ====");
+      // Debug: Checking calendar data
       // Try the debug endpoint first to check if data exists
       const debugResponse = await fetch('/api/calendar/debug', {
         credentials: 'include'
@@ -436,9 +594,7 @@ export function ContentCalendar({
       
       if (debugResponse.ok) {
         const debugData = await debugResponse.json();
-        console.log("Debug API response:", debugData);
-        console.log("Calendar events count:", debugData.calendarEvents?.count);
-        console.log("Calendar events sample:", debugData.calendarEvents?.sample);
+        // Debug: API response received
         
         // If debug shows events exist but we're not getting them, try direct fetch
         if (debugData.calendarEvents?.count > 0) {
@@ -454,16 +610,15 @@ export function ContentCalendar({
           if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
           
           const data = await response.json();
-          console.log(`Direct fetch found ${data.events?.length || 0} events`);
-          console.log("Raw API events sample:", data.events?.slice(0, 2));
+          // Direct fetch completed
           
           if (data.events && Array.isArray(data.events)) {
             try {
               const calendarEvents = data.events.map((event: any, index: number) => {
-                console.log(`Converting event ${index}:`, event);
+                // Converting event...
                 try {
                   const convertedEvent = convertApiEventToCalendarEvent(event);
-                  console.log(`Successfully converted event ${index}:`, convertedEvent);
+                  // Successfully converted event
                   return convertedEvent;
                 } catch (convErr: unknown) {
                   console.error(`Error converting event ${index}:`, convErr);
@@ -487,7 +642,7 @@ export function ContentCalendar({
                   };
                 }
               });
-              console.log(`Converted ${calendarEvents.length} events successfully`);
+              // TODO: Log conversion success for debugging purposes
               return calendarEvents;
             } catch (mapErr) {
               console.error("Error mapping API events to calendar events:", mapErr);
@@ -497,7 +652,7 @@ export function ContentCalendar({
             console.warn("No events array found in API response:", data);
           }
         } else {
-          console.log("Debug API shows no events exist in database");
+          // TODO: Handle case where no events are found
         }
       } else {
         console.error("Debug API failed:", await debugResponse.text());
@@ -514,13 +669,13 @@ export function ContentCalendar({
   // Define the loadEvents function
   const loadEvents = useCallback(async () => {
     try {
-      console.log("Fetching calendar events...");
+      // TODO: Add proper loading state indication
       if (!fetchEvents) {
-        console.log("No fetchEvents function provided, trying direct fetch");
+        // TODO: Handle case where fetchEvents function is not provided
         return await fetchCalendarEventsDirectly();
       }
       const fetchedEvents = await fetchEvents();
-      console.log(`Fetched ${fetchedEvents.length} events:`, fetchedEvents);
+      // TODO: Add proper event logging for debugging
       setError(null);
       return fetchedEvents;
     } catch (err) {
@@ -552,9 +707,7 @@ export function ContentCalendar({
         const newEvents = await loadEvents();
         
         // Only update events if there are actual changes to prevent unnecessary re-renders
-        if (JSON.stringify(newEvents) !== JSON.stringify(events)) {
-          setEvents(newEvents);
-        }
+        setEvents(newEvents);
       } catch (err) {
         console.error("Error loading events:", err);
         setError(err instanceof Error ? err.message : "Failed to load events");
@@ -563,14 +716,14 @@ export function ContentCalendar({
         isFetchingRef.current = false;
       }
     }, 500),
-    [loadEvents, events]
+    [loadEvents]
   );
 
   // Replace the useEffect that loads events
   useEffect(() => {
     // Skip loading on initial render if we already have events
     if (events.length > 0 && initialEventsRef.current) {
-      console.log('[ContentCalendar] Skipping initial load as events are already provided');
+      // Skipping initial load as events are already provided
       return;
     }
     
@@ -611,7 +764,7 @@ export function ContentCalendar({
 
   // Helper function to convert API event to calendar event
   const convertApiEventToCalendarEvent = (event: any): CalendarEvent => {
-    console.log("Converting event with structure:", Object.keys(event));
+    // TODO: Add proper event structure validation
     
     // Extract platforms from socialMediaContent if available
     const platforms: SocialPlatform[] = [];
@@ -878,14 +1031,382 @@ export function ContentCalendar({
     }
   }, [activeDragEvent, onEventUpdate, toast]);
 
-  // Configure drag sensors
+  // Configure drag sensors with enhanced touch support and compatibility
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 12, // Increased for better touch compatibility
+        delay: 100,   // Short delay to distinguish from scrolling
+        tolerance: 5, // Allow slight movement during delay
       },
     })
   );
+
+  // Gesture handling for calendar navigation
+  const gestureStateRef = useRef({
+    startX: 0,
+    startY: 0,
+    isGesturing: false,
+    minSwipeDistance: 50, // Minimum distance for swipe recognition
+    maxVerticalMovement: 100 // Max vertical movement to allow horizontal swipe
+  });
+
+  const handleGestureStart = useCallback((e: React.TouchEvent | React.PointerEvent) => {
+    if ('touches' in e) {
+      const touch = e.touches[0];
+      gestureStateRef.current = {
+        ...gestureStateRef.current,
+        startX: touch.clientX,
+        startY: touch.clientY,
+        isGesturing: true
+      };
+    } else {
+      gestureStateRef.current = {
+        ...gestureStateRef.current,
+        startX: e.clientX,
+        startY: e.clientY,
+        isGesturing: true
+      };
+    }
+  }, []);
+
+  // Date navigation functions
+  const handleDatePrev = useCallback(() => {
+    setCurrentDate(prev => {
+      switch (calendarView) {
+        case 'month':
+          return subMonths(prev, 1);
+        case 'week':
+          return new Date(prev.getTime() - 7 * 24 * 60 * 60 * 1000);
+        case 'day':
+          return new Date(prev.getTime() - 24 * 60 * 60 * 1000);
+        default:
+          return subMonths(prev, 1);
+      }
+    });
+  }, [calendarView]);
+
+  const handleDateNext = useCallback(() => {
+    setCurrentDate(prev => {
+      switch (calendarView) {
+        case 'month':
+          return addMonths(prev, 1);
+        case 'week':
+          return new Date(prev.getTime() + 7 * 24 * 60 * 60 * 1000);
+        case 'day':
+          return new Date(prev.getTime() + 24 * 60 * 60 * 1000);
+        default:
+          return addMonths(prev, 1);
+      }
+    });
+  }, [calendarView]);
+
+  const handleDateToday = useCallback(() => {
+    setCurrentDate(new Date());
+  }, []);
+
+  // Bulk selection handlers
+  const toggleSelectionMode = useCallback(() => {
+    setIsSelectionMode(!isSelectionMode);
+    setSelectedEvents(new Set());
+    setShowBulkActions(false);
+  }, [isSelectionMode]);
+
+  const toggleEventSelection = useCallback((eventId: string) => {
+    setSelectedEvents(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(eventId)) {
+        newSet.delete(eventId);
+      } else {
+        newSet.add(eventId);
+      }
+      setShowBulkActions(newSet.size > 0);
+      return newSet;
+    });
+  }, []);
+
+  const selectAllEvents = useCallback(() => {
+    const allEventIds = new Set(filteredEvents.map(event => event.id));
+    setSelectedEvents(allEventIds);
+    setShowBulkActions(allEventIds.size > 0);
+  }, [filteredEvents]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedEvents(new Set());
+    setShowBulkActions(false);
+  }, []);
+
+  const handleBulkDelete = useCallback(async () => {
+    if (!onEventDelete || selectedEvents.size === 0) return;
+    
+    try {
+      const eventIds = Array.from(selectedEvents);
+      await Promise.all(eventIds.map(id => onEventDelete(id)));
+      
+      setEvents(prev => prev.filter(event => !selectedEvents.has(event.id)));
+      setSelectedEvents(new Set());
+      setShowBulkActions(false);
+      
+      toast({
+        title: "Success",
+        description: `${eventIds.length} events deleted successfully`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete some events",
+        variant: "destructive",
+      });
+    }
+  }, [selectedEvents, onEventDelete, toast]);
+
+  const handleBulkStatusChange = useCallback(async (newStatus: string) => {
+    if (!onEventUpdate || selectedEvents.size === 0) return;
+    
+    try {
+      const eventsToUpdate = events.filter(event => selectedEvents.has(event.id));
+      const updatedEvents = await Promise.all(
+        eventsToUpdate.map(event => onEventUpdate({ ...event, status: newStatus as any }))
+      );
+      
+      setEvents(prev => prev.map(event => {
+        const updated = updatedEvents.find(u => u.id === event.id);
+        return updated || event;
+      }));
+      
+      setSelectedEvents(new Set());
+      setShowBulkActions(false);
+      
+      toast({
+        title: "Success",
+        description: `${updatedEvents.length} events updated successfully`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update some events",
+        variant: "destructive",
+      });
+    }
+  }, [selectedEvents, events, onEventUpdate, toast]);
+
+  // Event preview handlers
+  const handleEventHover = useCallback((event: CalendarEvent, mouseEvent: React.MouseEvent) => {
+    if (previewTimeoutRef.current) {
+      clearTimeout(previewTimeoutRef.current);
+    }
+    
+    previewTimeoutRef.current = setTimeout(() => {
+      setHoveredEvent(event);
+      setPreviewPosition({ x: mouseEvent.clientX, y: mouseEvent.clientY });
+    }, 500); // Show preview after 500ms delay
+  }, []);
+
+  const handleEventHoverEnd = useCallback(() => {
+    if (previewTimeoutRef.current) {
+      clearTimeout(previewTimeoutRef.current);
+      previewTimeoutRef.current = null;
+    }
+    
+    // Keep preview open for a short time to allow mouse to move to it
+    previewTimeoutRef.current = setTimeout(() => {
+      setHoveredEvent(null);
+      setPreviewPosition(null);
+    }, 300);
+  }, []);
+
+  const handlePreviewHover = useCallback(() => {
+    if (previewTimeoutRef.current) {
+      clearTimeout(previewTimeoutRef.current);
+      previewTimeoutRef.current = null;
+    }
+  }, []);
+
+  const handlePreviewLeave = useCallback(() => {
+    setHoveredEvent(null);
+    setPreviewPosition(null);
+  }, []);
+
+  // Keyboard navigation handlers
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    // Don't interfere with form inputs
+    if ((e.target as HTMLElement).tagName === 'INPUT' || 
+        (e.target as HTMLElement).tagName === 'TEXTAREA' ||
+        (e.target as HTMLElement).contentEditable === 'true') {
+      return;
+    }
+
+    switch (e.key) {
+      case 'ArrowLeft':
+        e.preventDefault();
+        if (e.ctrlKey || e.metaKey) {
+          // Ctrl/Cmd + Left = Previous period
+          handleDatePrev();
+        } else {
+          // Arrow navigation within current view
+          if (calendarView === 'month') {
+            setCurrentDate(prev => new Date(prev.getTime() - 24 * 60 * 60 * 1000));
+          } else if (calendarView === 'week') {
+            setCurrentDate(prev => new Date(prev.getTime() - 24 * 60 * 60 * 1000));
+          }
+        }
+        break;
+      
+      case 'ArrowRight':
+        e.preventDefault();
+        if (e.ctrlKey || e.metaKey) {
+          // Ctrl/Cmd + Right = Next period
+          handleDateNext();
+        } else {
+          // Arrow navigation within current view
+          if (calendarView === 'month') {
+            setCurrentDate(prev => new Date(prev.getTime() + 24 * 60 * 60 * 1000));
+          } else if (calendarView === 'week') {
+            setCurrentDate(prev => new Date(prev.getTime() + 24 * 60 * 60 * 1000));
+          }
+        }
+        break;
+
+      case 'ArrowUp':
+        e.preventDefault();
+        if (calendarView === 'month') {
+          setCurrentDate(prev => new Date(prev.getTime() - 7 * 24 * 60 * 60 * 1000));
+        } else if (calendarView === 'day') {
+          // Move up an hour in day view
+          setCurrentDate(prev => new Date(prev.getTime() - 60 * 60 * 1000));
+        }
+        break;
+
+      case 'ArrowDown':
+        e.preventDefault();
+        if (calendarView === 'month') {
+          setCurrentDate(prev => new Date(prev.getTime() + 7 * 24 * 60 * 60 * 1000));
+        } else if (calendarView === 'day') {
+          // Move down an hour in day view
+          setCurrentDate(prev => new Date(prev.getTime() + 60 * 60 * 1000));
+        }
+        break;
+
+      case 'Home':
+        e.preventDefault();
+        handleDateToday();
+        break;
+
+      case 'n':
+      case 'N':
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          // Ctrl/Cmd + N = New event
+          setNewEvent(prev => ({ ...prev, start: currentDate }));
+          setIsCreateDialogOpen(true);
+        }
+        break;
+
+      case '1':
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          setCalendarView('month');
+        }
+        break;
+
+      case '2':
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          setCalendarView('week');
+        }
+        break;
+
+      case '3':
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          setCalendarView('day');
+        }
+        break;
+
+      case '4':
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          setCalendarView('list');
+        }
+        break;
+
+      case 's':
+      case 'S':
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          // Ctrl/Cmd + S = Toggle selection mode
+          toggleSelectionMode();
+        }
+        break;
+
+      case 'a':
+      case 'A':
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          // Ctrl/Cmd + A = Select all events (when in selection mode)
+          if (isSelectionMode) {
+            selectAllEvents();
+          }
+        }
+        break;
+
+      case 'Delete':
+      case 'Backspace':
+        if (selectedEvents.size > 0) {
+          e.preventDefault();
+          // Delete selected events
+          handleBulkDelete();
+        }
+        break;
+
+      case 'Escape':
+        e.preventDefault();
+        // Close any open dialogs or exit selection mode
+        if (isSelectionMode) {
+          setIsSelectionMode(false);
+          clearSelection();
+        } else {
+          setIsCreateDialogOpen(false);
+          setIsEditDialogOpen(false);
+          setShowDeleteConfirm(false);
+        }
+        break;
+    }
+  }, [calendarView, currentDate, handleDatePrev, handleDateNext, handleDateToday, toggleSelectionMode, isSelectionMode, selectAllEvents, selectedEvents, handleBulkDelete, clearSelection]);
+
+  // Cleanup preview timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (previewTimeoutRef.current) {
+        clearTimeout(previewTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleGestureEnd = useCallback((e: React.TouchEvent | React.PointerEvent) => {
+    if (!gestureStateRef.current.isGesturing) return;
+
+    const currentX = 'changedTouches' in e ? e.changedTouches[0].clientX : e.clientX;
+    const currentY = 'changedTouches' in e ? e.changedTouches[0].clientY : e.clientY;
+    
+    const deltaX = currentX - gestureStateRef.current.startX;
+    const deltaY = Math.abs(currentY - gestureStateRef.current.startY);
+    
+    // Check if it's a valid horizontal swipe
+    if (Math.abs(deltaX) >= gestureStateRef.current.minSwipeDistance && 
+        deltaY <= gestureStateRef.current.maxVerticalMovement) {
+      
+      if (deltaX > 0) {
+        // Swipe right - go to previous
+        handleDatePrev();
+      } else {
+        // Swipe left - go to next  
+        handleDateNext();
+      }
+    }
+
+    gestureStateRef.current.isGesturing = false;
+  }, [handleDatePrev, handleDateNext]);
 
   // View components
   const MonthViewDay = ({ 
@@ -1003,9 +1524,7 @@ export function ContentCalendar({
               onClick={(e) => {
                 e.stopPropagation();
                 // Show all events for this day
-                const dayEvents = events;
-                // You can implement a modal or expand the cell to show all events
-                console.log('Show all events for', formatInTimeZone(day, userTimezone, 'yyyy-MM-dd'), dayEvents);
+                // TODO: implement a modal or expand the cell to show all events
               }}
               aria-label={`Show all ${events.length} events for ${dateString}`}
             >
@@ -1116,6 +1635,10 @@ export function ContentCalendar({
                   zIndex: 1
                 }}
                 onClick={() => onEventClick(event)}
+                onMouseEnter={(e) => handleEventHover(event, e)}
+                onMouseLeave={handleEventHoverEnd}
+                onFocus={(e) => handleEventHover(event, e as any)}
+                onBlur={handleEventHoverEnd}
               >
                 <div className="flex items-start justify-between h-full">
                   <div className="flex-1 min-w-0">
@@ -1149,144 +1672,6 @@ export function ContentCalendar({
     );
   };
 
-  const ListView = ({ 
-    events, 
-    onEventClick,
-  }: { 
-    events: CalendarEvent[];
-    onEventClick: (event: CalendarEvent) => void;
-  }) => {
-    const userTimezone = useTimezone();
-    
-    // Sort events by date and time
-    const sortedEvents = useMemo(() => {
-      return [...events].sort((a, b) => {
-        const dateA = new Date(`${a.date}T${a.time || '00:00'}`);
-        const dateB = new Date(`${b.date}T${b.time || '00:00'}`);
-        return dateA.getTime() - dateB.getTime();
-      });
-    }, [events]);
-
-    return (
-      <div className="space-y-4">
-        {/* Header row - responsive */}
-        <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 bg-muted/50 rounded-md font-medium text-sm">
-          <div className="col-span-3">Title</div>
-          <div className="col-span-2">Type</div>
-          <div className="col-span-2">Date & Time</div>
-          <div className="col-span-2">Status</div>
-          <div className="col-span-3">Platforms</div>
-        </div>
-        
-        {/* Mobile header */}
-        <div className="md:hidden flex justify-between p-4 bg-muted/50 rounded-md font-medium text-sm">
-          <div>Content</div>
-          <div>Details</div>
-        </div>
-        
-        {/* Event list */}
-        <div className="space-y-2 max-h-[50vh] overflow-y-auto">
-          {sortedEvents.map((event) => (
-            <div 
-              key={event.id} 
-              className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 border rounded-md hover:bg-muted/50 transition-colors cursor-pointer"
-              onClick={() => onEventClick(event)}
-            >
-              {/* Mobile view */}
-              <div className="md:hidden space-y-2">
-                <div className="font-medium">{event.title}</div>
-                <div className="text-sm text-muted-foreground">{event.description}</div>
-                <div className="flex flex-wrap gap-2 mt-2">
-                <span className={cn(
-                  "px-2 py-1 rounded-full text-xs font-medium",
-                    isValidContentType(event.type) ? eventTypeColorMap[event.type].bg : "bg-gray-100",
-                    isValidContentType(event.type) ? eventTypeColorMap[event.type].text : "text-gray-700"
-                )}>
-                  {event.type}
-                </span>
-                <span className={cn(
-                  "px-2 py-1 rounded-full text-xs font-medium",
-                  event.status === 'draft' && "bg-yellow-100 text-yellow-800",
-                  event.status === 'scheduled' && "bg-blue-100 text-blue-800",
-                  event.status === 'sent' && "bg-green-100 text-green-800",
-                  event.status === 'failed' && "bg-red-100 text-red-800"
-                )}>
-                  {event.status}
-                </span>
-                </div>
-              </div>
-              
-              {/* Desktop view */}
-              <div className="hidden md:block md:col-span-3">
-                <div className="font-medium truncate">{event.title}</div>
-                {event.description && (
-                  <div className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                    {event.description}
-                  </div>
-                )}
-              </div>
-              
-              <div className="hidden md:block md:col-span-2">
-                <span className={cn(
-                  "px-2 py-1 rounded-full text-xs font-medium",
-                  isValidContentType(event.type) ? eventTypeColorMap[event.type].bg : "bg-gray-100",
-                  isValidContentType(event.type) ? eventTypeColorMap[event.type].text : "text-gray-700"
-                )}>
-                  {event.type}
-                </span>
-              </div>
-              
-              {/* Date & Time column */}
-              <div className="hidden md:block md:col-span-2">
-                <div className="text-sm">
-                  {formatInTimeZone(new Date(`${event.date}T${event.time || '00:00'}`), userTimezone, "MMM d, yyyy")}
-                </div>
-                {event.time && (
-                  <div className="text-sm text-muted-foreground">
-                    {formatInTimeZone(new Date(`${event.date}T${event.time}`), userTimezone, "h:mm a")}
-                  </div>
-                )}
-              </div>
-
-              {/* Status column */}
-              <div className="hidden md:block md:col-span-2">
-                <span className={cn(
-                  "px-2 py-1 rounded-full text-xs font-medium",
-                  event.status === 'draft' && "bg-yellow-100 text-yellow-800",
-                  event.status === 'scheduled' && "bg-blue-100 text-blue-800",
-                  event.status === 'sent' && "bg-green-100 text-green-800",
-                  event.status === 'failed' && "bg-red-100 text-red-800"
-                )}>
-                  {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
-                </span>
-              </div>
-
-              {/* Platforms column */}
-              <div className="hidden md:block md:col-span-3">
-                {event.type === 'social' && event.socialMediaContent?.platforms?.length > 0 ? (
-                  <div className="flex gap-2">
-                    {event.socialMediaContent.platforms.map((platform: SocialPlatform) => (
-                      <span key={platform} className="text-sm">
-                        {platformColorMap[platform]?.icon}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <span className="text-sm text-muted-foreground">-</span>
-                )}
-              </div>
-            </div>
-          ))}
-
-          {sortedEvents.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              No events found
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
 
   // View render functions
   const renderMonthView = (
@@ -1427,6 +1812,10 @@ export function ContentCalendar({
                           zIndex: 1
                         }}
                         onClick={() => handleEventClick(event)}
+                        onMouseEnter={(e) => handleEventHover(event, e)}
+                        onMouseLeave={handleEventHoverEnd}
+                        onFocus={(e) => handleEventHover(event, e as any)}
+                        onBlur={handleEventHoverEnd}
                       >
                         <div className="font-medium truncate">{event.title}</div>
                         <div className="text-muted-foreground text-[10px]">
@@ -1511,13 +1900,16 @@ export function ContentCalendar({
   return (
     <div className="space-y-4 border rounded-xl p-4 bg-card shadow-sm">
       <CalendarHeader
-        calendarView={calendarView}
+        view={calendarView}
         onViewChange={(view) => {
           setCalendarView(view);
           onViewChange?.(view);
         }}
         currentDate={currentDate}
-        onDateChange={setCurrentDate}
+        onDatePrev={handleDatePrev}
+        onDateNext={handleDateNext}
+        onDateToday={handleDateToday}
+        userTimezone={userTimezone}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         selectedType={selectedType}
@@ -1525,10 +1917,17 @@ export function ContentCalendar({
         selectedStatus={selectedStatus}
         onStatusChange={setSelectedStatus}
         onAddEvent={() => {
-          setNewEvent(prev => ({ ...prev, start: currentDate }));
-          setIsCreateDialogOpen(true);
+          setPendingEventDate(currentDate.toISOString().split('T')[0]);
+          setIsTemplateSelectorOpen(true);
         }}
-        onDebug={async () => {
+        isSelectionMode={isSelectionMode}
+        selectedCount={selectedEvents.size}
+        onToggleSelection={toggleSelectionMode}
+        onSelectAll={selectAllEvents}
+        onClearSelection={clearSelection}
+        events={events}
+        selectedEvents={Array.from(selectedEvents).map(id => events.find(e => e.id === id)).filter(Boolean) as CalendarEvent[]}
+        onDebugFetch={async () => {
           try {
             setLoading(true);
             await fetchCalendarEventsDirectly();
@@ -1549,6 +1948,14 @@ export function ContentCalendar({
         loading={loading}
       />
 
+      {/* Keyboard shortcuts help (screen reader only) */}
+      <div id="calendar-help" className="sr-only">
+        Use arrow keys to navigate dates. Ctrl+Left/Right for previous/next period. 
+        Home key returns to today. Ctrl+N creates new event. Ctrl+1-4 switches views. 
+        Ctrl+S toggles selection mode. Ctrl+A selects all events. Delete key removes selected events.
+        Escape closes dialogs or exits selection mode.
+      </div>
+
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -1556,8 +1963,20 @@ export function ContentCalendar({
         onDragEnd={handleDragEnd}
         modifiers={[restrictToWindowEdges]}
       >
-        {/* Calendar Views */}
-        <div className="bg-background rounded-lg border">
+        {/* Calendar Views with gesture and keyboard support */}
+        <div 
+          className="bg-background rounded-lg border touch-pan-y select-none focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          onTouchStart={handleGestureStart}
+          onTouchEnd={handleGestureEnd}
+          onPointerDown={handleGestureStart}
+          onPointerUp={handleGestureEnd}
+          onKeyDown={handleKeyDown}
+          tabIndex={0}
+          role="application"
+          aria-label="Content Calendar"
+          aria-describedby="calendar-help"
+          style={{ touchAction: 'pan-y' }}
+        >
           {loading ? (
             <div className="flex flex-col items-center justify-center h-[50vh] p-8">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mb-4"></div>
@@ -1592,17 +2011,21 @@ export function ContentCalendar({
                     handleEventClick={handleEventClick}
                     handleDateClick={handleDateClick}
                     userTimezone={userTimezone}
+                    onEventHover={handleEventHover}
+                    onEventHoverEnd={handleEventHoverEnd}
                   />
                 </div>
               )}
               {calendarView === "week" && (
                 <div className="p-4">
-                  {renderWeekView(
-                    currentDate,
-                    getEventsForDay,
-                    handleEventClick,
-                    userTimezone
-                  )}
+                  <WeekView
+                    currentDate={currentDate}
+                    getEventsForDay={getEventsForDay}
+                    onEventClick={handleEventClick}
+                    userTimezone={userTimezone}
+                    onEventHover={handleEventHover}
+                    onEventHoverEnd={handleEventHoverEnd}
+                  />
                 </div>
               )}
               {calendarView === "day" && (
@@ -1612,17 +2035,43 @@ export function ContentCalendar({
                     getEventsForDay={getEventsForDay}
                     onEventClick={handleEventClick}
                     userTimezone={userTimezone}
+                    onEventHover={handleEventHover}
+                    onEventHoverEnd={handleEventHoverEnd}
                   />
                 </div>
               )}
               {calendarView === "list" && (
                 <div className="p-4">
-                  <ListView events={filteredEvents} onEventClick={handleEventClick} />
+                  <ListView 
+                    events={filteredEvents} 
+                    onEventClick={handleEventClick}
+                    isSelectionMode={isSelectionMode}
+                    selectedEvents={selectedEvents}
+                    onToggleSelection={toggleEventSelection}
+                    onEventHover={handleEventHover}
+                    onEventHoverEnd={handleEventHoverEnd}
+                  />
                 </div>
               )}
             </>
           )}
         </div>
+
+        {/* Floating Bulk Actions Button */}
+        {selectedEvents.size > 0 && (
+          <div className="fixed bottom-6 right-6 z-50">
+            <Button
+              onClick={() => setShowBulkActions(true)}
+              className="rounded-full shadow-lg h-12 w-12 p-0"
+              size="sm"
+            >
+              <div className="flex flex-col items-center">
+                <span className="text-xs font-medium">{selectedEvents.size}</span>
+                <span className="text-xs">Actions</span>
+              </div>
+            </Button>
+          </div>
+        )}
 
         <DragOverlay>
           {activeDragEvent && (
@@ -1646,82 +2095,162 @@ export function ContentCalendar({
       </DndContext>
 
       {/* Dialogs */}
-      {/* Create Event Dialog */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+      {/* Bulk Actions Dialog */}
+      <Dialog open={showBulkActions} onOpenChange={setShowBulkActions}>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Create New Event</DialogTitle>
+            <DialogTitle>Bulk Actions</DialogTitle>
             <DialogDescription>
-              Add a new event to your content calendar.
+              Perform actions on {selectedEvents.size} selected event{selectedEvents.size !== 1 ? 's' : ''}.
             </DialogDescription>
           </DialogHeader>
-          <EventForm
-            mode="create"
-            initialData={{
-              date: format(newEvent.start, "yyyy-MM-dd"),
-              time: format(newEvent.start, "HH:mm"),
-              status: "draft",
-              type: "email"
-            }}
-            onSubmit={async (event) => {
-              if (onEventCreate) {
-                try {
-                  const created = await onEventCreate(event);
-                  setEvents(prev => [...prev, created]);
-                  setIsCreateDialogOpen(false);
-                  toast({
-                    title: "Success",
-                    description: "Event created successfully",
-                  });
-                } catch (error) {
-                  toast({
-                    title: "Error",
-                    description: error instanceof Error ? error.message : "Failed to create event",
-                    variant: "destructive",
-                  });
-                }
-              }
-            }}
-            onCancel={() => setIsCreateDialogOpen(false)}
-          />
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="outline"
+                onClick={() => handleBulkStatusChange('draft')}
+                className="justify-start"
+              >
+                Set as Draft
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleBulkStatusChange('scheduled')}
+                className="justify-start"
+              >
+                Set as Scheduled
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleBulkStatusChange('sent')}
+                className="justify-start"
+              >
+                Set as Sent
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleBulkStatusChange('failed')}
+                className="justify-start"
+              >
+                Set as Failed
+              </Button>
+            </div>
+            <div className="border-t pt-4">
+              <Button
+                variant="destructive"
+                onClick={handleBulkDelete}
+                className="w-full"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Selected Events
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBulkActions(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Edit Event Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Edit Event</DialogTitle>
-            <DialogDescription>
-              Make changes to your event details.
-            </DialogDescription>
-          </DialogHeader>
-          {selectedEvent && (
-            <EventForm
-              mode="edit"
-              initialData={selectedEvent}
+      {/* Create Event Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="sm:max-w-[700px] max-w-[95vw] max-h-[90vh] overflow-hidden flex flex-col gap-0 p-0">
+          <div className="px-6 pt-6 pb-2 border-b border-border/10">{/* Header with subtle separator */}
+            <DialogHeader className="flex-shrink-0">
+              <DialogTitle>Create New Event</DialogTitle>
+              <DialogDescription>
+                Add a new event to your content calendar.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="flex-1 overflow-y-auto px-6 pb-6 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">{/* Scrollable container with custom scrollbar */}
+            <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+              <EventForm
+              mode="create"
+              initialData={{
+                date: format(newEvent.start, "yyyy-MM-dd"),
+                time: format(newEvent.start, "HH:mm"),
+                status: newEvent.status || "draft",
+                type: newEvent.type || "email",
+                title: newEvent.title || "",
+                description: newEvent.description || "",
+                ...newEvent
+              }}
               onSubmit={async (event) => {
-                if (onEventUpdate) {
+                if (onEventCreate) {
                   try {
-                    const updated = await onEventUpdate(event);
-                    setEvents(prev => prev.map(e => e.id === updated.id ? updated : e));
-                    setIsEditDialogOpen(false);
+                    // measurePerformance('create-event', () => {
+                    //   // Performance measurement wrapper
+                    // });
+                    const created = await onEventCreate(event);
+                    setEvents(prev => [...prev, created]);
+                    setIsCreateDialogOpen(false);
                     toast({
                       title: "Success",
-                      description: "Event updated successfully",
+                      description: "Event created successfully",
                     });
                   } catch (error) {
                     toast({
                       title: "Error",
-                      description: error instanceof Error ? error.message : "Failed to update event",
+                      description: error instanceof Error ? error.message : "Failed to create event",
                       variant: "destructive",
                     });
                   }
                 }
               }}
-              onCancel={() => setIsEditDialogOpen(false)}
-            />
-          )}
+                onCancel={() => setIsCreateDialogOpen(false)}
+              />
+            </Suspense>
+          </div>{/* End scrollable container */}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Event Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[700px] max-w-[95vw] max-h-[90vh] overflow-hidden flex flex-col gap-0 p-0">
+          <div className="px-6 pt-6 pb-2 border-b border-border/10">{/* Header with subtle separator */}
+            <DialogHeader className="flex-shrink-0">
+              <DialogTitle>Edit Event</DialogTitle>
+              <DialogDescription>
+                Make changes to your event details.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="flex-1 overflow-y-auto px-6 pb-6 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">{/* Scrollable container with custom scrollbar */}
+            {selectedEvent && (
+              <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+                <EventForm
+                mode="edit"
+                initialData={selectedEvent}
+                onSubmit={async (event) => {
+                  if (onEventUpdate) {
+                    try {
+                      // measurePerformance('update-event', () => {
+                      //   // Performance measurement wrapper
+                      // });
+                      const updated = await onEventUpdate(event);
+                      setEvents(prev => prev.map(e => e.id === updated.id ? updated : e));
+                      setIsEditDialogOpen(false);
+                      toast({
+                        title: "Success",
+                        description: "Event updated successfully",
+                      });
+                    } catch (error) {
+                      toast({
+                        title: "Error",
+                        description: error instanceof Error ? error.message : "Failed to update event",
+                        variant: "destructive",
+                      });
+                    }
+                  }
+                }}
+                  onCancel={() => setIsEditDialogOpen(false)}
+                />
+              </Suspense>
+            )}
+          </div>{/* End scrollable container */}
         </DialogContent>
       </Dialog>
 
@@ -1817,6 +2346,29 @@ export function ContentCalendar({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Template Selector Dialog */}
+      {isTemplateSelectorOpen && (
+        <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+          <TemplateSelector
+            isOpen={isTemplateSelectorOpen}
+            onClose={() => setIsTemplateSelectorOpen(false)}
+            onSelectTemplate={handleTemplateSelect}
+            initialDate={pendingEventDate || undefined}
+          />
+        </Suspense>
+      )}
+      
+      {/* Event Preview Tooltip */}
+      {hoveredEvent && previewPosition && (
+        <div 
+          onMouseEnter={handlePreviewHover}
+          onMouseLeave={handlePreviewLeave}
+          className="pointer-events-auto"
+        >
+          <EventPreview event={hoveredEvent} position={previewPosition} />
+        </div>
+      )}
     </div>
   );
 }

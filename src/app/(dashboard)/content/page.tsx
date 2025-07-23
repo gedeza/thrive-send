@@ -11,13 +11,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChevronLeft, ChevronRight, Grid, List, MoreHorizontal, Plus, Search, Trash, RefreshCw, Edit, Eye, Calendar, Clock, Tag } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Grid, List, MoreHorizontal, Plus, Search, Trash, RefreshCw, Edit, Eye, Calendar, Clock, Tag, FileText, Newspaper, Share2, Mail, BarChart3, TrendingUp } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { listContent, deleteContent, ContentData } from '@/lib/api/content-service';
 import { toast } from '@/components/ui/use-toast';
 import { ContentCalendarSync } from '@/components/content/ContentCalendarSync';
+import { SystemMonitor } from '@/components/debug/SystemMonitor';
 import { cn, debounce, formatDate, truncateText } from '@/lib/utils';
+import { MediaPreview } from '@/components/content/MediaPreview';
+import { PublishingOptionsIndicator } from '@/components/content/PublishingOptionsIndicator';
+import { PlatformIndicator } from '@/components/content/PlatformIndicator';
+import { ContentAnalyticsMetrics } from '@/components/content/ContentAnalyticsMetrics';
+import { useBulkContentAnalytics } from '@/lib/hooks/useContentAnalytics';
+import { calculatePerformanceScore } from '@/lib/api/content-analytics-service';
+import { useRealTimeAnalytics } from '@/lib/hooks/useRealTimeAnalytics';
+import { RealTimeAnalyticsIndicator } from '@/components/content/RealTimeAnalyticsIndicator';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,12 +64,32 @@ type ContentTypeFilter = 'all' | 'article' | 'blog' | 'social' | 'email';
 const ITEMS_PER_PAGE = 12;
 const SEARCH_DEBOUNCE_MS = 300;
 
-// Content type configurations
+// Enhanced content type configurations with icons
 const CONTENT_TYPE_CONFIG = {
-  blog: { label: 'Blog Post', color: 'bg-blue-100 text-blue-800 border-blue-200' },
-  article: { label: 'Article', color: 'bg-green-100 text-green-800 border-green-200' },
-  social: { label: 'Social Media', color: 'bg-purple-100 text-purple-800 border-purple-200' },
-  email: { label: 'Email Campaign', color: 'bg-orange-100 text-orange-800 border-orange-200' },
+  blog: { 
+    label: 'Blog Post', 
+    color: 'bg-blue-100 text-blue-800 border-blue-200',
+    icon: Newspaper,
+    description: 'Long-form blog content'
+  },
+  article: { 
+    label: 'Article', 
+    color: 'bg-green-100 text-green-800 border-green-200',
+    icon: FileText,
+    description: 'Editorial or informational article'
+  },
+  social: { 
+    label: 'Social Media', 
+    color: 'bg-purple-100 text-purple-800 border-purple-200',
+    icon: Share2,
+    description: 'Social media post'
+  },
+  email: { 
+    label: 'Email Campaign', 
+    color: 'bg-orange-100 text-orange-800 border-orange-200',
+    icon: Mail,
+    description: 'Email newsletter or campaign'
+  },
 } as const;
 
 // Status configurations
@@ -124,55 +153,128 @@ function ContentLibraryPage() {
     error,
     refetch
   } = useQuery({
-    queryKey: ['content', queryParams.toString()],
+    queryKey: ['content', Object.fromEntries(queryParams.entries())], // Use object instead of string for better key handling
     queryFn: () => listContent(Object.fromEntries(queryParams.entries())),
-    staleTime: 0,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    staleTime: 2 * 60 * 1000, // 2 minutes - balance between freshness and performance
+    cacheTime: 10 * 60 * 1000, // 10 minutes in memory
+    refetchOnMount: false, // Don't refetch on every mount - rely on cache
+    refetchOnWindowFocus: false, // Don't refetch on window focus - too aggressive
+    retry: 1, // Limit retries for failed requests
   });
 
-  // Add useEffect to refetch when component mounts
-  useEffect(() => {
-    refetch();
-  }, [refetch]);
+  // Remove aggressive manual refetch on mount - React Query handles this with proper cache settings
 
   // Prevent hydration mismatch
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Listen for content creation events
+  // Listen for content creation events and invalidate cache
   useEffect(() => {
     const handleContentCreated = () => {
-      console.log('Content created event received, refetching...');
-      refetch();
+      console.log('Content created event received, invalidating cache...');
+      // Use cache invalidation instead of manual refetch for better performance
+      queryClient.invalidateQueries({ queryKey: ['content'] });
+      // Also invalidate calendar cache since content and calendar are now connected
+      queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-data'] });
     };
 
     window.addEventListener('content-created', handleContentCreated);
     return () => window.removeEventListener('content-created', handleContentCreated);
-  }, [refetch]);
+  }, [queryClient]);
 
-  // Filter content based on search query (now handled server-side via debounced search)
+  // Fetch analytics for all content items
+  const contentIds = useMemo(() => 
+    (contentData?.content || []).map((item: ContentData) => item.id!).filter(Boolean), 
+    [contentData?.content]
+  );
+  
+  const { analyticsMap, isLoading: analyticsLoading } = useBulkContentAnalytics(contentIds);
+
+  // Real-time analytics updates
+  const realtimeAnalytics = useRealTimeAnalytics({
+    contentIds,
+    enabled: true,
+    interval: 15000, // Update every 15 seconds
+    simulateUpdates: true // Enable simulation in development
+  });
+
+  // Extract with explicit null checking and guaranteed fallbacks
+  const realtimeConnected = realtimeAnalytics?.isConnected ?? false;
+  const lastUpdateTime = realtimeAnalytics?.lastUpdateTime ?? null;
+  const refreshAnalytics = realtimeAnalytics?.refreshAnalytics ?? (() => {});
+  const realtimeUpdates = realtimeAnalytics?.realtimeUpdates ?? {};
+
+
+  // Filter and sort content based on search query and analytics
   const filteredContent = useMemo(() => {
-    return contentData?.content || [];
-  }, [contentData?.content]);
+    let content = contentData?.content || [];
+    
+    // Apply analytics-based sorting if needed
+    if (sortBy === 'performance' || sortBy === 'views' || sortBy === 'engagement') {
+      content = [...content].sort((a, b) => {
+        const analyticsA = analyticsMap[a.id!];
+        const analyticsB = analyticsMap[b.id!];
+        
+        let valueA = 0;
+        let valueB = 0;
+        
+        if (sortBy === 'performance') {
+          valueA = analyticsA ? calculatePerformanceScore(analyticsA) : 0;
+          valueB = analyticsB ? calculatePerformanceScore(analyticsB) : 0;
+        } else if (sortBy === 'views') {
+          valueA = analyticsA?.views || 0;
+          valueB = analyticsB?.views || 0;
+        } else if (sortBy === 'engagement') {
+          valueA = analyticsA?.engagementRate || 0;
+          valueB = analyticsB?.engagementRate || 0;
+        }
+        
+        return sortOrder === 'desc' ? valueB - valueA : valueA - valueB;
+      });
+    }
+    
+    return content;
+  }, [contentData?.content, analyticsMap, sortBy, sortOrder]);
 
   // Bulk selection handlers
   const isAllSelected = selectedItems.length === filteredContent.length && filteredContent.length > 0;
   const isPartiallySelected = selectedItems.length > 0 && selectedItems.length < filteredContent.length;
 
-  // Enhanced content stats
+  // Enhanced content stats with analytics
   const contentStats = useMemo(() => {
     if (!filteredContent.length) return null;
     
     const stats = filteredContent.reduce((acc, item) => {
-      acc[item.status] = (acc[item.status] || 0) + 1;
-      acc[item.type] = (acc[item.type] || 0) + 1;
+      // Convert status to lowercase for consistent key matching
+      const statusKey = item.status.toLowerCase();
+      const typeKey = item.type.toLowerCase();
+      
+      acc[statusKey] = (acc[statusKey] || 0) + 1;
+      acc[typeKey] = (acc[typeKey] || 0) + 1;
+      
+      // Add analytics-based stats
+      const analytics = analyticsMap[item.id!];
+      if (analytics) {
+        acc.totalViews = (acc.totalViews || 0) + analytics.views;
+        acc.totalLikes = (acc.totalLikes || 0) + analytics.likes;
+        acc.totalShares = (acc.totalShares || 0) + analytics.shares;
+        acc.totalEngagement = (acc.totalEngagement || 0) + 
+          (analytics.likes + analytics.shares + analytics.comments);
+        
+        // Count high-performing content
+        const score = calculatePerformanceScore(analytics);
+        if (score >= 70) {
+          acc.highPerforming = (acc.highPerforming || 0) + 1;
+        }
+      }
+      
       return acc;
     }, {} as Record<string, number>);
     
     return stats;
-  }, [filteredContent]);
+  }, [filteredContent, analyticsMap]);
 
   // Handle bulk actions
   const handleBulkDelete = async () => {
@@ -279,86 +381,194 @@ function ContentLibraryPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Dashboard-style Header */}
-      <div className="space-y-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight">Content Library</h1>
-            <p className="text-muted-foreground">
-              Create, manage, and schedule your content across all platforms
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleManualRefresh}
-                    disabled={isLoading}
-                  >
-                    <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
-                    <span className="hidden sm:inline ml-2">Refresh</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Refresh content list</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowSyncDialog(true)}
-            >
-              <Calendar className="h-4 w-4" />
-              <span className="hidden sm:inline ml-2">Sync Calendar</span>
-            </Button>
-            
-            <Button asChild>
-              <Link href="/content/new">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Content
-              </Link>
-            </Button>
-          </div>
+    <div className="space-y-4 p-4">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <FileText className="h-8 w-8 text-primary" />
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            Content Library
+          </h1>
         </div>
-
-        {/* Analytics-style Metric Cards */}
-        {contentStats && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {Object.entries(STATUS_CONFIG).map(([status, config]) => {
-              const count = contentStats[status] || 0;
-              const total = filteredContent.length;
-              const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : '0';
-              
-              return (
-                <Card key={status}>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">{config.label}</p>
-                        <p className="text-2xl font-bold">{count}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {percentage}% of total content
-                        </p>
-                      </div>
-                      <div className={cn("rounded-lg p-2", config.color)}>
-                        <config.icon className="h-5 w-5" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          Create, manage, and schedule your content across all channels and platforms.
+        </p>
       </div>
 
-      {/* Analytics-style Controls */}
+      <div className="flex items-center justify-end gap-2 mb-8">
+        <div className="flex items-center gap-2">
+          {/* Real-time Analytics Indicator */}
+          <RealTimeAnalyticsIndicator
+            isConnected={realtimeConnected}
+            lastUpdateTime={lastUpdateTime}
+            onRefresh={refreshAnalytics}
+            hasRecentUpdates={Object.keys(realtimeUpdates).length > 0}
+            size="sm"
+            showLastUpdate={true}
+            showConnectionStatus={true}
+          />
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleManualRefresh}
+                  disabled={isLoading}
+                >
+                  <RefreshCw className={cn("mr-2 h-4 w-4", isLoading && "animate-spin")} />
+                  Refresh
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Refresh content list</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowSyncDialog(true)}
+          >
+            <Calendar className="mr-2 h-4 w-4" />
+            Sync Calendar
+          </Button>
+          
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/content/analytics">
+              <BarChart3 className="mr-2 h-4 w-4" />
+              Analytics
+            </Link>
+          </Button>
+          
+          <Button asChild>
+            <Link href="/content/new">
+              <Plus className="mr-2 h-4 w-4" />
+              New Content
+            </Link>
+          </Button>
+        </div>
+      </div>
+
+      {/* Content Statistics */}
+      {contentStats && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+          {Object.entries(STATUS_CONFIG).map(([status, config]) => {
+            const count = contentStats[status] || 0;
+            const total = filteredContent.length;
+            const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : '0';
+            
+            // Dynamic colors based on status
+            const getStyles = (status: string) => {
+              switch(status) {
+                case 'draft':
+                  return {
+                    iconBg: 'p-3 bg-yellow-100 rounded-full',
+                    iconColor: 'h-6 w-6 text-yellow-600',
+                    numberColor: 'text-3xl font-bold text-yellow-600'
+                  };
+                case 'published':
+                  return {
+                    iconBg: 'p-3 bg-green-100 rounded-full',
+                    iconColor: 'h-6 w-6 text-green-600',
+                    numberColor: 'text-3xl font-bold text-green-600'
+                  };
+                case 'scheduled':
+                  return {
+                    iconBg: 'p-3 bg-blue-100 rounded-full',
+                    iconColor: 'h-6 w-6 text-blue-600',
+                    numberColor: 'text-3xl font-bold text-blue-600'
+                  };
+                default:
+                  return {
+                    iconBg: 'p-3 bg-primary/10 rounded-full',
+                    iconColor: 'h-6 w-6 text-primary',
+                    numberColor: 'text-3xl font-bold'
+                  };
+              }
+            };
+            
+            const styles = getStyles(status);
+            
+            return (
+              <Card key={status} className="hover:shadow-md transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-muted-foreground">{config.label}</p>
+                      <p className={styles.numberColor}>{count}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {percentage}% of total content
+                      </p>
+                    </div>
+                    <div className={styles.iconBg}>
+                      <div className={styles.iconColor}>
+                        <config.icon className="h-6 w-6" />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+          
+          {/* High-Performing Content Card */}
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">High Performing</p>
+                  <p className="text-3xl font-bold text-primary">{contentStats.highPerforming || 0}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {filteredContent.length > 0 ? 
+                      (((contentStats.highPerforming || 0) / filteredContent.length) * 100).toFixed(1) : '0'
+                    }% of total content
+                  </p>
+                </div>
+                <div className="p-3 bg-primary/10 rounded-full">
+                  <div className="h-6 w-6 text-primary">
+                    <TrendingUp className="h-6 w-6" />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Analytics Summary */}
+      {contentStats && (contentStats.totalViews || contentStats.totalLikes) && (
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Content Performance Overview
+            </h3>
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-blue-600">{(contentStats.totalViews || 0).toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">Total Views</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-pink-600">{(contentStats.totalLikes || 0).toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">Total Likes</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-green-600">{(contentStats.totalShares || 0).toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">Total Shares</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-purple-600">{(contentStats.totalEngagement || 0).toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">Total Engagement</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Search and Filters */}
       <Card>
         <CardContent className="p-6">
           <div className="space-y-4">
@@ -422,6 +632,9 @@ function ContentLibraryPage() {
                     <SelectItem value="title-asc">Title A-Z</SelectItem>
                     <SelectItem value="title-desc">Title Z-A</SelectItem>
                     <SelectItem value="updatedAt-desc">Recently updated</SelectItem>
+                    <SelectItem value="performance-desc">Best performing</SelectItem>
+                    <SelectItem value="views-desc">Most viewed</SelectItem>
+                    <SelectItem value="engagement-desc">Most engaging</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -631,23 +844,27 @@ function ContentLibraryPage() {
               <ContentCard
                 key={item.id}
                 item={item}
+                analytics={analyticsMap[item.id!]}
                 isSelected={selectedItems.includes(item.id!)}
                 onSelect={handleSelectItem}
                 onDelete={(id) => {
                   setItemToDelete(id);
                   setDeleteDialogOpen(true);
                 }}
+                realtimeUpdates={realtimeUpdates}
               />
             ) : (
               <ContentListItem
                 key={item.id}
                 item={item}
+                analytics={analyticsMap[item.id!]}
                 isSelected={selectedItems.includes(item.id!)}
                 onSelect={handleSelectItem}
                 onDelete={(id) => {
                   setItemToDelete(id);
                   setDeleteDialogOpen(true);
                 }}
+                realtimeUpdates={realtimeUpdates}
               />
             )
           ))}
@@ -758,20 +975,28 @@ function ContentLibraryPage() {
 // Enhanced Content Card Component
 interface ContentCardProps {
   item: ContentData;
+  analytics?: any; // ContentAnalytics from the service
   isSelected: boolean;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
+  realtimeUpdates?: Record<string, any>; // Real-time analytics updates
 }
 
-function ContentCard({ item, isSelected, onSelect, onDelete }: ContentCardProps) {
+function ContentCard({ item, analytics, isSelected, onSelect, onDelete, realtimeUpdates = {} }: ContentCardProps) {
   const typeConfig = CONTENT_TYPE_CONFIG[item.type.toLowerCase() as keyof typeof CONTENT_TYPE_CONFIG];
   const statusConfig = STATUS_CONFIG[item.status.toLowerCase() as keyof typeof STATUS_CONFIG];
   
   return (
     <Card className={cn(
-      "group hover:shadow-lg transition-all duration-200 cursor-pointer border-2",
-      isSelected ? "border-blue-500 bg-blue-50" : "border-transparent hover:border-gray-200"
-    )}>
+      "group hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4",
+      isSelected ? "border-l-blue-500 bg-blue-50" : "border-l-transparent hover:border-l-gray-300"
+    )} style={{ 
+      borderLeftColor: !isSelected ? (
+        item.status.toLowerCase() === 'published' ? '#22c55e' :
+        item.status.toLowerCase() === 'scheduled' ? '#3b82f6' :
+        item.status.toLowerCase() === 'draft' ? '#f59e0b' : '#6b7280'
+      ) : undefined
+    }}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3 flex-1">
@@ -786,7 +1011,8 @@ function ContentCard({ item, isSelected, onSelect, onDelete }: ContentCardProps)
               </CardTitle>
               <div className="flex flex-wrap items-center gap-2">
                 {typeConfig && (
-                  <Badge variant="outline" className={cn("text-xs border", typeConfig.color)}>
+                  <Badge variant="outline" className={cn("text-xs border flex items-center gap-1", typeConfig.color)}>
+                    <typeConfig.icon className="h-3 w-3" />
                     {typeConfig.label}
                   </Badge>
                 )}
@@ -797,6 +1023,14 @@ function ContentCard({ item, isSelected, onSelect, onDelete }: ContentCardProps)
                   </Badge>
                 )}
               </div>
+              
+              {/* Publishing Options Indicators */}
+              <PublishingOptionsIndicator 
+                publishingOptions={item.publishingOptions}
+                size="sm"
+                maxVisible={2}
+                className="mt-2"
+              />
             </div>
           </div>
           <DropdownMenu>
@@ -807,7 +1041,7 @@ function ContentCard({ item, isSelected, onSelect, onDelete }: ContentCardProps)
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link href={`/content/edit/${item.id}`} className="flex items-center">
+                <Link href={`/content/edit-new/${item.id}`} className="flex items-center">
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
                 </Link>
@@ -836,6 +1070,36 @@ function ContentCard({ item, isSelected, onSelect, onDelete }: ContentCardProps)
             {truncateText(item.excerpt, 120)}
           </p>
         )}
+        
+        {/* Media Preview */}
+        <MediaPreview 
+          media={item.media} 
+          mediaItems={item.mediaItems}
+          size="md" 
+          maxItems={3}
+          className="mb-3"
+        />
+        
+        {/* Platform Indicators */}
+        <PlatformIndicator 
+          platforms={item.platforms}
+          size="sm"
+          maxVisible={4}
+          className="mb-3"
+        />
+        
+        {/* Analytics Metrics with Real-time Updates */}
+        <ContentAnalyticsMetrics
+          contentId={item.id!}
+          analytics={analytics ? {
+            ...analytics,
+            ...(realtimeUpdates[item.id!] || {}) // Merge real-time updates safely
+          } : undefined}
+          size="sm"
+          showPerformanceScore={true}
+          showTrendingBadge={true}
+          className="mb-3"
+        />
         
         {item.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-3">
@@ -874,15 +1138,21 @@ function ContentCard({ item, isSelected, onSelect, onDelete }: ContentCardProps)
 }
 
 // Enhanced List Item Component
-function ContentListItem({ item, isSelected, onSelect, onDelete }: ContentCardProps) {
+function ContentListItem({ item, analytics, isSelected, onSelect, onDelete, realtimeUpdates = {} }: ContentCardProps) {
   const typeConfig = CONTENT_TYPE_CONFIG[item.type.toLowerCase() as keyof typeof CONTENT_TYPE_CONFIG];
   const statusConfig = STATUS_CONFIG[item.status.toLowerCase() as keyof typeof STATUS_CONFIG];
   
   return (
     <Card className={cn(
-      "group hover:shadow-md transition-all duration-200 border-2",
-      isSelected ? "border-blue-500 bg-blue-50" : "border-transparent hover:border-gray-200"
-    )}>
+      "group hover:shadow-lg transition-all duration-200 border-l-4",
+      isSelected ? "border-l-blue-500 bg-blue-50" : "border-l-transparent hover:border-l-gray-300"
+    )} style={{ 
+      borderLeftColor: !isSelected ? (
+        item.status.toLowerCase() === 'published' ? '#22c55e' :
+        item.status.toLowerCase() === 'scheduled' ? '#3b82f6' :
+        item.status.toLowerCase() === 'draft' ? '#f59e0b' : '#6b7280'
+      ) : undefined
+    }}>
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -898,7 +1168,8 @@ function ContentListItem({ item, isSelected, onSelect, onDelete }: ContentCardPr
                 </h3>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {typeConfig && (
-                    <Badge variant="outline" className={cn("text-xs border", typeConfig.color)}>
+                    <Badge variant="outline" className={cn("text-xs border flex items-center gap-1", typeConfig.color)}>
+                      <typeConfig.icon className="h-3 w-3" />
                       {typeConfig.label}
                     </Badge>
                   )}
@@ -908,6 +1179,12 @@ function ContentListItem({ item, isSelected, onSelect, onDelete }: ContentCardPr
                       {statusConfig.label}
                     </Badge>
                   )}
+                  {/* Publishing Options Indicators */}
+                  <PublishingOptionsIndicator 
+                    publishingOptions={item.publishingOptions}
+                    size="sm"
+                    maxVisible={3}
+                  />
                 </div>
               </div>
               
@@ -924,6 +1201,36 @@ function ContentListItem({ item, isSelected, onSelect, onDelete }: ContentCardPr
                   )}
                 </div>
               </div>
+              
+              {/* Media Preview */}
+              <MediaPreview 
+                media={item.media} 
+                mediaItems={item.mediaItems}
+                size="sm" 
+                maxItems={4}
+                className="mt-2"
+              />
+              
+              {/* Platform Indicators */}
+              <PlatformIndicator 
+                platforms={item.platforms}
+                size="sm"
+                maxVisible={5}
+                className="mt-2"
+              />
+              
+              {/* Analytics Metrics with Real-time Updates */}
+              <ContentAnalyticsMetrics
+                contentId={item.id!}
+                analytics={analytics ? {
+                  ...analytics,
+                  ...(realtimeUpdates[item.id!] || {}) // Merge real-time updates safely
+                } : undefined}
+                size="sm"
+                showPerformanceScore={false}
+                showTrendingBadge={true}
+                className="mt-2"
+              />
               
               {item.tags.length > 0 && (
                 <div className="flex items-center gap-2 mt-2">
@@ -945,7 +1252,7 @@ function ContentListItem({ item, isSelected, onSelect, onDelete }: ContentCardPr
           
           <div className="flex items-center gap-2 flex-shrink-0">
             <Button variant="ghost" size="sm" asChild>
-              <Link href={`/content/edit/${item.id}`}>
+              <Link href={`/content/edit-new/${item.id}`}>
                 <Edit className="h-4 w-4" />
               </Link>
             </Button>

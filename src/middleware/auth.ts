@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { ApiError } from "@/lib/api/error-handler";
 
 export interface AuthenticatedRequest extends NextRequest {
@@ -25,7 +25,7 @@ export async function withAuth(
     }
 
     // Get internal user
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { clerkId: userId },
       select: { id: true, clerkId: true },
     });
@@ -71,7 +71,7 @@ export async function withOrganization(
       }
 
       // Verify organization exists and user has access
-      const membership = await prisma.organizationMember.findFirst({
+      const membership = await db.organizationMember.findFirst({
         where: {
           organization: { clerkOrganizationId: organizationId },
           user: { clerkId: authedRequest.auth.user.clerkId }

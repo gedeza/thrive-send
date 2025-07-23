@@ -1,0 +1,16 @@
+-- AlterTable
+ALTER TABLE "Analytics" ADD COLUMN     "bounceRate" DOUBLE PRECISION NOT NULL DEFAULT 0,
+ADD COLUMN     "clickRate" DOUBLE PRECISION NOT NULL DEFAULT 0,
+ADD COLUMN     "clicks" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "comments" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "likes" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "openRate" DOUBLE PRECISION NOT NULL DEFAULT 0,
+ADD COLUMN     "shares" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "views" INTEGER NOT NULL DEFAULT 0;
+
+-- AlterTable
+ALTER TABLE "Content" ADD COLUMN     "platforms" TEXT[],
+ADD COLUMN     "publishingOptions" JSONB;
+
+-- CreateIndex
+CREATE INDEX "Analytics_createdAt_idx" ON "Analytics"("createdAt");
