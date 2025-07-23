@@ -8,8 +8,28 @@ import { NotificationCenter } from '@/components/notifications/NotificationCente
 import { CustomUserButton } from '@/components/ui/user-button';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
+  // Get current URL for dynamic redirect URLs on mobile
+  const currentUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+  
   return (
-    <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
+    <ClerkProvider 
+      publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      afterSignInUrl="/dashboard"
+      afterSignUpUrl="/onboarding"
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
+      // Dynamic redirect URLs for mobile device compatibility
+      redirectUrl={currentUrl}
+      allowedRedirectOrigins={[
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        // Allow mobile access patterns
+        /^http:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:3000$/,
+        /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}:3000$/,
+        /^http:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}:3000$/,
+        /^http:\/\/172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}:3000$/,
+      ]}
+    >
       <Providers>
         <div className="min-h-screen bg-background flex flex-col">
           {/* Global Header */}

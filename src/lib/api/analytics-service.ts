@@ -231,7 +231,6 @@ export const trackAnalyticsEvent = async (
 
 export function useAnalytics() {
   const { getToken } = useAuth();
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -250,9 +249,11 @@ export function useAnalytics() {
     dateRange: AnalyticsDateRange,
     interval: 'hour' | 'day' | 'week' | 'month' = 'day'
   ): Promise<TimeSeriesData> => {
+    const { getApiBaseUrl, mobileFetch } = await import('./mobile-config');
+    const baseUrl = getApiBaseUrl();
     const headers = await getAuthHeaders();
-    const response = await fetch(
-      `${baseUrl}/analytics/time-series?metric=${metric}&start=${dateRange.start}&end=${dateRange.end}&interval=${interval}`,
+    const response = await mobileFetch(
+      `/analytics/time-series?metric=${metric}&start=${dateRange.start}&end=${dateRange.end}&interval=${interval}`,
       { headers }
     );
     return response.json();
