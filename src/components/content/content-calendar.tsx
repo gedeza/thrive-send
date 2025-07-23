@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from "rea
 //   usePerformanceMonitoring
 // } from "@/lib/utils/bundle-optimizer";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Search, Filter, LayoutGrid, LayoutList, Clock, Facebook, Twitter, Instagram, Linkedin, Upload, X, Settings as SettingsIcon, RefreshCw, Bug, Trash2 } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Search, Filter, LayoutGrid, LayoutList, Clock, Facebook, Twitter, Instagram, Linkedin, Video, Upload, X, Settings as SettingsIcon, RefreshCw, Bug, Trash2 } from "lucide-react";
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useSensor, useSensors, PointerSensor, closestCenter } from "@dnd-kit/core";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import { Button } from "@/components/ui/button";
@@ -113,49 +113,59 @@ export const eventTypeColorMap: Record<ContentType, { bg: string; text: string }
 
 // Platform-specific color mapping
 const platformColorMap: Record<SocialPlatform, { bg: string; text: string; icon: React.ReactNode }> = {
-  FACEBOOK: {
+  facebook: {
     bg: "bg-[#1877F2]/10",
     text: "text-[#1877F2]",
     icon: <Facebook className="h-4 w-4" />
   },
-  TWITTER: {
+  twitter: {
     bg: "bg-[#1DA1F2]/10",
     text: "text-[#1DA1F2]",
     icon: <Twitter className="h-4 w-4" />
   },
-  INSTAGRAM: {
+  instagram: {
     bg: "bg-[#E4405F]/10",
     text: "text-[#E4405F]",
     icon: <Instagram className="h-4 w-4" />
   },
-  LINKEDIN: {
+  linkedin: {
     bg: "bg-[#0A66C2]/10",
     text: "text-[#0A66C2]",
     icon: <Linkedin className="h-4 w-4" />
+  },
+  tiktok: {
+    bg: "bg-[#000000]/10",
+    text: "text-[#000000]",
+    icon: <Video className="h-4 w-4" />
   }
 };
 
 // Platform-specific content limits
 const platformContentLimits = {
-  FACEBOOK: {
+  facebook: {
     maxTextLength: 63206,
     maxMediaCount: 10,
     supportedMediaTypes: ["image", "video", "link"]
   },
-  TWITTER: {
+  twitter: {
     maxTextLength: 280,
     maxMediaCount: 4,
     supportedMediaTypes: ["image", "video", "gif"]
   },
-  INSTAGRAM: {
+  instagram: {
     maxTextLength: 2200,
     maxMediaCount: 10,
     supportedMediaTypes: ["image", "video", "carousel"]
   },
-  LINKEDIN: {
+  linkedin: {
     maxTextLength: 3000,
     maxMediaCount: 9,
     supportedMediaTypes: ["image", "video", "document"]
+  },
+  tiktok: {
+    maxTextLength: 2200,
+    maxMediaCount: 1,
+    supportedMediaTypes: ["video"]
   }
 };
 

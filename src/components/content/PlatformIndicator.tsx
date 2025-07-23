@@ -53,7 +53,7 @@ const PLATFORM_CONFIG = {
   tiktok: {
     icon: Video,
     label: 'TikTok',
-    color: 'bg-gray-100 text-gray-700 border-gray-200'
+    color: 'bg-black/10 text-black border-black/20 dark:bg-white/10 dark:text-white dark:border-white/20'
   },
   email: {
     icon: Mail,
