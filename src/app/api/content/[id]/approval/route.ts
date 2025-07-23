@@ -13,6 +13,11 @@ const approvalSchema = z.object({
   assignedTo: z.string().optional(),
 });
 
+const statusSchema = z.object({
+  status: z.nativeEnum(ContentStatus),
+  comment: z.string().optional(),
+});
+
 // GET /api/content/[id]/approval
 export async function GET(
   request: NextRequest,
@@ -205,7 +210,7 @@ export async function PATCH(
             status,
             step: getNextStep(status),
             comment,
-            createdBy: userId,
+            userId: userId,
           },
         },
       },
@@ -244,21 +249,20 @@ export async function PATCH(
 }
 
 // Helper function to determine next step based on status
-function getNextStep(status: string): 'CREATION' | 'REVIEW' | 'APPROVAL' | 'PUBLICATION' {
+function getNextStep(status: string): ApprovalStep {
   switch (status) {
     case 'DRAFT':
-      return 'CREATION';
     case 'PENDING_REVIEW':
     case 'IN_REVIEW':
     case 'CHANGES_REQUESTED':
-      return 'REVIEW';
+      return ApprovalStep.REVIEW;
     case 'APPROVED':
     case 'REJECTED':
-      return 'APPROVAL';
+      return ApprovalStep.APPROVAL;
     case 'PUBLISHED':
     case 'ARCHIVED':
-      return 'PUBLICATION';
+      return ApprovalStep.PUBLISH;
     default:
-      return 'CREATION';
+      return ApprovalStep.REVIEW;
   }
 } 

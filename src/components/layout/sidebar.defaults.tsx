@@ -11,7 +11,10 @@ import {
   FileCode, 
   Folder, 
   Palette,
-  Plus
+  Plus,
+  ShoppingCart,
+  TrendingUp,
+  CheckCircle
 } from "lucide-react";
 
 /**
@@ -77,6 +80,13 @@ export const defaultSidebarItems: SidebarItemWithRoles[] = [
         icon: <Plus size={16} />,
         href: "/content/new",
         roles: ["admin", "user"], // Only admins and users can create
+      },
+      {
+        key: "content-approvals",
+        label: "Approvals",
+        icon: <CheckCircle size={16} />,
+        href: "/content/approvals",
+        roles: ["admin", "manager", "user"], // Content creators and reviewers
       }
     ]
   },
@@ -93,6 +103,29 @@ export const defaultSidebarItems: SidebarItemWithRoles[] = [
     icon: <Folder size={18} />,
     href: "/projects",
     roles: ["admin", "manager"], // Only admins and managers
+  },
+  {
+    key: "marketplace",
+    label: "Marketplace",
+    icon: <ShoppingCart size={18} />,
+    href: "/marketplace",
+    roles: ["admin", "manager", "user"], // Not for viewers or guests
+    children: [
+      {
+        key: "marketplace-create",
+        label: "Create Listing",
+        icon: <Plus size={16} />,
+        href: "/marketplace/create",
+        roles: ["admin", "user"], // Only admins and users can create
+      },
+      {
+        key: "marketplace-boosts",
+        label: "Boost Listings",
+        icon: <TrendingUp size={16} />,
+        href: "/marketplace/boosts",
+        roles: ["admin", "user"], // Only admins and users can boost
+      }
+    ]
   },
   {
     key: "demo",
@@ -115,9 +148,9 @@ export const defaultSidebarItems: SidebarItemWithRoles[] = [
  * based on user role
  */
 export const CRITICAL_ITEMS_BY_ROLE: Record<Role, string[]> = {
-  admin: ["dashboard", "templates", "projects", "settings"],
-  manager: ["dashboard", "templates", "projects"],
-  user: ["dashboard", "templates"],
+  admin: ["dashboard", "templates", "projects", "marketplace", "settings"],
+  manager: ["dashboard", "templates", "projects", "marketplace"],
+  user: ["dashboard", "templates", "marketplace"],
   viewer: ["dashboard", "templates"],
   guest: ["dashboard"]
 };
