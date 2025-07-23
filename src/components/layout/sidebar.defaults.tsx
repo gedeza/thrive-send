@@ -14,7 +14,8 @@ import {
   Plus,
   ShoppingCart,
   TrendingUp,
-  CheckCircle
+  CheckCircle,
+  Target
 } from "lucide-react";
 
 /**
@@ -50,6 +51,22 @@ export const defaultSidebarItems: SidebarItemWithRoles[] = [
     icon: <Users size={18} />,
     href: "/clients",
     roles: ["admin", "manager"], // Only admins and managers
+  },
+  {
+    key: "audiences",
+    label: "Audiences",
+    icon: <Target size={18} />,
+    href: "/audiences",
+    roles: ["admin", "manager", "user"], // Content creators and marketers
+    children: [
+      {
+        key: "audiences-create",
+        label: "Create Audience",
+        icon: <Plus size={16} />,
+        href: "/audiences/create",
+        roles: ["admin", "user"], // Only admins and users can create
+      }
+    ]
   },
   {
     key: "campaigns",
