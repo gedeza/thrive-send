@@ -104,6 +104,13 @@ export const defaultSidebarItems: SidebarItemWithRoles[] = [
         icon: <CheckCircle size={16} />,
         href: "/content/approvals",
         roles: ["admin", "manager", "user"], // Content creators and reviewers
+      },
+      {
+        key: "content-seo",
+        label: "SEO Optimizer",
+        icon: <TrendingUp size={16} />,
+        href: "/content/seo",
+        roles: ["admin", "manager", "user"], // Content creators and SEO optimizers
       }
     ]
   },
