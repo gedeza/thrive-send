@@ -587,7 +587,10 @@ export function ContentCalendar({
       start: startDate,
       end: endDate,
       type: eventData.type || "email",
-      socialMediaContent: eventData.socialMediaContent || prev.socialMediaContent
+      socialMediaContent: eventData.socialMediaContent || prev.socialMediaContent,
+      // Include template metadata for analytics tracking
+      templateMetadata: eventData.templateMetadata,
+      analytics: eventData.analytics
     }));
     setIsTemplateSelectorOpen(false);
     setIsCreateDialogOpen(true);
@@ -2195,6 +2198,37 @@ export function ContentCalendar({
                     //   // Performance measurement wrapper
                     // });
                     const created = await onEventCreate(event);
+                    
+                    // Track template usage for analytics if this event was created from a template
+                    if (event.templateMetadata?.templateId) {
+                      try {
+                        await fetch('/api/templates/track-usage', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({
+                            templateId: event.templateMetadata.templateId,
+                            eventId: created.id,
+                            userId: created.createdBy,
+                            organizationId: created.organizationId,
+                            context: 'calendar',
+                            modifications: {
+                              titleChanged: event.title !== event.templateMetadata.originalTitle,
+                              descriptionChanged: event.description !== event.templateMetadata.originalDescription,
+                              timeChanged: event.time !== event.templateMetadata.originalTime,
+                              platformsChanged: JSON.stringify(event.socialMediaContent?.platforms) !== 
+                                               JSON.stringify(event.templateMetadata.originalPlatforms)
+                            },
+                            usedAt: new Date().toISOString()
+                          }),
+                        });
+                      } catch (analyticsError) {
+                        console.warn('Failed to track template usage:', analyticsError);
+                        // Don't fail the event creation for analytics issues
+                      }
+                    }
+                    
                     setEvents(prev => [...prev, created]);
                     setIsCreateDialogOpen(false);
                     toast({

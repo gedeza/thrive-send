@@ -75,9 +75,17 @@ function TemplateSelector({
   }, [filteredTemplates]);
 
   const handleTemplateSelect = (template: ContentTemplate) => {
-    const eventData = applyTemplateToEvent(template, {
-      date: initialDate
-    });
+    const eventData = applyTemplateToEvent(
+      template, 
+      {
+        date: initialDate
+      },
+      {
+        optimizeForPlatforms: true,
+        includeAnalytics: true,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      }
+    );
     onSelectTemplate(eventData);
     onClose();
   };

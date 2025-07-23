@@ -183,29 +183,196 @@ export const getTemplateById = (id: string): ContentTemplate | undefined => {
   return DEFAULT_TEMPLATES.find(template => template.id === id);
 };
 
-// Template application function
+// Enhanced template application function with time zone handling and platform optimization
 export const applyTemplateToEvent = (
   template: ContentTemplate,
-  overrides: Partial<CalendarEvent> = {}
+  overrides: Partial<CalendarEvent> = {},
+  options: {
+    timezone?: string;
+    scheduleTime?: string;
+    optimizeForPlatforms?: boolean;
+    includeAnalytics?: boolean;
+  } = {}
 ): Partial<CalendarEvent> => {
   const now = new Date();
   const defaultDate = overrides.date || now.toISOString().split('T')[0];
   
-  return {
+  // Enhanced time handling with timezone support
+  const calculateScheduleTime = () => {
+    if (options.scheduleTime) {
+      return options.scheduleTime;
+    }
+    
+    // Smart scheduling based on content type and optimal engagement times
+    const optimalTimes = {
+      social: '14:00', // 2 PM - peak social media engagement
+      email: '09:00',  // 9 AM - peak email open rates
+      blog: '10:00',   // 10 AM - peak content consumption
+      article: '11:00', // 11 AM - professional reading time
+      custom: '12:00'   // Noon - neutral time
+    };
+    
+    return optimalTimes[template.type] || '12:00';
+  };
+
+  // Enhanced duration calculation based on content complexity
+  const calculateDuration = () => {
+    if (template.defaultDuration) {
+      return template.defaultDuration;
+    }
+    
+    // Smart duration based on content type and description length
+    const baseDurations = {
+      social: 30,   // 30 minutes for social posts
+      email: 60,    // 1 hour for emails
+      blog: 180,    // 3 hours for blog posts
+      article: 240, // 4 hours for articles
+      custom: 60    // 1 hour default
+    };
+    
+    let duration = baseDurations[template.type] || 60;
+    
+    // Adjust based on content complexity
+    const descriptionLength = template.defaultDescription?.length || 0;
+    if (descriptionLength > 500) {
+      duration *= 1.5; // 50% more time for complex content
+    } else if (descriptionLength > 1000) {
+      duration *= 2; // Double time for very complex content
+    }
+    
+    return Math.round(duration);
+  };
+
+  // Platform-specific optimization for social media content
+  const optimizeSocialContent = () => {
+    if (template.type !== 'social' || !options.optimizeForPlatforms) {
+      return template.type === 'social' ? {
+        platforms: template.suggestedPlatforms || [],
+        crossPost: true,
+        mediaUrls: [],
+        platformSpecificContent: {}
+      } : undefined;
+    }
+
+    const platformSpecificContent: any = {};
+    const platforms = template.suggestedPlatforms || [];
+
+    // Generate platform-optimized content
+    platforms.forEach(platform => {
+      const platformLimits = {
+        twitter: { maxLength: 280, hashtags: 2 },
+        facebook: { maxLength: 500, hashtags: 3 },
+        instagram: { maxLength: 300, hashtags: 5 },
+        linkedin: { maxLength: 700, hashtags: 3 },
+        tiktok: { maxLength: 150, hashtags: 3 }
+      };
+
+      const limits = platformLimits[platform as keyof typeof platformLimits];
+      if (limits) {
+        let optimizedText = template.defaultDescription;
+        
+        // Truncate if too long
+        if (optimizedText && optimizedText.length > limits.maxLength) {
+          optimizedText = optimizedText.substring(0, limits.maxLength - 3) + '...';
+        }
+
+        // Add platform-specific formatting
+        if (platform === 'twitter') {
+          // Add Twitter-specific formatting
+          optimizedText = optimizedText?.replace(/\n\n/g, '\n');
+        } else if (platform === 'linkedin') {
+          // Add LinkedIn professional formatting
+          optimizedText = optimizedText?.replace(/\n/g, '\n\n');
+        } else if (platform === 'instagram') {
+          // Add Instagram emoji and hashtag optimization
+          if (!optimizedText?.includes('📸') && !optimizedText?.includes('🎯')) {
+            optimizedText = '✨ ' + optimizedText;
+          }
+        }
+
+        platformSpecificContent[platform] = {
+          text: optimizedText,
+          mediaUrls: [],
+          scheduledTime: calculateScheduleTime(),
+          hashtags: template.tags.slice(0, limits.hashtags).map(tag => `#${tag.replace(/\s+/g, '')}`),
+          optimizedFor: platform
+        };
+      }
+    });
+
+    return {
+      platforms,
+      crossPost: platforms.length > 1,
+      mediaUrls: [],
+      platformSpecificContent
+    };
+  };
+
+  // Generate analytics tracking data
+  const generateAnalyticsData = () => {
+    if (!options.includeAnalytics) return undefined;
+    
+    return {
+      templateId: template.id,
+      templateCategory: template.category,
+      templateTags: template.tags,
+      expectedDuration: calculateDuration(),
+      optimizationLevel: options.optimizeForPlatforms ? 'high' : 'basic',
+      schedulingSource: 'template',
+      createdAt: new Date().toISOString()
+    };
+  };
+
+  const scheduleTime = calculateScheduleTime();
+  const duration = calculateDuration();
+  
+  // Create enhanced event data
+  const eventData: Partial<CalendarEvent> = {
     title: template.defaultTitle,
     description: template.defaultDescription,
     type: template.type,
     date: defaultDate,
-    duration: template.defaultDuration,
+    time: scheduleTime,
+    duration,
     status: 'draft',
-    socialMediaContent: template.type === 'social' ? {
-      platforms: template.suggestedPlatforms || [],
-      crossPost: true,
-      mediaUrls: [],
-      platformSpecificContent: {}
-    } : undefined,
+    
+    // Enhanced startTime and endTime calculation
+    startTime: `${defaultDate}T${scheduleTime}:00`,
+    endTime: (() => {
+      const start = new Date(`${defaultDate}T${scheduleTime}:00`);
+      const end = new Date(start.getTime() + duration * 60000); // Add duration in milliseconds
+      return end.toISOString();
+    })(),
+    
+    // Template metadata for tracking and optimization
+    templateMetadata: {
+      templateId: template.id,
+      templateName: template.name,
+      templateCategory: template.category,
+      appliedAt: new Date().toISOString(),
+      // Store original values for comparison during analytics tracking
+      originalTitle: template.defaultTitle,
+      originalDescription: template.defaultDescription,
+      originalTime: scheduleTime,
+      originalPlatforms: template.suggestedPlatforms || [],
+      optimizations: {
+        timeOptimized: !!options.scheduleTime,
+        platformOptimized: options.optimizeForPlatforms && template.type === 'social',
+        analyticsEnabled: options.includeAnalytics
+      }
+    },
+    
+    // Enhanced social media content
+    socialMediaContent: optimizeSocialContent(),
+    
+    // Analytics data for performance tracking
+    analytics: generateAnalyticsData(),
+    
+    // Apply any overrides last
     ...overrides
   };
+
+  return eventData;
 };
 
 // Custom template management (for future database integration)
