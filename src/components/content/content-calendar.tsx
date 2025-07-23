@@ -260,16 +260,16 @@ function EventPreview({ event, position }: { event: CalendarEvent; position: { x
 
   return (
     <div
-      className="fixed z-50 max-w-sm bg-white dark:bg-gray-800 border rounded-lg shadow-lg p-4 pointer-events-none"
+      className="fixed z-50 max-w-sm bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-600 rounded-lg shadow-2xl p-4 pointer-events-none backdrop-blur-sm"
       style={{
         left: Math.min(position.x + 10, window.innerWidth - 300),
-        top: Math.min(position.y + 10, window.innerHeight - 200)
+        top: Math.min(position.y + 10, window.innerHeight - 200),
       }}
     >
       <div className="space-y-3">
         {/* Header */}
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-sm leading-tight">{event.title}</h3>
+          <h3 className="font-semibold text-sm leading-tight text-gray-900 dark:text-gray-100">{event.title}</h3>
           <span className={cn(
             "px-2 py-1 rounded-full text-xs font-medium border",
             getStatusColor(event.status)
@@ -280,11 +280,11 @@ function EventPreview({ event, position }: { event: CalendarEvent; position: { x
 
         {/* Time and Type */}
         <div className="space-y-1">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
             <Clock className="h-3 w-3" />
             <span>{formatEventTime(event.date, event.time)}</span>
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
             <span className={cn(
               "px-2 py-1 rounded-full text-xs font-medium",
               isValidContentType(event.type) ? eventTypeColorMap[event.type].bg : "bg-gray-100",
@@ -297,7 +297,7 @@ function EventPreview({ event, position }: { event: CalendarEvent; position: { x
 
         {/* Description */}
         {event.description && (
-          <p className="text-xs text-muted-foreground line-clamp-3">
+          <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-3">
             {event.description}
           </p>
         )}
@@ -305,7 +305,7 @@ function EventPreview({ event, position }: { event: CalendarEvent; position: { x
         {/* Social Media Platforms */}
         {event.type === 'social' && event.socialMediaContent?.platforms && event.socialMediaContent.platforms.length > 0 && (
           <div className="flex items-center gap-1">
-            <span className="text-xs text-muted-foreground">Platforms:</span>
+            <span className="text-xs text-gray-700 dark:text-gray-300">Platforms:</span>
             <div className="flex gap-1">
               {event.socialMediaContent.platforms.map((platform, index) => (
                 <span key={index} className="inline-flex items-center">
@@ -318,15 +318,15 @@ function EventPreview({ event, position }: { event: CalendarEvent; position: { x
 
         {/* Media Count */}
         {event.socialMediaContent?.mediaUrls && event.socialMediaContent.mediaUrls.length > 0 && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1 text-xs text-gray-700 dark:text-gray-300">
             <Upload className="h-3 w-3" />
             <span>{event.socialMediaContent.mediaUrls.length} media file{event.socialMediaContent.mediaUrls.length !== 1 ? 's' : ''}</span>
           </div>
         )}
 
         {/* Quick Actions */}
-        <div className="flex gap-2 pt-2 border-t">
-          <span className="text-xs text-muted-foreground">
+        <div className="flex gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+          <span className="text-xs text-gray-600 dark:text-gray-400">
             Click to view details
           </span>
         </div>
