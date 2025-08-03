@@ -20,30 +20,36 @@ export const LazyFunnelManager = lazy(() =>
   }))
 );
 
-// Lazy load chart components
-export const LazyRechartsBarChart = lazy(() => 
-  import('@/components/analytics/charts/RechartsBarChart').then(module => ({
-    default: module.RechartsBarChart
+// Lazy load chart components - using Chart.js optimized components
+export const LazyOptimizedBarChart = lazy(() => 
+  import('@/components/analytics/OptimizedChartComponents').then(module => ({
+    default: module.OptimizedBarChart
   }))
 );
 
-export const LazyRechartsPieChart = lazy(() => 
-  import('@/components/analytics/charts/RechartsPieChart').then(module => ({
-    default: module.RechartsPieChart
+export const LazyOptimizedPieChart = lazy(() => 
+  import('@/components/analytics/OptimizedChartComponents').then(module => ({
+    default: module.OptimizedPieChart
   }))
 );
 
-export const LazyRechartsLineChart = lazy(() => 
-  import('@/components/analytics/charts/RechartsLineChart').then(module => ({
-    default: module.RechartsLineChart
+export const LazyOptimizedLineChart = lazy(() => 
+  import('@/components/analytics/OptimizedChartComponents').then(module => ({
+    default: module.OptimizedLineChart
   }))
 );
 
-export const LazyRechartsHeatMap = lazy(() => 
-  import('@/components/analytics/charts/RechartsHeatMap').then(module => ({
-    default: module.RechartsHeatMap
+export const LazyHeatMapWidget = lazy(() => 
+  import('@/components/analytics/HeatMapWidget').then(module => ({
+    default: module.default
   }))
 );
+
+// Backward compatibility exports for existing analytics page
+export const RechartsBarChartLazy = LazyOptimizedBarChart;
+export const RechartsPieChartLazy = LazyOptimizedPieChart;  
+export const RechartsLineChartLazy = LazyOptimizedLineChart;
+export const RechartsHeatMapLazy = LazyHeatMapWidget;
 
 // Lazy load content components
 export const LazyContentCalendar = lazy(() => 

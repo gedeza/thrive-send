@@ -356,7 +356,7 @@ export function CrossClientAnalytics({
                     <h4 className="text-sm font-medium mb-4">Performance Distribution</h4>
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm">High Performers (>120% of avg)</span>
+                        <span className="text-sm">High Performers (&gt;120% of avg)</span>
                         <Badge className="bg-green-100 text-green-700">
                           {crossClientData.clientAnalytics.filter(c => 
                             c.contentMetrics.avgEngagementRate > crossClientData.aggregateMetrics.averageEngagement * 1.2
@@ -373,7 +373,7 @@ export function CrossClientAnalytics({
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm">Underperformers (<80% of avg)</span>
+                        <span className="text-sm">Underperformers (&lt;80% of avg)</span>
                         <Badge className="bg-red-100 text-red-700">
                           {crossClientData.clientAnalytics.filter(c => 
                             c.contentMetrics.avgEngagementRate < crossClientData.aggregateMetrics.averageEngagement * 0.8

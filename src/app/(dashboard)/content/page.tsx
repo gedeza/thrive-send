@@ -18,7 +18,6 @@ import { listContent, deleteContent, ContentData } from '@/lib/api/content-servi
 import { useServiceProvider, type ClientSummary } from '@/context/ServiceProviderContext';
 import { toast } from '@/components/ui/use-toast';
 import { ContentCalendarSync } from '@/components/content/ContentCalendarSync';
-import { SystemMonitor } from '@/components/debug/SystemMonitor';
 import { cn, debounce, formatDate, truncateText } from '@/lib/utils';
 import { MediaPreview } from '@/components/content/MediaPreview';
 import { PublishingOptionsIndicator } from '@/components/content/PublishingOptionsIndicator';

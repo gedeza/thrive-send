@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/Alert';
 import { ClientSwitcher } from './ClientSwitcher';
-import { CrossClientAnalytics } from './CrossClientAnalytics';
+import { CrossClientAnalytics } from '@/components/analytics/CrossClientAnalytics';
 import { ServiceProviderHeader } from './ServiceProviderHeader';
 import { QuickActions } from './QuickActions';
 import { RecentActivity } from './RecentActivity';
