@@ -46,50 +46,99 @@ import {
 } from 'lucide-react';
 import { useServiceProvider } from '@/context/ServiceProviderContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  getContentSchedulingData,
-  createContentSchedule,
-  controlContentSchedule,
-  bulkScheduleContent,
-  applySchedulingTemplate,
-  getOptimalPostingTimes,
-  generateSchedulingReport,
-  type ContentSchedulingData,
-  type ScheduleRequest,
-  type ScheduledContentItem 
-} from '@/lib/api/content-scheduling-service';
-import { toast } from '@/components/ui/use-toast';
+
+interface Schedule {
+  id: string;
+  title: string;
+  contentType: string;
+  clientId: string;
+  clientName: string;
+  scheduleType: 'recurring' | 'one_time';
+  frequency?: 'daily' | 'weekly' | 'biweekly' | 'monthly';
+  status: 'active' | 'paused' | 'scheduled' | 'cancelled';
+  nextRun: string;
+  scheduledDate?: string;
+  platforms: string[];
+  timezone: string;
+  priority: 'high' | 'medium' | 'low';
+  template: {
+    name: string;
+    fields: string[];
+  };
+  recurring?: {
+    frequency: string;
+    endDate?: string | null;
+  };
+  approval: {
+    required: boolean;
+    approvers: string[];
+    autoApprove: boolean;
+  };
+  estimatedReach?: number;
+}
+
+interface SchedulingData {
+  schedules: Schedule[];
+  summary: {
+    total: number;
+    active: number;
+    scheduled: number;
+    paused: number;
+    recurring: number;
+    oneTime: number;
+  };
+  upcomingRuns: Array<{
+    id: string;
+    title: string;
+    clientName: string;
+    nextRun: string;
+    contentType: string;
+    requiresApproval: boolean;
+  }>;
+  clients: Array<{
+    id: string;
+    name: string;
+    scheduleCount: number;
+  }>;
+}
 
 interface AdvancedContentSchedulerProps {
-  defaultView?: 'calendar' | 'list' | 'analytics' | 'templates';
+  defaultView?: 'overview' | 'schedules' | 'upcoming' | 'analytics';
 }
 
 export function AdvancedContentScheduler({ 
-  defaultView = 'calendar' 
+  defaultView = 'overview' 
 }: AdvancedContentSchedulerProps) {
-  const { state: { organizationId, selectedClient } } = useServiceProvider();
+  const { organizationId } = useServiceProvider();
   const queryClient = useQueryClient();
 
   // State management
-  const [currentView, setCurrentView] = useState<'calendar' | 'list' | 'analytics' | 'templates'>(defaultView);
-  const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
-  const [clientFilter, setClientFilter] = useState<string>(selectedClient?.id || 'all');
+  const [currentView, setCurrentView] = useState<'overview' | 'schedules' | 'upcoming' | 'analytics'>(defaultView);
+  const [selectedClient, setSelectedClient] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [platformFilter, setPlatformFilter] = useState<string>('all');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
-  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
-  const [optimizationDialogOpen, setOptimizationDialogOpen] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   // Schedule form state
-  const [scheduleForm, setScheduleForm] = useState<Partial<ScheduleRequest>>({
-    action: 'create_schedule',
-    clientIds: [],
+  const [scheduleForm, setScheduleForm] = useState({
+    title: '',
+    contentType: 'social_post',
+    clientId: '',
+    scheduleType: 'recurring',
+    frequency: 'weekly',
+    dayOfWeek: 1,
+    dayOfMonth: 1,
+    time: '09:00',
     scheduledDate: '',
-    platforms: [],
     timezone: 'America/New_York',
-    priority: 'medium',
-    organizationId: organizationId || ''
+    templateId: 'template-1',
+    socialPlatforms: [] as string[],
+    approval: {
+      required: true,
+      autoApprove: false
+    }
   });
 
   // Data queries
@@ -97,39 +146,60 @@ export function AdvancedContentScheduler({
     data: schedulingData, 
     isLoading: dataLoading,
     refetch: refetchData
-  } = useQuery<ContentSchedulingData>({
-    queryKey: ['content-scheduling-data', organizationId, clientFilter, timeRange, currentView],
-    queryFn: () => getContentSchedulingData({
-      organizationId: organizationId!,
-      clientId: clientFilter !== 'all' ? clientFilter : undefined,
-      timeRange,
-      view: currentView === 'analytics' ? 'analytics' : 'calendar',
-    }),
+  } = useQuery<SchedulingData>({
+    queryKey: ['scheduling', organizationId, selectedClient],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        organizationId: organizationId || '',
+        clientId: selectedClient,
+        view: 'list'
+      });
+
+      const response = await fetch(`/api/service-provider/scheduling?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch scheduling data');
+      }
+      return response.json();
+    },
     enabled: !!organizationId,
   });
 
   // Mutations
   const scheduleMutation = useMutation({
-    mutationFn: createContentSchedule,
+    mutationFn: async (scheduleData: any) => {
+      const response = await fetch('/api/service-provider/scheduling', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(scheduleData)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create schedule');
+      }
+      return response.json();
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['content-scheduling-data'] });
-      setScheduleDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['scheduling'] });
+      setShowCreateForm(false);
       resetScheduleForm();
     },
   });
 
   const controlMutation = useMutation({
-    mutationFn: controlContentSchedule,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['content-scheduling-data'] });
+    mutationFn: async ({ scheduleId, action }: { scheduleId: string; action: string }) => {
+      const response = await fetch('/api/service-provider/scheduling', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scheduleId, action })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update schedule');
+      }
+      return response.json();
     },
-  });
-
-  const bulkScheduleMutation = useMutation({
-    mutationFn: bulkScheduleContent,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['content-scheduling-data'] });
-      setSelectedItems([]);
+      queryClient.invalidateQueries({ queryKey: ['scheduling'] });
     },
   });
 
@@ -186,76 +256,92 @@ export function AdvancedContentScheduler({
 
   // Handle schedule creation
   const handleCreateSchedule = async () => {
-    if (!scheduleForm.clientIds?.length || !scheduleForm.scheduledDate || !scheduleForm.platforms?.length) {
-      toast({
-        title: "Missing Information",
-        description: "Please select clients, date, and platforms",
-        variant: "destructive",
-      });
+    if (!scheduleForm.clientId || !scheduleForm.title) {
       return;
     }
 
-    await scheduleMutation.mutateAsync(scheduleForm as ScheduleRequest);
+    await scheduleMutation.mutateAsync({
+      ...scheduleForm,
+      organizationId: organizationId || ''
+    });
   };
 
   // Handle schedule control
   const handleScheduleControl = async (
     scheduleId: string,
-    action: 'pause' | 'resume' | 'cancel' | 'reschedule'
+    action: 'pause' | 'resume' | 'cancel'
   ) => {
     await controlMutation.mutateAsync({
       scheduleId,
-      action,
-      organizationId: organizationId!
-    });
-  };
-
-  // Handle bulk scheduling
-  const handleBulkSchedule = async () => {
-    if (selectedItems.length === 0) {
-      toast({
-        title: "No Items Selected",
-        description: "Please select content items to schedule",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    await bulkScheduleMutation.mutateAsync({
-      contentIds: selectedItems,
-      clientIds: scheduleForm.clientIds || [],
-      scheduledDate: scheduleForm.scheduledDate || '',
-      platforms: scheduleForm.platforms || [],
-      timezone: scheduleForm.timezone,
-      organizationId: organizationId!
+      action
     });
   };
 
   // Reset schedule form
   const resetScheduleForm = () => {
     setScheduleForm({
-      action: 'create_schedule',
-      clientIds: [],
+      title: '',
+      contentType: 'social_post',
+      clientId: '',
+      scheduleType: 'recurring',
+      frequency: 'weekly',
+      dayOfWeek: 1,
+      dayOfMonth: 1,
+      time: '09:00',
       scheduledDate: '',
-      platforms: [],
       timezone: 'America/New_York',
-      priority: 'medium',
-      organizationId: organizationId || ''
+      templateId: 'template-1',
+      socialPlatforms: [],
+      approval: {
+        required: true,
+        autoApprove: false
+      }
     });
   };
 
-  // Handle item selection
-  const handleItemSelection = (itemId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedItems([...selectedItems, itemId]);
-    } else {
-      setSelectedItems(selectedItems.filter(id => id !== itemId));
+  // Utility functions
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-500';
+      case 'paused': return 'bg-yellow-500';
+      case 'scheduled': return 'bg-blue-500';
+      case 'cancelled': return 'bg-red-500';
+      default: return 'bg-gray-500';
     }
   };
 
+  const getContentTypeIcon = (type: string) => {
+    switch (type) {
+      case 'newsletter': return '📧';
+      case 'social_post': return '📱';
+      case 'report': return '📊';
+      case 'alert': return '🚨';
+      case 'analytics': return '📈';
+      default: return '📄';
+    }
+  };
+
+  const formatNextRun = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = date.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Tomorrow';
+    if (diffDays < 7) return `In ${diffDays} days`;
+    
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   // Filter scheduled content
-  const filteredContent = schedulingData?.scheduledContent.filter(item => {
-    if (clientFilter !== 'all' && item.clientId !== clientFilter) return false;
+  const filteredContent = schedulingData?.schedules.filter(item => {
+    if (selectedClient !== 'all' && item.clientId !== selectedClient) return false;
     if (statusFilter !== 'all' && item.status !== statusFilter) return false;
     if (platformFilter !== 'all' && !item.platforms.includes(platformFilter)) return false;
     return true;
@@ -263,802 +349,504 @@ export function AdvancedContentScheduler({
 
   if (dataLoading) {
     return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold">Content Scheduler</h2>
-          <div className="flex gap-2">
-            <div className="w-32 h-10 bg-gray-200 rounded animate-pulse" />
-            <div className="w-24 h-10 bg-gray-200 rounded animate-pulse" />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-32 bg-gray-200 rounded-lg animate-pulse" />
-          ))}
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading scheduling data...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-4 lg:space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Advanced Content Scheduler</h2>
-          <p className="text-muted-foreground">
-            Manage content scheduling across all clients and platforms
-          </p>
+          <h2 className="text-xl lg:text-2xl font-bold text-gray-900">Advanced Content Scheduler</h2>
+          <p className="text-sm lg:text-base text-gray-600">Manage recurring and scheduled content across all clients</p>
         </div>
-        
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => refetchData()}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <Select value={selectedClient} onValueChange={setSelectedClient}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="Select client" />
+            </SelectTrigger>
+            <SelectContent>
+              {schedulingData?.clients.map(client => (
+                <SelectItem key={client.id} value={client.id}>
+                  {client.name} ({client.scheduleCount})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button 
+            onClick={() => setShowCreateForm(true)}
+            className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New Schedule
           </Button>
-          <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Schedule Content
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Schedule Content</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-6">
-                {/* Client Selection */}
-                <div>
-                  <Label>Select Clients</Label>
-                  <div className="grid grid-cols-1 gap-2 mt-2 max-h-32 overflow-y-auto border rounded-lg p-3">
-                    {schedulingData?.availableClients.map((client) => (
-                      <div key={client.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={client.id}
-                          checked={scheduleForm.clientIds?.includes(client.id)}
-                          onCheckedChange={(checked) => {
-                            const clientIds = scheduleForm.clientIds || [];
-                            if (checked) {
-                              setScheduleForm({
-                                ...scheduleForm,
-                                clientIds: [...clientIds, client.id]
-                              });
-                            } else {
-                              setScheduleForm({
-                                ...scheduleForm,
-                                clientIds: clientIds.filter(id => id !== client.id)
-                              });
-                            }
-                          }}
-                        />
-                        <Label htmlFor={client.id} className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <span>{client.name}</span>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-xs">
-                                {client.type}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">
-                                {client.activeSchedules} active
-                              </span>
-                            </div>
-                          </div>
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+        </div>
+      </div>
 
-                {/* Date and Time */}
-                <div className="grid grid-cols-2 gap-4">
+      <Tabs value={currentView} onValueChange={(value: any) => setCurrentView(value)} className="space-y-4 lg:space-y-6">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+          <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
+          <TabsTrigger value="schedules" className="text-xs sm:text-sm">All Schedules</TabsTrigger>
+          <TabsTrigger value="upcoming" className="text-xs sm:text-sm">Upcoming Runs</TabsTrigger>
+          <TabsTrigger value="analytics" className="text-xs sm:text-sm">Analytics</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-4 lg:space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
                   <div>
-                    <Label htmlFor="scheduled-date">Scheduled Date & Time</Label>
-                    <Input
-                      id="scheduled-date"
-                      type="datetime-local"
-                      value={scheduleForm.scheduledDate}
-                      onChange={(e) => setScheduleForm({
-                        ...scheduleForm,
-                        scheduledDate: e.target.value
-                      })}
-                    />
+                    <p className="text-sm font-medium text-gray-600">Total Schedules</p>
+                    <p className="text-2xl font-bold text-gray-900">{schedulingData?.summary.total || 0}</p>
                   </div>
+                  <Calendar className="w-8 h-8 text-blue-600" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
                   <div>
-                    <Label htmlFor="timezone">Timezone</Label>
-                    <Select 
-                      value={scheduleForm.timezone} 
-                      onValueChange={(value) => setScheduleForm({
-                        ...scheduleForm,
-                        timezone: value
-                      })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="America/New_York">Eastern Time</SelectItem>
-                        <SelectItem value="America/Chicago">Central Time</SelectItem>
-                        <SelectItem value="America/Denver">Mountain Time</SelectItem>
-                        <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <p className="text-sm font-medium text-gray-600">Active</p>
+                    <p className="text-2xl font-bold text-green-600">{schedulingData?.summary.active || 0}</p>
                   </div>
+                  <Play className="w-8 h-8 text-green-600" />
                 </div>
+              </CardContent>
+            </Card>
 
-                {/* Platform Selection */}
-                <div>
-                  <Label>Platforms</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    {['facebook', 'instagram', 'twitter', 'linkedin', 'email', 'blog'].map((platform) => (
-                      <div key={platform} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={platform}
-                          checked={scheduleForm.platforms?.includes(platform)}
-                          onCheckedChange={(checked) => {
-                            const platforms = scheduleForm.platforms || [];
-                            if (checked) {
-                              setScheduleForm({
-                                ...scheduleForm,
-                                platforms: [...platforms, platform]
-                              });
-                            } else {
-                              setScheduleForm({
-                                ...scheduleForm,
-                                platforms: platforms.filter(p => p !== platform)
-                              });
-                            }
-                          }}
-                        />
-                        <Label htmlFor={platform} className="flex items-center gap-2 capitalize">
-                          {getPlatformIcon(platform)}
-                          {platform}
-                        </Label>
-                      </div>
-                    ))}
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Recurring</p>
+                    <p className="text-2xl font-bold text-blue-600">{schedulingData?.summary.recurring || 0}</p>
                   </div>
+                  <Clock className="w-8 h-8 text-blue-600" />
                 </div>
+              </CardContent>
+            </Card>
 
-                {/* Recurring Settings */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Switch 
-                      id="recurring"
-                      checked={!!scheduleForm.recurring}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setScheduleForm({
-                            ...scheduleForm,
-                            recurring: {
-                              frequency: 'weekly',
-                              daysOfWeek: [1],
-                              endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-                            }
-                          });
-                        } else {
-                          setScheduleForm({
-                            ...scheduleForm,
-                            recurring: undefined
-                          });
-                        }
-                      }}
-                    />
-                    <Label htmlFor="recurring">Recurring Schedule</Label>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">One-Time</p>
+                    <p className="text-2xl font-bold text-orange-600">{schedulingData?.summary.oneTime || 0}</p>
                   </div>
+                  <Square className="w-8 h-8 text-orange-600" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-                  {scheduleForm.recurring && (
-                    <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="w-5 h-5" />
+                Next 10 Scheduled Runs
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {schedulingData?.upcomingRuns.map(run => (
+                  <div key={run.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{getContentTypeIcon(run.contentType)}</span>
                       <div>
-                        <Label>Frequency</Label>
-                        <Select 
-                          value={scheduleForm.recurring.frequency}
-                          onValueChange={(value: any) => setScheduleForm({
-                            ...scheduleForm,
-                            recurring: {
-                              ...scheduleForm.recurring!,
-                              frequency: value
-                            }
-                          })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="daily">Daily</SelectItem>
-                            <SelectItem value="weekly">Weekly</SelectItem>
-                            <SelectItem value="monthly">Monthly</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label>End Date</Label>
-                        <Input
-                          type="date"
-                          value={scheduleForm.recurring.endDate?.split('T')[0]}
-                          onChange={(e) => setScheduleForm({
-                            ...scheduleForm,
-                            recurring: {
-                              ...scheduleForm.recurring!,
-                              endDate: e.target.value + 'T00:00:00.000Z'
-                            }
-                          })}
-                        />
+                        <p className="font-medium text-gray-900">{run.title}</p>
+                        <p className="text-sm text-gray-600">{run.clientName}</p>
                       </div>
                     </div>
-                  )}
-                </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-gray-900">{formatNextRun(run.nextRun)}</p>
+                      {run.requiresApproval && (
+                        <Badge variant="outline" className="text-xs">Requires Approval</Badge>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-                {/* Priority */}
+        <TabsContent value="schedules" className="space-y-4">
+          <div className="grid gap-4">
+            {filteredContent.map(schedule => (
+              <Card key={schedule.id}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <span className="text-3xl">{getContentTypeIcon(schedule.contentType)}</span>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">{schedule.title}</h3>
+                        <p className="text-sm text-gray-600">{schedule.clientName}</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge className={`text-white ${getStatusColor(schedule.status)}`}>
+                            {schedule.status}
+                          </Badge>
+                          <Badge variant="outline">
+                            {schedule.scheduleType === 'recurring' ? schedule.frequency : 'One-time'}
+                          </Badge>
+                          <Badge variant="outline">{schedule.contentType}</Badge>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-right">
+                      <p className="text-sm text-gray-600">Next Run</p>
+                      <p className="font-medium text-gray-900">{formatNextRun(schedule.nextRun)}</p>
+                      <div className="flex items-center gap-2 mt-3">
+                        {schedule.status === 'active' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleScheduleControl(schedule.id, 'pause')}
+                          >
+                            <Pause className="w-4 h-4 mr-1" />
+                            Pause
+                          </Button>
+                        )}
+                        {schedule.status === 'paused' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleScheduleControl(schedule.id, 'resume')}
+                          >
+                            <Play className="w-4 h-4 mr-1" />
+                            Resume
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleScheduleControl(schedule.id, 'cancel')}
+                        >
+                          <Square className="w-4 h-4 mr-1" />
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                      <div>
+                        <p className="font-medium">Template</p>
+                        <p>{schedule.template.name}</p>
+                      </div>
+                      <div>
+                        <p className="font-medium">Timezone</p>
+                        <p>{schedule.timezone}</p>
+                      </div>
+                      <div>
+                        <p className="font-medium">Approval Required</p>
+                        <p>{schedule.approval.required ? 'Yes' : 'No'}</p>
+                      </div>
+                    </div>
+                    
+                    {schedule.platforms.length > 0 && (
+                      <div className="mt-3">
+                        <p className="text-sm font-medium text-gray-600 mb-2">Social Platforms</p>
+                        <div className="flex gap-2">
+                          {schedule.platforms.map(platform => (
+                            <Badge key={platform} variant="outline" className="text-xs">
+                              {platform}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="upcoming" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Upcoming Scheduled Content</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {schedulingData?.upcomingRuns.map(run => (
+                  <div key={run.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center gap-4">
+                      <span className="text-2xl">{getContentTypeIcon(run.contentType)}</span>
+                      <div>
+                        <h4 className="font-medium text-gray-900">{run.title}</h4>
+                        <p className="text-sm text-gray-600">{run.clientName}</p>
+                        <p className="text-xs text-gray-500">{run.contentType}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-gray-900">{formatNextRun(run.nextRun)}</p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(run.nextRun).toLocaleString()}
+                      </p>
+                      {run.requiresApproval && (
+                        <Badge variant="outline" className="text-xs mt-1">
+                          Requires Approval
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Schedule Performance</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Success Rate</p>
+                    <p className="text-2xl font-bold text-green-600">94.5%</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Average Engagement</p>
+                    <p className="text-2xl font-bold text-blue-600">8.7%</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Total Scheduled</p>
+                    <p className="text-2xl font-bold text-gray-900">247</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Client Distribution</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {schedulingData?.clients.filter(c => c.id !== 'all').map(client => (
+                    <div key={client.id} className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">{client.name}</span>
+                      <span className="font-medium">{client.scheduleCount}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {showCreateForm && (
+        <CreateScheduleForm
+          onClose={() => setShowCreateForm(false)}
+          onSubmit={(data) => scheduleMutation.mutate(data)}
+          clients={schedulingData?.clients || []}
+          organizationId={organizationId || ''}
+        />
+      )}
+    </div>
+  );
+};
+
+interface CreateScheduleFormProps {
+  onClose: () => void;
+  onSubmit: (data: any) => void;
+  clients: Array<{ id: string; name: string; scheduleCount: number }>;
+  organizationId: string;
+}
+
+const CreateScheduleForm: React.FC<CreateScheduleFormProps> = ({
+  onClose,
+  onSubmit,
+  clients,
+  organizationId
+}) => {
+  const [formData, setFormData] = useState({
+    title: '',
+    contentType: 'social_post',
+    clientId: '',
+    scheduleType: 'recurring',
+    frequency: 'weekly',
+    dayOfWeek: 1,
+    dayOfMonth: 1,
+    time: '09:00',
+    scheduledDate: '',
+    timezone: 'America/New_York',
+    templateId: 'template-1',
+    socialPlatforms: [],
+    approval: {
+      required: true,
+      autoApprove: false
+    }
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit({
+      ...formData,
+      organizationId
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <CardHeader>
+          <CardTitle>Create New Schedule</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="contentType">Content Type</Label>
+                <Select
+                  value={formData.contentType}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, contentType: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="social_post">Social Post</SelectItem>
+                    <SelectItem value="newsletter">Newsletter</SelectItem>
+                    <SelectItem value="report">Report</SelectItem>
+                    <SelectItem value="alert">Alert</SelectItem>
+                    <SelectItem value="analytics">Analytics</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="clientId">Client</Label>
+              <Select
+                value={formData.clientId}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, clientId: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select client" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clients.filter(c => c.id !== 'all').map(client => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="scheduleType">Schedule Type</Label>
+              <Select
+                value={formData.scheduleType}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, scheduleType: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recurring">Recurring</SelectItem>
+                  <SelectItem value="one_time">One Time</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {formData.scheduleType === 'recurring' && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <Label>Priority</Label>
-                  <Select 
-                    value={scheduleForm.priority}
-                    onValueChange={(value: any) => setScheduleForm({
-                      ...scheduleForm,
-                      priority: value
-                    })}
+                  <Label htmlFor="frequency">Frequency</Label>
+                  <Select
+                    value={formData.frequency}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, frequency: value }))}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="high">High Priority</SelectItem>
-                      <SelectItem value="medium">Medium Priority</SelectItem>
-                      <SelectItem value="low">Low Priority</SelectItem>
+                      <SelectItem value="daily">Daily</SelectItem>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="biweekly">Bi-weekly</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-
-                {/* Action Buttons */}
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setScheduleDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button 
-                    onClick={handleCreateSchedule}
-                    disabled={scheduleMutation.isPending}
+                <div>
+                  <Label htmlFor="time">Time</Label>
+                  <Input
+                    type="time"
+                    value={formData.time}
+                    onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="timezone">Timezone</Label>
+                  <Select
+                    value={formData.timezone}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, timezone: value }))}
                   >
-                    {scheduleMutation.isPending ? 'Scheduling...' : 'Schedule Content'}
-                  </Button>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="America/New_York">Eastern Time</SelectItem>
+                      <SelectItem value="America/Chicago">Central Time</SelectItem>
+                      <SelectItem value="America/Denver">Mountain Time</SelectItem>
+                      <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-
-      {/* Overview Stats */}
-      {schedulingData?.schedulingOverview && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Scheduled</p>
-                  <p className="text-2xl font-bold">{schedulingData.schedulingOverview.totalScheduledContent}</p>
-                </div>
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Calendar className="h-6 w-6 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Active Schedules</p>
-                  <p className="text-2xl font-bold">{schedulingData.schedulingOverview.activeSchedules}</p>
-                </div>
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Play className="h-6 w-6 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Success Rate</p>
-                  <p className="text-2xl font-bold">{schedulingData.schedulingOverview.successRate}%</p>
-                </div>
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <Target className="h-6 w-6 text-purple-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Today's Posts</p>
-                  <p className="text-2xl font-bold">{schedulingData.schedulingOverview.scheduledToday}</p>
-                </div>
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <Clock className="h-6 w-6 text-orange-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Insights */}
-      {schedulingData?.insights && schedulingData.insights.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Scheduling Insights</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {schedulingData.insights.map((insight, index) => (
-              <Card key={index} className={`border-l-4 ${
-                insight.priority === 'high' ? 'border-l-red-500' :
-                insight.priority === 'medium' ? 'border-l-yellow-500' : 
-                'border-l-green-500'
-              }`}>
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <div className={`p-2 rounded-lg ${
-                      insight.type === 'optimization' ? 'bg-blue-100' :
-                      insight.type === 'conflict' ? 'bg-red-100' :
-                      'bg-green-100'
-                    }`}>
-                      {insight.type === 'optimization' ? <Lightbulb className="h-4 w-4" /> :
-                       insight.type === 'conflict' ? <AlertTriangle className="h-4 w-4" /> :
-                       <TrendingUp className="h-4 w-4" />}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-sm">{insight.title}</h4>
-                      <p className="text-sm text-muted-foreground mt-1">{insight.message}</p>
-                      {insight.actionable && (
-                        <Button size="sm" variant="outline" className="mt-2">
-                          Take Action
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Main Content Tabs */}
-      <Tabs value={currentView} onValueChange={(value: any) => setCurrentView(value)}>
-        <TabsList>
-          <TabsTrigger value="calendar">Calendar View</TabsTrigger>
-          <TabsTrigger value="list">List View</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="templates">Templates</TabsTrigger>
-        </TabsList>
-
-        {/* Calendar View */}
-        <TabsContent value="calendar" className="space-y-6">
-          <div className="flex items-center gap-4">
-            <Select value={clientFilter} onValueChange={setClientFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filter by client" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Clients</SelectItem>
-                {schedulingData?.availableClients.map((client) => (
-                  <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="scheduled">Scheduled</SelectItem>
-                <SelectItem value="published">Published</SelectItem>
-                <SelectItem value="paused">Paused</SelectItem>
-                <SelectItem value="failed">Failed</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Calendar Grid - Simplified for demo */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredContent.slice(0, 9).map((item) => (
-              <Card key={item.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h4 className="font-semibold text-sm">{item.title}</h4>
-                        <p className="text-xs text-muted-foreground">{item.clientName}</p>
-                      </div>
-                      <Badge className={getStatusBadge(item.status).color}>
-                        {getStatusBadge(item.status).icon}
-                        {item.status}
-                      </Badge>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
-                      <span>{new Date(item.scheduledDate).toLocaleDateString()}</span>
-                      <Clock className="h-4 w-4 ml-2" />
-                      <span>{new Date(item.scheduledDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-1">
-                      {item.platforms.map((platform) => (
-                        <div key={platform} className="p-1 bg-gray-100 rounded">
-                          {getPlatformIcon(platform)}
-                        </div>
-                      ))}
-                    </div>
-                    
-                    {item.recurring && (
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Repeat className="h-3 w-3" />
-                        <span>Repeats {item.recurring.frequency}</span>
-                      </div>
-                    )}
-                    
-                    <div className="flex items-center gap-2">
-                      {item.status === 'scheduled' && (
-                        <>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleScheduleControl(item.id, 'pause')}
-                          >
-                            <Pause className="h-3 w-3" />
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="destructive"
-                            onClick={() => handleScheduleControl(item.id, 'cancel')}
-                          >
-                            <Square className="h-3 w-3" />
-                          </Button>
-                        </>
-                      )}
-                      
-                      {item.status === 'paused' && (
-                        <Button 
-                          size="sm"
-                          onClick={() => handleScheduleControl(item.id, 'resume')}
-                        >
-                          <Play className="h-3 w-3" />
-                        </Button>
-                      )}
-                      
-                      <Button size="sm" variant="ghost">
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                      
-                      <Button size="sm" variant="ghost">
-                        <MoreHorizontal className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        {/* List View */}
-        <TabsContent value="list" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Select value={clientFilter} onValueChange={setClientFilter}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Filter by client" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Clients</SelectItem>
-                  {schedulingData?.availableClients.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Select value={platformFilter} onValueChange={setPlatformFilter}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Filter by platform" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Platforms</SelectItem>
-                  <SelectItem value="facebook">Facebook</SelectItem>
-                  <SelectItem value="instagram">Instagram</SelectItem>
-                  <SelectItem value="twitter">Twitter</SelectItem>
-                  <SelectItem value="linkedin">LinkedIn</SelectItem>
-                  <SelectItem value="email">Email</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {selectedItems.length > 0 && (
-              <Button onClick={handleBulkSchedule} disabled={bulkScheduleMutation.isPending}>
-                <Zap className="h-4 w-4 mr-2" />
-                Bulk Action ({selectedItems.length})
-              </Button>
             )}
-          </div>
 
-          <div className="space-y-4">
-            {filteredContent.map((item) => (
-              <Card key={item.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    <Checkbox
-                      checked={selectedItems.includes(item.id)}
-                      onCheckedChange={(checked) => handleItemSelection(item.id, !!checked)}
-                    />
-                    
-                    <div className="flex-1 space-y-3">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h4 className="font-semibold">{item.title}</h4>
-                          <p className="text-sm text-muted-foreground">{item.clientName}</p>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className={item.priority === 'high' ? 'border-red-200 text-red-700' : 
-                                                                item.priority === 'medium' ? 'border-yellow-200 text-yellow-700' :
-                                                                'border-green-200 text-green-700'}>
-                            {item.priority}
-                          </Badge>
-                          <Badge className={getStatusBadge(item.status).color}>
-                            {getStatusBadge(item.status).icon}
-                            {item.status}
-                          </Badge>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          <span>{new Date(item.scheduledDate).toLocaleDateString()}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          <span>{new Date(item.scheduledDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Globe className="h-4 w-4" />
-                          <span>{item.timezone}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Users className="h-4 w-4" />
-                          <span>{item.estimatedReach.toLocaleString()} reach</span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        {item.platforms.map((platform) => (
-                          <div key={platform} className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded text-xs">
-                            {getPlatformIcon(platform)}
-                            <span className="capitalize">{platform}</span>
-                          </div>
-                        ))}
-                      </div>
-                      
-                      {item.recurring && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Repeat className="h-4 w-4 text-blue-500" />
-                          <span className="text-blue-600">
-                            Repeats {item.recurring.frequency} 
-                            {item.recurring.endDate && (
-                              <> until {new Date(item.recurring.endDate).toLocaleDateString()}</>
-                            )}
-                          </span>
-                        </div>
-                      )}
-                      
-                      <div className="flex items-center gap-2">
-                        {item.status === 'scheduled' && (
-                          <>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => handleScheduleControl(item.id, 'pause')}
-                            >
-                              <Pause className="h-4 w-4 mr-1" />
-                              Pause
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="destructive"
-                              onClick={() => handleScheduleControl(item.id, 'cancel')}
-                            >
-                              <Square className="h-4 w-4 mr-1" />
-                              Cancel
-                            </Button>
-                          </>
-                        )}
-                        
-                        {item.status === 'paused' && (
-                          <Button 
-                            size="sm"
-                            onClick={() => handleScheduleControl(item.id, 'resume')}
-                          >
-                            <Play className="h-4 w-4 mr-1" />
-                            Resume
-                          </Button>
-                        )}
-                        
-                        <Button size="sm" variant="outline">
-                          <Edit className="h-4 w-4 mr-1" />
-                          Edit
-                        </Button>
-                        
-                        <Button size="sm" variant="ghost">
-                          <Eye className="h-4 w-4 mr-1" />
-                          Preview
-                        </Button>
-                        
-                        <Button size="sm" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        {/* Analytics View */}
-        <TabsContent value="analytics" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Platform Performance */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Platform Performance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {schedulingData?.platformAnalysis.map((platform) => (
-                    <div key={platform.platform} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        {getPlatformIcon(platform.platform)}
-                        <div>
-                          <p className="font-medium capitalize">{platform.platform}</p>
-                          <p className="text-sm text-muted-foreground">{platform.scheduledPosts} posts</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold">{platform.successRate}%</p>
-                        <p className="text-sm text-muted-foreground">success rate</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Timezone Analysis */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Timezone Coverage</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {schedulingData?.timezoneAnalysis.map((tz) => (
-                    <div key={tz.timezone} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <MapPin className="h-4 w-4" />
-                        <div>
-                          <p className="font-medium">{tz.timezone.replace('America/', '').replace('_', ' ')}</p>
-                          <p className="text-sm text-muted-foreground">{tz.clientCount} clients</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold">{tz.scheduledPosts}</p>
-                        <p className="text-sm text-muted-foreground">posts</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Optimal Times */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Optimal Posting Times</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {schedulingData?.platformAnalysis.slice(0, 3).map((platform) => (
-                  <div key={platform.platform} className="p-4 border rounded-lg">
-                    <div className="flex items-center gap-2 mb-3">
-                      {getPlatformIcon(platform.platform)}
-                      <span className="font-medium capitalize">{platform.platform}</span>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium">Best Times:</p>
-                      {platform.optimalTimes.map((time, index) => (
-                        <div key={index} className="flex items-center justify-between text-sm">
-                          <span>{time}</span>
-                          <span className="text-green-600">{platform.avgEngagement}% avg</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+            {formData.scheduleType === 'one_time' && (
+              <div>
+                <Label htmlFor="scheduledDate">Scheduled Date & Time</Label>
+                <Input
+                  type="datetime-local"
+                  value={formData.scheduledDate}
+                  onChange={(e) => setFormData(prev => ({ ...prev, scheduledDate: e.target.value }))}
+                  required
+                />
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            )}
 
-        {/* Templates View */}
-        <TabsContent value="templates" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Scheduling Templates</h3>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Template
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {schedulingData?.schedulingTemplates.map((template) => (
-              <Card key={template.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-semibold">{template.name}</h4>
-                      <p className="text-sm text-muted-foreground">{template.description}</p>
-                    </div>
-                    
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center justify-between">
-                        <span>Frequency:</span>
-                        <span className="capitalize">{template.frequency}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Time:</span>
-                        <span>{template.time}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Usage:</span>
-                        <span>{template.usageCount} times</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-1">
-                      {template.platforms.map((platform) => (
-                        <div key={platform} className="p-1 bg-gray-100 rounded">
-                          {getPlatformIcon(platform)}
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Button size="sm" variant="outline">
-                        <Edit className="h-4 w-4 mr-1" />
-                        Edit
-                      </Button>
-                      <Button size="sm">
-                        <Zap className="h-4 w-4 mr-1" />
-                        Apply
-                      </Button>
-                      <Button size="sm" variant="ghost">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-      </Tabs>
+            <div className="flex flex-col sm:flex-row justify-end gap-2">
+              <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto">
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
+                Create Schedule
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
-}
+};
+
+export default AdvancedContentScheduler;

@@ -217,12 +217,19 @@ function ClientsPageContent() {
       }
       
       const data = await res.json();
-      // Handle paginated API response format
-      if (data.data && Array.isArray(data.data)) {
-        setClients(data.data);
-      } else if (Array.isArray(data)) {
-        // Fallback for legacy direct array format
+      // Handle different API response formats
+      if (Array.isArray(data)) {
+        // Direct array format (current)
         setClients(data);
+      } else if (data.data && Array.isArray(data.data)) {
+        // Paginated API response format
+        setClients(data.data);
+      } else if (data.clients && Array.isArray(data.clients)) {
+        // Metadata format
+        setClients(data.clients);
+        if (data.metadata?.demoMode) {
+          console.log('Running in demo mode - database unavailable');
+        }
       } else {
         console.error("Unexpected API response format:", data);
         setClients([]);
@@ -547,7 +554,7 @@ function ClientsPageContent() {
                 <Button 
                   variant="outline" 
                   size="icon"
-                  onClick={() => window.location.reload()} 
+                  onClick={handleRefresh} 
                   disabled={loading}
                   className="shrink-0"
                 >

@@ -245,29 +245,29 @@ export function BulkOperationsManager({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 lg:space-y-6">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Bulk Operations Manager</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-xl lg:text-2xl font-bold">Bulk Operations Manager</h2>
+          <p className="text-sm lg:text-base text-muted-foreground">
             Execute operations across multiple clients simultaneously
           </p>
         </div>
         
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => refetchData()}>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button variant="outline" onClick={() => refetchData()} className="w-full sm:w-auto">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
           <Dialog open={operationDialogOpen} onOpenChange={setOperationDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="w-full sm:w-auto">
                 <Zap className="h-4 w-4 mr-2" />
                 New Bulk Operation
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Create Bulk Operation</DialogTitle>
               </DialogHeader>
@@ -537,15 +537,15 @@ export function BulkOperationsManager({
 
       {/* Main Content Tabs */}
       <Tabs value={currentView} onValueChange={(value: any) => setCurrentView(value)}>
-        <TabsList>
-          <TabsTrigger value="operations">Available Operations</TabsTrigger>
-          <TabsTrigger value="history">Operation History</TabsTrigger>
-          <TabsTrigger value="templates">Operation Templates</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="operations" className="text-xs sm:text-sm">Available Operations</TabsTrigger>
+          <TabsTrigger value="history" className="text-xs sm:text-sm">Operation History</TabsTrigger>
+          <TabsTrigger value="templates" className="text-xs sm:text-sm">Operation Templates</TabsTrigger>
         </TabsList>
 
         {/* Available Operations Tab */}
-        <TabsContent value="operations" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <TabsContent value="operations" className="space-y-4 lg:space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
             {bulkOpsData?.bulkOperationTypes.map((operation) => (
               <Card key={operation.id} className="hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-6">

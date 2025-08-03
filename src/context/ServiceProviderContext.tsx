@@ -184,7 +184,7 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
         dispatch({ 
           type: 'SET_ORGANIZATION', 
           payload: { 
-            id: orgId || 'demo-org', 
+            id: orgId!, 
             name: 'Demo Service Provider', 
             type: 'service_provider' 
           } 
@@ -304,7 +304,7 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
       dispatch({
         type: 'SET_ORGANIZATION',
         payload: {
-          id: orgId || 'demo-org',
+          id: orgId!,
           name: 'Demo Service Provider',
           type: 'service_provider',
         },
@@ -392,9 +392,11 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
   // Refresh clients data
   const refreshClients = async () => {
     try {
+      console.log('ServiceProviderContext refreshClients: using organizationId =', state.organizationId);
       const response = await fetch(`/api/service-provider/clients?organizationId=${state.organizationId}`);
       if (!response.ok) throw new Error('Failed to fetch clients');
       const clients = await response.json();
+      console.log('ServiceProviderContext refreshClients: fetched', clients.length, 'clients');
       dispatch({ type: 'SET_CLIENTS', payload: clients });
     } catch (error) {
       console.error('Failed to refresh clients:', error);

@@ -116,17 +116,19 @@ export function ServiceProviderDashboard({ className = '' }: ServiceProviderDash
   return (
     <div className={`min-h-screen bg-gray-50 ${className}`}>
       {/* Service Provider Header */}
-      <ServiceProviderHeader
-        organizationName={state.organizationName}
-        currentUser={state.currentUser}
-        selectedClient={currentClient}
-        onRefresh={handleRefresh}
-        isRefreshing={refreshing}
-      />
+      <div className="mb-4 lg:mb-6">
+        <ServiceProviderHeader
+          organizationName={state.organizationName}
+          currentUser={state.currentUser}
+          selectedClient={currentClient}
+          onRefresh={handleRefresh}
+          isRefreshing={refreshing}
+        />
+      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 lg:py-6">
         {/* Client Switcher */}
-        <div className="mb-6">
+        <div className="mb-4 lg:mb-6">
           <ClientSwitcher
             onCreateClient={() => {
               router.push('/clients/new');
@@ -142,8 +144,8 @@ export function ServiceProviderDashboard({ className = '' }: ServiceProviderDash
         </div>
 
         {/* Navigation Breadcrumb */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between">
+        <div className="mb-4 lg:mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center space-x-2">
               {isClientView && currentClient ? (
                 <>
@@ -155,8 +157,8 @@ export function ServiceProviderDashboard({ className = '' }: ServiceProviderDash
                   >
                     ← Back to Overview
                   </Button>
-                  <span className="text-muted-foreground">•</span>
-                  <span className="font-semibold">{currentClient.name}</span>
+                  <span className="text-muted-foreground hidden sm:inline">•</span>
+                  <span className="font-semibold truncate max-w-xs sm:max-w-none">{currentClient.name}</span>
                 </>
               ) : (
                 <span className="font-semibold">Service Provider Overview</span>
@@ -168,10 +170,10 @@ export function ServiceProviderDashboard({ className = '' }: ServiceProviderDash
                 variant="outline" 
                 size="sm" 
                 onClick={() => router.push('/clients')}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 w-full sm:w-auto justify-center"
               >
                 <Users className="h-4 w-4" />
-                Manage All Clients
+                <span className="sm:inline">Manage All Clients</span>
               </Button>
             )}
           </div>
@@ -238,9 +240,9 @@ function ServiceProviderOverview({
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6">
         {/* Cross-Client Analytics */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="xl:col-span-2 space-y-4 lg:space-y-6">
           <CrossClientAnalytics />
           
           {/* Quick Actions */}
@@ -248,7 +250,7 @@ function ServiceProviderOverview({
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-4 lg:space-y-6">
           {/* Enhanced Client Performance Rankings */}
           <ClientPerformanceRankings 
             clients={clients}
@@ -292,13 +294,13 @@ function ServiceProviderOverview({
 // Client-Specific Dashboard
 function ClientSpecificDashboard({ client }: { client: any }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 lg:space-y-6">
       {/* Client Header */}
       <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
+        <CardContent className="p-4 lg:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center space-x-4">
-              <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
+              <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
                 {client.logoUrl ? (
                   <img 
                     src={client.logoUrl} 
@@ -309,17 +311,17 @@ function ClientSpecificDashboard({ client }: { client: any }) {
                   <Users className="h-6 w-6 text-gray-400" />
                 )}
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">{client.name}</h1>
-                <p className="text-gray-500">{client.type} • {client.status}</p>
+              <div className="min-w-0">
+                <h1 className="text-xl lg:text-2xl font-bold text-gray-900 truncate">{client.name}</h1>
+                <p className="text-gray-500 text-sm">{client.type} • {client.status}</p>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+              <Button variant="outline" size="sm" className="w-full sm:w-auto">
                 <Settings className="h-4 w-4 mr-2" />
                 Settings
               </Button>
-              <Button size="sm">
+              <Button size="sm" className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
                 New Campaign
               </Button>
@@ -329,7 +331,7 @@ function ClientSpecificDashboard({ client }: { client: any }) {
       </Card>
 
       {/* Client Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Active Campaigns"
           value={client.activeCampaigns || 0}
@@ -398,20 +400,20 @@ function MetricCard({
 
   return (
     <Card>
-      <CardContent className="p-6">
+      <CardContent className="p-4 lg:p-6">
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-600">{title}</p>
-            <p className="text-2xl font-bold text-gray-900">{value}</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-gray-600 truncate">{title}</p>
+            <p className="text-xl lg:text-2xl font-bold text-gray-900 truncate">{value}</p>
             {description && (
-              <p className="text-sm text-gray-500 mt-1">{description}</p>
+              <p className="text-sm text-gray-500 mt-1 truncate">{description}</p>
             )}
             {trend && (
-              <p className="text-xs text-gray-400 mt-1">{trend}</p>
+              <p className="text-xs text-gray-400 mt-1 truncate">{trend}</p>
             )}
           </div>
-          <div className={`h-12 w-12 rounded-lg flex items-center justify-center ${colorClasses[color]}`}>
-            <Icon className="h-6 w-6" />
+          <div className={`h-10 w-10 lg:h-12 lg:w-12 rounded-lg flex items-center justify-center flex-shrink-0 ml-3 ${colorClasses[color]}`}>
+            <Icon className="h-5 w-5 lg:h-6 lg:w-6" />
           </div>
         </div>
       </CardContent>

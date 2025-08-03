@@ -141,6 +141,7 @@
     "@babel/preset-typescript": "^7.27.1",
     "@faker-js/faker": "^9.9.0",
     "@playwright/test": "^1.40.0",
+    "@tailwindcss/line-clamp": "^0.4.4",
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^14.0.0",
     "@types/node": "^20.0.0",

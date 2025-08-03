@@ -183,76 +183,77 @@ export function TemplateLibrary({ onTemplateSelect, onTemplateApply }: TemplateL
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold">Template Library</h2>
-          <p className="text-muted-foreground">
+      <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+        <div className="flex-1">
+          <h2 className="text-xl sm:text-2xl font-bold">Template Library</h2>
+          <p className="text-sm sm:text-base text-muted-foreground mt-1">
             Manage and share templates across your clients
           </p>
         </div>
         
-        <div className="flex gap-2">
-          <Button>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Button className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
-            Create Template
+            <span className="hidden xs:inline">Create Template</span>
+            <span className="xs:hidden">Create</span>
           </Button>
         </div>
       </div>
 
       {/* Summary Cards */}
       {summary && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-6">
               <div className="flex items-center">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <FileText className="h-6 w-6 text-blue-600" />
+                <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg">
+                  <FileText className="h-4 w-4 sm:h-6 sm:w-6 text-blue-600" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-muted-foreground">Total Templates</p>
-                  <p className="text-2xl font-bold">{summary.totalTemplates}</p>
+                <div className="ml-2 sm:ml-4">
+                  <p className="text-xs sm:text-sm font-medium text-muted-foreground">Total Templates</p>
+                  <p className="text-lg sm:text-2xl font-bold">{summary.totalTemplates}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-6">
               <div className="flex items-center">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Share2 className="h-6 w-6 text-green-600" />
+                <div className="p-1.5 sm:p-2 bg-green-100 rounded-lg">
+                  <Share2 className="h-4 w-4 sm:h-6 sm:w-6 text-green-600" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-muted-foreground">Total Usage</p>
-                  <p className="text-2xl font-bold">{summary.totalUsage}</p>
+                <div className="ml-2 sm:ml-4">
+                  <p className="text-xs sm:text-sm font-medium text-muted-foreground">Total Usage</p>
+                  <p className="text-lg sm:text-2xl font-bold">{summary.totalUsage}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-6">
               <div className="flex items-center">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <TrendingUp className="h-6 w-6 text-purple-600" />
+                <div className="p-1.5 sm:p-2 bg-purple-100 rounded-lg">
+                  <TrendingUp className="h-4 w-4 sm:h-6 sm:w-6 text-purple-600" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-muted-foreground">Avg Engagement</p>
-                  <p className="text-2xl font-bold">{summary.averageEngagement.toFixed(1)}%</p>
+                <div className="ml-2 sm:ml-4">
+                  <p className="text-xs sm:text-sm font-medium text-muted-foreground">Avg Engagement</p>
+                  <p className="text-lg sm:text-2xl font-bold">{summary.averageEngagement.toFixed(1)}%</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-6">
               <div className="flex items-center">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <Users className="h-6 w-6 text-orange-600" />
+                <div className="p-1.5 sm:p-2 bg-orange-100 rounded-lg">
+                  <Users className="h-4 w-4 sm:h-6 sm:w-6 text-orange-600" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-muted-foreground">Shareable Clients</p>
-                  <p className="text-2xl font-bold">{shareableClients.length}</p>
+                <div className="ml-2 sm:ml-4">
+                  <p className="text-xs sm:text-sm font-medium text-muted-foreground">Shareable Clients</p>
+                  <p className="text-lg sm:text-2xl font-bold">{shareableClients.length}</p>
                 </div>
               </div>
             </CardContent>
@@ -261,48 +262,52 @@ export function TemplateLibrary({ onTemplateSelect, onTemplateApply }: TemplateL
       )}
 
       {/* Filters */}
-      <div className="flex flex-col lg:flex-row gap-4">
-        <div className="flex-1">
+      <div className="flex flex-col space-y-3 sm:space-y-4">
+        {/* Search Bar */}
+        <div className="w-full">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search templates..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-10 w-full"
             />
           </div>
         </div>
         
-        <Select value={selectedType} onValueChange={setSelectedType}>
-          <SelectTrigger className="w-full lg:w-48">
-            <SelectValue placeholder="All Types" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="email">Email</SelectItem>
-            <SelectItem value="social">Social</SelectItem>
-            <SelectItem value="blog">Blog</SelectItem>
-          </SelectContent>
-        </Select>
-        
-        <Select value={selectedClient_Filter} onValueChange={setSelectedClient_Filter}>
-          <SelectTrigger className="w-full lg:w-48">
-            <SelectValue placeholder="All Clients" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Clients</SelectItem>
-            {shareableClients.map((client) => (
-              <SelectItem key={client.id} value={client.id}>
-                {client.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/* Filter Controls */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+          <Select value={selectedType} onValueChange={setSelectedType}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="All Types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="email">Email</SelectItem>
+              <SelectItem value="social">Social</SelectItem>
+              <SelectItem value="blog">Blog</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Select value={selectedClient_Filter} onValueChange={setSelectedClient_Filter}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="All Clients" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Clients</SelectItem>
+              {shareableClients.map((client) => (
+                <SelectItem key={client.id} value={client.id}>
+                  {client.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Template Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {templates.map((template) => (
           <Card key={template.id} className="hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
@@ -313,36 +318,38 @@ export function TemplateLibrary({ onTemplateSelect, onTemplateApply }: TemplateL
                     {template.templateType}
                   </Badge>
                 </div>
-                <div className="flex gap-1">
+                <div className="flex gap-0.5 sm:gap-1">
                   <Button 
                     variant="ghost" 
                     size="sm"
+                    className="h-8 w-8 p-0 sm:h-9 sm:w-9"
                     onClick={() => {
                       setSelectedTemplate(template);
                       setPreviewDialogOpen(true);
                     }}
                   >
-                    <Eye className="h-4 w-4" />
+                    <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
                   </Button>
                   <Button 
                     variant="ghost" 
                     size="sm"
+                    className="h-8 w-8 p-0 sm:h-9 sm:w-9"
                     onClick={() => {
                       setSelectedTemplate(template);
                       setShareDialogOpen(true);
                     }}
                   >
-                    <Share2 className="h-4 w-4" />
+                    <Share2 className="h-3 w-3 sm:h-4 sm:w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm">
-                    <MoreHorizontal className="h-4 w-4" />
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 sm:h-9 sm:w-9">
+                    <MoreHorizontal className="h-3 w-3 sm:h-4 sm:w-4" />
                   </Button>
                 </div>
               </div>
               
               <div>
-                <CardTitle className="text-lg mb-2">{template.name}</CardTitle>
-                <p className="text-sm text-muted-foreground line-clamp-2">
+                <CardTitle className="text-base sm:text-lg mb-2 line-clamp-1 sm:line-clamp-none">{template.name}</CardTitle>
+                <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
                   {template.description}
                 </p>
               </div>
@@ -352,20 +359,20 @@ export function TemplateLibrary({ onTemplateSelect, onTemplateApply }: TemplateL
               <div className="space-y-4">
                 {/* Template Preview */}
                 {template.previewImage && (
-                  <div className="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <FileText className="h-8 w-8 text-gray-400" />
+                  <div className="w-full h-24 sm:h-32 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400" />
                   </div>
                 )}
                 
                 {/* Usage Stats */}
-                <div className="flex justify-between items-center text-sm">
-                  <div className="flex items-center gap-2">
-                    <Share2 className="h-4 w-4 text-muted-foreground" />
-                    <span>{template.sharedWithClients.length} clients</span>
+                <div className="flex justify-between items-center text-xs sm:text-sm">
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <Share2 className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                    <span className="truncate">{template.sharedWithClients.length} clients</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                    <span>{template.totalUsage} uses</span>
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                    <span className="truncate">{template.totalUsage} uses</span>
                   </div>
                 </div>
                 
@@ -384,28 +391,29 @@ export function TemplateLibrary({ onTemplateSelect, onTemplateApply }: TemplateL
                 </div>
                 
                 {/* Action Buttons */}
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="flex-1"
+                    className="flex-1 text-xs sm:text-sm"
                     onClick={() => {
                       setSelectedTemplate(template);
                       setApplyDialogOpen(true);
                     }}
                   >
-                    <Copy className="h-4 w-4 mr-2" />
-                    Use Template
+                    <Copy className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    <span className="hidden xs:inline">Use Template</span>
+                    <span className="xs:hidden">Use</span>
                   </Button>
                   <Button 
                     size="sm" 
-                    className="flex-1"
+                    className="flex-1 text-xs sm:text-sm"
                     onClick={() => {
                       setSelectedTemplate(template);
                       setShareDialogOpen(true);
                     }}
                   >
-                    <Share2 className="h-4 w-4 mr-2" />
+                    <Share2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                     Share
                   </Button>
                 </div>
@@ -417,27 +425,39 @@ export function TemplateLibrary({ onTemplateSelect, onTemplateApply }: TemplateL
 
       {/* Pagination */}
       {pagination && pagination.totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2">
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4">
           <Button
             variant="outline"
             size="sm"
             disabled={currentPage <= 1}
             onClick={() => setCurrentPage(currentPage - 1)}
+            className="w-full sm:w-auto"
           >
             Previous
           </Button>
           
-          <div className="flex items-center gap-2">
-            {[...Array(pagination.totalPages)].map((_, i) => (
-              <Button
-                key={i + 1}
-                variant={currentPage === i + 1 ? "default" : "outline"}
-                size="sm"
-                onClick={() => setCurrentPage(i + 1)}
-              >
-                {i + 1}
-              </Button>
-            ))}
+          <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-center">
+            {[...Array(Math.min(pagination.totalPages, 5))].map((_, i) => {
+              const pageNum = pagination.totalPages <= 5 ? i + 1 : 
+                currentPage <= 3 ? i + 1 :
+                currentPage >= pagination.totalPages - 2 ? pagination.totalPages - 4 + i :
+                currentPage - 2 + i;
+              
+              return (
+                <Button
+                  key={pageNum}
+                  variant={currentPage === pageNum ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(pageNum)}
+                  className="h-8 w-8 p-0 sm:h-9 sm:w-9"
+                >
+                  {pageNum}
+                </Button>
+              );
+            })}
+            {pagination.totalPages > 5 && currentPage < pagination.totalPages - 2 && (
+              <span className="text-muted-foreground">...</span>
+            )}
           </div>
           
           <Button
@@ -445,6 +465,7 @@ export function TemplateLibrary({ onTemplateSelect, onTemplateApply }: TemplateL
             size="sm"
             disabled={currentPage >= pagination.totalPages}
             onClick={() => setCurrentPage(currentPage + 1)}
+            className="w-full sm:w-auto"
           >
             Next
           </Button>
@@ -453,9 +474,9 @@ export function TemplateLibrary({ onTemplateSelect, onTemplateApply }: TemplateL
 
       {/* Template Sharing Dialog */}
       <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Share Template</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg">Share Template</DialogTitle>
           </DialogHeader>
           
           {selectedTemplate && sharingStatus && (
@@ -472,9 +493,9 @@ export function TemplateLibrary({ onTemplateSelect, onTemplateApply }: TemplateL
 
       {/* Template Preview Dialog */}
       <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-4xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Template Preview</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg">Template Preview</DialogTitle>
           </DialogHeader>
           
           {selectedTemplate && (
@@ -488,9 +509,9 @@ export function TemplateLibrary({ onTemplateSelect, onTemplateApply }: TemplateL
 
       {/* Template Application Dialog */}
       <Dialog open={applyDialogOpen} onOpenChange={setApplyDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Apply Template</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg">Apply Template</DialogTitle>
           </DialogHeader>
           
           {selectedTemplate && (
@@ -524,40 +545,40 @@ function TemplateShareDialog({
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h3 className="text-lg font-semibold mb-2">{template.name}</h3>
-        <p className="text-muted-foreground">{template.description}</p>
+        <h3 className="text-base sm:text-lg font-semibold mb-2 line-clamp-1">{template.name}</h3>
+        <p className="text-sm sm:text-base text-muted-foreground line-clamp-2">{template.description}</p>
       </div>
 
       {/* Current Sharing Status */}
       <div>
-        <h4 className="font-medium mb-3">Currently Shared With</h4>
+        <h4 className="text-sm sm:text-base font-medium mb-3">Currently Shared With</h4>
         {sharingStatus.sharedWith.length > 0 ? (
           <div className="space-y-2">
             {sharingStatus.sharedWith.map((client: any) => (
-              <div key={client.clientId} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                <div>
-                  <p className="font-medium">{client.clientName}</p>
-                  <p className="text-sm text-muted-foreground">
+              <div key={client.clientId} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-green-50 rounded-lg gap-2">
+                <div className="flex-1">
+                  <p className="font-medium text-sm sm:text-base truncate">{client.clientName}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     Used {client.usage.timesUsed} times • {client.usage.averageEngagement}% engagement
                   </p>
                 </div>
-                <Badge variant="secondary">Shared</Badge>
+                <Badge variant="secondary" className="self-start sm:self-center">Shared</Badge>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-muted-foreground">Not shared with any clients yet</p>
+          <p className="text-sm sm:text-base text-muted-foreground">Not shared with any clients yet</p>
         )}
       </div>
 
       {/* Available Clients to Share With */}
       <div>
-        <h4 className="font-medium mb-3">Share With Additional Clients</h4>
-        <div className="space-y-2">
+        <h4 className="text-sm sm:text-base font-medium mb-3">Share With Additional Clients</h4>
+        <div className="space-y-3">
           {sharingStatus.availableClients.map((client: any) => (
-            <div key={client.clientId} className="flex items-center space-x-3">
+            <div key={client.clientId} className="flex items-start space-x-3">
               <Checkbox
                 id={client.clientId}
                 checked={selectedClients.includes(client.clientId)}
@@ -568,15 +589,16 @@ function TemplateShareDialog({
                     setSelectedClients(selectedClients.filter(id => id !== client.clientId));
                   }
                 }}
+                className="mt-1"
               />
-              <Label htmlFor={client.clientId} className="flex-1">
-                <div>
-                  <span className="font-medium">{client.clientName}</span>
-                  <Badge variant="outline" className="ml-2 text-xs">
+              <Label htmlFor={client.clientId} className="flex-1 cursor-pointer">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                  <span className="font-medium text-sm sm:text-base">{client.clientName}</span>
+                  <Badge variant="outline" className="text-xs w-fit">
                     {client.clientType}
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground">{client.eligibilityReason}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1 line-clamp-2">{client.eligibilityReason}</p>
               </Label>
             </div>
           ))}
@@ -584,13 +606,14 @@ function TemplateShareDialog({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={onClose}>
+      <div className="flex flex-col sm:flex-row justify-end gap-2">
+        <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
           Cancel
         </Button>
         <Button 
           onClick={() => onShare(template, selectedClients)}
           disabled={selectedClients.length === 0}
+          className="w-full sm:w-auto"
         >
           Share Template ({selectedClients.length})
         </Button>
@@ -606,57 +629,57 @@ function TemplatePreviewDialog({
 }: {
   template: ServiceProviderTemplate;
   onClose: () => void;
-}) {
+}): React.JSX.Element {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h3 className="text-lg font-semibold mb-2">{template.name}</h3>
-        <p className="text-muted-foreground">{template.description}</p>
+        <h3 className="text-base sm:text-lg font-semibold mb-2 line-clamp-1">{template.name}</h3>
+        <p className="text-sm sm:text-base text-muted-foreground line-clamp-2">{template.description}</p>
       </div>
 
       <Tabs defaultValue="content" className="w-full">
-        <TabsList>
-          <TabsTrigger value="content">Content</TabsTrigger>
-          <TabsTrigger value="fields">Customizable Fields</TabsTrigger>
-          <TabsTrigger value="stats">Usage Stats</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="content" className="text-xs sm:text-sm">Content</TabsTrigger>
+          <TabsTrigger value="fields" className="text-xs sm:text-sm">Fields</TabsTrigger>
+          <TabsTrigger value="stats" className="text-xs sm:text-sm">Stats</TabsTrigger>
         </TabsList>
         
         <TabsContent value="content" className="mt-4">
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <pre className="whitespace-pre-wrap text-sm">{template.content}</pre>
+          <div className="p-3 sm:p-4 bg-gray-50 rounded-lg max-h-64 overflow-y-auto">
+            <pre className="whitespace-pre-wrap text-xs sm:text-sm">{template.content}</pre>
           </div>
         </TabsContent>
         
         <TabsContent value="fields" className="mt-4">
-          <div className="space-y-2">
+          <div className="space-y-2 max-h-64 overflow-y-auto">
             {template.customizableFields.map((field) => (
-              <div key={field.field} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <span className="font-medium">{{field.field}}</span>
-                  <p className="text-sm text-muted-foreground">{field.label}</p>
+              <div key={field.field} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg gap-2">
+                <div className="flex-1">
+                  <span className="font-medium text-sm sm:text-base">{field.field}</span>
+                  <p className="text-xs sm:text-sm text-muted-foreground">{field.label}</p>
                 </div>
-                <Badge variant="outline">{field.type}</Badge>
+                <Badge variant="outline" className="self-start sm:self-center text-xs">{field.type}</Badge>
               </div>
             ))}
           </div>
         </TabsContent>
         
         <TabsContent value="stats" className="mt-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-muted-foreground">Total Usage</p>
-              <p className="text-2xl font-bold">{template.totalUsage}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="p-3 sm:p-4 bg-blue-50 rounded-lg">
+              <p className="text-xs sm:text-sm text-muted-foreground">Total Usage</p>
+              <p className="text-xl sm:text-2xl font-bold">{template.totalUsage}</p>
             </div>
-            <div className="p-4 bg-green-50 rounded-lg">
-              <p className="text-sm text-muted-foreground">Avg Engagement</p>
-              <p className="text-2xl font-bold">{template.averageEngagement}%</p>
+            <div className="p-3 sm:p-4 bg-green-50 rounded-lg">
+              <p className="text-xs sm:text-sm text-muted-foreground">Avg Engagement</p>
+              <p className="text-xl sm:text-2xl font-bold">{template.averageEngagement}%</p>
             </div>
           </div>
         </TabsContent>
       </Tabs>
 
       <div className="flex justify-end">
-        <Button onClick={onClose}>Close</Button>
+        <Button onClick={onClose} className="w-full sm:w-auto">Close</Button>
       </div>
     </div>
   );
@@ -678,23 +701,23 @@ function TemplateApplyDialog({
   const [customizations, setCustomizations] = useState<Record<string, string>>({});
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h3 className="text-lg font-semibold mb-2">Apply {template.name}</h3>
-        <p className="text-muted-foreground">Customize and create content for a specific client</p>
+        <h3 className="text-base sm:text-lg font-semibold mb-2 line-clamp-1">Apply {template.name}</h3>
+        <p className="text-sm sm:text-base text-muted-foreground">Customize and create content for a specific client</p>
       </div>
 
       {/* Client Selection */}
       <div>
-        <Label htmlFor="client-select">Select Client</Label>
+        <Label htmlFor="client-select" className="text-sm sm:text-base">Select Client</Label>
         <Select value={selectedClient} onValueChange={setSelectedClient}>
-          <SelectTrigger>
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Choose a client..." />
           </SelectTrigger>
           <SelectContent>
             {shareableClients.map((client) => (
               <SelectItem key={client.id} value={client.id}>
-                {client.name} ({client.type})
+                <span className="truncate">{client.name} ({client.type})</span>
               </SelectItem>
             ))}
           </SelectContent>
@@ -703,11 +726,11 @@ function TemplateApplyDialog({
 
       {/* Customization Fields */}
       <div>
-        <Label>Customize Template Fields</Label>
-        <div className="space-y-4 mt-2">
+        <Label className="text-sm sm:text-base">Customize Template Fields</Label>
+        <div className="space-y-3 sm:space-y-4 mt-2 max-h-64 overflow-y-auto">
           {template.customizableFields.map((field) => (
             <div key={field.field}>
-              <Label htmlFor={field.field}>{field.label}</Label>
+              <Label htmlFor={field.field} className="text-sm sm:text-base">{field.label}</Label>
               {field.type === 'textarea' ? (
                 <Textarea
                   id={field.field}
@@ -717,6 +740,7 @@ function TemplateApplyDialog({
                     ...customizations,
                     [field.field]: e.target.value
                   })}
+                  className="text-sm sm:text-base min-h-[80px]"
                 />
               ) : (
                 <Input
@@ -728,6 +752,7 @@ function TemplateApplyDialog({
                     ...customizations,
                     [field.field]: e.target.value
                   })}
+                  className="text-sm sm:text-base"
                 />
               )}
             </div>
@@ -736,13 +761,14 @@ function TemplateApplyDialog({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={onClose}>
+      <div className="flex flex-col sm:flex-row justify-end gap-2">
+        <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
           Cancel
         </Button>
         <Button 
           onClick={() => onApply(template, selectedClient, customizations)}
           disabled={!selectedClient}
+          className="w-full sm:w-auto"
         >
           Create Content
         </Button>

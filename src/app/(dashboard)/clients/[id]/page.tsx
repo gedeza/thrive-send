@@ -1,10 +1,13 @@
+'use client';
+
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { auth } from '@clerk/nextjs/server';
-import { db } from '@/lib/db';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoadingPage, LoadingSkeleton } from '@/components/common/LoadingSpinner';
+import { useServiceProvider } from '@/context/ServiceProviderContext';
+import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 
 // Components
 import ClientHeader, { ClientHeaderSkeleton } from '@/components/clients/ClientHeader';
@@ -16,35 +19,72 @@ import FeedbackSection from '@/components/clients/FeedbackSection';
 import GoalsSection from '@/components/clients/GoalsSection';
 import ClientProjectsSection from '@/components/clients/ClientProjectsSection';
 
-export default async function ClientDashboard({
+export default function ClientDashboard({
   params,
 }: {
   params: { id: string };
 }) {
-  const { userId, orgId } = await auth();
-  if (!userId || !orgId) {
-    return null;
-  }
-
+  const { organizationId, switchClient } = useServiceProvider();
   const clientId = params.id;
 
-  try {
-    // Fetch initial client data
-    const client = await db.client.findUnique({
-      where: { id: clientId },
-      select: {
-        id: true,
-        name: true,
-        industry: true,
-        website: true,
-        email: true,
-        phone: true,
-      },
-    });
+  // Fetch client data using service provider API
+  const { data: client, isLoading, error } = useQuery({
+    queryKey: ['client-detail', clientId, organizationId],
+    queryFn: async () => {
+      if (!organizationId) {
+        throw new Error('No organization ID');
+      }
 
-    if (!client) {
-      notFound();
+      const response = await fetch(`/api/service-provider/clients/${clientId}?organizationId=${organizationId}`);
+      if (response.status === 404) {
+        throw new Error('Client not found');
+      }
+      if (!response.ok) {
+        throw new Error('Failed to fetch client');
+      }
+      return response.json();
+    },
+    enabled: !!organizationId && !!clientId,
+  });
+
+  // Auto-switch client context when viewing client detail
+  useEffect(() => {
+    if (client && switchClient) {
+      const clientSummary = {
+        id: client.id,
+        name: client.name,
+        type: client.type,
+        status: client.status === 'active' ? 'ACTIVE' : 'INACTIVE',
+        logoUrl: client.logoUrl,
+        performanceScore: client.performanceScore,
+        activeCampaigns: client.projects?.length || 0,
+        engagementRate: client.performanceScore / 20,
+        monthlyBudget: client.monthlyBudget,
+        lastActivity: new Date(client.lastActivity),
+      };
+      switchClient(clientSummary);
     }
+  }, [client, switchClient]);
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-8">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-24 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+          <div className="h-64 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !client) {
+    notFound();
+  }
 
     return (
       <div className="container mx-auto py-8">
@@ -175,10 +215,6 @@ export default async function ClientDashboard({
         </Tabs>
       </div>
     );
-  } catch (error) {
-    console.error('Error in ClientDashboard:', error);
-    throw error;
-  }
 }
 
 function KPILoadingState() {

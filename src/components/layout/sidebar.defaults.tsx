@@ -20,7 +20,12 @@ import {
   Zap,
   Clock,
   Repeat,
-  Share2
+  Share2,
+  FileBarChart,
+  PieChart,
+  LineChart,
+  UserPlus,
+  Shield
 } from "lucide-react";
 
 /**
@@ -56,6 +61,29 @@ export const defaultSidebarItems: SidebarItemWithRoles[] = [
     icon: <Users size={18} />,
     href: "/clients",
     roles: ["admin", "manager"], // Only admins and managers
+  },
+  {
+    key: "team",
+    label: "Team",
+    icon: <UserPlus size={18} />,
+    href: "/team",
+    roles: ["admin", "manager"], // Team management for service providers
+    children: [
+      {
+        key: "team-invite",
+        label: "Invite Members",
+        icon: <UserPlus size={16} />,
+        href: "/team/invite",
+        roles: ["admin", "manager"],
+      },
+      {
+        key: "team-permissions",
+        label: "Permissions",
+        icon: <Shield size={16} />,
+        href: "/team#permissions",
+        roles: ["admin"],
+      }
+    ]
   },
   {
     key: "audiences",
@@ -159,6 +187,43 @@ export const defaultSidebarItems: SidebarItemWithRoles[] = [
         label: "Content Scheduler",
         icon: <Clock size={16} />,
         href: "/service-provider/scheduling",
+        roles: ["admin", "manager"],
+      },
+      {
+        key: "service-provider-revenue",
+        label: "Revenue Dashboard",
+        icon: <TrendingUp size={16} />,
+        href: "/service-provider/revenue",
+        roles: ["admin", "manager"],
+      }
+    ]
+  },
+  {
+    key: "reports",
+    label: "Reports",
+    icon: <FileBarChart size={18} />,
+    href: "/reports",
+    roles: ["admin", "manager"], // Advanced reporting for service providers
+    children: [
+      {
+        key: "reports-analytics",
+        label: "Cross-Client Analytics",
+        icon: <BarChart3 size={16} />,
+        href: "/reports#analytics",
+        roles: ["admin", "manager"],
+      },
+      {
+        key: "reports-automation",
+        label: "Automated Reports",
+        icon: <Clock size={16} />,
+        href: "/reports#automation",
+        roles: ["admin", "manager"],
+      },
+      {
+        key: "reports-templates",
+        label: "Report Templates",
+        icon: <FileText size={16} />,
+        href: "/reports#templates",
         roles: ["admin", "manager"],
       }
     ]
