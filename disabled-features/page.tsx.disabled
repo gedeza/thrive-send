@@ -1,0 +1,472 @@
+'use client';
+// import FeatureAnalyticsTab from "./FeatureAnalyticsTab";
+// import FeatureAudienceTab from "./FeatureAudienceTab";
+import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import InfoCard from "@/components/ui/InfoCard";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Container, Box, Paper, Typography, Divider, Grid,
+  Card as MuiCard, CardContent as MuiCardContent, CardActions,
+  Chip, useTheme, useMediaQuery
+} from '@mui/material';
+
+// Icons
+import AddIcon from '@mui/icons-material/Add';
+import EmailIcon from '@mui/icons-material/Email';
+import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
+import CodeIcon from '@mui/icons-material/Code';
+import HomeIcon from '@mui/icons-material/Home';
+
+const CustomTabs = dynamic(() => import('@/components/Tabs/Tabs'), { ssr: false });
+const CreateCampaign = dynamic(() => import('@/components/Campaign/CreateCampaign'), { ssr: false });
+const ContentForm = dynamic(() => import('@/components/content/ContentForm'), { ssr: false });
+
+const overviewCards = [
+  {
+    title: "Enhanced Tabs",
+    description:
+      "Fully responsive tabs that work in both horizontal and vertical orientations. Supports badges, icons, and animations.",
+    chip: "New",
+    color: "primary",
+  },
+  {
+    title: "Campaign Creation",
+    description:
+      "Comprehensive form for creating marketing campaigns with validation and audience selection.",
+    chip: "Core",
+    color: "secondary",
+  },
+  {
+    title: "Content Management",
+    description:
+      "Rich content editor with tagging and media uploads for creating engaging email content.",
+    chip: "Popular",
+    color: "accent",
+  },
+];
+
+// Demo overview, now using InfoCard
+const OverviewContent = () => (
+  <div className="p-6 bg-neutral-background rounded-lg shadow">
+    <h2 className="text-2xl font-semibold text-primary-600 mb-2">
+      Marketing Platform Demo
+    </h2>
+    <p className="mb-4 text-neutral-text">
+      This demo showcases the key components of our Marketing Platform UI:
+    </p>
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-6">
+      {overviewCards.map(card => (
+        <InfoCard
+          key={card.title}
+          title={card.title}
+          description={card.description}
+          chip={card.chip}
+          color={card.color}
+        />
+      ))}
+    </div>
+    <Divider className="my-4" />
+    <Box>
+      <Typography variant="body1" className="mb-2 font-medium">
+        Recent Activity
+      </Typography>
+      <ul className="pl-4 border-l-4 border-primary-500">
+        <li><strong>Campaign Created:</strong> Summer Sale Announcement - 2 hours ago</li>
+        <li><strong>Content Updated:</strong> Monthly Newsletter - 5 hours ago</li>
+        <li><strong>Campaign Sent:</strong> Product Launch - Yesterday</li>
+      </ul>
+    </Box>
+  </div>
+);
+
+// ... (leave the rest of the code, such as FeatureDemos, ImplementationGuide, etc. as is unless you want more illustrative tidy-up)
+
+const componentDocs = [
+  {
+    id: 'button',
+    title: 'Button',
+    description: 'Interactive button component with various styles and states.',
+    usage: `<Button variant="default">Click me</Button>`,
+    props: [
+      { name: 'variant', type: 'string', default: 'default', description: 'Visual style of the button' },
+      { name: 'size', type: 'string', default: 'default', description: 'Size of the button' },
+      { name: 'disabled', type: 'boolean', default: 'false', description: 'Whether the button is disabled' }
+    ],
+    examples: [
+      { title: 'Default', code: '<Button>Default Button</Button>' },
+      { title: 'Primary', code: '<Button variant="primary">Primary Button</Button>' },
+      { title: 'Outline', code: '<Button variant="outline">Outline Button</Button>' }
+    ]
+  },
+  {
+    id: 'card',
+    title: 'Card',
+    description: 'Container for related content and actions.',
+    usage: `<Card>
+  <CardHeader>
+    <CardTitle>Card Title</CardTitle>
+    <CardDescription>Card Description</CardDescription>
+  </CardHeader>
+  <CardContent>
+    Card Content
+  </CardContent>
+</Card>`,
+    props: [
+      { name: 'className', type: 'string', default: '', description: 'Additional CSS classes' }
+    ],
+    examples: [
+      { title: 'Basic Card', code: '<Card><CardContent>Simple Card</CardContent></Card>' },
+      { title: 'With Header', code: '<Card><CardHeader><CardTitle>Title</CardTitle></CardHeader><CardContent>Content</CardContent></Card>' }
+    ]
+  },
+  {
+    id: 'tabs',
+    title: 'Tabs',
+    description: 'Switch between different views within the same context.',
+    usage: `<Tabs defaultValue="tab1">
+  <TabsList>
+    <TabsTrigger value="tab1">Tab 1</TabsTrigger>
+    <TabsTrigger value="tab2">Tab 2</TabsTrigger>
+  </TabsList>
+  <TabsContent value="tab1">Content 1</TabsContent>
+  <TabsContent value="tab2">Content 2</TabsContent>
+</Tabs>`,
+    props: [
+      { name: 'defaultValue', type: 'string', default: '', description: 'The initial active tab' },
+      { name: 'value', type: 'string', default: '', description: 'Controlled value for active tab' },
+      { name: 'onValueChange', type: 'function', default: '', description: 'Function called when tab changes' }
+    ],
+    examples: [
+      { title: 'Basic Tabs', code: '<Tabs defaultValue="tab1"><TabsList><TabsTrigger value="tab1">Tab 1</TabsTrigger></TabsList><TabsContent value="tab1">Content</TabsContent></Tabs>' }
+    ]
+  }
+];
+
+const ComponentKnowledgeBase = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredComponents, setFilteredComponents] = useState(componentDocs);
+  const [selectedComponent, setSelectedComponent] = useState(componentDocs[0]);
+  const [activeTab, setActiveTab] = useState('documentation');
+  useEffect(() => {
+    if (searchTerm === '') {
+      setFilteredComponents(componentDocs);
+    } else {
+      const filtered = componentDocs.filter(comp =>
+        comp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        comp.description.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredComponents(filtered);
+    }
+  }, [searchTerm]);
+  useEffect(() => {
+    if (filteredComponents.length > 0) {
+      setSelectedComponent(filteredComponents[0]);
+    }
+  }, [filteredComponents]);
+  return (
+    <Box sx={{ p: { xs: 2, sm: 3 } }}>
+      <Typography variant="h5" gutterBottom fontWeight={600}>
+        UI Component Knowledge Base
+      </Typography>
+      <Typography variant="body1" paragraph>
+        Explore our UI components, view documentation, and see examples.
+      </Typography>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="md:col-span-1">
+          <div className="mb-4">
+            <Input
+              type="text"
+              placeholder="Search components..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full"
+              aria-label="Search components"
+            />
+          </div>
+          <div className="space-y-2">
+            {filteredComponents.map((component) => (
+              <Button
+                key={component.id}
+                variant={selectedComponent?.id === component.id ? "default" : "outline"}
+                className="w-full justify-start"
+                onClick={() => setSelectedComponent(component)}
+              >
+                {component.title}
+              </Button>
+            ))}
+          </div>
+        </div>
+        <div className="md:col-span-3">
+          {selectedComponent ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>{selectedComponent.title}</CardTitle>
+                <CardDescription>{selectedComponent.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="documentation">Documentation</TabsTrigger>
+                    <TabsTrigger value="examples">Examples</TabsTrigger>
+                    <TabsTrigger value="code">Code</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="documentation" className="space-y-4">
+                    <h3 className="text-lg font-semibold mt-4">Props</h3>
+                    <div className="border rounded-md">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left p-2">Name</th>
+                            <th className="text-left p-2">Type</th>
+                            <th className="text-left p-2">Default</th>
+                            <th className="text-left p-2">Description</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedComponent.props.map((prop, index) => (
+                            <tr key={index} className="border-b">
+                              <td className="p-2 font-mono text-sm">{prop.name}</td>
+                              <td className="p-2 font-mono text-sm">{prop.type}</td>
+                              <td className="p-2 font-mono text-sm">{prop.default}</td>
+                              <td className="p-2">{prop.description}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="examples" className="space-y-4">
+                    {selectedComponent.examples.map((example, index) => (
+                      <Card key={index}>
+                        <CardHeader>
+                          <CardTitle className="text-md">{example.title}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="mb-4 p-4 border rounded-md flex items-center justify-center">
+                            <div className="text-gray-500">[Component Example Rendering]</div>
+                          </div>
+                          <pre className="bg-gray-100 p-4 rounded-md overflow-x-auto">
+                            <code>{example.code}</code>
+                          </pre>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </TabsContent>
+                  <TabsContent value="code">
+                    <pre className="bg-gray-100 p-4 rounded-md overflow-x-auto">
+                      <code>{selectedComponent.usage}</code>
+                    </pre>
+                    <div className="mt-4 flex justify-end">
+                      <Button variant="outline" size="sm">Copy Code</Button>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="pt-6">
+                <p>No component selected or found. Try adjusting your search.</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    </Box>
+  );
+};
+
+const FeatureDemos = () => {
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
+  const [activeTab, setActiveTab] = useState(0);
+  const mainTabs = [
+    { label: "Create Campaign", content: <CreateCampaign /> },
+    { label: "Create Content", content: <ContentForm /> },
+    // { label: "Analytics", content: <FeatureAnalyticsTab /> },
+    // { label: "Audience", content: <FeatureAudienceTab /> }
+  ];
+  return (
+    <Box sx={{ p: { xs: 2, sm: 3 } }}>
+      <Typography variant="h5" gutterBottom fontWeight={600}>
+        Application Features Demo
+      </Typography>
+      <Typography variant="body1" paragraph>
+        Explore the key functional features of our marketing platform.
+      </Typography>
+      <Paper elevation={2} sx={{ mb: 4 }}>
+        <CustomTabs
+          tabs={mainTabs}
+          defaultTab={activeTab}
+          onChange={(index) => setActiveTab(index)}
+          variant="scrollable"
+          showAnimation={true}
+          color="primary"
+          ariaLabel="marketing platform sections"
+        />
+      </Paper>
+    </Box>
+  );
+};
+
+const ImplementationGuide = () => (
+  <Box sx={{ p: { xs: 2, sm: 3 } }}>
+    <Typography variant="h5" gutterBottom fontWeight={600}>
+      Implementation Guide
+    </Typography>
+    <Typography variant="body1" paragraph>
+      Learn how to implement the components and features demonstrated in this demo.
+    </Typography>
+    <Grid container spacing={3} sx={{ mt: 2 }}>
+      <Grid item xs={12} md={4}>
+        <MuiCard variant="outlined">
+          <MuiCardContent>
+            <Typography variant="h6" color="primary" gutterBottom>
+              Component Integration
+            </Typography>
+            <Typography variant="body2">
+              Step-by-step guide for integrating UI components into your application.
+            </Typography>
+          </MuiCardContent>
+          <CardActions>
+            <Button variant="outline" size="sm">View Guide</Button>
+          </CardActions>
+        </MuiCard>
+      </Grid>
+      <Grid item xs={12} md={4}>
+        <MuiCard variant="outlined">
+          <MuiCardContent>
+            <Typography variant="h6" color="primary" gutterBottom>
+              Application Setup
+            </Typography>
+            <Typography variant="body2">
+              Instructions for setting up the marketing platform in your environment.
+            </Typography>
+          </MuiCardContent>
+          <CardActions>
+            <Button variant="outline" size="sm">View Guide</Button>
+          </CardActions>
+        </MuiCard>
+      </Grid>
+      <Grid item xs={12} md={4}>
+        <MuiCard variant="outlined">
+          <MuiCardContent>
+            <Typography variant="h6" color="primary" gutterBottom>
+              API Documentation
+            </Typography>
+            <Typography variant="body2">
+              Reference for all available API endpoints and data structures.
+            </Typography>
+          </MuiCardContent>
+          <CardActions>
+            <Button variant="outline" size="sm">View Guide</Button>
+          </CardActions>
+        </MuiCard>
+      </Grid>
+    </Grid>
+    <Box sx={{ mt: 5, mb: 3 }}>
+      <Typography variant="h5" gutterBottom fontWeight={600}>
+        Code Examples
+      </Typography>
+      <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
+        <Typography variant="body2" component="pre" sx={{
+          fontFamily: 'monospace',
+          whiteSpace: 'pre-wrap',
+          overflowX: 'auto'
+        }}>
+          {`// Import components
+import { Tabs } from "@/components/ui/tabs";
+import CreateCampaign from '@/components/CreateCampaign';
+
+// Use in your component
+<Tabs defaultValue="tab1">
+  <TabsList>
+    <TabsTrigger value="tab1">Tab 1</TabsTrigger>
+  </TabsList>
+  <TabsContent value="tab1">Content</TabsContent>
+</Tabs>`}
+        </Typography>
+      </Paper>
+    </Box>
+  </Box>
+);
+
+export default function Demo() {
+  const theme = useTheme();
+  const router = useRouter();
+  const [activeMainTab, setActiveMainTab] = useState(0);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  useEffect(() => {
+    setLastUpdated(new Date().toLocaleDateString());
+  }, []);
+  const mainSections = [
+    { label: "Overview", icon: <HomeIcon />, content: <OverviewContent /> },
+    { label: "Features", icon: <EmailIcon />, content: <FeatureDemos /> },
+    { label: "Components", icon: <CodeIcon />, content: <ComponentKnowledgeBase /> },
+    { label: "Implementation", icon: <LibraryBooksIcon />, content: <ImplementationGuide /> }
+  ];
+  const handleMainTabChange = (_e: React.SyntheticEvent, idx: number) => {
+    setActiveMainTab(idx);
+  };
+  return (
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" component="h1" fontWeight={700} gutterBottom>
+          Thrive Send Demo
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          Explore our UI components, application features, and implementation guides.
+        </Typography>
+      </Box>
+      <Paper elevation={2} sx={{ mb: 4 }}>
+        <Box className="flex flex-col md:flex-row items-center md:justify-between gap-4 p-3">
+          {mainSections.map((sec, idx) => (
+            <Button
+              key={sec.label}
+              variant={activeMainTab === idx ? "primary" : "outline"}
+              className="rounded-full px-4 font-semibold"
+              onClick={() => setActiveMainTab(idx)}
+              aria-label={`Navigate to ${sec.label}`}
+              type="button"
+            >
+              {sec.icon}
+              <span className="ml-1">{sec.label}</span>
+            </Button>
+          ))}
+        </Box>
+        <Divider sx={{ my: 1 }} />
+        <Box className="p-4">
+          {mainSections[activeMainTab].content}
+        </Box>
+      </Paper>
+      <Box sx={{ mt: 8, pt: 3, borderTop: 1, borderColor: 'divider' }}>
+        <Typography variant="body2" color="text.secondary" align="center">
+          Demo Version 1.0.0 | Last Updated: {lastUpdated || ""}
+        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 3, mt: 2 }}>
+          <Link href="/" style={{ color: theme.palette.primary.main, textDecoration: 'none' }}>
+            Home
+          </Link>
+          <Link href="/settings" style={{ color: theme.palette.primary.main, textDecoration: 'none' }}>
+            Settings
+          </Link>
+          <Link href="/help" style={{ color: theme.palette.primary.main, textDecoration: 'none' }}>
+            Help
+          </Link>
+          <Button variant="outline" size="sm" onClick={() => router.push('/dashboard')}>
+            Dashboard
+          </Button>
+        </Box>
+        <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 2 }}>
+          Thrive Send Marketing Platform - All rights reserved
+        </Typography>
+      </Box>
+    </Container>
+  );
+}

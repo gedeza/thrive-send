@@ -5,9 +5,9 @@ import { logger } from '../utils/logger';
 
 export class EnhancedPrismaClient {
   private static instance: EnhancedPrismaClient;
-  private connectionPool: EnhancedConnectionPool;
-  private queryOptimizer: QueryOptimizationService;
-  private prisma: PrismaClient;
+  private connectionPool!: EnhancedConnectionPool;
+  private queryOptimizer!: QueryOptimizationService;
+  private prisma!: PrismaClient;
 
   private constructor() {
     this.initializeClient();

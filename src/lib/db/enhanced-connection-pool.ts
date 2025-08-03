@@ -18,7 +18,7 @@ export interface DatabaseConfig {
 
 export class EnhancedConnectionPool {
   private static instance: EnhancedConnectionPool;
-  private prisma: PrismaClient;
+  private prisma!: PrismaClient;
   private config: DatabaseConfig;
   private connectionStats: {
     activeConnections: number;
@@ -145,7 +145,7 @@ export class EnhancedConnectionPool {
     return url.toString();
   }
 
-  private getLogLevel(): string[] {
+  private getLogLevel(): ('query' | 'error' | 'warn' | 'info')[] {
     const nodeEnv = process.env.NODE_ENV || 'development';
     
     switch (nodeEnv) {
