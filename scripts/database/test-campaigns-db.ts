@@ -1,5 +1,5 @@
 // scripts/test-campaigns-db.ts
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, CampaignStatus, CampaignGoalType } from '@prisma/client';
 
 async function main() {
   console.log('Initializing Prisma client...');
@@ -41,9 +41,8 @@ async function main() {
         data: {
           name: 'Test Campaign',
           description: 'Created by test script',
-          status: 'DRAFT',
-          channel: 'Email',
-          audience: 'Test Audience',
+          status: CampaignStatus.draft,
+          goalType: CampaignGoalType.AWARENESS,
           startDate: new Date(),
           endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 1 week later
           organizationId: org.id,

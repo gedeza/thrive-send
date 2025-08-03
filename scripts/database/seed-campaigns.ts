@@ -1,5 +1,5 @@
 // scripts/seed-campaigns.ts
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, CampaignStatus, CampaignGoalType } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -76,12 +76,14 @@ async function main() {
     {
       id: "proj1",
       name: "Website Redesign",
-      description: "Complete overhaul of company website"
+      description: "Complete overhaul of company website",
+      organizationId: "org1" // Required field
     },
     {
       id: "proj2",
       name: "Product Launch Campaign",
-      description: "Marketing campaign for new product line"
+      description: "Marketing campaign for new product line",
+      organizationId: "org2" // Required field
     }
   ];
 
@@ -104,9 +106,10 @@ async function main() {
       description: 'Promotion for our summer collection',
       startDate: new Date('2023-07-01'),
       endDate: new Date('2023-07-15'),
-      status: 'completed', // was SENT
+      status: CampaignStatus.completed,
       budget: 1500,
-      goals: 'Increase summer sales by 20%',
+      customGoal: 'Increase summer sales by 20%',
+      goalType: CampaignGoalType.REVENUE,
       organizationId: "org1",
       clientId: "client1",
       projectId: null, // Explicitly null
@@ -116,9 +119,10 @@ async function main() {
       description: 'New product announcement campaign',
       startDate: new Date('2023-06-28'),
       endDate: new Date('2023-07-28'),
-      status: 'draft', // was DRAFT
+      status: CampaignStatus.draft,
       budget: null, // Explicitly null
-      goals: null,  // Explicitly null
+      customGoal: null,  // Explicitly null
+      goalType: CampaignGoalType.AWARENESS,
       organizationId: "org2",
       clientId: null, // Explicitly null
       projectId: "proj2"
@@ -128,9 +132,10 @@ async function main() {
       description: 'Regular updates and offers',
       startDate: new Date('2023-05-20'),
       endDate: new Date('2023-06-01'),
-      status: 'completed', // was COMPLETED
+      status: CampaignStatus.completed,
       budget: null, // Explicitly null
-      goals: null,  // Explicitly null
+      customGoal: null,  // Explicitly null
+      goalType: CampaignGoalType.RETENTION,
       organizationId: "org3",
       clientId: null, // Explicitly null
       projectId: null, // Explicitly null
@@ -140,9 +145,10 @@ async function main() {
       description: 'End of year promotional campaign',
       startDate: new Date('2023-11-15'),
       endDate: new Date('2023-12-31'),
-      status: 'active', // was PLANNED
+      status: CampaignStatus.active,
       budget: 5000,
-      goals: 'Drive holiday sales and increase customer engagement',
+      customGoal: 'Drive holiday sales and increase customer engagement',
+      goalType: CampaignGoalType.CONVERSION,
       organizationId: "org1",
       clientId: "client2",
       projectId: null, // Explicitly null
@@ -152,9 +158,10 @@ async function main() {
       description: 'Social media campaign to increase brand visibility',
       startDate: new Date('2023-08-01'),
       endDate: new Date('2023-10-31'),
-      status: 'active', // was ACTIVE
+      status: CampaignStatus.active,
       budget: 3500,
-      goals: 'Increase social media followers by 15%',
+      customGoal: 'Increase social media followers by 15%',
+      goalType: CampaignGoalType.AWARENESS,
       organizationId: "org2",
       clientId: null, // Explicitly null
       projectId: "proj1"

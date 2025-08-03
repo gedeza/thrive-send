@@ -15,7 +15,12 @@ import {
   ShoppingCart,
   TrendingUp,
   CheckCircle,
-  Target
+  Target,
+  Building2,
+  Zap,
+  Clock,
+  Repeat,
+  Share2
 } from "lucide-react";
 
 /**
@@ -111,6 +116,50 @@ export const defaultSidebarItems: SidebarItemWithRoles[] = [
         icon: <TrendingUp size={16} />,
         href: "/content/seo",
         roles: ["admin", "manager", "user"], // Content creators and SEO optimizers
+      }
+    ]
+  },
+  {
+    key: "service-provider",
+    label: "Service Provider",
+    icon: <Building2 size={18} />,
+    href: "/service-provider",
+    roles: ["admin", "manager"], // B2B2G service provider features
+    children: [
+      {
+        key: "service-provider-templates",
+        label: "Template Library",
+        icon: <FileText size={16} />,
+        href: "/service-provider/templates",
+        roles: ["admin", "manager"],
+      },
+      {
+        key: "service-provider-analytics",
+        label: "Client Analytics",
+        icon: <BarChart3 size={16} />,
+        href: "/service-provider/analytics",
+        roles: ["admin", "manager"],
+      },
+      {
+        key: "service-provider-approvals",
+        label: "Approval Workflows",
+        icon: <CheckCircle size={16} />,
+        href: "/service-provider/approvals",
+        roles: ["admin", "manager"],
+      },
+      {
+        key: "service-provider-bulk-ops",
+        label: "Bulk Operations",
+        icon: <Zap size={16} />,
+        href: "/service-provider/bulk-operations",
+        roles: ["admin", "manager"],
+      },
+      {
+        key: "service-provider-scheduling",
+        label: "Content Scheduler",
+        icon: <Clock size={16} />,
+        href: "/service-provider/scheduling",
+        roles: ["admin", "manager"],
       }
     ]
   },

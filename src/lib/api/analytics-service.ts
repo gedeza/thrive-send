@@ -787,3 +787,281 @@ function generateMockABTestResults(testId: string) {
     timeline,
   };
 }
+
+// 🚀 B2B2G SERVICE PROVIDER ANALYTICS - Extended Interfaces and Functions
+
+export interface ServiceProviderClientAnalytics {
+  clientId: string;
+  clientName: string;
+  clientType: string;
+  contentMetrics: {
+    totalContent: number;
+    publishedContent: number;
+    draftContent: number;
+    contentTypes: Record<string, number>;
+    avgEngagementRate: number;
+    totalViews: number;
+    totalClicks: number;
+    conversionRate: number;
+  };
+  performanceData: Array<{
+    date: string;
+    views: number;
+    engagement: number;
+    clicks: number;
+    impressions: number;
+    reach: number;
+  }>;
+  topContent: Array<{
+    id: string;
+    title: string;
+    type: string;
+    publishedAt: string;
+    views: number;
+    engagement: number;
+    clicks: number;
+  }>;
+}
+
+export interface ServiceProviderCrossClientAnalytics {
+  aggregateMetrics: {
+    totalClients: number;
+    totalContent: number;
+    totalPublishedContent: number;
+    averageEngagement: number;
+    totalViews: number;
+    totalClicks: number;
+    averageConversionRate: number;
+  };
+  clientAnalytics: ServiceProviderClientAnalytics[];
+  contentTypeDistribution: Record<string, number>;
+  clientRankings: {
+    byEngagement: ServiceProviderClientAnalytics[];
+    byViews: ServiceProviderClientAnalytics[];
+    byConversion: ServiceProviderClientAnalytics[];
+  };
+  timeRange: string;
+  compareClients: boolean;
+  generatedAt: string;
+  insights: Array<{
+    type: 'success' | 'warning' | 'info' | 'error';
+    title: string;
+    message: string;
+    impact: 'high' | 'medium' | 'low';
+  }>;
+}
+
+export interface ServiceProviderSingleClientAnalyticsResponse {
+  clientAnalytics: ServiceProviderClientAnalytics;
+  timeRange: string;
+  generatedAt: string;
+}
+
+/**
+ * Get analytics for a specific client in service provider context
+ */
+export async function getServiceProviderClientAnalytics(params: {
+  organizationId: string;
+  clientId: string;
+  timeRange?: '7d' | '30d' | '90d' | '1y';
+}): Promise<ServiceProviderSingleClientAnalyticsResponse> {
+  try {
+    console.log('📊 Fetching service provider client analytics:', params);
+    
+    const queryParams = new URLSearchParams({
+      organizationId: params.organizationId,
+      clientId: params.clientId,
+      timeRange: params.timeRange || '30d',
+    });
+
+    const response = await fetch(`${SERVICE_PROVIDER_ANALYTICS_API_URL}?${queryParams}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('Service Provider Client Analytics API Error:', error);
+      throw new Error(error.message || 'Failed to fetch client analytics');
+    }
+
+    const data = await response.json();
+    console.log('✅ Service provider client analytics fetched:', {
+      clientId: params.clientId,
+      contentCount: data.clientAnalytics.contentMetrics.totalContent
+    });
+
+    return data;
+  } catch (error) {
+    console.error('❌ Error fetching service provider client analytics:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get cross-client analytics for service provider dashboard
+ */
+export async function getServiceProviderCrossClientAnalytics(params: {
+  organizationId: string;
+  timeRange?: '7d' | '30d' | '90d' | '1y';
+  compareClients?: boolean;
+}): Promise<ServiceProviderCrossClientAnalytics> {
+  try {
+    console.log('📊 Fetching service provider cross-client analytics:', params);
+    
+    const queryParams = new URLSearchParams({
+      organizationId: params.organizationId,
+      clientId: 'all',
+      timeRange: params.timeRange || '30d',
+      compareClients: params.compareClients ? 'true' : 'false',
+    });
+
+    const response = await fetch(`${SERVICE_PROVIDER_ANALYTICS_API_URL}?${queryParams}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('Service Provider Cross-Client Analytics API Error:', error);
+      throw new Error(error.message || 'Failed to fetch cross-client analytics');
+    }
+
+    const data = await response.json();
+    console.log('✅ Service provider cross-client analytics fetched:', {
+      clientCount: data.aggregateMetrics.totalClients,
+      totalContent: data.aggregateMetrics.totalContent
+    });
+
+    return data;
+  } catch (error) {
+    console.error('❌ Error fetching service provider cross-client analytics:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get client performance comparison for service providers
+ */
+export async function getServiceProviderClientPerformanceComparison(params: {
+  organizationId: string;
+  clientIds: string[];
+  timeRange?: '7d' | '30d' | '90d' | '1y';
+  metrics?: string[];
+}): Promise<{
+  comparisonData: Array<{
+    clientId: string;
+    clientName: string;
+    metrics: Record<string, number>;
+    performanceData: Array<{
+      date: string;
+      [key: string]: number | string;
+    }>;
+  }>;
+  timeRange: string;
+  comparedMetrics: string[];
+  insights: Array<{
+    type: 'success' | 'warning' | 'info';
+    message: string;
+    clientsAffected: string[];
+  }>;
+}> {
+  try {
+    console.log('📊 Fetching service provider client performance comparison:', params);
+
+    // Get individual client data for each client
+    const clientAnalyticsPromises = params.clientIds.map(clientId =>
+      getServiceProviderClientAnalytics({
+        organizationId: params.organizationId,
+        clientId,
+        timeRange: params.timeRange
+      })
+    );
+
+    const clientAnalyticsResults = await Promise.all(clientAnalyticsPromises);
+    
+    // Transform data for comparison
+    const comparisonData = clientAnalyticsResults.map(result => ({
+      clientId: result.clientAnalytics.clientId,
+      clientName: result.clientAnalytics.clientName,
+      metrics: {
+        totalContent: result.clientAnalytics.contentMetrics.totalContent,
+        avgEngagementRate: result.clientAnalytics.contentMetrics.avgEngagementRate,
+        totalViews: result.clientAnalytics.contentMetrics.totalViews,
+        totalClicks: result.clientAnalytics.contentMetrics.totalClicks,
+        conversionRate: result.clientAnalytics.contentMetrics.conversionRate
+      },
+      performanceData: result.clientAnalytics.performanceData
+    }));
+
+    // Generate comparison insights
+    const insights = generateServiceProviderComparisonInsights(comparisonData);
+
+    const result = {
+      comparisonData,
+      timeRange: params.timeRange || '30d',
+      comparedMetrics: params.metrics || ['avgEngagementRate', 'totalViews', 'conversionRate'],
+      insights
+    };
+
+    console.log('✅ Service provider client performance comparison generated:', {
+      clientCount: comparisonData.length,
+      insightCount: insights.length
+    });
+
+    return result;
+  } catch (error) {
+    console.error('❌ Error generating service provider client performance comparison:', error);
+    throw error;
+  }
+}
+
+// Helper function to generate service provider specific comparison insights
+function generateServiceProviderComparisonInsights(comparisonData: any[]) {
+  const insights = [];
+  
+  // Find best and worst performers
+  const byEngagement = [...comparisonData].sort((a, b) => b.metrics.avgEngagementRate - a.metrics.avgEngagementRate);
+  const bestEngagement = byEngagement[0];
+  const worstEngagement = byEngagement[byEngagement.length - 1];
+  
+  if (bestEngagement && worstEngagement && byEngagement.length > 1) {
+    const gap = bestEngagement.metrics.avgEngagementRate - worstEngagement.metrics.avgEngagementRate;
+    if (gap > 5) {
+      insights.push({
+        type: 'warning' as const,
+        message: `${gap.toFixed(1)}% engagement gap between ${bestEngagement.clientName} and ${worstEngagement.clientName}`,
+        clientsAffected: [bestEngagement.clientId, worstEngagement.clientId]
+      });
+    }
+  }
+  
+  // Volume insights
+  const totalContent = comparisonData.reduce((sum, client) => sum + client.metrics.totalContent, 0);
+  const avgContent = totalContent / comparisonData.length;
+  const lowVolumeClients = comparisonData.filter(client => client.metrics.totalContent < avgContent * 0.7);
+  
+  if (lowVolumeClients.length > 0) {
+    insights.push({
+      type: 'info' as const,
+      message: `${lowVolumeClients.length} client(s) producing below-average content volume`,
+      clientsAffected: lowVolumeClients.map(client => client.clientId)
+    });
+  }
+
+  // Service provider specific insights
+  const highPerformers = comparisonData.filter(client => client.metrics.avgEngagementRate > avgContent * 1.2);
+  if (highPerformers.length > 0) {
+    insights.push({
+      type: 'success' as const,
+      message: `${highPerformers.length} client(s) exceeding performance benchmarks - consider sharing best practices`,
+      clientsAffected: highPerformers.map(client => client.clientId)
+    });
+  }
+  
+  return insights;
+}

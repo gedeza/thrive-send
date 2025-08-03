@@ -8,7 +8,7 @@
  */
 
 import { performance } from 'perf_hooks';
-import fetch from 'node-fetch';
+// Using built-in Node.js fetch (Node 18+)
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs';
@@ -475,4 +475,5 @@ if (require.main === module) {
   });
 }
 
-export { PerformanceTestRunner, PerformanceTestConfig };
+export { PerformanceTestRunner };
+export type { PerformanceTestConfig };

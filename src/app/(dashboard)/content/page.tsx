@@ -11,10 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChevronLeft, ChevronRight, Grid, List, MoreHorizontal, Plus, Search, Trash, RefreshCw, Edit, Eye, Calendar, Clock, Tag, FileText, Newspaper, Share2, Mail, BarChart3, TrendingUp } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Grid, List, MoreHorizontal, Plus, Search, Trash, RefreshCw, Edit, Eye, Calendar, Clock, Tag, FileText, Newspaper, Share2, Mail, BarChart3, TrendingUp, Users } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { listContent, deleteContent, ContentData } from '@/lib/api/content-service';
+import { useServiceProvider, type ClientSummary } from '@/context/ServiceProviderContext';
 import { toast } from '@/components/ui/use-toast';
 import { ContentCalendarSync } from '@/components/content/ContentCalendarSync';
 import { SystemMonitor } from '@/components/debug/SystemMonitor';
@@ -102,6 +103,12 @@ const STATUS_CONFIG = {
 function ContentLibraryPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  
+  // 🚀 B2B2G SERVICE PROVIDER INTEGRATION
+  const { 
+    state: { organizationId, selectedClient }, 
+    switchClient 
+  } = useServiceProvider();
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -130,36 +137,48 @@ function ContentLibraryPage() {
     debouncedSearch(searchQuery);
   }, [searchQuery, debouncedSearch]);
 
-  // Define queryParams with debounced search
+  // 🎯 CLIENT-AWARE QUERY PARAMS
   const queryParams = useMemo(() => {
     const params = new URLSearchParams({
       page: currentPage.toString(),
       limit: ITEMS_PER_PAGE.toString(),
       sortBy: sortBy,
       sortOrder: sortOrder,
+      organizationId: organizationId || 'demo-org',
     });
+    
+    // Add client context if specific client selected
+    if (selectedClient) {
+      params.set('clientId', selectedClient.id);
+    }
     
     if (statusFilter !== 'all') params.set('status', statusFilter);
     if (contentTypeFilter !== 'all') params.set('contentType', contentTypeFilter);
     if (debouncedSearchQuery) params.set('search', debouncedSearchQuery);
     
     return params;
-  }, [currentPage, statusFilter, contentTypeFilter, debouncedSearchQuery, sortBy, sortOrder]);
+  }, [currentPage, statusFilter, contentTypeFilter, debouncedSearchQuery, sortBy, sortOrder, organizationId, selectedClient]);
 
-  // Single useQuery hook with proper configuration
+  // 🚀 CLIENT-AWARE CONTENT QUERY
   const {
     data: contentData,
     isLoading,
     error,
     refetch
   } = useQuery({
-    queryKey: ['content', Object.fromEntries(queryParams.entries())], // Use object instead of string for better key handling
-    queryFn: () => listContent(Object.fromEntries(queryParams.entries())),
+    queryKey: ['service-provider-content', Object.fromEntries(queryParams.entries())], // Service provider specific cache key
+    queryFn: () => {
+      // Use client-aware API parameters
+      const apiParams = Object.fromEntries(queryParams.entries());
+      console.log('🎯 Content API call with params:', apiParams);
+      return listContent(apiParams);
+    },
     staleTime: 2 * 60 * 1000, // 2 minutes - balance between freshness and performance
     cacheTime: 10 * 60 * 1000, // 10 minutes in memory
     refetchOnMount: false, // Don't refetch on every mount - rely on cache
     refetchOnWindowFocus: false, // Don't refetch on window focus - too aggressive
     retry: 1, // Limit retries for failed requests
+    enabled: !!organizationId, // Only run query when we have organization context
   });
 
   // Remove aggressive manual refetch on mount - React Query handles this with proper cache settings
@@ -168,6 +187,11 @@ function ContentLibraryPage() {
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  // Update showBulkActions when selectedItems changes
+  useEffect(() => {
+    setShowBulkActions(selectedItems.length > 0);
+  }, [selectedItems]);
 
   // Listen for content creation events and invalidate cache
   useEffect(() => {
@@ -244,12 +268,15 @@ function ContentLibraryPage() {
 
   // Enhanced content stats with analytics
   const contentStats = useMemo(() => {
-    if (!filteredContent.length) return null;
+    if (!filteredContent || !filteredContent.length) return null;
     
     const stats = filteredContent.reduce((acc, item) => {
-      // Convert status to lowercase for consistent key matching
-      const statusKey = item.status.toLowerCase();
-      const typeKey = item.type.toLowerCase();
+      // Ensure item exists and has required properties
+      if (!item) return acc;
+      
+      // Convert status to lowercase for consistent key matching with null safety
+      const statusKey = item.status?.toLowerCase() || 'unknown';
+      const typeKey = item.type?.toLowerCase() || 'unknown';
       
       acc[statusKey] = (acc[statusKey] || 0) + 1;
       acc[typeKey] = (acc[typeKey] || 0) + 1;
@@ -324,7 +351,6 @@ function ContentLibraryPage() {
         ? prev.filter(itemId => itemId !== id)
         : [...prev, id];
       
-      setShowBulkActions(newSelection.length > 0);
       return newSelection;
     });
   }, []);
@@ -332,7 +358,6 @@ function ContentLibraryPage() {
   const handleSelectAll = useCallback(() => {
     const newSelection = isAllSelected ? [] : filteredContent.map((item: ContentData) => item.id!);
     setSelectedItems(newSelection);
-    setShowBulkActions(newSelection.length > 0);
   }, [isAllSelected, filteredContent]);
 
   const clearSelection = useCallback(() => {
@@ -387,12 +412,77 @@ function ContentLibraryPage() {
         <div className="flex items-center justify-center gap-3 mb-4">
           <FileText className="h-8 w-8 text-primary" />
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-            Content Library
+            {selectedClient ? `${selectedClient.name} Content` : 'Service Provider Content'}
           </h1>
         </div>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Create, manage, and schedule your content across all channels and platforms.
+          {selectedClient 
+            ? `Manage content for ${selectedClient.name} across all channels and platforms.`
+            : 'Create, manage, and schedule content across all client channels and platforms.'
+          }
         </p>
+      </div>
+      
+      {/* 🚀 SERVICE PROVIDER CLIENT INTERFACE */}
+      <div className="flex items-center justify-between mb-6 p-4 bg-muted/30 rounded-lg">
+        <div className="flex items-center space-x-4">
+          {selectedClient ? (
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-sm">
+                {selectedClient.name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2)}
+              </div>
+              <div>
+                <div className="font-semibold text-lg">{selectedClient.name}</div>
+                <div className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Badge variant="outline">{selectedClient.type}</Badge>
+                  <span>•</span>
+                  <span>{selectedClient.performanceScore || 0}% performance</span>
+                </div>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => switchClient(null)}
+                className="ml-4"
+              >
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                All Clients
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <Users className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <div className="font-semibold text-lg">All Clients Content Overview</div>
+                <div className="text-sm text-muted-foreground">
+                  Manage content across all your clients
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => router.push('/clients')}
+          >
+            <Users className="h-4 w-4 mr-2" />
+            Manage Clients
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => router.push('/dashboard')}
+          >
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Dashboard
+          </Button>
+        </div>
       </div>
 
       <div className="flex items-center justify-end gap-2 mb-8">
@@ -536,6 +626,53 @@ function ContentLibraryPage() {
             </CardContent>
           </Card>
         </div>
+      )}
+      
+      {/* 🎯 CLIENT-SPECIFIC PERFORMANCE METRICS */}
+      {selectedClient && contentStats && (
+        <Card className="mb-6 border-l-4 border-l-primary">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              {selectedClient.name} Content Performance
+            </h3>
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <p className="text-2xl font-bold text-blue-600">{filteredContent.length}</p>
+                <p className="text-sm text-muted-foreground">Client Content Items</p>
+              </div>
+              <div className="text-center p-4 bg-green-50 rounded-lg">
+                <p className="text-2xl font-bold text-green-600">{selectedClient.performanceScore || 0}%</p>
+                <p className="text-sm text-muted-foreground">Client Performance Score</p>
+              </div>
+              <div className="text-center p-4 bg-purple-50 rounded-lg">
+                <p className="text-2xl font-bold text-purple-600">{selectedClient.activeCampaigns || 0}</p>
+                <p className="text-sm text-muted-foreground">Active Campaigns</p>
+              </div>
+              <div className="text-center p-4 bg-orange-50 rounded-lg">
+                <p className="text-2xl font-bold text-orange-600">{selectedClient.engagementRate?.toFixed(1) || '0.0'}%</p>
+                <p className="text-sm text-muted-foreground">Engagement Rate</p>
+              </div>
+            </div>
+            
+            <div className="mt-4 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Badge variant="outline">{selectedClient.type}</Badge>
+                <span>•</span>
+                <span>Last activity: {selectedClient.lastActivity ? formatDistanceToNow(new Date(selectedClient.lastActivity), { addSuffix: true }) : 'N/A'}</span>
+              </div>
+              
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => router.push(`/clients/${selectedClient.id}`)}
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                View Client Details
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Analytics Summary */}
@@ -983,8 +1120,8 @@ interface ContentCardProps {
 }
 
 function ContentCard({ item, analytics, isSelected, onSelect, onDelete, realtimeUpdates = {} }: ContentCardProps) {
-  const typeConfig = CONTENT_TYPE_CONFIG[item.type.toLowerCase() as keyof typeof CONTENT_TYPE_CONFIG];
-  const statusConfig = STATUS_CONFIG[item.status.toLowerCase() as keyof typeof STATUS_CONFIG];
+  const typeConfig = CONTENT_TYPE_CONFIG[(item.type?.toLowerCase() || 'blog') as keyof typeof CONTENT_TYPE_CONFIG];
+  const statusConfig = STATUS_CONFIG[(item.status?.toLowerCase() || 'draft') as keyof typeof STATUS_CONFIG];
   
   return (
     <Card className={cn(
@@ -992,9 +1129,9 @@ function ContentCard({ item, analytics, isSelected, onSelect, onDelete, realtime
       isSelected ? "border-l-blue-500 bg-blue-50" : "border-l-transparent hover:border-l-gray-300"
     )} style={{ 
       borderLeftColor: !isSelected ? (
-        item.status.toLowerCase() === 'published' ? '#22c55e' :
-        item.status.toLowerCase() === 'scheduled' ? '#3b82f6' :
-        item.status.toLowerCase() === 'draft' ? '#f59e0b' : '#6b7280'
+        item.status?.toLowerCase() === 'published' ? '#22c55e' :
+        item.status?.toLowerCase() === 'scheduled' ? '#3b82f6' :
+        item.status?.toLowerCase() === 'draft' ? '#f59e0b' : '#6b7280'
       ) : undefined
     }}>
       <CardHeader className="pb-3">
@@ -1139,8 +1276,8 @@ function ContentCard({ item, analytics, isSelected, onSelect, onDelete, realtime
 
 // Enhanced List Item Component
 function ContentListItem({ item, analytics, isSelected, onSelect, onDelete, realtimeUpdates = {} }: ContentCardProps) {
-  const typeConfig = CONTENT_TYPE_CONFIG[item.type.toLowerCase() as keyof typeof CONTENT_TYPE_CONFIG];
-  const statusConfig = STATUS_CONFIG[item.status.toLowerCase() as keyof typeof STATUS_CONFIG];
+  const typeConfig = CONTENT_TYPE_CONFIG[(item.type?.toLowerCase() || 'blog') as keyof typeof CONTENT_TYPE_CONFIG];
+  const statusConfig = STATUS_CONFIG[(item.status?.toLowerCase() || 'draft') as keyof typeof STATUS_CONFIG];
   
   return (
     <Card className={cn(
@@ -1148,9 +1285,9 @@ function ContentListItem({ item, analytics, isSelected, onSelect, onDelete, real
       isSelected ? "border-l-blue-500 bg-blue-50" : "border-l-transparent hover:border-l-gray-300"
     )} style={{ 
       borderLeftColor: !isSelected ? (
-        item.status.toLowerCase() === 'published' ? '#22c55e' :
-        item.status.toLowerCase() === 'scheduled' ? '#3b82f6' :
-        item.status.toLowerCase() === 'draft' ? '#f59e0b' : '#6b7280'
+        item.status?.toLowerCase() === 'published' ? '#22c55e' :
+        item.status?.toLowerCase() === 'scheduled' ? '#3b82f6' :
+        item.status?.toLowerCase() === 'draft' ? '#f59e0b' : '#6b7280'
       ) : undefined
     }}>
       <CardContent className="p-4">

@@ -37,12 +37,12 @@ async function testCalendar() {
       data: {
         title: 'Test Event',
         description: 'This is a test event',
-        date: '2024-03-20',
-        time: '10:00',
         status: 'draft',
         type: 'email',
-        userId: user.id,
+        createdBy: user.id,
         organizationId: org.id,
+        startTime: new Date('2024-03-20T10:00:00Z'),
+        endTime: new Date('2024-03-20T11:00:00Z'),
       },
     });
     console.log('✅ Test calendar event created:', event);

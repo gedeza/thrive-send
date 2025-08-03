@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Users, Globe, Facebook, Twitter, Instagram, Linkedin, Mail, User, RefreshCcw, TrendingUp, Building2, Activity, CheckCircle2, Search, Grid, List, Filter, MoreHorizontal, Edit, Eye, MapPin } from "lucide-react";
-import { useServiceProvider } from '@/context/ServiceProviderContext';
+import { useServiceProvider, type ClientSummary } from '@/context/ServiceProviderContext';
+import { useRouter } from 'next/navigation';
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -196,7 +197,8 @@ function ClientsPageContent() {
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [industryFilter, setIndustryFilter] = useState<string>('all');
   const [performanceFilter, setPerformanceFilter] = useState<string>('all');
-  const { state: { organizationId, currentUser } } = useServiceProvider();
+  const { state: { organizationId, currentUser }, switchClient } = useServiceProvider();
+  const router = useRouter();
 
   const fetchClients = useCallback(async () => {
     setLoading(true);
@@ -402,9 +404,32 @@ function ClientsPageContent() {
         <div className="mb-8">
           <ClientPerformanceRankings 
             clients={filteredClients}
-            onClientSelect={(clientId) => {
-              // TODO: Implement client switching logic when ServiceProvider context supports it
-              console.log('Switch to client:', clientId);
+            onClientSelect={async (clientId) => {
+              try {
+                // Find the client data
+                const selectedClient = filteredClients.find(c => c.id === clientId);
+                if (selectedClient) {
+                  // Convert to ClientSummary format for ServiceProviderContext
+                  const clientSummary: ClientSummary = {
+                    id: selectedClient.id,
+                    name: selectedClient.name,
+                    type: selectedClient.type,
+                    status: selectedClient.status === 'active' ? 'ACTIVE' : 'INACTIVE',
+                    logoUrl: selectedClient.logoUrl || undefined,
+                    performanceScore: selectedClient.performanceScore,
+                    activeCampaigns: selectedClient.projects?.length || 0,
+                    engagementRate: selectedClient.performanceScore / 20, // Convert score to engagement rate
+                    monthlyBudget: selectedClient.monthlyBudget,
+                    lastActivity: new Date(selectedClient.lastActivity),
+                  };
+                  
+                  // Switch client context and navigate to dashboard
+                  await switchClient(clientSummary);
+                  router.push('/dashboard');
+                }
+              } catch (error) {
+                console.error('Failed to switch client context:', error);
+              }
             }}
             isLoading={loading}
           />

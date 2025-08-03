@@ -8,6 +8,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { ClerkProvider } from '@clerk/nextjs';
 import { OnboardingProvider } from '@/context/OnboardingContext';
+import { ServiceProviderProvider } from '@/context/ServiceProviderContext';
 import { cn } from '@/lib/utils';
 
 const inter = Inter({ subsets: ["latin"] });
@@ -35,7 +36,7 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
         <meta name="format-detection" content="telephone=no" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <link
           href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Roboto:wght@400;500;700&display=swap"
@@ -45,9 +46,11 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <ClerkProvider>
-            <OnboardingProvider>
-              <ClientLayout>{children}</ClientLayout>
-            </OnboardingProvider>
+            <ServiceProviderProvider>
+              <OnboardingProvider>
+                <ClientLayout>{children}</ClientLayout>
+              </OnboardingProvider>
+            </ServiceProviderProvider>
           </ClerkProvider>
           <Toaster />
         </ThemeProvider>

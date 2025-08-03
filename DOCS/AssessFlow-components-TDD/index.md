@@ -1,7 +1,9 @@
 # Component Documentation Index
 
 ## Dashboard Components
-- [DashboardOverview](./dashboard/DashboardOverview.md) - Main dashboard component with metrics and analytics
+- [ServiceProviderDashboard-TDD](./dashboard/ServiceProviderDashboard-TDD.md) - **PRD-Compliant** B2B2G Service Provider Dashboard TDD
+- [ServiceProviderDashboard-UserFlows](./dashboard/ServiceProviderDashboard-UserFlows.md) - **PRD-Compliant** User interaction patterns and workflows
+- [Dashboard-Implementation-Guide](./dashboard/Dashboard-Implementation-Guide.md) - **PRD-Compliant** Implementation roadmap and checklist
 - [AnalyticsChart](./dashboard/AnalyticsChart.md) - Chart component for analytics visualization
 - [ActivityFeed](./dashboard/ActivityFeed.md) - Feed component for recent activities
 

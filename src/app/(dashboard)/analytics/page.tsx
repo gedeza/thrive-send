@@ -41,10 +41,11 @@ import {
   ConversionFunnelLazy as ConversionFunnel
 } from '@/components/lazy/LazyComponents';
 import { useAnalyticsData } from '@/lib/hooks/useAnalyticsData';
+import { ServiceProviderAnalyticsDashboard } from '@/components/analytics/ServiceProviderAnalyticsDashboard';
 
 // Types
 type AnalyticsTimeframe = 'day' | 'week' | 'month' | 'year';
-type AnalyticsTab = 'overview' | 'audience' | 'engagement' | 'revenue' | 'funnels';
+type AnalyticsTab = 'overview' | 'audience' | 'engagement' | 'revenue' | 'funnels' | 'service-provider';
 
 interface MetricCardProps {
   title: string;
@@ -343,7 +344,7 @@ function AnalyticsPageContent() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as AnalyticsTab)}>
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Activity className="h-4 w-4" />
               Overview
@@ -363,6 +364,10 @@ function AnalyticsPageContent() {
             <TabsTrigger value="funnels" className="flex items-center gap-2">
               <Target className="h-4 w-4" />
               Funnels
+            </TabsTrigger>
+            <TabsTrigger value="service-provider" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              B2B2G Analytics
             </TabsTrigger>
           </TabsList>
 
@@ -580,6 +585,19 @@ function AnalyticsPageContent() {
               campaignId={selectedCampaign !== 'all' ? selectedCampaign : undefined}
               timeframe={timeframe === 'day' ? '7d' : timeframe === 'week' ? '30d' : timeframe === 'month' ? '90d' : '1y'}
               showControls={true}
+            />
+          </TabsContent>
+
+          {/* Service Provider Analytics Tab */}
+          <TabsContent value="service-provider" className="space-y-6">
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-2">Service Provider Analytics</h3>
+              <p className="text-sm text-muted-foreground">
+                Advanced B2B2G analytics for managing multiple clients and cross-client performance comparison
+              </p>
+            </div>
+            <ServiceProviderAnalyticsDashboard 
+              defaultTimeRange={timeframe === 'day' ? '7d' : timeframe === 'week' ? '30d' : timeframe === 'month' ? '90d' : '1y'}
             />
           </TabsContent>
         </Tabs>

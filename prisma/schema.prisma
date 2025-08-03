@@ -67,6 +67,11 @@ model Organization {
   updatedAt              DateTime                 @updatedAt
   clerkOrganizationId    String?                  @unique
   settings               Json?                    @default("{}")
+  // Service Provider Enhancements
+  type                   String?                  @default("service_provider") @db.VarChar(50)
+  subscriptionTier       String?                  @default("basic") @db.VarChar(50)
+  maxClients            Int?                     @default(10)
+  marketplaceEnabled    Boolean?                 @default(true)
   assets                 Asset[]
   audiences              Audience[]
   audienceSegments       AudienceSegment[]
@@ -87,20 +92,27 @@ model Organization {
   reports                Report[]
   socialAccounts         SocialAccount[]
   subscription           Subscription?
+  // Service Provider Relations
+  serviceProviderMetrics ServiceProviderMetrics[]
+  clientPerformanceRankings ClientPerformanceRanking[]
+  crossClientAnalytics   CrossClientAnalytics[]
+  marketplaceRevenue     MarketplaceRevenue[]
   targetingRules         TargetingRule[]
   Template               Template[]
   workflows              Workflow[]
 }
 
 model OrganizationMember {
-  id             String       @id @default(cuid())
-  role           String       @default("MEMBER")
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  userId         String
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Restrict)
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  id                   String               @id @default(cuid())
+  role                 String               @default("MEMBER")
+  serviceProviderRole  ServiceProviderRole? @default(CONTENT_CREATOR)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  userId               String
+  organizationId       String
+  organization         Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  user                 User                 @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  clientAssignments    ClientAssignment[]
 
   @@unique([userId, organizationId])
 }
@@ -119,6 +131,12 @@ model Client {
   website        String?
   status         ClientStatus     @default(ACTIVE)
   logoUrl        String?
+  // Service Provider Enhancements
+  serviceProviderId String?
+  onboardedAt       DateTime?
+  contractStartDate DateTime?
+  contractEndDate   DateTime?
+  monthlyBudget     Decimal?       @db.Decimal(10,2)
   analytics      Analytics[]
   budgets        Budget[]
   campaigns      Campaign[]
@@ -128,8 +146,13 @@ model Client {
   goals          ClientGoal[]
   projects       Project[]
   socialAccounts SocialAccount[]
+  // Service Provider Relations
+  clientAssignments     ClientAssignment[]
+  performanceRankings   ClientPerformanceRanking[]
+  marketplaceRevenue    MarketplaceRevenue[]
 
   @@index([organizationId])
+  @@index([serviceProviderId])
 }
 
 model Project {
@@ -1605,4 +1628,110 @@ enum ClientStatus {
   INACTIVE
   LEAD
   ARCHIVED
+}
+
+// Service Provider Enhancements
+
+enum ServiceProviderRole {
+  OWNER
+  ADMIN
+  MANAGER
+  CONTENT_CREATOR
+  REVIEWER
+  APPROVER
+  PUBLISHER
+  ANALYST
+  CLIENT_MANAGER
+}
+
+model ClientAssignment {
+  id                   String             @id @default(cuid())
+  organizationMemberId String
+  clientId             String
+  role                 String             @default("CONTRIBUTOR")
+  permissions          Json               @default("[]")
+  assignedAt           DateTime           @default(now())
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  organizationMember   OrganizationMember @relation(fields: [organizationMemberId], references: [id], onDelete: Cascade)
+  client               Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationMemberId, clientId])
+  @@index([organizationMemberId])
+  @@index([clientId])
+}
+
+model ServiceProviderMetrics {
+  id                     String       @id @default(cuid())
+  organizationId         String
+  date                   DateTime     @db.Date
+  totalClients           Int          @default(0)
+  activeClients          Int          @default(0)
+  totalCampaigns         Int          @default(0)
+  activeCampaigns        Int          @default(0)
+  totalContent           Int          @default(0)
+  publishedContent       Int          @default(0)
+  totalRevenue           Decimal      @default(0) @db.Decimal(10,2)
+  marketplaceRevenue     Decimal      @default(0) @db.Decimal(10,2)
+  teamUtilization        Decimal      @default(0) @db.Decimal(5,2)
+  avgClientSatisfaction  Decimal      @default(0) @db.Decimal(3,2)
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+  organization           Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, date])
+  @@index([organizationId, date])
+}
+
+model ClientPerformanceRanking {
+  id               String       @id @default(cuid())
+  organizationId   String
+  clientId         String
+  rankingDate      DateTime     @db.Date
+  performanceScore Decimal      @default(0) @db.Decimal(5,2)
+  engagementRate   Decimal      @default(0) @db.Decimal(5,2)
+  growthRate       Decimal      @default(0) @db.Decimal(5,2)
+  contentVelocity  Int          @default(0)
+  budgetEfficiency Decimal      @default(0) @db.Decimal(5,2)
+  rankingPosition  Int          @default(0)
+  createdAt        DateTime     @default(now())
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client           Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, clientId, rankingDate])
+  @@index([organizationId, rankingDate])
+}
+
+model CrossClientAnalytics {
+  id               String       @id @default(cuid())
+  organizationId   String
+  metricType       String       @db.VarChar(100)
+  metricValue      Decimal      @db.Decimal(15,2)
+  comparisonPeriod String       @db.VarChar(50)
+  clientBreakdown  Json         @default("{}")
+  trendData        Json         @default("[]")
+  dateRangeStart   DateTime
+  dateRangeEnd     DateTime
+  createdAt        DateTime     @default(now())
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+model MarketplaceRevenue {
+  id              String        @id @default(cuid())
+  organizationId  String
+  clientId        String?
+  revenueType     String        @db.VarChar(50) // 'commission', 'boost', 'content', 'subscription'
+  amount          Decimal       @db.Decimal(10,2)
+  commissionRate  Decimal       @default(0) @db.Decimal(5,2)
+  transactionDate DateTime
+  description     String?
+  metadata        Json          @default("{}")
+  createdAt       DateTime      @default(now())
+  organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client          Client?       @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([clientId])
 }
