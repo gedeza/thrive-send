@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Users, Globe, Facebook, Twitter, Instagram, Linkedin, Mail, User, RefreshCcw, TrendingUp, Building2, Activity, CheckCircle2, Search, Grid, List, Filter, MoreHorizontal, Edit, Eye, MapPin } from "lucide-react";
-import { useOrganization } from "@clerk/nextjs";
+import { useServiceProvider } from '@/context/ServiceProviderContext';
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ClientsErrorBoundary } from "@/components/clients/ClientsErrorBoundary";
 import { ClientSkeletonGrid, MetricSkeletonCard } from "@/components/clients/ClientSkeletonGrid";
+import { ClientPerformanceRankings } from "@/components/clients/ClientPerformanceRankings";
 import {
   Tooltip,
   TooltipContent,
@@ -40,9 +41,10 @@ type Project = {
   name: string;
   status: "ACTIVE" | "PLANNED" | "COMPLETED";
 };
-type Client = {
+interface ClientAccount {
   id: string;
   name: string;
+  organizationId: string; // Service provider org ID
   email: string;
   type: ClientType;
   status: ClientStatus;
@@ -50,16 +52,34 @@ type Client = {
   website?: string;
   logoUrl?: string;
   createdAt: string;
+  
+  // Service provider specific fields
+  performanceScore: number; // 0-100
+  assignedTeamMembers?: TeamMemberAssignment[];
+  primaryManager?: string;
+  monthlyBudget?: number;
+  lastActivity: string;
+  
+  // Legacy fields for compatibility
   socialAccounts: SocialAccount[];
   projects: Project[];
-};
+}
 
-type ClientStats = {
+interface TeamMemberAssignment {
+  userId: string;
+  userName: string;
+  role: 'manager' | 'creator' | 'reviewer' | 'analyst';
+  permissions: string[];
+  assignedAt: string;
+}
+
+interface ServiceProviderClientStats {
   totalClients: number;
   activeClients: number;
   newClientsThisMonth: number;
   clientGrowth: number;
-  activeClientPercentage: number;
+  averagePerformanceScore: number;
+  topPerformingClients: ClientAccount[];
   clientsByType: Record<string, number>;
   clientsByStatus: Record<string, number>;
   projects: {
@@ -68,7 +88,7 @@ type ClientStats = {
     completed: number;
     completionRate: number;
   };
-};
+}
 
 // Badge coloring for client types
 const typeBadge = {
@@ -164,8 +184,8 @@ function MetricCard({ title, value, description, icon, change, isLoading, trend 
 }
 
 function ClientsPageContent() {
-  const [clients, setClients] = useState<Client[]>([]);
-  const [stats, setStats] = useState<ClientStats | null>(null);
+  const [clients, setClients] = useState<ClientAccount[]>([]);
+  const [stats, setStats] = useState<ServiceProviderClientStats | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [statsLoading, setStatsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -175,18 +195,19 @@ function ClientsPageContent() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [industryFilter, setIndustryFilter] = useState<string>('all');
-  const { organization } = useOrganization();
+  const [performanceFilter, setPerformanceFilter] = useState<string>('all');
+  const { state: { organizationId, currentUser } } = useServiceProvider();
 
   const fetchClients = useCallback(async () => {
     setLoading(true);
     setError(null);
     
     try {
-      if (!organization?.id) {
-        throw new Error("No organization selected");
+      if (!organizationId) {
+        throw new Error("No service provider organization");
       }
 
-      const res = await fetch(`/api/clients?organizationId=${organization.id}`);
+      const res = await fetch(`/api/service-provider/clients?organizationId=${organizationId}`);
       
       if (!res.ok) {
         const errorText = await res.text();
@@ -210,18 +231,18 @@ function ClientsPageContent() {
     } finally {
       setLoading(false);
     }
-  }, [organization?.id]);
+  }, [organizationId]);
 
   const fetchStats = useCallback(async () => {
     setStatsLoading(true);
     setStatsError(null);
     
     try {
-      if (!organization?.id) {
+      if (!organizationId) {
         return;
       }
 
-      const res = await fetch(`/api/clients/stats?organizationId=${organization.id}`);
+      const res = await fetch(`/api/service-provider/clients/metrics?organizationId=${organizationId}`);
       
       if (!res.ok) {
         const errorText = await res.text();
@@ -245,14 +266,14 @@ function ClientsPageContent() {
     } finally {
       setStatsLoading(false);
     }
-  }, [organization?.id]);
+  }, [organizationId]);
 
   useEffect(() => {
-    if (organization?.id) {
+    if (organizationId) {
       fetchClients();
       fetchStats();
     }
-  }, [organization?.id, fetchClients, fetchStats]);
+  }, [organizationId, fetchClients, fetchStats]);
 
   const handleRefresh = useCallback(() => {
     fetchClients();
@@ -288,8 +309,21 @@ function ClientsPageContent() {
       filtered = filtered.filter(client => client.industry === industryFilter);
     }
 
+    // Performance filter
+    if (performanceFilter !== 'all') {
+      filtered = filtered.filter(client => {
+        if (!client.performanceScore) return false;
+        switch (performanceFilter) {
+          case 'excellent': return client.performanceScore >= 90;
+          case 'good': return client.performanceScore >= 70 && client.performanceScore < 90;
+          case 'needs-attention': return client.performanceScore < 70;
+          default: return true;
+        }
+      });
+    }
+
     return filtered;
-  }, [search, clients, statusFilter, typeFilter, industryFilter]);
+  }, [search, clients, statusFilter, typeFilter, industryFilter, performanceFilter]);
 
   // Get unique industries for filter dropdown
   const uniqueIndustries = useMemo(() => {
@@ -327,76 +361,56 @@ function ClientsPageContent() {
         </div>
 
       {/* Metrics Overview */}
-      {/* Statistics Cards */}
+      {/* Service Provider Client Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card className="hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Clients</p>
-                <p className="text-3xl font-bold">{stats?.totalClients || 0}</p>
-                {stats?.clientGrowth !== undefined && (
-                  <div className={cn(
-                    "flex items-center text-xs font-medium mt-1",
-                    stats.clientGrowth >= 0 ? 'text-green-600' : 'text-red-600'
-                  )}>
-                    <TrendingUp className={cn(
-                      "mr-1 h-3 w-3",
-                      stats.clientGrowth < 0 && "rotate-180"
-                    )} />
-                    {stats.clientGrowth >= 0 ? '+' : ''}{stats.clientGrowth}%
-                  </div>
-                )}
-              </div>
-              <div className="p-3 bg-primary/10 rounded-full">
-                <Users className="h-6 w-6 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <MetricCard
+          title="Total Clients"
+          value={stats?.totalClients || 0}
+          description="Managed client accounts"
+          icon={<Users className="h-6 w-6" />}
+          change={stats?.clientGrowth}
+          isLoading={statsLoading}
+        />
         
-        <Card className="hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Active Clients</p>
-                <p className="text-3xl font-bold text-blue-600">{stats?.activeClients || 0}</p>
-              </div>
-              <div className="p-3 bg-blue-100 rounded-full">
-                <Activity className="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <MetricCard
+          title="Active Clients"
+          value={stats?.activeClients || 0}
+          description="Currently active accounts"
+          icon={<Activity className="h-6 w-6 text-blue-600" />}
+          isLoading={statsLoading}
+        />
         
-        <Card className="hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Active Projects</p>
-                <p className="text-3xl font-bold text-orange-600">{stats?.projects?.active || 0}</p>
-              </div>
-              <div className="p-3 bg-orange-100 rounded-full">
-                <Building2 className="h-6 w-6 text-orange-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <MetricCard
+          title="Avg Performance"
+          value={`${stats?.averagePerformanceScore || 0}%`}
+          description="Client performance average"
+          icon={<TrendingUp className="h-6 w-6 text-green-600" />}
+          isLoading={statsLoading}
+        />
         
-        <Card className="hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Completion Rate</p>
-                <p className="text-3xl font-bold text-green-600">{stats?.projects?.completionRate || 0}%</p>
-              </div>
-              <div className="p-3 bg-green-100 rounded-full">
-                <CheckCircle2 className="h-6 w-6 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <MetricCard
+          title="Top Performer"
+          value={stats?.topPerformingClients?.[0]?.name || 'N/A'}
+          description="Highest scoring client"
+          icon={<CheckCircle2 className="h-6 w-6 text-orange-600" />}
+          isLoading={statsLoading}
+        />
       </div>
+
+      {/* Client Performance Rankings */}
+      {!loading && !error && filteredClients.length > 0 && (
+        <div className="mb-8">
+          <ClientPerformanceRankings 
+            clients={filteredClients}
+            onClientSelect={(clientId) => {
+              // TODO: Implement client switching logic when ServiceProvider context supports it
+              console.log('Switch to client:', clientId);
+            }}
+            isLoading={loading}
+          />
+        </div>
+      )}
+
       {/* Search and Filter Bar */}
       <div className="bg-muted/30 p-4 rounded-lg space-y-4">
         {/* Mobile-first: Search and Primary Action */}
@@ -458,6 +472,18 @@ function ClientsPageContent() {
                 </SelectContent>
               </Select>
             )}
+            
+            <Select value={performanceFilter} onValueChange={setPerformanceFilter}>
+              <SelectTrigger className="w-[140px] sm:w-[150px] bg-background">
+                <SelectValue placeholder="Performance" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Performance</SelectItem>
+                <SelectItem value="excellent">Excellent (90%+)</SelectItem>
+                <SelectItem value="good">Good (70-89%)</SelectItem>
+                <SelectItem value="needs-attention">Needs Attention (&lt;70%)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="flex items-center gap-2">
@@ -568,6 +594,7 @@ function ClientsPageContent() {
                   setStatusFilter('all');
                   setTypeFilter('all');
                   setIndustryFilter('all');
+                  setPerformanceFilter('all');
                 }}>
                   Clear Filters
                 </Button>
@@ -611,7 +638,7 @@ export default function ClientsPage() {
 
 // Client Card Component
 interface ClientCardProps {
-  client: Client;
+  client: ClientAccount;
   viewMode: 'grid' | 'list';
 }
 
@@ -660,6 +687,16 @@ function ClientCard({ client, viewMode }: ClientCardProps) {
                     >
                       {client.status}
                     </Badge>
+                    {client.performanceScore && (
+                      <Badge className={cn(
+                        "text-xs px-1.5 py-0.5 whitespace-nowrap",
+                        client.performanceScore >= 90 ? 'bg-green-100 text-green-800' :
+                        client.performanceScore >= 70 ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                      )}>
+                        {client.performanceScore}% score
+                      </Badge>
+                    )}
                   </div>
                 </div>
                 
@@ -676,8 +713,13 @@ function ClientCard({ client, viewMode }: ClientCardProps) {
                   )}
                   <span className="flex items-center gap-1">
                     <Activity className="h-3 w-3" />
-                    {client.projects?.length || 0}
+                    {client.projects?.length || 0} projects
                   </span>
+                  {client.monthlyBudget && (
+                    <span className="flex items-center gap-1">
+                      💰 ${client.monthlyBudget.toLocaleString()}/mo
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -811,6 +853,16 @@ function ClientCard({ client, viewMode }: ClientCardProps) {
             >
               {client.status}
             </Badge>
+            {client.performanceScore && (
+              <Badge className={cn(
+                "text-xs px-1.5 py-0.5 whitespace-nowrap",
+                client.performanceScore >= 90 ? 'bg-green-100 text-green-800' :
+                client.performanceScore >= 70 ? 'bg-yellow-100 text-yellow-800' :
+                'bg-red-100 text-red-800'
+              )}>
+                {client.performanceScore}% score
+              </Badge>
+            )}
           </div>
           
           {client.industry && (
@@ -824,6 +876,12 @@ function ClientCard({ client, viewMode }: ClientCardProps) {
             <Activity className="h-3 w-3" />
             <span>{client.projects?.length || 0} projects</span>
           </div>
+
+          {client.monthlyBudget && (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              💰 <span>${client.monthlyBudget.toLocaleString()}/mo</span>
+            </div>
+          )}
           
           <div className="flex items-center justify-between pt-2 border-t">
             <span className="text-xs text-muted-foreground">
