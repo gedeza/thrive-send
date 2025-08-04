@@ -1,146 +1,237 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+/**
+ * ServiceProviderAnalyticsDashboard Component
+ * Built from Analytics TDD v2.0.0 - PRD Compliant B2B2G Architecture
+ * 
+ * Main analytics interface for service providers to monitor their entire 
+ * client portfolio and business performance across multiple revenue streams.
+ */
+
+import React, { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  BarChart3, 
-  TrendingUp, 
   Users, 
-  Eye, 
-  MousePointer, 
+  DollarSign, 
+  TrendingUp, 
+  BarChart3,
+  Activity,
   Target,
-  Calendar,
-  Filter,
-  Download,
-  RefreshCw,
   AlertCircle,
   CheckCircle,
-  Info,
   ArrowUp,
   ArrowDown,
-  Minus
+  Minus,
+  RefreshCw,
+  Download,
+  Filter,
+  Info
 } from 'lucide-react';
-import { useServiceProvider } from '@/context/ServiceProviderContext';
 import { useQuery } from '@tanstack/react-query';
 import { 
-  getServiceProviderCrossClientAnalytics,
-  getServiceProviderClientAnalytics,
-  getServiceProviderClientPerformanceComparison,
-  type ServiceProviderCrossClientAnalytics,
-  type ServiceProviderSingleClientAnalyticsResponse,
-  type ServiceProviderClientAnalytics
-} from '@/lib/api/analytics-service';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+  ServiceProviderMetrics,
+  CrossClientAnalytics,
+  RevenueAnalytics,
+  ServiceProviderAnalyticsDashboardProps,
+  AnalyticsInsight,
+  TrendDirection
+} from '@/types/analytics';
+import { useServiceProvider } from '@/context/ServiceProviderContext';
 
-interface ServiceProviderAnalyticsDashboardProps {
-  defaultView?: 'overview' | 'client-specific' | 'comparison';
-  defaultTimeRange?: '7d' | '30d' | '90d' | '1y';
-}
+// Service functions for API calls
+const fetchServiceProviderMetrics = async (
+  organizationId: string, 
+  timeRange: string
+): Promise<ServiceProviderMetrics> => {
+  const response = await fetch(`/api/service-provider/analytics/metrics?organizationId=${organizationId}&timeRange=${timeRange}`);
+  if (!response.ok) throw new Error('Failed to fetch service provider metrics');
+  return response.json();
+};
 
-export function ServiceProviderAnalyticsDashboard({ 
-  defaultView = 'overview',
-  defaultTimeRange = '30d' 
+const fetchCrossClientAnalytics = async (
+  organizationId: string, 
+  timeRange: string
+): Promise<CrossClientAnalytics> => {
+  const response = await fetch(`/api/service-provider/analytics/cross-client?organizationId=${organizationId}&timeRange=${timeRange}&compareClients=true`);
+  if (!response.ok) throw new Error('Failed to fetch cross-client analytics');
+  return response.json();
+};
+
+const fetchRevenueAnalytics = async (
+  organizationId: string, 
+  timeRange: string
+): Promise<RevenueAnalytics> => {
+  const response = await fetch(`/api/service-provider/analytics/revenue?organizationId=${organizationId}&timeRange=${timeRange}&includeForecasting=true`);
+  if (!response.ok) throw new Error('Failed to fetch revenue analytics');
+  return response.json();
+};
+
+export function ServiceProviderAnalyticsDashboard({
+  organizationId,
+  defaultTimeRange = '30d',
+  initialView = 'overview'
 }: ServiceProviderAnalyticsDashboardProps) {
-  const { 
-    state: { organizationId, selectedClient }, 
-    switchClient 
-  } = useServiceProvider();
-
-  // State for dashboard controls
-  const [currentView, setCurrentView] = useState<'overview' | 'client-specific' | 'comparison'>(defaultView);
+  const { state } = useServiceProvider();
+  
+  // Component State
+  const [currentView, setCurrentView] = useState<'overview' | 'cross-client' | 'revenue' | 'rankings'>(initialView);
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>(defaultTimeRange);
-  const [selectedClientId, setSelectedClientId] = useState<string>(selectedClient?.id || 'all');
-  const [comparisonClients, setComparisonClients] = useState<string[]>(['demo-client-1', 'demo-client-2']);
+  const [isExporting, setIsExporting] = useState(false);
 
-  // Cross-client analytics query
+  // Data Queries
+  const { 
+    data: serviceProviderMetrics, 
+    isLoading: metricsLoading, 
+    error: metricsError,
+    refetch: refetchMetrics 
+  } = useQuery({
+    queryKey: ['service-provider-metrics', organizationId, timeRange],
+    queryFn: () => fetchServiceProviderMetrics(organizationId, timeRange),
+    enabled: !!organizationId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+  });
+
   const { 
     data: crossClientData, 
     isLoading: crossClientLoading, 
     error: crossClientError,
     refetch: refetchCrossClient 
-  } = useQuery<ServiceProviderCrossClientAnalytics>({
-    queryKey: ['service-provider-cross-client-analytics', organizationId, timeRange],
-    queryFn: () => getServiceProviderCrossClientAnalytics({
-      organizationId: organizationId!,
-      timeRange,
-      compareClients: true
-    }),
-    enabled: !!organizationId && currentView === 'overview',
-  });
-
-  // Single client analytics query
-  const { 
-    data: singleClientData, 
-    isLoading: singleClientLoading,
-    error: singleClientError,
-    refetch: refetchSingleClient
-  } = useQuery<ServiceProviderSingleClientAnalyticsResponse>({
-    queryKey: ['service-provider-client-analytics', organizationId, selectedClientId, timeRange],
-    queryFn: () => getServiceProviderClientAnalytics({
-      organizationId: organizationId!,
-      clientId: selectedClientId,
-      timeRange
-    }),
-    enabled: !!organizationId && selectedClientId !== 'all' && currentView === 'client-specific',
-  });
-
-  // Client performance comparison query
-  const { 
-    data: comparisonData, 
-    isLoading: comparisonLoading,
-    error: comparisonError
   } = useQuery({
-    queryKey: ['service-provider-client-comparison', organizationId, comparisonClients, timeRange],
-    queryFn: () => getServiceProviderClientPerformanceComparison({
-      organizationId: organizationId!,
-      clientIds: comparisonClients,
-      timeRange
-    }),
-    enabled: !!organizationId && comparisonClients.length > 1 && currentView === 'comparison',
+    queryKey: ['cross-client-analytics', organizationId, timeRange],
+    queryFn: () => fetchCrossClientAnalytics(organizationId, timeRange),
+    enabled: !!organizationId && (currentView === 'overview' || currentView === 'cross-client'),
+    staleTime: 3 * 60 * 1000, // 3 minutes
+    refetchOnWindowFocus: false,
   });
 
-  // Chart colors for consistency
-  const chartColors = ['#1976d2', '#43a047', '#fbc02d', '#e53935', '#9c27b0', '#ff9800'];
+  const { 
+    data: revenueData, 
+    isLoading: revenueLoading, 
+    error: revenueError,
+    refetch: refetchRevenue 
+  } = useQuery({
+    queryKey: ['revenue-analytics', organizationId, timeRange],
+    queryFn: () => fetchRevenueAnalytics(organizationId, timeRange),
+    enabled: !!organizationId && (currentView === 'overview' || currentView === 'revenue'),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+  });
 
-  // Get metric icon
-  const getMetricIcon = (type: string) => {
-    switch (type) {
-      case 'views': return <Eye className="h-4 w-4" />;
-      case 'clicks': return <MousePointer className="h-4 w-4" />;
-      case 'engagement': return <TrendingUp className="h-4 w-4" />;
-      case 'conversions': return <Target className="h-4 w-4" />;
-      case 'content': return <BarChart3 className="h-4 w-4" />;
-      default: return <TrendingUp className="h-4 w-4" />;
+  // Utility Functions
+  const getTrendIcon = useCallback((trend: TrendDirection, value?: number) => {
+    if (trend === 'up' || (value && value > 0)) {
+      return <ArrowUp className="h-4 w-4 text-green-600" />;
+    } else if (trend === 'down' || (value && value < 0)) {
+      return <ArrowDown className="h-4 w-4 text-red-600" />;
     }
-  };
-
-  // Get change indicator
-  const getChangeIndicator = (change: number) => {
-    if (change > 0) return <ArrowUp className="h-4 w-4 text-green-600" />;
-    if (change < 0) return <ArrowDown className="h-4 w-4 text-red-600" />;
     return <Minus className="h-4 w-4 text-gray-400" />;
-  };
+  }, []);
 
-  // Get insight icon
-  const getInsightIcon = (type: string) => {
+  const getInsightIcon = useCallback((type: string) => {
     switch (type) {
       case 'success': return <CheckCircle className="h-4 w-4 text-green-600" />;
       case 'warning': return <AlertCircle className="h-4 w-4 text-yellow-600" />;
       case 'error': return <AlertCircle className="h-4 w-4 text-red-600" />;
       default: return <Info className="h-4 w-4 text-blue-600" />;
     }
-  };
+  }, []);
 
-  // Loading state
-  if (crossClientLoading || singleClientLoading || comparisonLoading) {
+  const formatCurrency = useCallback((amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  }, []);
+
+  const formatPercentage = useCallback((value: number) => {
+    return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`;
+  }, []);
+
+  // Event Handlers
+  const handleRefresh = useCallback(() => {
+    refetchMetrics();
+    refetchCrossClient();
+    refetchRevenue();
+  }, [refetchMetrics, refetchCrossClient, refetchRevenue]);
+
+  const handleExport = useCallback(async (format: 'pdf' | 'excel' | 'csv') => {
+    setIsExporting(true);
+    try {
+      const exportData = {
+        serviceProviderMetrics,
+        crossClientAnalytics: crossClientData,
+        revenueAnalytics: revenueData,
+        timestamp: new Date().toISOString(),
+        organizationId,
+        timeRange,
+        exportType: 'full' as const
+      };
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().split('T')[0];
+      const filename = `service-provider-analytics-${timestamp}`;
+
+      if (format === 'csv') {
+        const { exportAnalyticsToCSV } = await import('@/lib/utils/analytics-export');
+        exportAnalyticsToCSV(exportData, filename);
+      } else if (format === 'excel') {
+        const { exportAnalyticsToExcel } = await import('@/lib/utils/analytics-export');
+        exportAnalyticsToExcel(exportData, filename);
+      } else if (format === 'pdf') {
+        const { exportAnalyticsToPDF } = await import('@/lib/utils/analytics-export');
+        await exportAnalyticsToPDF(exportData, filename);
+      }
+
+      console.log(`✅ Analytics exported as ${format.toUpperCase()}`);
+    } catch (error) {
+      console.error('❌ Export failed:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  }, [serviceProviderMetrics, crossClientData, revenueData, organizationId, timeRange]);
+
+  // Loading and Error States
+  const isMainLoading = useMemo(() => {
+    return metricsLoading || (currentView === 'cross-client' && crossClientLoading) || (currentView === 'revenue' && revenueLoading);
+  }, [metricsLoading, crossClientLoading, revenueLoading, currentView]);
+
+  const currentError = useMemo(() => {
+    return metricsError || crossClientError || revenueError;
+  }, [metricsError, crossClientError, revenueError]);
+
+  if (currentError) {
+    return (
+      <Card className="p-8 text-center border-red-200">
+        <div className="flex justify-center mb-4">
+          <AlertCircle className="h-8 w-8 text-red-500" />
+        </div>
+        <h3 className="text-lg font-semibold mb-2 text-red-700">Analytics Unavailable</h3>
+        <p className="text-muted-foreground mb-4">
+          Unable to load analytics data. Please try refreshing or contact support.
+        </p>
+        <Button variant="outline" onClick={handleRefresh}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh Data
+        </Button>
+      </Card>
+    );
+  }
+
+  if (isMainLoading) {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold">Analytics Dashboard</h2>
+          <div>
+            <h2 className="text-2xl font-bold">Service Provider Analytics</h2>
+            <div className="w-64 h-4 bg-gray-200 rounded animate-pulse mt-2" />
+          </div>
           <div className="flex gap-2">
             <div className="w-32 h-10 bg-gray-200 rounded animate-pulse" />
             <div className="w-24 h-10 bg-gray-200 rounded animate-pulse" />
@@ -151,11 +242,7 @@ export function ServiceProviderAnalyticsDashboard({
             <div key={i} className="h-32 bg-gray-200 rounded-lg animate-pulse" />
           ))}
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {[...Array(2)].map((_, i) => (
-            <div key={i} className="h-80 bg-gray-200 rounded-lg animate-pulse" />
-          ))}
-        </div>
+        <div className="h-80 bg-gray-200 rounded-lg animate-pulse" />
       </div>
     );
   }
@@ -167,7 +254,7 @@ export function ServiceProviderAnalyticsDashboard({
         <div>
           <h2 className="text-2xl font-bold">Service Provider Analytics</h2>
           <p className="text-muted-foreground">
-            Monitor performance across all your clients
+            Monitor performance across your {serviceProviderMetrics?.totalClients || 0} client portfolio
           </p>
         </div>
         
@@ -184,402 +271,204 @@ export function ServiceProviderAnalyticsDashboard({
             </SelectContent>
           </Select>
           
-          <Button variant="outline" size="sm" onClick={() => {
-            if (currentView === 'overview') refetchCrossClient();
-            if (currentView === 'client-specific') refetchSingleClient();
-          }}>
+          <Button variant="outline" size="sm" onClick={handleRefresh}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
           
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
+          <Select onValueChange={(value) => handleExport(value as 'csv' | 'excel' | 'pdf')} disabled={isExporting}>
+            <SelectTrigger asChild>
+              <Button variant="outline" size="sm" disabled={isExporting}>
+                <Download className="h-4 w-4 mr-2" />
+                {isExporting ? 'Exporting...' : 'Export'}
+              </Button>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="csv">Export as CSV</SelectItem>
+              <SelectItem value="excel">Export as Excel</SelectItem>
+              <SelectItem value="pdf">Export as PDF</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      {/* View Selector */}
-      <Tabs value={currentView} onValueChange={(value: any) => setCurrentView(value)}>
-        <TabsList>
-          <TabsTrigger value="overview">Cross-Client Overview</TabsTrigger>
-          <TabsTrigger value="client-specific">Client-Specific</TabsTrigger>
-          <TabsTrigger value="comparison">Client Comparison</TabsTrigger>
-        </TabsList>
-
-        {/* Cross-Client Overview */}
-        <TabsContent value="overview" className="space-y-6">
-          {crossClientData && (
-            <>
-              {/* Aggregate Metrics Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Total Clients</p>
-                        <p className="text-2xl font-bold">{crossClientData.aggregateMetrics.totalClients}</p>
-                      </div>
-                      <div className="p-2 bg-blue-100 rounded-lg">
-                        <Users className="h-6 w-6 text-blue-600" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Total Content</p>
-                        <p className="text-2xl font-bold">{crossClientData.aggregateMetrics.totalContent}</p>
-                      </div>
-                      <div className="p-2 bg-green-100 rounded-lg">
-                        <BarChart3 className="h-6 w-6 text-green-600" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Avg Engagement</p>
-                        <p className="text-2xl font-bold">{crossClientData.aggregateMetrics.averageEngagement.toFixed(1)}%</p>
-                      </div>
-                      <div className="p-2 bg-purple-100 rounded-lg">
-                        <TrendingUp className="h-6 w-6 text-purple-600" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Total Views</p>
-                        <p className="text-2xl font-bold">{crossClientData.aggregateMetrics.totalViews.toLocaleString()}</p>
-                      </div>
-                      <div className="p-2 bg-orange-100 rounded-lg">
-                        <Eye className="h-6 w-6 text-orange-600" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+      {/* Key Business Metrics Cards */}
+      {serviceProviderMetrics && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Clients</p>
+                  <p className="text-2xl font-bold">{serviceProviderMetrics.totalClients}</p>
+                  <div className="flex items-center gap-1 mt-1">
+                    {getTrendIcon('up', serviceProviderMetrics.growthMetrics.clientGrowthRate)}
+                    <span className="text-sm text-green-600">
+                      {formatPercentage(serviceProviderMetrics.growthMetrics.clientGrowthRate)}
+                    </span>
+                  </div>
+                </div>
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Users className="h-6 w-6 text-blue-600" />
+                </div>
               </div>
+            </CardContent>
+          </Card>
 
-              {/* Client Rankings */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Top by Engagement</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {crossClientData.clientRankings.byEngagement.slice(0, 3).map((client, index) => (
-                        <div key={client.clientId} className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="w-6 h-6 rounded-full p-0 flex items-center justify-center text-xs">
-                              {index + 1}
-                            </Badge>
-                            <span className="font-medium">{client.clientName}</span>
-                          </div>
-                          <span className="text-sm text-muted-foreground">
-                            {client.contentMetrics.avgEngagementRate.toFixed(1)}%
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Top by Views</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {crossClientData.clientRankings.byViews.slice(0, 3).map((client, index) => (
-                        <div key={client.clientId} className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="w-6 h-6 rounded-full p-0 flex items-center justify-center text-xs">
-                              {index + 1}
-                            </Badge>
-                            <span className="font-medium">{client.clientName}</span>
-                          </div>
-                          <span className="text-sm text-muted-foreground">
-                            {client.contentMetrics.totalViews.toLocaleString()}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Top by Conversion</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {crossClientData.clientRankings.byConversion.slice(0, 3).map((client, index) => (
-                        <div key={client.clientId} className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="w-6 h-6 rounded-full p-0 flex items-center justify-center text-xs">
-                              {index + 1}
-                            </Badge>
-                            <span className="font-medium">{client.clientName}</span>
-                          </div>
-                          <span className="text-sm text-muted-foreground">
-                            {client.contentMetrics.conversionRate.toFixed(1)}%
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
+                  <p className="text-2xl font-bold">{formatCurrency(serviceProviderMetrics.totalRevenue)}</p>
+                  <div className="flex items-center gap-1 mt-1">
+                    {getTrendIcon('up', serviceProviderMetrics.growthMetrics.revenueGrowthRate)}
+                    <span className="text-sm text-green-600">
+                      {formatPercentage(serviceProviderMetrics.growthMetrics.revenueGrowthRate)}
+                    </span>
+                  </div>
+                </div>
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <DollarSign className="h-6 w-6 text-green-600" />
+                </div>
               </div>
+            </CardContent>
+          </Card>
 
-              {/* Content Type Distribution */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Content Type Distribution</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <PieChart>
-                        <Pie
-                          data={Object.entries(crossClientData.contentTypeDistribution).map(([type, count]) => ({
-                            name: type.charAt(0).toUpperCase() + type.slice(1),
-                            value: count
-                          }))}
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={80}
-                          dataKey="value"
-                          label={({ name, value }) => `${name}: ${value}`}
-                        >
-                          {Object.entries(crossClientData.contentTypeDistribution).map((_, index) => (
-                            <Cell key={index} fill={chartColors[index % chartColors.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-
-                {/* Insights */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Key Insights</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {crossClientData.insights.map((insight, index) => (
-                        <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
-                          {getInsightIcon(insight.type)}
-                          <div className="flex-1">
-                            <h4 className="font-medium text-sm">{insight.title}</h4>
-                            <p className="text-sm text-muted-foreground mt-1">{insight.message}</p>
-                            <Badge variant="outline" className="mt-2 text-xs">
-                              {insight.impact} impact
-                            </Badge>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Active Campaigns</p>
+                  <p className="text-2xl font-bold">{serviceProviderMetrics.activeCampaigns}</p>
+                  <p className="text-sm text-muted-foreground">
+                    of {serviceProviderMetrics.totalCampaigns} total
+                  </p>
+                </div>
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Activity className="h-6 w-6 text-purple-600" />
+                </div>
               </div>
-            </>
-          )}
-        </TabsContent>
+            </CardContent>
+          </Card>
 
-        {/* Client-Specific View */}
-        <TabsContent value="client-specific" className="space-y-6">
-          <div className="flex items-center gap-4">
-            <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-              <SelectTrigger className="w-64">
-                <SelectValue placeholder="Select a client..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="demo-client-1">City of Springfield</SelectItem>
-                <SelectItem value="demo-client-2">TechStart Inc.</SelectItem>
-                <SelectItem value="demo-client-3">Local Coffee Co.</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {singleClientData && (
-            <>
-              {/* Client Metrics */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Total Content</p>
-                        <p className="text-2xl font-bold">{singleClientData.clientAnalytics.contentMetrics.totalContent}</p>
-                      </div>
-                      {getMetricIcon('content')}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Engagement Rate</p>
-                        <p className="text-2xl font-bold">{singleClientData.clientAnalytics.contentMetrics.avgEngagementRate.toFixed(1)}%</p>
-                      </div>
-                      {getMetricIcon('engagement')}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Total Views</p>
-                        <p className="text-2xl font-bold">{singleClientData.clientAnalytics.contentMetrics.totalViews.toLocaleString()}</p>
-                      </div>
-                      {getMetricIcon('views')}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Conversion Rate</p>
-                        <p className="text-2xl font-bold">{singleClientData.clientAnalytics.contentMetrics.conversionRate.toFixed(1)}%</p>
-                      </div>
-                      {getMetricIcon('conversions')}
-                    </div>
-                  </CardContent>
-                </Card>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Team Utilization</p>
+                  <p className="text-2xl font-bold">{serviceProviderMetrics.teamUtilization}%</p>
+                  <p className="text-sm text-muted-foreground">
+                    Client satisfaction: {serviceProviderMetrics.avgClientSatisfaction.toFixed(1)}/5.0
+                  </p>
+                </div>
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <Target className="h-6 w-6 text-orange-600" />
+                </div>
               </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
-              {/* Performance Chart */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Performance Trend</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={singleClientData.clientAnalytics.performanceData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Line type="monotone" dataKey="views" stroke="#1976d2" name="Views" />
-                      <Line type="monotone" dataKey="engagement" stroke="#43a047" name="Engagement" />
-                      <Line type="monotone" dataKey="clicks" stroke="#fbc02d" name="Clicks" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
+      {/* Additional Revenue Metrics */}
+      {serviceProviderMetrics?.marketplaceRevenue > 0 && (
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold">Revenue Streams</h3>
+              <Badge variant="outline">
+                {formatPercentage(serviceProviderMetrics.growthMetrics.revenueGrowthRate)} growth
+              </Badge>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <p className="text-sm text-muted-foreground">Client Revenue</p>
+                <p className="text-xl font-bold text-blue-600">
+                  {formatCurrency(serviceProviderMetrics.totalRevenue - serviceProviderMetrics.marketplaceRevenue)}
+                </p>
+              </div>
+              <div className="text-center p-4 bg-green-50 rounded-lg">
+                <p className="text-sm text-muted-foreground">Marketplace Revenue</p>
+                <p className="text-xl font-bold text-green-600">
+                  {formatCurrency(serviceProviderMetrics.marketplaceRevenue)}
+                </p>
+              </div>
+              <div className="text-center p-4 bg-purple-50 rounded-lg">
+                <p className="text-sm text-muted-foreground">Average per Client</p>
+                <p className="text-xl font-bold text-purple-600">
+                  {formatCurrency(serviceProviderMetrics.totalRevenue / serviceProviderMetrics.totalClients)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-              {/* Top Content */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Top Performing Content</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {singleClientData.clientAnalytics.topContent.map((content, index) => (
-                      <div key={content.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex-1">
-                          <h4 className="font-medium">{content.title}</h4>
-                          <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
-                            <Badge variant="outline" className="text-xs">{content.type}</Badge>
-                            <span>{content.views.toLocaleString()} views</span>
-                            <span>{content.engagement}% engagement</span>
-                          </div>
-                        </div>
-                        <Badge variant="outline" className="text-xs">
-                          #{index + 1}
+      {/* Analytics Insights */}
+      {crossClientData?.insights && crossClientData.insights.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Key Insights</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {crossClientData.insights.slice(0, 3).map((insight: AnalyticsInsight, index: number) => (
+                <div key={insight.id || index} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
+                  {getInsightIcon(insight.type)}
+                  <div className="flex-1">
+                    <h4 className="font-medium text-sm">{insight.title}</h4>
+                    <p className="text-sm text-muted-foreground mt-1">{insight.message}</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Badge variant="outline" className="text-xs">
+                        {insight.impact} impact
+                      </Badge>
+                      {insight.actionRequired && (
+                        <Badge variant="destructive" className="text-xs">
+                          Action Required
                         </Badge>
-                      </div>
-                    ))}
+                      )}
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            </>
-          )}
-        </TabsContent>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-        {/* Client Comparison View */}
-        <TabsContent value="comparison" className="space-y-6">
-          <div className="flex items-center gap-4">
+      {/* Navigation to Detailed Views */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setCurrentView('cross-client')}>
+          <CardContent className="p-6 text-center">
+            <BarChart3 className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+            <h3 className="font-semibold mb-2">Cross-Client Analytics</h3>
             <p className="text-sm text-muted-foreground">
-              Comparing: {comparisonClients.map(id => 
-                id === 'demo-client-1' ? 'City of Springfield' :
-                id === 'demo-client-2' ? 'TechStart Inc.' :
-                'Local Coffee Co.'
-              ).join(' vs ')}
+              Compare performance across your entire client portfolio
             </p>
-          </div>
+          </CardContent>
+        </Card>
 
-          {comparisonData && (
-            <>
-              {/* Comparison Chart */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Performance Comparison</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={comparisonData.comparisonData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="clientName" />
-                      <YAxis />
-                      <Tooltip />
-                      <Bar dataKey="metrics.avgEngagementRate" fill="#1976d2" name="Engagement Rate %" />
-                      <Bar dataKey="metrics.totalViews" fill="#43a047" name="Total Views" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setCurrentView('revenue')}>
+          <CardContent className="p-6 text-center">
+            <DollarSign className="h-8 w-8 mx-auto mb-2 text-green-600" />
+            <h3 className="font-semibold mb-2">Revenue Analytics</h3>
+            <p className="text-sm text-muted-foreground">
+              Detailed revenue breakdown and business intelligence
+            </p>
+          </CardContent>
+        </Card>
 
-              {/* Comparison Insights */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Comparison Insights</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {comparisonData.insights.map((insight, index) => (
-                      <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
-                        {getInsightIcon(insight.type)}
-                        <div className="flex-1">
-                          <p className="text-sm">{insight.message}</p>
-                          <div className="flex gap-2 mt-2">
-                            {insight.clientsAffected.map(clientId => (
-                              <Badge key={clientId} variant="outline" className="text-xs">
-                                {clientId === 'demo-client-1' ? 'Springfield' :
-                                 clientId === 'demo-client-2' ? 'TechStart' :
-                                 'Coffee Co.'}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </>
-          )}
-        </TabsContent>
-      </Tabs>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setCurrentView('rankings')}>
+          <CardContent className="p-6 text-center">
+            <TrendingUp className="h-8 w-8 mx-auto mb-2 text-purple-600" />
+            <h3 className="font-semibold mb-2">Client Rankings</h3>
+            <p className="text-sm text-muted-foreground">
+              Client performance rankings and health scoring
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

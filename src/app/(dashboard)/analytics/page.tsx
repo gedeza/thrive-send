@@ -42,6 +42,7 @@ import {
 } from '@/components/lazy/LazyComponents';
 import { useAnalyticsData } from '@/lib/hooks/useAnalyticsData';
 import { ServiceProviderAnalyticsDashboard } from '@/components/analytics/ServiceProviderAnalyticsDashboard';
+import { useServiceProvider } from '@/context/ServiceProviderContext';
 
 // Types
 type AnalyticsTimeframe = 'day' | 'week' | 'month' | 'year';
@@ -148,6 +149,9 @@ const queryClient = new QueryClient({
 });
 
 function AnalyticsPageContent() {
+  // Service provider context
+  const { state } = useServiceProvider();
+  
   // State management
   const [activeTab, setActiveTab] = useState<AnalyticsTab>('overview');
   const [timeframe, setTimeframe] = useState<AnalyticsTimeframe>('week');
@@ -597,6 +601,7 @@ function AnalyticsPageContent() {
               </p>
             </div>
             <ServiceProviderAnalyticsDashboard 
+              organizationId={state.organizationId || ''}
               defaultTimeRange={timeframe === 'day' ? '7d' : timeframe === 'week' ? '30d' : timeframe === 'month' ? '90d' : '1y'}
             />
           </TabsContent>

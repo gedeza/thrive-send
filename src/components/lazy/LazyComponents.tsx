@@ -41,15 +41,42 @@ export const LazyOptimizedLineChart = lazy(() =>
 
 export const LazyHeatMapWidget = lazy(() => 
   import('@/components/analytics/HeatMapWidget').then(module => ({
-    default: module.default
+    default: module.HeatMapWidget
   }))
 );
 
-// Backward compatibility exports for existing analytics page
-export const RechartsBarChartLazy = LazyOptimizedBarChart;
-export const RechartsPieChartLazy = LazyOptimizedPieChart;  
-export const RechartsLineChartLazy = LazyOptimizedLineChart;
-export const RechartsHeatMapLazy = LazyHeatMapWidget;
+// Wrapped chart components with appropriate skeletons for backward compatibility
+export function RechartsBarChartLazy(props: any) {
+  return (
+    <LazyWrapper fallback={<ChartSkeleton />}>
+      <LazyOptimizedBarChart {...props} />
+    </LazyWrapper>
+  );
+}
+
+export function RechartsPieChartLazy(props: any) {
+  return (
+    <LazyWrapper fallback={<ChartSkeleton />}>
+      <LazyOptimizedPieChart {...props} />
+    </LazyWrapper>
+  );
+}
+
+export function RechartsLineChartLazy(props: any) {
+  return (
+    <LazyWrapper fallback={<ChartSkeleton />}>
+      <LazyOptimizedLineChart {...props} />
+    </LazyWrapper>
+  );
+}
+
+export function RechartsHeatMapLazy(props: any) {
+  return (
+    <LazyWrapper fallback={<ChartSkeleton />}>
+      <LazyHeatMapWidget {...props} />
+    </LazyWrapper>
+  );
+}
 
 // Lazy load content components
 export const LazyContentCalendar = lazy(() => 
@@ -100,37 +127,6 @@ export function FunnelManagerLazy(props: any) {
   );
 }
 
-export function RechartsBarChartLazy(props: any) {
-  return (
-    <LazyWrapper fallback={<ChartSkeleton />}>
-      <LazyRechartsBarChart {...props} />
-    </LazyWrapper>
-  );
-}
-
-export function RechartsPieChartLazy(props: any) {
-  return (
-    <LazyWrapper fallback={<ChartSkeleton />}>
-      <LazyRechartsPieChart {...props} />
-    </LazyWrapper>
-  );
-}
-
-export function RechartsLineChartLazy(props: any) {
-  return (
-    <LazyWrapper fallback={<ChartSkeleton />}>
-      <LazyRechartsLineChart {...props} />
-    </LazyWrapper>
-  );
-}
-
-export function RechartsHeatMapLazy(props: any) {
-  return (
-    <LazyWrapper fallback={<ChartSkeleton />}>
-      <LazyRechartsHeatMap {...props} />
-    </LazyWrapper>
-  );
-}
 
 export function ContentCalendarLazy(props: any) {
   return (
