@@ -599,82 +599,63 @@ export function ContentCalendar({
   // Direct fetch function - moved up before it's used
   const fetchCalendarEventsDirectly = async () => {
     try {
-      // Debug: Checking calendar data
-      // Try the debug endpoint first to check if data exists
-      const debugResponse = await fetch('/api/calendar/debug', {
+      const response = await fetch('/api/calendar/events', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        },
         credentials: 'include'
       });
       
-      if (debugResponse.ok) {
-        const debugData = await debugResponse.json();
-        // Debug: API response received
-        
-        // If debug shows events exist but we're not getting them, try direct fetch
-        if (debugData.calendarEvents?.count > 0) {
-          const response = await fetch('/api/calendar/events', {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'Cache-Control': 'no-cache'
-            },
-            credentials: 'include'
-          });
-          
-          if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
-          
-          const data = await response.json();
-          // Direct fetch completed
-          
-          if (data.events && Array.isArray(data.events)) {
-            try {
-              const calendarEvents = data.events.map((event: any, index: number) => {
-                // Converting event...
-                try {
-                  const convertedEvent = convertApiEventToCalendarEvent(event);
-                  // Successfully converted event
-                  return convertedEvent;
-                } catch (convErr: unknown) {
-                  console.error(`Error converting event ${index}:`, convErr);
-                  console.error("Problematic event:", event);
-                  // Return a minimal valid event to prevent the whole array from failing
-                  return {
-                    id: event.id || `error-${index}`,
-                    title: event.title || "Conversion Error",
-                    description: `Error converting event: ${convErr instanceof Error ? convErr.message : String(convErr)}`,
-                    type: 'custom',
-                    status: 'draft',
-                    date: event.startTime?.split('T')[0] || new Date().toISOString().split('T')[0],
-                    socialMediaContent: {
-                      platforms: [],
-                      mediaUrls: [],
-                      crossPost: false,
-                      platformSpecificContent: {}
-                    },
-                    organizationId: event.organizationId || '',
-                    createdBy: event.createdBy || ''
-                  };
-                }
-              });
-              // TODO: Log conversion success for debugging purposes
-              return calendarEvents;
-            } catch (mapErr) {
-              console.error("Error mapping API events to calendar events:", mapErr);
-              throw mapErr;
-            }
-          } else {
-            console.warn("No events array found in API response:", data);
+      // Handle authentication issues gracefully
+      if (response.status === 401 || response.status === 403) {
+        console.warn("Authentication required for calendar API");
+        return [];
+      }
+      
+      if (!response.ok) {
+        console.warn(`Calendar API returned ${response.status}, showing empty calendar`);
+        return [];
+      }
+      
+      const data = await response.json();
+      
+      if (data.events && Array.isArray(data.events)) {
+        const calendarEvents = data.events.map((event: any, index: number) => {
+          try {
+            return convertApiEventToCalendarEvent(event);
+          } catch (convErr: unknown) {
+            console.error(`Error converting event ${index}:`, convErr);
+            console.error("Problematic event:", event);
+            // Return a minimal valid event to prevent the whole array from failing
+            return {
+              id: event.id || `error-${index}`,
+              title: event.title || "Conversion Error",
+              description: `Error converting event: ${convErr instanceof Error ? convErr.message : String(convErr)}`,
+              type: 'custom',
+              status: 'draft',
+              date: event.startTime?.split('T')[0] || new Date().toISOString().split('T')[0],
+              time: '00:00',
+              startTime: event.startTime || new Date().toISOString(),
+              endTime: event.endTime || new Date().toISOString(),
+              socialMediaContent: {
+                platforms: [],
+                mediaUrls: [],
+                crossPost: false,
+                platformSpecificContent: {}
+              },
+              organizationId: event.organizationId || '',
+              createdBy: event.createdBy || ''
+            };
           }
-        } else {
-          // TODO: Handle case where no events are found
-        }
-      } else {
-        console.error("Debug API failed:", await debugResponse.text());
+        });
+        return calendarEvents;
       }
       
       return [];
     } catch (err) {
-      console.error("Error in direct fetch:", err);
-      setError(err instanceof Error ? err.message : "Failed to directly load calendar events");
+      console.warn("Error fetching calendar events:", err);
       return [];
     }
   };
@@ -701,7 +682,7 @@ export function ContentCalendar({
       });
       return [];
     }
-  }, [fetchEvents, toast, fetchCalendarEventsDirectly]);
+  }, [fetchEvents]);
   
   // Debounce the loadEvents function to prevent rapid refetching
   const debouncedLoadEvents = useCallback(

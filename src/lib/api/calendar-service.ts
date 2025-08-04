@@ -102,7 +102,7 @@ const convertCalendarEventToApiEvent = (event: ContentCalendarEvent): Omit<ApiCa
   };
 };
 
-const API_URL = '/api/simple-calendar';
+const API_URL = '/api/calendar/events';
 
 // Memory cache for events during the current session
 let eventsCache: {
@@ -210,6 +210,10 @@ export async function fetchCalendarEvents(params?: {
     });
 
     if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        console.warn(`[fetchCalendarEvents] Authentication required: ${response.status}`);
+        return [];
+      }
       console.error(`[fetchCalendarEvents] Error response: ${response.status} ${response.statusText}`);
       const errorText = await response.text();
       console.error(`[fetchCalendarEvents] Error details: ${errorText}`);

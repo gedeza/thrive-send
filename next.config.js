@@ -5,6 +5,16 @@ const nextConfig = {
   experimental: {
     forceSwcTransforms: true,
   },
+  // Exclude script files from build
+  pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'md', 'mdx'],
+  webpack: (config, { isServer }) => {
+    // Ignore optimize script and other non-source files
+    config.watchOptions = {
+      ...config.watchOptions,
+      ignored: ['**/optimize', '**/scripts/**', '**/node_modules/**']
+    };
+    return config;
+  },
   images: {
     domains: ["placehold.co"]
   },
