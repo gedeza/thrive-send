@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from "rea
 //   usePerformanceMonitoring
 // } from "@/lib/utils/bundle-optimizer";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Search, Filter, LayoutGrid, LayoutList, Clock, Facebook, Twitter, Instagram, Linkedin, Video, Upload, X, Settings as SettingsIcon, RefreshCw, Bug, Trash2 } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Search, Filter, LayoutGrid, LayoutList, Clock, Facebook, Twitter, Instagram, Linkedin, Video, Upload, X, Settings as SettingsIcon, RefreshCw, Trash2 } from "lucide-react";
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useSensor, useSensors, PointerSensor, closestCenter } from "@dnd-kit/core";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import { Button } from "@/components/ui/button";
@@ -1921,24 +1921,6 @@ export function ContentCalendar({
         onClearSelection={clearSelection}
         events={events}
         selectedEvents={Array.from(selectedEvents).map(id => events.find(e => e.id === id)).filter(Boolean) as CalendarEvent[]}
-        onDebugFetch={async () => {
-          try {
-            setLoading(true);
-            await fetchCalendarEventsDirectly();
-            toast({
-              title: "Debug",
-              description: `Attempted direct data fetch. Check console for details.`,
-            });
-          } catch (err) {
-            toast({
-              title: "Debug Error",
-              description: err instanceof Error ? err.message : "Error during debug fetch",
-              variant: "destructive",
-            });
-          } finally {
-            setLoading(false);
-          }
-        }}
         loading={loading}
       />
 
