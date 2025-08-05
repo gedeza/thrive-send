@@ -4,6 +4,7 @@ import React from 'react';
 import { usePathname } from "next/navigation";
 import { Sidebar, SidebarItem } from "./sidebar";
 import { Header, HeaderProps } from "./header";
+import { AutoCurrencyDetectionBanner } from '@/components/ui/CurrencyDetectionBanner';
 import { cn } from '@/lib/utils';
 
 export interface MainLayoutProps {
@@ -48,6 +49,8 @@ export function MainLayout({
           
           {/* Page content */}
           <main className={`flex-1 overflow-y-auto bg-background ${contentPadding}`}>
+            {/* Auto currency detection banner */}
+            {!isAuthPage && <AutoCurrencyDetectionBanner />}
             {children}
           </main>
         </div>

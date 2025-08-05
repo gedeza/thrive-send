@@ -192,7 +192,7 @@ const NOTIFICATION_CATEGORIES: NotificationCategory[] = [
       },
       billingUpdates: {
         label: 'Billing & Payments',
-        description: 'Payment receipts and billing notifications',
+        description: 'Payment receipts and billing notifications (supports ZAR, USD, EUR)',
         email: true,
         push: false,
         inApp: true

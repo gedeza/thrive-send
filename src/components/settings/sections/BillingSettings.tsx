@@ -31,7 +31,9 @@ import {
   ChevronRight,
   ExternalLink
 } from 'lucide-react';
-import { useOrganizationSettings } from '@/contexts/SettingsContext';
+import { useOrganizationSettings, useUserSettings } from '@/contexts/SettingsContext';
+import { formatCurrency, getUserCurrency, getUserCurrencyAsync, SUPPORTED_CURRENCIES } from '@/lib/utils/currency';
+import { useCurrencyDetection } from '@/hooks/useCurrencyDetection';
 import { cn } from '@/lib/utils';
 
 // Types
@@ -101,8 +103,8 @@ const mockInvoices: Invoice[] = [
   {
     id: 'inv_001',
     date: '2024-03-01T00:00:00Z',
-    amount: 29.99,
-    currency: 'USD',
+    amount: getUserCurrency() === 'ZAR' ? 549.99 : getUserCurrency() === 'EUR' ? 25.49 : 29.99,
+    currency: getUserCurrency(),
     status: 'paid',
     description: 'ThriveSend Pro - March 2024',
     downloadUrl: '#'
@@ -110,8 +112,8 @@ const mockInvoices: Invoice[] = [
   {
     id: 'inv_002',
     date: '2024-02-01T00:00:00Z',
-    amount: 29.99,
-    currency: 'USD',
+    amount: getUserCurrency() === 'ZAR' ? 549.99 : getUserCurrency() === 'EUR' ? 25.49 : 29.99,
+    currency: getUserCurrency(),
     status: 'paid',
     description: 'ThriveSend Pro - February 2024',
     downloadUrl: '#'
@@ -119,8 +121,8 @@ const mockInvoices: Invoice[] = [
   {
     id: 'inv_003',
     date: '2024-01-01T00:00:00Z',
-    amount: 29.99,
-    currency: 'USD',
+    amount: getUserCurrency() === 'ZAR' ? 549.99 : getUserCurrency() === 'EUR' ? 25.49 : 29.99,
+    currency: getUserCurrency(),
     status: 'paid',
     description: 'ThriveSend Pro - January 2024',
     downloadUrl: '#'
@@ -136,55 +138,62 @@ const mockSubscription: Subscription = {
   cancelAtPeriodEnd: false
 };
 
-const availablePlans: Plan[] = [
-  {
-    id: 'free',
-    name: 'Free',
-    price: 0,
-    currency: 'USD',
-    interval: 'month',
-    features: [
-      '5 content pieces per month',
-      'Basic analytics',
-      '1 team member',
-      'Email support'
-    ],
-    current: false
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    price: 29.99,
-    currency: 'USD',
-    interval: 'month',
-    features: [
-      'Unlimited content',
-      'Advanced analytics',
-      '10 team members',
-      'Priority support',
-      'AI content generation',
-      'Social media scheduling'
-    ],
-    popular: true,
-    current: true
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    price: 99.99,
-    currency: 'USD',
-    interval: 'month',
-    features: [
-      'Everything in Pro',
-      'Unlimited team members',
-      'Custom integrations',
-      'Dedicated support',
-      'White-labeling',
-      'Advanced security'
-    ],
-    current: false
-  }
-];
+const getPlansForCurrency = (currency: string): Plan[] => {
+  const isZAR = currency === 'ZAR';
+  const isEUR = currency === 'EUR';
+  
+  return [
+    {
+      id: 'free',
+      name: 'Free',
+      price: 0,
+      currency,
+      interval: 'month',
+      features: [
+        '5 content pieces per month',
+        'Basic analytics',
+        '1 team member',
+        'Email support'
+      ],
+      current: false
+    },
+    {
+      id: 'pro',
+      name: 'Pro',
+      price: isZAR ? 549.99 : isEUR ? 25.49 : 29.99,
+      currency,
+      interval: 'month',
+      features: [
+        'Unlimited content',
+        'Advanced analytics',
+        '10 team members',
+        'Priority support',
+        'AI content generation',
+        'Social media scheduling',
+        ...(isZAR ? ['PayFast payment integration', 'Local South African support'] : [])
+      ],
+      popular: true,
+      current: true
+    },
+    {
+      id: 'enterprise',
+      name: 'Enterprise',
+      price: isZAR ? 1849.99 : isEUR ? 84.99 : 99.99,
+      currency,
+      interval: 'month',
+      features: [
+        'Everything in Pro',
+        'Unlimited team members',
+        'Custom integrations',
+        'Dedicated support',
+        'White-labeling',
+        'Advanced security',
+        ...(isZAR ? ['Priority South African business support', 'Local payment methods'] : [])
+      ],
+      current: false
+    }
+  ];
+};
 
 // Payment method component
 function PaymentMethodCard({ 
@@ -314,7 +323,7 @@ function InvoiceRow({ invoice }: { invoice: Invoice }) {
       <div className="flex items-center gap-4">
         <div className="text-right">
           <div className="font-medium">
-            ${invoice.amount.toFixed(2)} {invoice.currency}
+            {formatCurrency(invoice.amount, invoice.currency)}
           </div>
           {getStatusBadge(invoice.status)}
         </div>
@@ -357,7 +366,7 @@ function PlanCard({
       <CardHeader className="text-center pb-4">
         <CardTitle className="text-xl">{plan.name}</CardTitle>
         <div className="text-3xl font-bold">
-          ${plan.price}
+          {formatCurrency(plan.price, plan.currency)}
           <span className="text-sm font-normal text-muted-foreground">/{plan.interval}</span>
         </div>
       </CardHeader>
@@ -388,6 +397,8 @@ function PlanCard({
 // Main component
 export default function BillingSettings() {
   const { canManage } = useOrganizationSettings();
+  const { settings: userSettings } = useUserSettings();
+  const { currency: detectedCurrency, isAutoDetected } = useCurrencyDetection();
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>(mockPaymentMethods);
   const [invoices] = useState<Invoice[]>(mockInvoices);
   const [subscription] = useState<Subscription>(mockSubscription);
@@ -419,6 +430,9 @@ export default function BillingSettings() {
     }
   };
   
+  // Get user's preferred currency and plans (with auto-detection)
+  const userCurrency = userSettings?.preferences?.currency || detectedCurrency || getUserCurrency();
+  const availablePlans = getPlansForCurrency(userCurrency);
   const currentPlan = availablePlans.find(plan => plan.current);
   const nextBillingDate = new Date(subscription.currentPeriodEnd);
   
@@ -454,9 +468,14 @@ export default function BillingSettings() {
             
             <div className="text-center p-4 border rounded-lg">
               <div className="text-2xl font-bold text-green-600 mb-1">
-                ${currentPlan?.price || 0}
+                {formatCurrency(currentPlan?.price || 0, userCurrency)}
               </div>
-              <div className="text-sm text-muted-foreground">Monthly Cost</div>
+              <div className="text-sm text-muted-foreground">
+                Monthly Cost
+                {isAutoDetected && (
+                  <div className="text-xs text-blue-600 mt-1">🌍 Auto-detected currency</div>
+                )}
+              </div>
             </div>
             
             <div className="text-center p-4 border rounded-lg">
@@ -496,13 +515,13 @@ export default function BillingSettings() {
             <div>
               <h3 className="text-lg font-semibold">{currentPlan?.name} Plan</h3>
               <p className="text-muted-foreground">
-                ${currentPlan?.price}/{currentPlan?.interval} • 
+                {formatCurrency(currentPlan?.price || 0, userCurrency)}/{currentPlan?.interval} • 
                 Next billing: {nextBillingDate.toLocaleDateString()}
               </p>
             </div>
             
             <div className="text-right">
-              <div className="text-2xl font-bold">${currentPlan?.price}</div>
+              <div className="text-2xl font-bold">{formatCurrency(currentPlan?.price || 0, userCurrency)}</div>
               <div className="text-sm text-muted-foreground">per {currentPlan?.interval}</div>
             </div>
           </div>

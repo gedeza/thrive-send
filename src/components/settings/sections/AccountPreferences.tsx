@@ -19,6 +19,7 @@ import {
   Check
 } from 'lucide-react';
 import { useUserSettings } from '@/contexts/SettingsContext';
+import { SUPPORTED_CURRENCIES, SUPPORTED_LOCALES, getUserCurrency, formatCurrency, getCurrencySymbol } from '@/lib/utils/currency';
 import { cn } from '@/lib/utils';
 
 export default function AccountPreferences() {
@@ -329,7 +330,7 @@ export default function AccountPreferences() {
             <div className="space-y-2">
               <Label>Currency</Label>
               <Select
-                value={settings?.preferences?.currency || 'USD'}
+                value={settings?.preferences?.currency || getUserCurrency()}
                 onValueChange={(value) => updateSetting('preferences.currency', value)}
                 disabled={saving}
               >
@@ -337,18 +338,36 @@ export default function AccountPreferences() {
                   <SelectValue placeholder="Select currency" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="USD">USD - US Dollar</SelectItem>
-                  <SelectItem value="EUR">EUR - Euro</SelectItem>
-                  <SelectItem value="GBP">GBP - British Pound</SelectItem>
-                  <SelectItem value="CAD">CAD - Canadian Dollar</SelectItem>
-                  <SelectItem value="AUD">AUD - Australian Dollar</SelectItem>
-                  <SelectItem value="ZAR">ZAR - South African Rand</SelectItem>
-                  <SelectItem value="JPY">JPY - Japanese Yen</SelectItem>
-                  <SelectItem value="CNY">CNY - Chinese Yuan</SelectItem>
-                  <SelectItem value="INR">INR - Indian Rupee</SelectItem>
-                  <SelectItem value="BRL">BRL - Brazilian Real</SelectItem>
+                  {Object.entries(SUPPORTED_CURRENCIES).map(([code, config]) => (
+                    <SelectItem key={code} value={code}>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm">{config.symbol}</span>
+                        <span>{code}</span>
+                        <span className="text-muted-foreground">- {config.code === 'ZAR' ? 'South African Rand' : config.code === 'USD' ? 'US Dollar' : config.code === 'EUR' ? 'Euro' : config.code === 'GBP' ? 'British Pound' : config.code === 'CAD' ? 'Canadian Dollar' : config.code === 'AUD' ? 'Australian Dollar' : config.code === 'JPY' ? 'Japanese Yen' : config.code === 'NGN' ? 'Nigerian Naira' : config.code === 'INR' ? 'Indian Rupee' : config.code === 'BRL' ? 'Brazilian Real' : 'Currency'}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                Preview: {formatCurrency(29.99, settings?.preferences?.currency || getUserCurrency())}
+                {settings?.preferences?.currency === 'ZAR' && (
+                  <span className="ml-2 text-green-600 font-medium">🇿🇦 South African market</span>
+                )}
+                {(() => {
+                  const detectedCurrency = typeof window !== 'undefined' ? localStorage.getItem('detectedCurrency') : null;
+                  const userPreference = typeof window !== 'undefined' ? localStorage.getItem('preferredCurrency') : null;
+                  
+                  if (detectedCurrency && !userPreference && detectedCurrency === (settings?.preferences?.currency || getUserCurrency())) {
+                    return (
+                      <span className="ml-2 text-blue-600 font-medium">
+                        🌍 Auto-detected from your location
+                      </span>
+                    );
+                  }
+                  return null;
+                })()}
+              </p>
             </div>
           </div>
         </CardContent>

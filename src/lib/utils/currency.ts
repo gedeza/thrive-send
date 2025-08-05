@@ -168,14 +168,187 @@ export const SUPPORTED_LOCALES: Record<string, LocaleConfig> = {
 };
 
 /**
- * Get user's preferred currency from various sources
+ * Country to currency mapping for geolocation-based detection
+ */
+const COUNTRY_CURRENCY_MAP: Record<string, string> = {
+  'US': 'USD', 'United States': 'USD',
+  'ZA': 'ZAR', 'South Africa': 'ZAR',
+  'BR': 'BRL', 'Brazil': 'BRL',
+  'DE': 'EUR', 'Germany': 'EUR',
+  'FR': 'EUR', 'France': 'EUR',
+  'IT': 'EUR', 'Italy': 'EUR',
+  'ES': 'EUR', 'Spain': 'EUR',
+  'NL': 'EUR', 'Netherlands': 'EUR',
+  'BE': 'EUR', 'Belgium': 'EUR',
+  'AT': 'EUR', 'Austria': 'EUR',
+  'GB': 'GBP', 'United Kingdom': 'GBP',
+  'UK': 'GBP',
+  'CA': 'CAD', 'Canada': 'CAD',
+  'AU': 'AUD', 'Australia': 'AUD',
+  'NZ': 'AUD', 'New Zealand': 'AUD',
+  'JP': 'JPY', 'Japan': 'JPY',
+  'NG': 'NGN', 'Nigeria': 'NGN',
+  'IN': 'INR', 'India': 'INR',
+  'CN': 'USD', 'China': 'USD', // Use USD for China as CNY not in supported list
+  'MX': 'USD', 'Mexico': 'USD', // Use USD for Mexico
+  'AR': 'USD', 'Argentina': 'USD' // Use USD for Argentina
+};
+
+/**
+ * Detect user's country using multiple fallback methods
+ */
+async function detectUserCountry(): Promise<string | null> {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    // Method 1: Check for Cloudflare country header (fastest)
+    const cfCountry = (window as any).__CF_COUNTRY__;
+    if (cfCountry && COUNTRY_CURRENCY_MAP[cfCountry]) {
+      console.log('🌍 Currency detected via Cloudflare:', cfCountry);
+      return cfCountry;
+    }
+
+    // Method 2: Use free IP geolocation API with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    
+    const response = await fetch('https://ipapi.co/json/', {
+      signal: controller.signal,
+      headers: { 'Accept': 'application/json' }
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.country_code && COUNTRY_CURRENCY_MAP[data.country_code]) {
+        console.log('🌍 Currency detected via IP geolocation:', data.country_code, data.country_name);
+        return data.country_code;
+      }
+    }
+  } catch (error) {
+    if (error.name !== 'AbortError') {
+      console.warn('🌍 Geolocation API failed:', error);
+    }
+  }
+
+  // Method 3: Fallback to timezone-based estimation
+  try {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const timezoneCountryMap: Record<string, string> = {
+      'Africa/Johannesburg': 'ZA',
+      'Africa/Cape_Town': 'ZA',
+      'America/Sao_Paulo': 'BR',
+      'America/Rio_Branco': 'BR',
+      'America/New_York': 'US',
+      'America/Los_Angeles': 'US',
+      'America/Chicago': 'US',
+      'America/Denver': 'US',
+      'America/Toronto': 'CA',
+      'America/Vancouver': 'CA',
+      'Europe/London': 'GB',
+      'Europe/Berlin': 'DE',
+      'Europe/Paris': 'FR',
+      'Europe/Rome': 'IT',
+      'Europe/Madrid': 'ES',
+      'Europe/Amsterdam': 'NL',
+      'Australia/Sydney': 'AU',
+      'Australia/Melbourne': 'AU',
+      'Asia/Tokyo': 'JP',
+      'Asia/Kolkata': 'IN',
+      'Asia/Mumbai': 'IN',
+      'Africa/Lagos': 'NG'
+    };
+    
+    const country = timezoneCountryMap[timezone];
+    if (country) {
+      console.log('🌍 Currency detected via timezone:', timezone, '→', country);
+      return country;
+    }
+  } catch (error) {
+    console.warn('🌍 Timezone detection failed:', error);
+  }
+
+  return null;
+}
+
+/**
+ * Get currency based on detected country
+ */
+async function getCurrencyFromGeolocation(): Promise<string> {
+  const country = await detectUserCountry();
+  const currency = country ? COUNTRY_CURRENCY_MAP[country] || 'USD' : 'USD';
+  
+  if (country) {
+    console.log(`🌍 Auto-detected currency: ${currency} for country: ${country}`);
+  }
+  
+  return currency;
+}
+
+/**
+ * Amazon-style automatic currency detection (async)
+ */
+export async function getUserCurrencyAsync(): Promise<string> {
+  // Priority: localStorage (user preference) > geolocation > locale > default
+  if (typeof window !== 'undefined') {
+    const userPreference = localStorage.getItem('preferredCurrency');
+    if (userPreference && SUPPORTED_CURRENCIES[userPreference]) {
+      console.log('💰 Using saved currency preference:', userPreference);
+      return userPreference;
+    }
+  }
+
+  // Try geolocation-based auto-detection
+  try {
+    const geoCurrency = await getCurrencyFromGeolocation();
+    if (geoCurrency && SUPPORTED_CURRENCIES[geoCurrency]) {
+      // Cache the detected currency for faster future loads
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('detectedCurrency', geoCurrency);
+        localStorage.setItem('detectedCurrencyTimestamp', Date.now().toString());
+      }
+      return geoCurrency;
+    }
+  } catch (error) {
+    console.warn('🌍 Geolocation currency detection failed:', error);
+  }
+
+  // Fallback to locale-based detection
+  const locale = getUserLocale();
+  const localeConfig = SUPPORTED_LOCALES[locale];
+  const fallbackCurrency = localeConfig?.currency || 'USD';
+  
+  console.log('🌍 Using locale fallback currency:', fallbackCurrency);
+  return fallbackCurrency;
+}
+
+/**
+ * Synchronous version with cached geolocation results
  */
 export function getUserCurrency(): string {
-  // Priority: localStorage > user settings > organization settings > geolocation > default
+  // Priority: localStorage (user preference) > cached detection > locale > default
   if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem('preferredCurrency');
-    if (stored && SUPPORTED_CURRENCIES[stored]) {
-      return stored;
+    const userPreference = localStorage.getItem('preferredCurrency');
+    if (userPreference && SUPPORTED_CURRENCIES[userPreference]) {
+      return userPreference;
+    }
+
+    // Check if we have a recent cached detection result (valid for 24 hours)
+    const detected = localStorage.getItem('detectedCurrency');
+    const detectedTimestamp = localStorage.getItem('detectedCurrencyTimestamp');
+    
+    if (detected && detectedTimestamp && SUPPORTED_CURRENCIES[detected]) {
+      const age = Date.now() - parseInt(detectedTimestamp);
+      const isValid = age < 24 * 60 * 60 * 1000; // 24 hours
+      
+      if (isValid) {
+        return detected;
+      } else {
+        // Clear expired cache
+        localStorage.removeItem('detectedCurrency');
+        localStorage.removeItem('detectedCurrencyTimestamp');
+      }
     }
   }
 

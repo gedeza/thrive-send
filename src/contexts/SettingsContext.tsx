@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useReducer, useEffect, useCallback, ReactNode } from 'react';
 import { useUser, useOrganization } from '@clerk/nextjs';
+import { getUserCurrency, getUserCurrencyAsync, getUserLocale, SUPPORTED_CURRENCIES } from '@/lib/utils/currency';
 
 // Types based on Settings TDD specification
 export interface UserSettings {
@@ -120,7 +121,7 @@ const defaultUserSettings: UserSettings = {
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     language: 'en',
     dateFormat: 'MM/DD/YYYY',
-    currency: 'USD'
+    currency: getUserCurrency() // Dynamic based on user's location/preference
   }
 };
 
@@ -139,7 +140,7 @@ const defaultOrganizationSettings: OrganizationSettings = {
   },
   defaults: {
     timezone: 'UTC',
-    currency: 'USD',
+    currency: getUserCurrency(), // Dynamic based on organization's location
     dateFormat: 'MM/DD/YYYY',
     campaignDefaults: {}
   },
@@ -456,6 +457,46 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
   const resetError = useCallback(() => {
     dispatch({ type: 'RESET_ERROR' });
   }, []);
+
+  // Auto-detect currency on first load (Amazon-style)
+  useEffect(() => {
+    let mounted = true;
+
+    async function initializeCurrency() {
+      try {
+        const detectedCurrency = await getUserCurrencyAsync();
+        
+        if (mounted && detectedCurrency && SUPPORTED_CURRENCIES[detectedCurrency]) {
+          // Update default settings with detected currency
+          const updatedDefaults = {
+            ...defaultUserSettings,
+            preferences: {
+              ...defaultUserSettings.preferences,
+              currency: detectedCurrency
+            }
+          };
+          
+          // Only update if we don't have user settings yet
+          if (!state.userSettings) {
+            dispatch({ type: 'SET_USER_SETTINGS', payload: updatedDefaults });
+          }
+          
+          console.log(`🌍 ThriveSend: Auto-detected currency ${detectedCurrency} for your region`);
+        }
+      } catch (error) {
+        console.warn('Currency auto-detection failed:', error);
+      }
+    }
+
+    // Run auto-detection on first load
+    if (!state.userSettings) {
+      initializeCurrency();
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, [state.userSettings]);
 
   // Load settings on mount or when user/organization changes
   useEffect(() => {
