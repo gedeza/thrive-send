@@ -1,0 +1,161 @@
+// Enhanced Recommendation Network Models
+// Add these models to the main schema.prisma file
+
+model Newsletter {
+  id                          String                     @id @default(cuid())
+  title                       String
+  description                 String?
+  clientId                    String
+  organizationId              String
+  subscriberCount             Int                        @default(0)
+  averageOpenRate             Float                      @default(0.0)
+  averageClickRate            Float                      @default(0.0)
+  categories                  String[]                   @default([])
+  targetAudience              Json                       @default("{}")
+  isActiveForRecommendations  Boolean                    @default(true)
+  recommendationWeight        Float                      @default(1.0)
+  createdAt                   DateTime                   @default(now())
+  updatedAt                   DateTime                   @updatedAt
+  
+  // Relations
+  client                      Client                     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  organization                Organization               @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  outgoingRecommendations     NewsletterRecommendation[] @relation("FromNewsletter")
+  incomingRecommendations     NewsletterRecommendation[] @relation("ToNewsletter")
+  fromMatches                 RecommendationMatch[]      @relation("FromNewsletterMatch")
+  toMatches                   RecommendationMatch[]      @relation("ToNewsletterMatch")
+  
+  @@index([organizationId])
+  @@index([clientId])
+  @@index([isActiveForRecommendations])
+  @@index([categories])
+}
+
+model NewsletterRecommendation {
+  id                    String                      @id @default(cuid())
+  fromNewsletterId      String
+  toNewsletterId        String
+  status                RecommendationStatus        @default(ACTIVE)
+  type                  RecommendationType          @default(MUTUAL)
+  priority              Int                         @default(5) // 1-10 scale
+  startDate             DateTime                    @default(now())
+  endDate               DateTime?
+  targetAudienceOverlap Float                       @default(0.0)
+  estimatedReach        Int                         @default(0)
+  metadata              Json                        @default("{}")
+  createdAt             DateTime                    @default(now())
+  updatedAt             DateTime                    @updatedAt
+  
+  // Relations
+  fromNewsletter        Newsletter                  @relation("FromNewsletter", fields: [fromNewsletterId], references: [id], onDelete: Cascade)
+  toNewsletter          Newsletter                  @relation("ToNewsletter", fields: [toNewsletterId], references: [id], onDelete: Cascade)
+  performance           RecommendationPerformance[]
+  
+  @@unique([fromNewsletterId, toNewsletterId])
+  @@index([fromNewsletterId])
+  @@index([toNewsletterId])
+  @@index([status])
+  @@index([startDate])
+}
+
+model RecommendationPerformance {
+  id               String                   @id @default(cuid())
+  recommendationId String
+  period           PerformancePeriod
+  periodStart      DateTime
+  periodEnd        DateTime
+  impressions      Int                      @default(0)
+  clicks           Int                      @default(0)
+  conversions      Int                      @default(0) // New subscribers
+  revenue          Float                    @default(0.0)
+  ctr              Float                    @default(0.0) // Click-through rate
+  conversionRate   Float                    @default(0.0)
+  costPerConversion Float                   @default(0.0)
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  
+  // Relations
+  recommendation   NewsletterRecommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  
+  @@unique([recommendationId, period, periodStart])
+  @@index([recommendationId])
+  @@index([periodStart])
+}
+
+model RecommendationSettings {
+  id                           String       @id @default(cuid())
+  organizationId               String       @unique
+  isNetworkActive              Boolean      @default(true)
+  autoAcceptRecommendations    Boolean      @default(false)
+  maxRecommendationsPerNewsletter Int       @default(5)
+  minAudienceOverlap           Float        @default(10.0)
+  preferredCategories          String[]     @default([])
+  excludedOrganizations        String[]     @default([])
+  revSharePercentage           Float        @default(0.0) // Revenue share for successful conversions
+  qualityThreshold             Float        @default(3.0) // Min quality score (1-5)
+  settings                     Json         @default("{}")
+  createdAt                    DateTime     @default(now())
+  updatedAt                    DateTime     @updatedAt
+  
+  // Relations
+  organization                 Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  @@index([organizationId])
+}
+
+model RecommendationMatch {
+  id                     String     @id @default(cuid())
+  fromNewsletterId       String
+  toNewsletterId         String
+  matchScore             Float      // Algorithmic matching score (0-100)
+  categoryAlignment      Float      @default(0.0)
+  audienceCompatibility  Float      @default(0.0)
+  performanceHistory     Float      @default(0.0)
+  geographicAlignment    Float      @default(0.0)
+  seasonalRelevance      Float      @default(0.0)
+  competitionLevel       Float      @default(0.0)
+  isAutoGenerated        Boolean    @default(true)
+  lastCalculated         DateTime   @default(now())
+  metadata               Json       @default("{}")
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @updatedAt
+  
+  // Relations
+  fromNewsletter         Newsletter @relation("FromNewsletterMatch", fields: [fromNewsletterId], references: [id], onDelete: Cascade)
+  toNewsletter           Newsletter @relation("ToNewsletterMatch", fields: [toNewsletterId], references: [id], onDelete: Cascade)
+  
+  @@unique([fromNewsletterId, toNewsletterId])
+  @@index([matchScore])
+  @@index([lastCalculated])
+}
+
+// Enums for recommendation system
+enum RecommendationStatus {
+  ACTIVE
+  PAUSED
+  ENDED
+  PENDING_APPROVAL
+  REJECTED
+}
+
+enum RecommendationType {
+  MUTUAL      // Both newsletters recommend each other
+  ONE_WAY     // Only one newsletter recommends the other
+  SPONSORED   // Paid recommendation
+}
+
+enum PerformancePeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+}
+
+// Add these relations to existing models:
+
+// Add to Organization model:
+// newsletters              Newsletter[]
+// recommendationSettings   RecommendationSettings?
+
+// Add to Client model:  
+// newsletters              Newsletter[]

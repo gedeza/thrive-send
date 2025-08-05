@@ -127,6 +127,7 @@
     "remark-gfm": "^4.0.1",
     "resend": "^4.5.2",
     "sonner": "^2.0.5",
+    "stripe": "^18.4.0",
     "tailwind-merge": "^2.0.0",
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^11.1.0",
