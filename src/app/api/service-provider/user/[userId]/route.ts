@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/prisma';
+import { db as prisma } from '@/lib/db';
 
 export async function GET(
   request: NextRequest,
@@ -22,9 +22,9 @@ export async function GET(
 
     // Get user details with organization and role information
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { clerkId: userId },
       include: {
-        organizations: {
+        organizationMemberships: {
           include: {
             organization: {
               select: {
@@ -42,25 +42,19 @@ export async function GET(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Build user data with permissions (simplified for now)
+    // Build user data matching ServiceProviderUser interface
     const serviceProviderUser = {
       id: user.id,
-      name: user.name || user.email,
+      name: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email,
       email: user.email,
-      role: user.organizations[0]?.role || 'CONTENT_CREATOR',
+      role: user.organizationMemberships[0]?.role || 'CONTENT_CREATOR',
       permissions: [
         {
           resource: '*',
-          actions: ['read', 'write'],
+          actions: ['read', 'write'] as const,
           scope: 'organization' as const,
         },
       ],
-      organizations: user.organizations.map(uo => ({
-        id: uo.organization.id,
-        name: uo.organization.name,
-        type: uo.organization.type,
-        role: uo.role,
-      })),
     };
 
     return NextResponse.json(serviceProviderUser);

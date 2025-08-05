@@ -1,7 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth, useOrganization } from '@clerk/nextjs';
+import { useServiceProvider } from '@/context/ServiceProviderContext';
+import { useAudienceData } from '@/hooks/use-audience-data';
+import type { Audience, AudienceSegment, AudienceStats } from '@/hooks/use-audience-data';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Plus, 
   Users, 
@@ -26,295 +30,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/components/ui/use-toast';
 import Link from 'next/link';
 
-interface AudienceSegment {
-  id: string;
-  name: string;
-  description?: string;
-  type: 'DEMOGRAPHIC' | 'BEHAVIORAL' | 'CUSTOM' | 'LOOKALIKE';
-  size: number;
-  status: 'ACTIVE' | 'INACTIVE' | 'PROCESSING';
-  lastUpdated: string;
-  conditions?: {
-    demographics?: {
-      ageRange?: string[];
-      gender?: string[];
-      location?: string[];
-    };
-    behavioral?: {
-      engagement?: string;
-      purchaseHistory?: string;
-      activityLevel?: string;
-    };
-    custom?: {
-      tags?: string[];
-      customFields?: Record<string, any>;
-    };
-  };
-  performance?: {
-    engagementRate: number;
-    conversionRate: number;
-    avgOrderValue: number;
-    churnRate: number;
-  };
-  growth?: {
-    thisWeek: number;
-    thisMonth: number;
-  };
-}
-
-interface Audience {
-  id: string;
-  name: string;
-  description?: string;
-  type: 'CUSTOM' | 'IMPORTED' | 'DYNAMIC';
-  status: 'ACTIVE' | 'INACTIVE' | 'PROCESSING';
-  size: number;
-  createdAt: string;
-  lastUpdated?: string;
-  source?: string;
-  tags: string[];
-  segments: AudienceSegment[];
-  analytics?: {
-    totalEngagement: number;
-    avgEngagementRate: number;
-    topPerformingSegment: string;
-    growth: {
-      daily: number;
-      weekly: number;
-      monthly: number;
-    };
-  };
-}
+// Types are now imported from the hook
 
 export default function AudiencesPage() {
   const { userId } = useAuth();
   const { organization } = useOrganization();
-  const [audiences, setAudiences] = useState<Audience[]>([]);
-  const [filteredAudiences, setFilteredAudiences] = useState<Audience[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { state: { organizationId } } = useServiceProvider();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
-  const [stats, setStats] = useState({
-    totalAudiences: 0,
-    totalContacts: 0,
-    activeSegments: 0,
-    avgEngagementRate: 0
-  });
+  
+  // Use live data hook instead of hardcoded demo data
+  const { audiences, stats, isLoading, error, refetch } = useAudienceData(organizationId);
 
-  useEffect(() => {
-    fetchAudiences();
-  }, []);
-
-  useEffect(() => {
-    filterAudiences();
-  }, [audiences, searchQuery, statusFilter, typeFilter]);
-
-  const fetchAudiences = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Mock data for demonstration - replace with actual API call
-      const mockAudiences: Audience[] = [
-        {
-          id: '1',
-          name: 'High-Value Customers',
-          description: 'Customers with orders over $500 in the last 6 months',
-          type: 'CUSTOM',
-          status: 'ACTIVE',
-          size: 2547,
-          createdAt: '2024-01-15T10:00:00Z',
-          lastUpdated: '2024-01-20T15:30:00Z',
-          source: 'Custom Segmentation',
-          tags: ['high-value', 'premium', 'loyal'],
-          segments: [
-            {
-              id: 'seg1',
-              name: 'Premium Buyers',
-              type: 'BEHAVIORAL',
-              size: 1234,
-              status: 'ACTIVE',
-              lastUpdated: '2024-01-20T15:30:00Z',
-              conditions: {
-                behavioral: {
-                  purchaseHistory: 'high_value',
-                  engagement: 'high'
-                }
-              },
-              performance: {
-                engagementRate: 78.5,
-                conversionRate: 12.3,
-                avgOrderValue: 750,
-                churnRate: 5.2
-              },
-              growth: {
-                thisWeek: 5.2,
-                thisMonth: 18.7
-              }
-            },
-            {
-              id: 'seg2',
-              name: 'Repeat Customers',
-              type: 'BEHAVIORAL',
-              size: 1313,
-              status: 'ACTIVE',
-              lastUpdated: '2024-01-19T12:00:00Z',
-              conditions: {
-                behavioral: {
-                  purchaseHistory: 'repeat',
-                  activityLevel: 'active'
-                }
-              },
-              performance: {
-                engagementRate: 65.8,
-                conversionRate: 8.9,
-                avgOrderValue: 420,
-                churnRate: 8.1
-              },
-              growth: {
-                thisWeek: 2.1,
-                thisMonth: 12.4
-              }
-            }
-          ],
-          analytics: {
-            totalEngagement: 89234,
-            avgEngagementRate: 72.1,
-            topPerformingSegment: 'Premium Buyers',
-            growth: {
-              daily: 1.2,
-              weekly: 5.8,
-              monthly: 15.6
-            }
-          }
-        },
-        {
-          id: '2',
-          name: 'Newsletter Subscribers',
-          description: 'Active email subscribers from the last 3 months',
-          type: 'IMPORTED',
-          status: 'ACTIVE',
-          size: 8945,
-          createdAt: '2024-01-10T08:00:00Z',
-          lastUpdated: '2024-01-21T09:15:00Z',
-          source: 'Email Import',
-          tags: ['newsletter', 'email', 'subscribers'],
-          segments: [
-            {
-              id: 'seg3',
-              name: 'Highly Engaged',
-              type: 'BEHAVIORAL',
-              size: 3456,
-              status: 'ACTIVE',
-              lastUpdated: '2024-01-21T09:15:00Z',
-              conditions: {
-                behavioral: {
-                  engagement: 'high',
-                  activityLevel: 'very_active'
-                }
-              },
-              performance: {
-                engagementRate: 85.2,
-                conversionRate: 6.7,
-                avgOrderValue: 280,
-                churnRate: 3.1
-              },
-              growth: {
-                thisWeek: 8.3,
-                thisMonth: 22.1
-              }
-            }
-          ],
-          analytics: {
-            totalEngagement: 156789,
-            avgEngagementRate: 58.4,
-            topPerformingSegment: 'Highly Engaged',
-            growth: {
-              daily: 2.8,
-              weekly: 12.4,
-              monthly: 28.9
-            }
-          }
-        },
-        {
-          id: '3',
-          name: 'Demographic: Millennials',
-          description: 'Users aged 25-40 with high engagement rates',
-          type: 'DYNAMIC',
-          status: 'PROCESSING',
-          size: 4521,
-          createdAt: '2024-01-18T14:20:00Z',
-          lastUpdated: '2024-01-21T10:45:00Z',
-          source: 'Dynamic Segmentation',
-          tags: ['millennials', 'demographic', 'age-based'],
-          segments: [
-            {
-              id: 'seg4',
-              name: 'Urban Millennials',
-              type: 'DEMOGRAPHIC',
-              size: 2890,
-              status: 'ACTIVE',
-              lastUpdated: '2024-01-21T10:45:00Z',
-              conditions: {
-                demographics: {
-                  ageRange: ['25-35'],
-                  location: ['urban', 'metro']
-                }
-              },
-              performance: {
-                engagementRate: 62.8,
-                conversionRate: 9.4,
-                avgOrderValue: 340,
-                churnRate: 12.7
-              },
-              growth: {
-                thisWeek: -1.2,
-                thisMonth: 7.8
-              }
-            }
-          ],
-          analytics: {
-            totalEngagement: 67543,
-            avgEngagementRate: 62.8,
-            topPerformingSegment: 'Urban Millennials',
-            growth: {
-              daily: 0.8,
-              weekly: 3.2,
-              monthly: 11.5
-            }
-          }
-        }
-      ];
-
-      setAudiences(mockAudiences);
-      
-      // Calculate stats
-      const totalContacts = mockAudiences.reduce((sum, audience) => sum + audience.size, 0);
-      const totalSegments = mockAudiences.reduce((sum, audience) => sum + audience.segments.length, 0);
-      const avgEngagement = mockAudiences.reduce((sum, audience) => 
-        sum + (audience.analytics?.avgEngagementRate || 0), 0
-      ) / mockAudiences.length;
-
-      setStats({
-        totalAudiences: mockAudiences.length,
-        totalContacts,
-        activeSegments: totalSegments,
-        avgEngagementRate: avgEngagement
-      });
-      
-    } catch (error) {
-      console.error('Error fetching audiences:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch audiences',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const filterAudiences = () => {
+  // Filtered audiences using useMemo to prevent infinite loops
+  const filteredAudiences = useMemo(() => {
     let filtered = audiences;
 
     if (searchQuery) {
@@ -333,8 +63,10 @@ export default function AudiencesPage() {
       filtered = filtered.filter(audience => audience.type.toLowerCase() === typeFilter);
     }
 
-    setFilteredAudiences(filtered);
-  };
+    return filtered;
+  }, [audiences, searchQuery, statusFilter, typeFilter]);
+
+
 
   const getStatusConfig = (status: string) => {
     const configs = {
@@ -379,6 +111,12 @@ export default function AudiencesPage() {
               Create Audience
             </Button>
           </Link>
+          <Link href="/audiences/shared-segments">
+            <Button variant="outline">
+              <Target className="h-4 w-4 mr-2" />
+              Shared Segments
+            </Button>
+          </Link>
           <Button variant="outline">
             <Settings className="h-4 w-4 mr-2" />
             Import Contacts
@@ -394,7 +132,11 @@ export default function AudiencesPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalAudiences}</div>
+            {isLoading ? (
+              <Skeleton className="h-8 w-16 mb-2" />
+            ) : (
+              <div className="text-2xl font-bold">{stats.totalAudiences}</div>
+            )}
             <p className="text-xs text-muted-foreground">Across all segments</p>
           </CardContent>
         </Card>
@@ -405,7 +147,11 @@ export default function AudiencesPage() {
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalContacts.toLocaleString()}</div>
+            {isLoading ? (
+              <Skeleton className="h-8 w-20 mb-2" />
+            ) : (
+              <div className="text-2xl font-bold">{stats.totalContacts.toLocaleString()}</div>
+            )}
             <p className="text-xs text-muted-foreground">+12% from last month</p>
           </CardContent>
         </Card>
@@ -416,7 +162,11 @@ export default function AudiencesPage() {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.activeSegments}</div>
+            {isLoading ? (
+              <Skeleton className="h-8 w-12 mb-2" />
+            ) : (
+              <div className="text-2xl font-bold">{stats.activeSegments}</div>
+            )}
             <p className="text-xs text-muted-foreground">Across all audiences</p>
           </CardContent>
         </Card>
@@ -427,7 +177,11 @@ export default function AudiencesPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.avgEngagementRate.toFixed(1)}%</div>
+            {isLoading ? (
+              <Skeleton className="h-8 w-16 mb-2" />
+            ) : (
+              <div className="text-2xl font-bold">{stats.avgEngagementRate.toFixed(1)}%</div>
+            )}
             <p className="text-xs text-muted-foreground">+5.2% from last month</p>
           </CardContent>
         </Card>
@@ -474,35 +228,102 @@ export default function AudiencesPage() {
         </CardContent>
       </Card>
 
+      {/* Loading state */}
+      {isLoading && (
+        <div className="space-y-6">
+          {[...Array(3)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <div className="animate-pulse space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-2 flex-1">
+                      <Skeleton className="h-6 w-48" />
+                      <Skeleton className="h-4 w-96" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Skeleton className="h-8 w-16" />
+                      <Skeleton className="h-8 w-16" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-4">
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Error state */}
+      {error && (
+        <Card className="border-destructive/20 bg-destructive/5">
+          <CardContent className="p-6 text-center">
+            <div className="flex justify-center mb-3">
+              <div className="p-2 bg-destructive/10 rounded-full">
+                <Users className="h-6 w-6 text-destructive" />
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold mb-2">Failed to load audiences</h3>
+            <p className="text-muted-foreground mb-4">{error instanceof Error ? error.message : 'Unknown error occurred'}</p>
+            <Button
+              variant="outline"
+              onClick={() => refetch()}
+            >
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Audiences List */}
-      <div className="space-y-6">
-        {filteredAudiences.length > 0 ? (
-          filteredAudiences.map((audience) => (
-            <AudienceCard key={audience.id} audience={audience} />
-          ))
-        ) : (
-          <Card>
-            <CardContent className="text-center py-8">
-              <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-medium mb-2">No audiences found</h3>
-              <p className="text-muted-foreground mb-4">
-                {searchQuery || statusFilter !== 'all' || typeFilter !== 'all'
-                  ? 'Try adjusting your filters'
-                  : "Create your first audience to start targeting customers"
-                }
-              </p>
-              {!searchQuery && statusFilter === 'all' && typeFilter === 'all' && (
-                <Link href="/audiences/create">
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Audience
+      {!isLoading && !error && (
+        <div className="space-y-6">
+          {filteredAudiences.length > 0 ? (
+            filteredAudiences.map((audience) => (
+              <AudienceCard key={audience.id} audience={audience} />
+            ))
+          ) : (
+            <Card>
+              <CardContent className="text-center py-8">
+                <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-medium mb-2">No audiences found</h3>
+                <p className="text-muted-foreground mb-4">
+                  {searchQuery || statusFilter !== 'all' || typeFilter !== 'all'
+                    ? 'Try adjusting your filters'
+                    : audiences.length === 0
+                      ? "Create your first audience to start targeting customers"
+                      : "No audiences match your current search criteria"
+                  }
+                </p>
+                {!searchQuery && statusFilter === 'all' && typeFilter === 'all' && audiences.length === 0 && (
+                  <Link href="/audiences/create">
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Audience
+                    </Button>
+                  </Link>
+                )}
+                {(searchQuery || statusFilter !== 'all' || typeFilter !== 'all') && audiences.length > 0 && (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setSearchQuery('');
+                      setStatusFilter('all');
+                      setTypeFilter('all');
+                    }}
+                  >
+                    Clear Filters
                   </Button>
-                </Link>
-              )}
-            </CardContent>
-          </Card>
-        )}
-      </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
     </div>
   );
 }
