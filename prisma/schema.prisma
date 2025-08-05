@@ -1200,21 +1200,39 @@ model Recommendation {
 }
 
 model Payment {
-  id             String                @id @default(cuid())
-  amount         Float
-  currency       String
-  status         String                @default("PENDING")
-  paymentMethod  String
-  paymentIntent  String?
-  metadata       Json?
-  createdAt      DateTime              @default(now())
-  updatedAt      DateTime              @updatedAt
-  subscriptionId String?
-  purchases      MarketplacePurchase[]
-  subscription   Subscription?         @relation(fields: [subscriptionId], references: [id])
+  id                String                @id @default(cuid())
+  amount            Float
+  currency          String
+  status            PaymentStatus         @default(PENDING)
+  provider          String                @default("stripe") // payfast, flutterwave, stripe, paystack
+  paymentIntent     String?
+  paymentMethodId   String?
+  clientSecret      String?
+  processingFee     Float?                @default(0)
+  netAmount         Float?
+  metadata          Json?                 @default("{}")
+  organizationId    String?
+  clientId          String?
+  productId         String?
+  productName       String?
+  refundAmount      Float?                @default(0)
+  refundedAt        DateTime?
+  completedAt       DateTime?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  subscriptionId    String?
+  
+  // Relations
+  purchases         MarketplacePurchase[]
+  subscription      Subscription?         @relation(fields: [subscriptionId], references: [id])
+  paymentMethods    PaymentMethod[]       @relation("PaymentToPaymentMethod")
+  transactions      Transaction[]
 
   @@index([status])
   @@index([subscriptionId])
+  @@index([organizationId])
+  @@index([provider])
+  @@index([paymentIntent])
 }
 
 model Invitation {
@@ -1604,6 +1622,93 @@ enum ClientStatus {
   INACTIVE
   LEAD
   ARCHIVED
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+model PaymentMethod {
+  id                String              @id @default(cuid())
+  type              PaymentMethodType   @default(CARD)
+  provider          String              @default("stripe")
+  organizationId    String
+  customerId        String?
+  externalId        String              // Stripe payment method ID or other provider ID
+  last4             String?
+  brand             String?
+  expiryMonth       Int?
+  expiryYear        Int?
+  isDefault         Boolean             @default(false)
+  metadata          Json?               @default("{}")
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  
+  // Relations
+  payments          Payment[]           @relation("PaymentToPaymentMethod")
+  transactions      Transaction[]
+
+  @@index([organizationId])
+  @@index([customerId])
+  @@index([externalId])
+  @@index([isDefault])
+}
+
+enum PaymentMethodType {
+  CARD
+  BANK_ACCOUNT
+  DIGITAL_WALLET
+  CRYPTO
+}
+
+model Transaction {
+  id                String              @id @default(cuid())
+  paymentId         String
+  paymentIntentId   String
+  productId         String?
+  productName       String?
+  clientId          String?
+  organizationId    String
+  amount            Float
+  currency          String
+  status            TransactionStatus   @default(PENDING)
+  paymentMethodId   String?
+  processingFee     Float               @default(0)
+  netAmount         Float
+  metadata          Json?               @default("{}")
+  createdAt         DateTime            @default(now())
+  completedAt       DateTime?
+  
+  // Refund information
+  refundId          String?
+  refundAmount      Float?              @default(0)
+  refundReason      String?
+  refundedAt        DateTime?
+  
+  // Relations
+  payment           Payment             @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  paymentMethod     PaymentMethod?      @relation(fields: [paymentMethodId], references: [id])
+
+  @@index([paymentId])
+  @@index([organizationId])
+  @@index([clientId])
+  @@index([status])
+  @@index([paymentIntentId])
+  @@index([createdAt])
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
 }
 
 // Service Provider Enhancements

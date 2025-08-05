@@ -1,0 +1,32 @@
+
+> thrive-send@0.1.0 dev /Users/nhla/Desktop/PROJECTS/2025/thrive-send
+> pnpm hooks:check && next dev
+
+
+> thrive-send@0.1.0 hooks:check /Users/nhla/Desktop/PROJECTS/2025/thrive-send
+> node scripts/hooks-check.js
+
+✅ Optimization hooks system files available
+  ▲ Next.js 14.2.29
+  - Local:        http://localhost:3000
+  - Environments: .env.local, .env
+  - Experiments (use with caution):
+    · forceSwcTransforms
+
+ ✓ Starting...
+ ✓ Ready in 13s
+ ✓ Compiled /middleware in 471ms (195 modules)
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 8.1s (2187 modules)
+ POST /api/analytics 404 in 9040ms
+ GET /api/health-check 404 in 8317ms
+ ✓ Compiled in 1606ms (996 modules)
+ GET /api/health-check 404 in 54ms
+ GET /api/service-provider/analytics 404 in 21ms
+ GET /api/health-check 404 in 26ms
+ GET /api/health-check 404 in 20ms
+ ✓ Compiled in 976ms (996 modules)
+ GET /api/health-check 404 in 25ms
+ GET /api/health-check 404 in 21ms
+ ELIFECYCLE  Command failed.
+[?25h
