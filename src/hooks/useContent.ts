@@ -1,5 +1,30 @@
 import { useState, useCallback } from 'react';
-import { CreateContentInput, UpdateContentInput } from '@/services/content.service';
+
+// Content types for the hook - aligned with the main Content model
+interface CreateContentInput {
+  title: string;
+  content: string;
+  type: 'ARTICLE' | 'BLOG' | 'SOCIAL' | 'EMAIL';
+  excerpt?: string;
+  tags?: string[];
+  platforms?: string[];
+  media?: any[];
+  publishingOptions?: {
+    crossPost?: boolean;
+    autoOptimize?: boolean;
+    trackAnalytics?: boolean;
+  };
+  status?: 'DRAFT' | 'IN_REVIEW' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'APPROVED' | 'REJECTED' | 'PUBLISHED' | 'ARCHIVED';
+  scheduledAt?: string;
+  slug?: string;
+  projectId?: string;
+  campaignId?: string;
+  organizationId?: string;
+}
+
+interface UpdateContentInput extends Partial<CreateContentInput> {
+  id: string;
+}
 
 interface UseContentOptions {
   onSuccess?: () => void;

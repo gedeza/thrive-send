@@ -103,8 +103,8 @@ export async function GET(
       planned: projectStats.find((s: ProjectStats) => s.status === "PLANNED")?._count.id || 0,
     };
 
-    // Fetch content engagement metrics
-    const contentMetrics = await prisma.contentPiece.aggregate({
+    // Fetch content engagement metrics - using Content model with proper project relationship
+    const contentMetrics = await prisma.content.aggregate({
       where: {
         project: {
           clientId: params.id,

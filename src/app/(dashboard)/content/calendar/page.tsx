@@ -335,14 +335,75 @@ function CalendarPageContent() {
         <CardContent className="p-6">
           <ContentCalendar
             events={events}
-            onEventCreate={handleEventCreate}
+            onEventClick={(event) => {
+              // Handle event click - could open edit dialog
+              console.log('Event clicked:', event);
+            }}
+            onDateClick={(date) => {
+              // Handle date click - could open create event dialog
+              console.log('Date clicked:', date);
+            }}
+            onEventCreate={(date, time) => {
+              // Handle event creation from calendar
+              const newEvent = {
+                title: 'New Event',
+                description: '',
+                type: 'custom' as ContentType,
+                status: 'draft' as const,
+                date: date.toISOString().split('T')[0],
+                time: time,
+                templateMetadata: selectedTemplate ? {
+                  templateId: selectedTemplate.id,
+                  originalTitle: selectedTemplate.name
+                } : undefined
+              };
+              handleEventCreate(newEvent);
+            }}
             onEventUpdate={handleEventUpdate}
             onEventDelete={handleEventDelete}
-            fetchEvents={loadEvents}
             defaultView={calendarView}
             onViewChange={handleViewChange}
-            onSyncClick={() => setShowSync(true)}
-            onSettingsClick={() => setShowSettings(true)}
+            enableSync={true}
+            onSync={async () => {
+              await loadEvents();
+            }}
+            enableAnalytics={true}
+            onAnalyticsEvent={(eventName, data) => {
+              // Track analytics events
+              console.log('Analytics:', eventName, data);
+            }}
+            enableCache={isCachingEnabled}
+            cacheTimeout={300000}
+            enablePreview={true}
+            previewDelay={500}
+            enableDragDrop={true}
+            onEventDrop={async (event, newDate, newTime) => {
+              const updatedEvent = {
+                ...event,
+                date: newDate.toISOString().split('T')[0],
+                time: newTime
+              };
+              await handleEventUpdate(updatedEvent);
+            }}
+            enableBulkSelection={true}
+            onBulkAction={async (action, selectedEvents) => {
+              if (action === 'delete') {
+                for (const event of selectedEvents) {
+                  await handleEventDelete(event.id);
+                }
+              }
+            }}
+            enableExport={true}
+            exportFormats={['ical', 'csv', 'json']}
+            onError={(error) => {
+              console.error('Calendar error:', error);
+              toast({
+                title: "Calendar Error",
+                description: error.message,
+                variant: "destructive",
+              });
+            }}
+            className="w-full"
           />
         </CardContent>
       </Card>

@@ -48,6 +48,10 @@ export function HeatMapWidget({ data, isLoading, error, title = "Activity Heatma
 
   const displayData = data || mockData;
 
+  // Validate data structure before processing
+  const hasValidData = displayData?.datasets?.[0]?.data && Array.isArray(displayData.datasets[0].data) && displayData.datasets[0].data.length > 0;
+  const hasValidLabels = displayData?.labels && Array.isArray(displayData.labels) && displayData.labels.length > 0;
+
   // Group data by week
   const weeks = Array.from({ length: 52 }, (_, i) => i + 1);
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -55,15 +59,18 @@ export function HeatMapWidget({ data, isLoading, error, title = "Activity Heatma
   // Transform data into a matrix
   const matrix = Array(7).fill(null).map(() => Array(52).fill(0));
   
-  displayData.datasets[0].data.forEach((value, i) => {
-    const date = new Date(2024, 0, i + 1);
-    const day = date.getDay();
-    const week = Math.floor(date.getTime() / (7 * 24 * 60 * 60 * 1000)) % 52;
-    matrix[day][week] = value;
-  });
+  // Only process data if valid structure exists
+  if (hasValidData) {
+    displayData.datasets[0].data.forEach((value, i) => {
+      const date = new Date(2024, 0, i + 1);
+      const day = date.getDay();
+      const week = Math.floor(date.getTime() / (7 * 24 * 60 * 60 * 1000)) % 52;
+      matrix[day][week] = value;
+    });
+  }
 
-  // Find max value for color scaling
-  const maxValue = Math.max(...displayData.datasets[0].data);
+  // Find max value for color scaling - with fallback
+  const maxValue = hasValidData ? Math.max(...displayData.datasets[0].data) : 200;
 
   return (
     <BaseChartWidget
@@ -76,7 +83,7 @@ export function HeatMapWidget({ data, isLoading, error, title = "Activity Heatma
       <div className="relative">
         {/* Day labels */}
         <div className="absolute -left-12 top-0 h-full flex flex-col justify-between text-xs text-muted-foreground">
-          {displayData.labels.map(day => (
+          {(hasValidLabels ? displayData.labels : days).map(day => (
             <div key={day} className="h-[calc(100%/7)] flex items-center">
               {day}
             </div>

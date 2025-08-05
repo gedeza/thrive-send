@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from "react";
-import { ChevronLeft, ChevronRight, Plus, Search, Bug, CheckSquare, Square, Users, Trash2, Download, Calendar as CalendarIconLucide } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Search, CheckSquare, Square, Users, Trash2, Download, Calendar as CalendarIconLucide } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -50,7 +50,6 @@ interface CalendarHeaderProps {
   
   // Actions
   onAddEvent: () => void;
-  onDebugFetch?: () => void;
   
   // Bulk selection
   isSelectionMode?: boolean;
@@ -82,7 +81,6 @@ export function CalendarHeader({
   selectedStatus,
   onStatusChange,
   onAddEvent,
-  onDebugFetch,
   isSelectionMode = false,
   selectedCount = 0,
   onToggleSelection,
@@ -203,19 +201,6 @@ export function CalendarHeader({
               {isSelectionMode ? <CheckSquare className="h-4 w-4 mr-2" /> : <Square className="h-4 w-4 mr-2" />}
               <span className="hidden sm:inline">Select</span>
               <span className="sm:hidden">Select</span>
-            </Button>
-          )}
-          {onDebugFetch && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onDebugFetch}
-              disabled={loading}
-              className="touch-manipulation"
-            >
-              <Bug className="h-4 w-4 mr-2" /> 
-              <span className="hidden sm:inline">Debug</span>
-              <span className="sm:hidden">Debug</span>
             </Button>
           )}
         </div>

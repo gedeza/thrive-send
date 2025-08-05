@@ -2,7 +2,8 @@
 
 import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@clerk/nextjs';
+// 🚀 B2B2G SERVICE PROVIDER INTEGRATION
+import { useServiceProvider, type ClientSummary } from '@/context/ServiceProviderContext';
 // Add this import:
 import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,7 +17,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { CalendarIcon, ImageIcon, Loader2, Plus, X } from 'lucide-react';
+import { CalendarIcon, ImageIcon, Loader2, Plus, X, Users } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { RichTextEditor } from '@/components/rich-text-editor';
 import { saveContent, updateContent } from '@/lib/api/content-service';
@@ -64,8 +65,13 @@ interface ContentFormProps {
 
 export function ContentForm({ initialData, mode = 'create', contentListId }: ContentFormProps) {
   const router = useRouter();
-  const { userId } = useAuth();
-  // Add this line:
+  
+  // 🎯 SERVICE PROVIDER CONTEXT
+  const { 
+    state: { organizationId, selectedClient, currentUser }, 
+    switchClient 
+  } = useServiceProvider();
+  
   const queryClient = useQueryClient();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -110,6 +116,9 @@ export function ContentForm({ initialData, mode = 'create', contentListId }: Con
       media: [],
       scheduledAt: undefined,
       slug: '',
+      // 🎯 CLIENT CONTEXT DEFAULTS
+      clientId: selectedClient?.id || initialData?.clientId || '',
+      serviceProviderId: organizationId || '',
       ...initialData,
     },
   });
@@ -172,11 +181,46 @@ export function ContentForm({ initialData, mode = 'create', contentListId }: Con
     try {
       setIsSubmitting(true);
       
+      // 🚀 SERVICE PROVIDER VALIDATION
+      if (!organizationId || !currentUser) {
+        toast({
+          title: 'Service Provider context required',
+          description: 'Please ensure you are logged in as a service provider.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // 🎯 CLIENT CONTEXT VALIDATION
+      if (!selectedClient && !data.clientId) {
+        toast({
+          title: 'Client selection required',
+          description: 'Please select a client before creating content.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // 📝 ENHANCE DATA WITH CLIENT CONTEXT
+      const contentData = {
+        ...data,
+        clientId: selectedClient?.id || data.clientId,
+        serviceProviderId: organizationId,
+        createdByUserId: currentUser.id,
+        clientName: selectedClient?.name || 'Unknown Client',
+      };
+      
+      console.log('🎯 Creating content with client context:', {
+        clientId: contentData.clientId,
+        clientName: contentData.clientName,
+        serviceProviderId: contentData.serviceProviderId
+      });
+      
       let savedContent;
       if (mode === 'edit' && initialData?.id) {
-        savedContent = await updateContent(initialData.id, data);
+        savedContent = await updateContent(initialData.id, contentData);
       } else {
-        savedContent = await saveContent(data);
+        savedContent = await saveContent(contentData);
       }
       
       // Now invalidate all related caches
@@ -220,6 +264,71 @@ export function ContentForm({ initialData, mode = 'create', contentListId }: Con
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      {/* 🎯 CLIENT CONTEXT DISPLAY */}
+      {selectedClient && (
+        <Card className="border-l-4 border-l-primary bg-primary/5">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-sm">
+                  {selectedClient.name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2)}
+                </div>
+                <div>
+                  <div className="font-semibold text-primary">Creating content for {selectedClient.name}</div>
+                  <div className="text-sm text-muted-foreground flex items-center gap-2">
+                    <Badge variant="outline">{selectedClient.type}</Badge>
+                    <span>•</span>
+                    <span>{selectedClient.performanceScore || 0}% performance</span>
+                  </div>
+                </div>
+              </div>
+              
+              <Button 
+                type="button"
+                variant="outline" 
+                size="sm"
+                onClick={() => router.push('/clients')}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Switch Client
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* No Client Selected Warning */}
+      {!selectedClient && (
+        <Card className="border-l-4 border-l-yellow-500 bg-yellow-50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center">
+                  <Users className="h-6 w-6 text-yellow-600" />
+                </div>
+                <div>
+                  <div className="font-semibold text-yellow-800">No client selected</div>
+                  <div className="text-sm text-yellow-700">
+                    Please select a client to create content for.
+                  </div>
+                </div>
+              </div>
+              
+              <Button 
+                type="button"
+                variant="outline" 
+                size="sm"
+                onClick={() => router.push('/clients')}
+                className="border-yellow-600 text-yellow-600 hover:bg-yellow-100"
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Select Client
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
       <div className="space-y-4">
         <div>
           <label htmlFor="title" className="block text-sm font-medium mb-1">

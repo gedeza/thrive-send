@@ -15,7 +15,17 @@ import {
   ShoppingCart,
   TrendingUp,
   CheckCircle,
-  Target
+  Target,
+  Building2,
+  Zap,
+  Clock,
+  Repeat,
+  Share2,
+  FileBarChart,
+  PieChart,
+  LineChart,
+  UserPlus,
+  Shield
 } from "lucide-react";
 
 /**
@@ -44,6 +54,22 @@ export const defaultSidebarItems: SidebarItemWithRoles[] = [
     icon: <Calendar size={18} />,
     href: "/content/calendar",
     roles: ["admin", "manager", "user"], // Not for viewers or guests
+    children: [
+      {
+        key: "calendar-overview",
+        label: "Calendar Overview",
+        icon: <Calendar size={16} />,
+        href: "/content/calendar",
+        roles: ["admin", "manager", "user"],
+      },
+      {
+        key: "calendar-multi-client",
+        label: "Multi-Client View",
+        icon: <Users size={16} />,
+        href: "/content/calendar/multi-client",
+        roles: ["admin", "manager"], // Service provider multi-client view
+      }
+    ]
   },
   {
     key: "clients",
@@ -53,6 +79,29 @@ export const defaultSidebarItems: SidebarItemWithRoles[] = [
     roles: ["admin", "manager"], // Only admins and managers
   },
   {
+    key: "team",
+    label: "Team",
+    icon: <UserPlus size={18} />,
+    href: "/team",
+    roles: ["admin", "manager"], // Team management for service providers
+    children: [
+      {
+        key: "team-invite",
+        label: "Invite Members",
+        icon: <UserPlus size={16} />,
+        href: "/team/invite",
+        roles: ["admin", "manager"],
+      },
+      {
+        key: "team-permissions",
+        label: "Permissions",
+        icon: <Shield size={16} />,
+        href: "/team#permissions",
+        roles: ["admin"],
+      }
+    ]
+  },
+  {
     key: "audiences",
     label: "Audiences",
     icon: <Target size={18} />,
@@ -60,11 +109,32 @@ export const defaultSidebarItems: SidebarItemWithRoles[] = [
     roles: ["admin", "manager", "user"], // Content creators and marketers
     children: [
       {
+        key: "audiences-overview",
+        label: "Audience Overview",
+        icon: <Target size={16} />,
+        href: "/audiences",
+        roles: ["admin", "manager", "user"],
+      },
+      {
         key: "audiences-create",
         label: "Create Audience",
         icon: <Plus size={16} />,
         href: "/audiences/create",
         roles: ["admin", "user"], // Only admins and users can create
+      },
+      {
+        key: "audiences-cross-client",
+        label: "Cross-Client Analytics",
+        icon: <Users size={16} />,
+        href: "/audiences/cross-client",
+        roles: ["admin", "manager"], // Service provider cross-client audience insights
+      },
+      {
+        key: "audiences-segments",
+        label: "Shared Segments",
+        icon: <Share2 size={16} />,
+        href: "/audiences/segments",
+        roles: ["admin", "manager"], // Manage reusable audience segments across clients
       }
     ]
   },
@@ -76,11 +146,39 @@ export const defaultSidebarItems: SidebarItemWithRoles[] = [
     roles: ["admin", "manager", "user"],
     children: [
       {
+        key: "campaigns-overview",
+        label: "Campaign Overview",
+        icon: <Mail size={16} />,
+        href: "/campaigns",
+        roles: ["admin", "manager", "user"],
+      },
+      {
         key: "campaigns-new",
         label: "Create Campaign",
         icon: <Plus size={16} />,
         href: "/campaigns/new",
         roles: ["admin", "user"], // Only admins and users can create
+      },
+      {
+        key: "campaigns-multi-client",
+        label: "Multi-Client Campaigns",
+        icon: <Users size={16} />,
+        href: "/campaigns/multi-client",
+        roles: ["admin", "manager"], // Service provider multi-client campaign management
+      },
+      {
+        key: "campaigns-templates",
+        label: "Campaign Templates",
+        icon: <FileText size={16} />,
+        href: "/campaigns/templates",
+        roles: ["admin", "manager"], // Reusable campaign templates for multiple clients
+      },
+      {
+        key: "campaigns-bulk",
+        label: "Bulk Operations",
+        icon: <Repeat size={16} />,
+        href: "/campaigns/bulk",
+        roles: ["admin", "manager"], // Bulk campaign operations across clients
       }
     ]
   },
@@ -115,19 +213,131 @@ export const defaultSidebarItems: SidebarItemWithRoles[] = [
     ]
   },
   {
+    key: "service-provider",
+    label: "Service Provider",
+    icon: <Building2 size={18} />,
+    href: "/service-provider",
+    roles: ["admin", "manager"], // B2B2G service provider features
+    children: [
+      {
+        key: "service-provider-templates",
+        label: "Template Library",
+        icon: <FileText size={16} />,
+        href: "/service-provider/templates",
+        roles: ["admin", "manager"],
+      },
+      {
+        key: "service-provider-analytics",
+        label: "Client Analytics",
+        icon: <BarChart3 size={16} />,
+        href: "/service-provider/analytics",
+        roles: ["admin", "manager"],
+      },
+      {
+        key: "service-provider-approvals",
+        label: "Approval Workflows",
+        icon: <CheckCircle size={16} />,
+        href: "/service-provider/approvals",
+        roles: ["admin", "manager"],
+      },
+      {
+        key: "service-provider-bulk-ops",
+        label: "Bulk Operations",
+        icon: <Zap size={16} />,
+        href: "/service-provider/bulk-operations",
+        roles: ["admin", "manager"],
+      },
+      {
+        key: "service-provider-scheduling",
+        label: "Content Scheduler",
+        icon: <Clock size={16} />,
+        href: "/service-provider/scheduling",
+        roles: ["admin", "manager"],
+      },
+      {
+        key: "service-provider-revenue",
+        label: "Revenue Dashboard",
+        icon: <TrendingUp size={16} />,
+        href: "/service-provider/revenue",
+        roles: ["admin", "manager"],
+      }
+    ]
+  },
+  {
+    key: "reports",
+    label: "Reports",
+    icon: <FileBarChart size={18} />,
+    href: "/reports",
+    roles: ["admin", "manager"], // Advanced reporting for service providers
+    children: [
+      {
+        key: "reports-analytics",
+        label: "Cross-Client Analytics",
+        icon: <BarChart3 size={16} />,
+        href: "/reports#analytics",
+        roles: ["admin", "manager"],
+      },
+      {
+        key: "reports-automation",
+        label: "Automated Reports",
+        icon: <Clock size={16} />,
+        href: "/reports#automation",
+        roles: ["admin", "manager"],
+      },
+      {
+        key: "reports-templates",
+        label: "Report Templates",
+        icon: <FileText size={16} />,
+        href: "/reports#templates",
+        roles: ["admin", "manager"],
+      }
+    ]
+  },
+  {
     key: "templates",
     label: "Templates",
     icon: <FileText size={18} />,
     href: "/templates",
     // No roles specified = available to everyone
+    children: [
+      {
+        key: "templates-browse",
+        label: "Browse Templates",
+        icon: <FileText size={16} />,
+        href: "/templates",
+        // No roles = available to everyone
+      },
+      {
+        key: "templates-library",
+        label: "Service Provider Library",
+        icon: <Folder size={16} />,
+        href: "/templates/library",
+        roles: ["admin", "manager"], // Service provider template management
+      },
+      {
+        key: "templates-client-specific",
+        label: "Client-Specific Templates",
+        icon: <Users size={16} />,
+        href: "/templates/client-specific",
+        roles: ["admin", "manager"], // Templates customized for specific clients
+      },
+      {
+        key: "templates-create",
+        label: "Create Template",
+        icon: <Plus size={16} />,
+        href: "/templates/create",
+        roles: ["admin", "user"], // Template creation
+      }
+    ]
   },
-  {
-    key: "projects",
-    label: "Projects",
-    icon: <Folder size={18} />,
-    href: "/projects",
-    roles: ["admin", "manager"], // Only admins and managers
-  },
+  // REMOVED: Projects - Not part of B2B2G PRD specification
+  // {
+  //   key: "projects",
+  //   label: "Projects",
+  //   icon: <Folder size={18} />,
+  //   href: "/projects",
+  //   roles: ["admin", "manager"], // Only admins and managers
+  // },
   {
     key: "marketplace",
     label: "Marketplace",
@@ -158,13 +368,14 @@ export const defaultSidebarItems: SidebarItemWithRoles[] = [
       }
     ]
   },
-  {
-    key: "demo",
-    label: "Demo",
-    icon: <Palette size={18} />,
-    href: "/demo",
-    roles: ["admin", "manager", "user", "viewer"], // Not for guests
-  },
+  // REMOVED: Demo - Not part of B2B2G PRD specification, dev/testing component only
+  // {
+  //   key: "demo",
+  //   label: "Demo",
+  //   icon: <Palette size={18} />,
+  //   href: "/demo",
+  //   roles: ["admin", "manager", "user", "viewer"], // Not for guests
+  // },
   {
     key: "settings",
     label: "Settings",
@@ -179,8 +390,8 @@ export const defaultSidebarItems: SidebarItemWithRoles[] = [
  * based on user role
  */
 export const CRITICAL_ITEMS_BY_ROLE: Record<Role, string[]> = {
-  admin: ["dashboard", "templates", "projects", "marketplace", "marketplace-moderation", "settings"],
-  manager: ["dashboard", "templates", "projects", "marketplace"],
+  admin: ["dashboard", "templates", "marketplace", "marketplace-moderation", "settings"],
+  manager: ["dashboard", "templates", "marketplace"],
   user: ["dashboard", "templates", "marketplace"],
   viewer: ["dashboard", "templates"],
   guest: ["dashboard"]
@@ -199,7 +410,7 @@ export function ensureSidebarItems(items: SidebarItem[]): SidebarItem[] {
   const existingKeys = new Set(items.map(item => item.key));
   
   // Default to admin critical items if no role-specific logic is provided
-  const criticalKeys = ["dashboard", "templates", "projects", "settings"];
+  const criticalKeys = ["dashboard", "templates", "settings"];
   
   // Add any missing critical items from defaults
   for (const criticalKey of criticalKeys) {

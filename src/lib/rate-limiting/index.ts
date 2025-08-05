@@ -1,420 +1,262 @@
-import { AdvancedRateLimiter, createRateLimitConfig } from './advanced-rate-limiter';
-import { RateLimitMiddleware, createRateLimitMiddlewareConfig } from './rate-limit-middleware';
-import { logger } from '../utils/logger';
-
-// Global rate limiter instance
-let globalRateLimiter: AdvancedRateLimiter | null = null;
-let globalRateLimitMiddleware: RateLimitMiddleware | null = null;
-
 /**
- * Initialize the global rate limiting system
+ * Rate Limiting Service for API Protection
+ * Provides request rate limiting with Redis-based storage
  */
-export function initializeRateLimiting(): {
-  rateLimiter: AdvancedRateLimiter;
-  rateLimitMiddleware: RateLimitMiddleware;
-} {
-  if (!globalRateLimiter) {
-    const config = createRateLimitConfig();
-    globalRateLimiter = new AdvancedRateLimiter(config);
-    
-    const middlewareConfig = createRateLimitMiddlewareConfig();
-    globalRateLimitMiddleware = new RateLimitMiddleware(globalRateLimiter, middlewareConfig);
-    
-    logger.info('Global rate limiting system initialized', {
-      redisHost: config.redis.host,
-      redisPort: config.redis.port,
-      defaultRequests: config.defaultLimits.requests,
-      defaultWindowMs: config.defaultLimits.windowMs,
-      adaptiveScaling: config.adaptiveScaling.enabled,
-      circuitBreaker: config.circuitBreaker.enabled,
-    });
-  }
 
-  return {
-    rateLimiter: globalRateLimiter,
-    rateLimitMiddleware: globalRateLimitMiddleware!,
-  };
+export interface RateLimitConfig {
+  windowMs: number;
+  maxRequests: number;
+  keyGenerator?: (request: Request) => string;
+  skipSuccessfulRequests?: boolean;
+  skipFailedRequests?: boolean;
 }
 
-/**
- * Get the global rate limiter instance
- */
-export function getRateLimiter(): AdvancedRateLimiter {
-  if (!globalRateLimiter) {
-    const { rateLimiter } = initializeRateLimiting();
-    return rateLimiter;
-  }
-  return globalRateLimiter;
+export interface RateLimitResult {
+  success: boolean;
+  limit: number;
+  remaining: number;
+  resetTime: number;
+  retryAfter?: number;
 }
 
-/**
- * Get the global rate limit middleware instance
- */
-export function getRateLimitMiddleware(): RateLimitMiddleware {
-  if (!globalRateLimitMiddleware) {
-    const { rateLimitMiddleware } = initializeRateLimiting();
-    return rateLimitMiddleware;
-  }
-  return globalRateLimitMiddleware;
+export interface RateLimitMetrics {
+  totalRequests: number;
+  blockedRequests: number;
+  allowedRequests: number;
+  averageResponseTime: number;
+  activeKeys: number;
 }
 
-/**
- * High-level rate limiting service
- */
-export class RateLimitService {
-  private middleware: RateLimitMiddleware;
+// Simple in-memory store for development (replace with Redis in production)
+class InMemoryStore {
+  private store: Map<string, { count: number; resetTime: number }> = new Map();
+  private readonly cleanupInterval: number = 60000; // 1 minute
 
   constructor() {
-    this.middleware = getRateLimitMiddleware();
-  }
-
-  /**
-   * Email-specific rate limiting
-   */
-  async checkEmailSending(
-    organizationId: string,
-    recipientCount: number,
-    options: {
-      userId?: string;
-      campaignId?: string;
-      priority?: 'high' | 'medium' | 'low';
-    } = {}
-  ): Promise<{
-    allowed: boolean;
-    delayRecommendation?: number;
-    batchSize?: number;
-    result: any;
-  }> {
-    if (recipientCount > 1000) {
-      // Use bulk email campaign limits
-      return this.middleware.checkEmailCampaign(
-        options.campaignId || 'bulk-send',
-        recipientCount,
-        {
-          organizationId,
-          userId: options.userId,
-          campaignType: 'bulk',
-          priority: options.priority,
+    // Cleanup expired entries periodically
+    setInterval(() => {
+      const now = Date.now();
+      for (const [key, data] of this.store.entries()) {
+        if (data.resetTime <= now) {
+          this.store.delete(key);
         }
-      );
-    } else {
-      // Use regular email sending limits
-      const result = await this.middleware.checkAPIEndpoint(
-        'email-send',
-        'POST',
-        {
-          organizationId,
-          userId: options.userId,
-        }
-      );
-
-      return {
-        allowed: result.allowed,
-        result: result.result,
-      };
-    }
+      }
+    }, this.cleanupInterval);
   }
 
-  /**
-   * Bulk operation rate limiting
-   */
-  async checkBulkOperation(
-    operation: string,
-    items: any[],
-    organizationId: string,
-    options: {
-      userId?: string;
-      metadata?: Record<string, any>;
-    } = {}
-  ): Promise<{
-    allowed: boolean;
-    blockedItems: any[];
-    allowedItems: any[];
-    rateLimitResults: any[];
-  }> {
-    return this.middleware.checkBulkOperation(
-      operation,
-      items,
-      {
-        organizationId,
-        userId: options.userId,
-        metadata: options.metadata,
-      }
-    );
-  }
-
-  /**
-   * Database operation rate limiting
-   */
-  async checkDatabaseOperation(
-    operation: string,
-    organizationId: string,
-    options: {
-      userId?: string;
-      queryType?: string;
-      estimatedComplexity?: number;
-    } = {}
-  ): Promise<{
-    allowed: boolean;
-    result: any;
-  }> {
-    return this.middleware.checkDatabaseOperation(
-      operation,
-      {
-        organizationId,
-        userId: options.userId,
-        queryType: options.queryType,
-        estimatedComplexity: options.estimatedComplexity,
-      }
-    );
-  }
-
-  /**
-   * API endpoint rate limiting
-   */
-  async checkAPIAccess(
-    endpoint: string,
-    method: string,
-    organizationId: string,
-    options: {
-      userId?: string;
-      clientIp?: string;
-      userAgent?: string;
-    } = {}
-  ): Promise<{
-    allowed: boolean;
-    result: any;
-  }> {
-    return this.middleware.checkAPIEndpoint(
-      endpoint,
-      method,
-      {
-        organizationId,
-        userId: options.userId,
-        clientIp: options.clientIp,
-        userAgent: options.userAgent,
-      }
-    );
-  }
-
-  /**
-   * Campaign-specific rate limiting
-   */
-  async checkCampaignOperation(
-    campaignId: string,
-    operation: string,
-    organizationId: string,
-    options: {
-      userId?: string;
-      recipientCount?: number;
-      campaignType?: string;
-    } = {}
-  ): Promise<{
-    allowed: boolean;
-    result: any;
-    recommendations?: {
-      delay?: number;
-      batchSize?: number;
-      throttleRate?: number;
-    };
-  }> {
-    const result = await this.middleware.checkAPIEndpoint(
-      `campaign-${operation}`,
-      'POST',
-      {
-        organizationId,
-        userId: options.userId,
-      }
-    );
-
-    let recommendations: any = {};
-
-    if (!result.allowed && options.recipientCount) {
-      // Provide recommendations for large campaigns
-      if (options.recipientCount > 10000) {
-        recommendations = {
-          delay: 300000, // 5 minutes
-          batchSize: Math.floor(options.recipientCount / 20), // 20 batches
-          throttleRate: 100, // 100 emails per second
-        };
-      } else if (options.recipientCount > 1000) {
-        recommendations = {
-          delay: 60000, // 1 minute
-          batchSize: Math.floor(options.recipientCount / 10), // 10 batches
-          throttleRate: 50, // 50 emails per second
-        };
-      }
-    }
-
-    return {
-      allowed: result.allowed,
-      result: result.result,
-      recommendations: Object.keys(recommendations).length > 0 ? recommendations : undefined,
-    };
-  }
-
-  /**
-   * User action rate limiting
-   */
-  async checkUserAction(
-    action: string,
-    userId: string,
-    organizationId: string,
-    options: {
-      metadata?: Record<string, any>;
-    } = {}
-  ): Promise<{
-    allowed: boolean;
-    result: any;
-  }> {
-    return this.middleware.checkAPIEndpoint(
-      `user-${action}`,
-      'POST',
-      {
-        organizationId,
-        userId,
-      }
-    );
-  }
-
-  /**
-   * Get rate limit status for organization
-   */
-  async getOrganizationStatus(organizationId: string): Promise<{
-    [operation: string]: any;
-  }> {
-    const operations = [
-      'email-send',
-      'bulk-email',
-      'campaign-send',
-      'api-general',
-      'db-operations',
-    ];
-
-    const statusPromises = operations.map(async (operation) => {
-      const key = `org:${organizationId}:${operation}`;
-      const status = await this.middleware.getStatus(key);
-      return { operation, status };
-    });
-
-    const results = await Promise.all(statusPromises);
+  get(key: string): { count: number; resetTime: number } | null {
+    const data = this.store.get(key);
+    if (!data) return null;
     
-    const statusMap: { [operation: string]: any } = {};
-    results.forEach(({ operation, status }) => {
-      statusMap[operation] = status;
-    });
-
-    return statusMap;
-  }
-
-  /**
-   * Reset rate limits for organization
-   */
-  async resetOrganizationLimits(organizationId: string): Promise<{
-    success: boolean;
-    resetCount: number;
-  }> {
-    try {
-      const key = `org:${organizationId}`;
-      const success = await this.middleware.resetLimit(key);
-      
-      logger.info('Organization rate limits reset', { organizationId, success });
-      
-      return {
-        success,
-        resetCount: success ? 1 : 0,
-      };
-    } catch (error) {
-      logger.error('Failed to reset organization rate limits', error as Error, { organizationId });
-      return {
-        success: false,
-        resetCount: 0,
-      };
+    // Check if expired
+    if (data.resetTime <= Date.now()) {
+      this.store.delete(key);
+      return null;
     }
+    
+    return data;
   }
 
-  /**
-   * Get comprehensive rate limiting metrics
-   */
-  async getMetrics(): Promise<any> {
-    return this.middleware.getMetrics();
+  set(key: string, count: number, resetTime: number): void {
+    this.store.set(key, { count, resetTime });
   }
 
-  /**
-   * Health check
-   */
-  async healthCheck(): Promise<any> {
-    return this.middleware.healthCheck();
-  }
-
-  /**
-   * Get rate limiting recommendations for bulk operations
-   */
-  getBulkOperationRecommendations(
-    itemCount: number,
-    operation: string
-  ): {
-    recommendedBatchSize: number;
-    recommendedDelay: number;
-    estimatedDuration: number;
-    throttleRate: number;
-  } {
-    let recommendedBatchSize: number;
-    let recommendedDelay: number;
-    let throttleRate: number;
-
-    // Base recommendations on item count and operation type
-    if (itemCount > 100000) {
-      recommendedBatchSize = 1000;
-      recommendedDelay = 30000; // 30 seconds
-      throttleRate = 20; // 20 items per second
-    } else if (itemCount > 10000) {
-      recommendedBatchSize = 500;
-      recommendedDelay = 15000; // 15 seconds
-      throttleRate = 50; // 50 items per second
-    } else if (itemCount > 1000) {
-      recommendedBatchSize = 100;
-      recommendedDelay = 5000; // 5 seconds
-      throttleRate = 100; // 100 items per second
+  increment(key: string, windowMs: number): { count: number; resetTime: number } {
+    const now = Date.now();
+    const existing = this.get(key);
+    
+    if (existing) {
+      existing.count++;
+      this.store.set(key, existing);
+      return existing;
     } else {
-      recommendedBatchSize = 50;
-      recommendedDelay = 1000; // 1 second
-      throttleRate = 200; // 200 items per second
+      const newData = { count: 1, resetTime: now + windowMs };
+      this.store.set(key, newData);
+      return newData;
     }
+  }
 
-    // Adjust for specific operations
-    if (operation === 'email-send') {
-      throttleRate = Math.min(throttleRate, 100); // Email sending is more intensive
-    } else if (operation === 'db-write') {
-      throttleRate = Math.min(throttleRate, 50); // Database writes are intensive
+  getMetrics(): { activeKeys: number } {
+    return { activeKeys: this.store.size };
+  }
+
+  reset(key?: string): void {
+    if (key) {
+      this.store.delete(key);
+    } else {
+      this.store.clear();
     }
-
-    const batchCount = Math.ceil(itemCount / recommendedBatchSize);
-    const estimatedDuration = (batchCount * recommendedDelay) + (itemCount / throttleRate * 1000);
-
-    return {
-      recommendedBatchSize,
-      recommendedDelay,
-      estimatedDuration,
-      throttleRate,
-    };
   }
 }
 
-// Export singleton rate limit service
-export const rateLimitService = new RateLimitService();
+class RateLimitService {
+  private store: InMemoryStore;
+  private metrics: {
+    totalRequests: number;
+    blockedRequests: number;
+    allowedRequests: number;
+    responseTimes: number[];
+  };
 
-// Export all rate limiting classes and functions
-export { 
-  AdvancedRateLimiter, 
-  RateLimitMiddleware, 
-  createRateLimitConfig,
-  createRateLimitMiddlewareConfig 
-};
-export type { 
-  RateLimitConfig, 
-  RateLimitRule, 
-  RateLimitContext, 
-  RateLimitResult,
-  RateLimitMiddlewareConfig 
-};
+  constructor() {
+    this.store = new InMemoryStore();
+    this.metrics = {
+      totalRequests: 0,
+      blockedRequests: 0,
+      allowedRequests: 0,
+      responseTimes: [],
+    };
+  }
+
+  private generateKey(request: Request, keyGenerator?: (request: Request) => string): string {
+    if (keyGenerator) {
+      return keyGenerator(request);
+    }
+
+    // Default key generation based on IP and User-Agent
+    const forwardedFor = request.headers.get('x-forwarded-for');
+    const realIp = request.headers.get('x-real-ip');
+    const ip = forwardedFor?.split(',')[0] || realIp || 'anonymous';
+    const userAgent = request.headers.get('user-agent') || 'unknown';
+    
+    return `${ip}:${userAgent.substring(0, 50)}`;
+  }
+
+  async checkRateLimit(
+    request: Request, 
+    config: RateLimitConfig
+  ): Promise<RateLimitResult> {
+    const startTime = Date.now();
+    this.metrics.totalRequests++;
+
+    try {
+      const key = this.generateKey(request, config.keyGenerator);
+      const data = this.store.increment(key, config.windowMs);
+      
+      const remaining = Math.max(0, config.maxRequests - data.count);
+      const success = data.count <= config.maxRequests;
+
+      if (success) {
+        this.metrics.allowedRequests++;
+      } else {
+        this.metrics.blockedRequests++;
+      }
+
+      // Track response time
+      const responseTime = Date.now() - startTime;
+      this.metrics.responseTimes.push(responseTime);
+      
+      // Keep only last 1000 response times for averaging
+      if (this.metrics.responseTimes.length > 1000) {
+        this.metrics.responseTimes = this.metrics.responseTimes.slice(-1000);
+      }
+
+      return {
+        success,
+        limit: config.maxRequests,
+        remaining,
+        resetTime: data.resetTime,
+        retryAfter: success ? undefined : Math.ceil((data.resetTime - Date.now()) / 1000),
+      };
+    } catch (error) {
+      console.error('Rate limiting error:', error);
+      // On error, allow the request through
+      return {
+        success: true,
+        limit: config.maxRequests,
+        remaining: config.maxRequests,
+        resetTime: Date.now() + config.windowMs,
+      };
+    }
+  }
+
+  getMetrics(): RateLimitMetrics {
+    const averageResponseTime = this.metrics.responseTimes.length > 0
+      ? this.metrics.responseTimes.reduce((sum, time) => sum + time, 0) / this.metrics.responseTimes.length
+      : 0;
+
+    const storeMetrics = this.store.getMetrics();
+
+    return {
+      totalRequests: this.metrics.totalRequests,
+      blockedRequests: this.metrics.blockedRequests,
+      allowedRequests: this.metrics.allowedRequests,
+      averageResponseTime: Math.round(averageResponseTime * 100) / 100,
+      activeKeys: storeMetrics.activeKeys,
+    };
+  }
+
+  reset(key?: string): void {
+    this.store.reset(key);
+    
+    if (!key) {
+      // Reset all metrics
+      this.metrics = {
+        totalRequests: 0,
+        blockedRequests: 0,
+        allowedRequests: 0,
+        responseTimes: [],
+      };
+    }
+  }
+
+  isHealthy(): boolean {
+    try {
+      // Basic health check - ensure store is responsive
+      const testKey = `health-check-${Date.now()}`;
+      this.store.set(testKey, 1, Date.now() + 1000);
+      const result = this.store.get(testKey);
+      this.store.reset(testKey);
+      
+      return result !== null;
+    } catch (error) {
+      console.error('Rate limiter health check failed:', error);
+      return false;
+    }
+  }
+}
+
+// Singleton instance
+let rateLimitService: RateLimitService | null = null;
+
+export function getRateLimitService(): RateLimitService {
+  if (!rateLimitService) {
+    rateLimitService = new RateLimitService();
+  }
+  return rateLimitService;
+}
+
+// Predefined rate limit configurations
+export const RateLimitConfigs = {
+  // Standard API rate limiting
+  API_STANDARD: {
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    maxRequests: 100,
+  },
+  
+  // Strict rate limiting for sensitive endpoints
+  API_STRICT: {
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    maxRequests: 20,
+  },
+  
+  // Authentication endpoints
+  AUTH: {
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    maxRequests: 5,
+  },
+  
+  // File upload endpoints
+  UPLOAD: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: 10,
+  },
+  
+  // Search endpoints
+  SEARCH: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: 30,
+  },
+} as const;
+
+export default getRateLimitService;

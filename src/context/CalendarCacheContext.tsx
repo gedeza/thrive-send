@@ -1,7 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, ReactNode, useRef } from 'react';
-import { CalendarEvent } from '@/components/content/content-calendar';
+import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { calendarCache, CacheConfig, CacheStats } from '@/lib/cache/calendar-cache';
 
 interface CalendarCacheContextType {
@@ -10,8 +9,8 @@ interface CalendarCacheContextType {
   isCachingEnabled: boolean;
   setCachingEnabled: (enabled: boolean) => void;
   clearAllCaches: () => void;
-  get: <T>(key: string, config?: CacheConfig, refreshFn?: () => Promise<T>) => Promise<T | null>;
-  set: <T>(key: string, value: T, config?: CacheConfig) => Promise<void>;
+  get: (key: string, config?: CacheConfig, refreshFn?: () => Promise<any>) => Promise<any>;
+  set: (key: string, value: any, config?: CacheConfig) => Promise<void>;
   invalidate: (pattern: string | RegExp, reason?: 'create' | 'update' | 'delete') => Promise<void>;
   clear: () => Promise<void>;
   getStats: () => CacheStats;
@@ -29,10 +28,12 @@ const CalendarCacheContext = createContext<CalendarCacheContextType>({
   clear: async () => {},
   getStats: () => ({
     hitRate: 0,
-    missRate: 0,
-    size: 0,
+    totalHits: 0,
+    totalMisses: 0,
+    cacheSize: 0,
     memoryUsage: 0,
-    lastCleanup: new Date()
+    oldestEntry: 0,
+    newestEntry: 0
   })
 });
 
@@ -61,6 +62,7 @@ export const CalendarCacheProvider = ({ children }: CalendarCacheProviderProps) 
   const [isCachingEnabled, setIsCachingEnabled] = useState<boolean>(
     process.env.NODE_ENV === 'development' // Enable by default in development
   );
+
   // Use the exported cache instance
   const getCache = useCallback(() => {
     return calendarCache;
@@ -71,11 +73,11 @@ export const CalendarCacheProvider = ({ children }: CalendarCacheProviderProps) 
   }, []);
 
   // Enhanced cache operations
-  const get = useCallback(async <T>(
+  const get = useCallback(async (
     key: string,
     config?: CacheConfig,
-    refreshFn?: () => Promise<T>
-  ): Promise<T | null> => {
+    refreshFn?: () => Promise<any>
+  ): Promise<any> => {
     if (!isCachingEnabled) {
       return refreshFn ? await refreshFn() : null;
     }
@@ -84,9 +86,9 @@ export const CalendarCacheProvider = ({ children }: CalendarCacheProviderProps) 
     return cache.get(key, config, refreshFn);
   }, [isCachingEnabled, getCache]);
 
-  const set = useCallback(async <T>(
+  const set = useCallback(async (
     key: string,
-    value: T,
+    value: any,
     config?: CacheConfig
   ): Promise<void> => {
     if (!isCachingEnabled) return;
@@ -118,10 +120,12 @@ export const CalendarCacheProvider = ({ children }: CalendarCacheProviderProps) 
     if (!isCachingEnabled) {
       return {
         hitRate: 0,
-        missRate: 0,
-        size: 0,
+        totalHits: 0,
+        totalMisses: 0,
+        cacheSize: 0,
         memoryUsage: 0,
-        lastCleanup: new Date()
+        oldestEntry: 0,
+        newestEntry: 0
       };
     }
 
@@ -167,4 +171,4 @@ export const CalendarCacheProvider = ({ children }: CalendarCacheProviderProps) 
       {children}
     </CalendarCacheContext.Provider>
   );
-}; 
+};

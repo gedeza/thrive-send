@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-import { EmailQueueManager } from '@/lib/queue';
+// Direct email sending for MVP - removed queue system
 import { logger } from '@/lib/utils/logger';
 
 // Validation schema for campaign send request

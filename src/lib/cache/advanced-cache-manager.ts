@@ -1,678 +1,361 @@
-import Redis from 'ioredis';
+// Optional Redis import - graceful degradation if not available
+let createClient: any = null;
+let RedisClientType: any = null;
+
+try {
+  const redis = require('redis');
+  createClient = redis.createClient;
+  RedisClientType = redis.RedisClientType;
+} catch (error) {
+  // Redis not available - will use memory-only caching
+  console.warn('Redis not available, using memory-only caching');
+}
 import { logger } from '../utils/logger';
 
-interface CacheConfig {
+export interface CacheConfig {
   redis: {
     host: string;
     port: number;
     password?: string;
-    db: number;
-    keyPrefix: string;
+    db?: number;
   };
   defaultTTL: number;
   maxMemoryItems: number;
-  compressionThreshold: number;
-  enableMetrics: boolean;
+  enableCompression: boolean;
+  enableAnalytics: boolean;
 }
 
-interface CacheItem<T = any> {
+export interface CacheItem<T = any> {
   data: T;
   timestamp: number;
   ttl: number;
   compressed?: boolean;
-  size?: number;
+  metadata?: any;
 }
 
-interface CacheMetrics {
+export interface CacheStats {
   hits: number;
   misses: number;
   sets: number;
   deletes: number;
-  evictions: number;
-  totalRequests: number;
-  averageResponseTime: number;
   memoryUsage: number;
-  redisConnections: number;
+  redisConnected: boolean;
+  totalItems: number;
 }
 
 export class AdvancedCacheManager {
-  private static instance: AdvancedCacheManager;
-  private redis: Redis;
+  private static instance: AdvancedCacheManager | null = null;
+  private redisClient: any = null;
   private memoryCache: Map<string, CacheItem> = new Map();
   private config: CacheConfig;
-  private metrics: CacheMetrics;
-  private compressionEnabled: boolean;
+  private stats: CacheStats = {
+    hits: 0,
+    misses: 0,
+    sets: 0,
+    deletes: 0,
+    memoryUsage: 0,
+    redisConnected: false,
+    totalItems: 0
+  };
 
   private constructor(config: CacheConfig) {
     this.config = config;
-    this.compressionEnabled = config.compressionThreshold > 0;
-    this.metrics = {
-      hits: 0,
-      misses: 0,
-      sets: 0,
-      deletes: 0,
-      evictions: 0,
-      totalRequests: 0,
-      averageResponseTime: 0,
-      memoryUsage: 0,
-      redisConnections: 0,
-    };
-
     this.initializeRedis();
-    this.startMetricsCollection();
+    this.startCleanupTimer();
   }
 
-  static getInstance(config?: CacheConfig): AdvancedCacheManager {
+  public static getInstance(config: CacheConfig): AdvancedCacheManager {
     if (!AdvancedCacheManager.instance) {
-      if (!config) {
-        throw new Error('Cache configuration required for first initialization');
-      }
       AdvancedCacheManager.instance = new AdvancedCacheManager(config);
     }
     return AdvancedCacheManager.instance;
   }
 
-  private initializeRedis(): void {
-    this.redis = new Redis({
-      host: this.config.redis.host,
-      port: this.config.redis.port,
-      password: this.config.redis.password,
-      db: this.config.redis.db,
-      keyPrefix: this.config.redis.keyPrefix,
-      retryDelayOnFailover: 100,
-      maxRetriesPerRequest: 3,
-      lazyConnect: true,
-      reconnectOnError: (err) => {
-        const targetError = 'READONLY';
-        return err.message.includes(targetError);
-      },
-    });
-
-    this.redis.on('connect', () => {
-      logger.info('Redis cache connected successfully');
-    });
-
-    this.redis.on('error', (error) => {
-      logger.error('Redis cache connection error', error);
-    });
-
-    this.redis.on('ready', () => {
-      logger.info('Redis cache ready');
-      this.metrics.redisConnections++;
-    });
-  }
-
-  /**
-   * Get cached data with fallback to multiple layers
-   */
-  async get<T = any>(key: string, options: {
-    useMemoryCache?: boolean;
-    useRedis?: boolean;
-    deserialize?: boolean;
-  } = {}): Promise<T | null> {
-    const startTime = Date.now();
-    this.metrics.totalRequests++;
-
+  private async initializeRedis(): Promise<void> {
     try {
-      const {
-        useMemoryCache = true,
-        useRedis = true,
-        deserialize = true,
-      } = options;
-
-      // Try memory cache first
-      if (useMemoryCache) {
-        const memoryItem = this.memoryCache.get(key);
-        if (memoryItem && !this.isExpired(memoryItem)) {
-          this.metrics.hits++;
-          this.updateResponseTime(startTime);
-          return memoryItem.data;
-        }
+      if (!createClient) {
+        logger.warn('Redis not available, using memory-only caching');
+        this.stats.redisConnected = false;
+        return;
       }
 
-      // Try Redis cache
-      if (useRedis) {
-        const redisData = await this.redis.get(key);
+      this.redisClient = createClient({
+        socket: {
+          host: this.config.redis.host,
+          port: this.config.redis.port,
+        },
+        password: this.config.redis.password,
+        database: this.config.redis.db || 0,
+      });
+
+      this.redisClient.on('error', (err: any) => {
+        logger.error('Redis Client Error', err);
+        this.stats.redisConnected = false;
+      });
+
+      this.redisClient.on('connect', () => {
+        logger.info('Connected to Redis');
+        this.stats.redisConnected = true;
+      });
+
+      await this.redisClient.connect();
+    } catch (error) {
+      logger.error('Failed to initialize Redis', error);
+      this.stats.redisConnected = false;
+    }
+  }
+
+  public async get<T>(key: string): Promise<T | null> {
+    try {
+      // Try memory cache first
+      const memoryItem = this.memoryCache.get(key);
+      if (memoryItem && this.isItemValid(memoryItem)) {
+        this.stats.hits++;
+        return memoryItem.data as T;
+      }
+
+      // Try Redis if available
+      if (this.redisClient && this.stats.redisConnected) {
+        const redisData = await this.redisClient.get(key);
         if (redisData) {
-          let data: T;
-          
-          if (deserialize) {
-            data = await this.deserializeData(redisData);
-          } else {
-            data = redisData as T;
+          const parsed = JSON.parse(redisData) as CacheItem<T>;
+          if (this.isItemValid(parsed)) {
+            this.stats.hits++;
+            // Store in memory cache for faster access
+            this.setMemoryCache(key, parsed);
+            return parsed.data;
           }
-
-          // Store in memory cache for faster access
-          if (useMemoryCache) {
-            this.setMemoryCache(key, data, this.config.defaultTTL);
-          }
-
-          this.metrics.hits++;
-          this.updateResponseTime(startTime);
-          return data;
         }
       }
 
-      this.metrics.misses++;
-      this.updateResponseTime(startTime);
+      this.stats.misses++;
       return null;
-
     } catch (error) {
-      logger.error('Cache get operation failed', error as Error, { key });
-      this.metrics.misses++;
-      this.updateResponseTime(startTime);
+      logger.error('Cache get error', { key, error });
+      this.stats.misses++;
       return null;
     }
   }
 
-  /**
-   * Set cached data with automatic compression and TTL
-   */
-  async set<T = any>(key: string, data: T, options: {
-    ttl?: number;
-    useMemoryCache?: boolean;
-    useRedis?: boolean;
-    compress?: boolean;
-    serialize?: boolean;
-  } = {}): Promise<boolean> {
-    const startTime = Date.now();
-    this.metrics.sets++;
-
+  public async set<T>(key: string, data: T, ttl?: number): Promise<boolean> {
     try {
-      const {
-        ttl = this.config.defaultTTL,
-        useMemoryCache = true,
-        useRedis = true,
-        compress = true,
-        serialize = true,
-      } = options;
+      const effectiveTTL = ttl || this.config.defaultTTL;
+      const item: CacheItem<T> = {
+        data,
+        timestamp: Date.now(),
+        ttl: effectiveTTL,
+        compressed: false,
+        metadata: {
+          size: this.estimateSize(data),
+          type: typeof data
+        }
+      };
 
       // Set in memory cache
-      if (useMemoryCache) {
-        this.setMemoryCache(key, data, ttl);
+      this.setMemoryCache(key, item);
+
+      // Set in Redis if available
+      if (this.redisClient && this.stats.redisConnected) {
+        await this.redisClient.setEx(key, Math.floor(effectiveTTL / 1000), JSON.stringify(item));
       }
 
-      // Set in Redis cache
-      if (useRedis) {
-        let serializedData: string;
-        
-        if (serialize) {
-          serializedData = await this.serializeData(data, compress);
-        } else {
-          serializedData = data as string;
-        }
-
-        if (ttl > 0) {
-          await this.redis.setex(key, ttl, serializedData);
-        } else {
-          await this.redis.set(key, serializedData);
-        }
-      }
-
-      this.updateResponseTime(startTime);
+      this.stats.sets++;
+      this.updateMemoryUsage();
       return true;
-
     } catch (error) {
-      logger.error('Cache set operation failed', error as Error, { key });
-      this.updateResponseTime(startTime);
+      logger.error('Cache set error', { key, error });
       return false;
     }
   }
 
-  /**
-   * Delete cached data from all layers
-   */
-  async delete(key: string): Promise<boolean> {
-    this.metrics.deletes++;
-
+  public async delete(key: string): Promise<boolean> {
     try {
       // Delete from memory cache
-      const memoryDeleted = this.memoryCache.delete(key);
-      
-      // Delete from Redis cache
-      const redisDeleted = await this.redis.del(key);
+      this.memoryCache.delete(key);
 
-      return memoryDeleted || redisDeleted > 0;
-
-    } catch (error) {
-      logger.error('Cache delete operation failed', error as Error, { key });
-      return false;
-    }
-  }
-
-  /**
-   * Multi-get operation for batch fetching
-   */
-  async mget<T = any>(keys: string[], options: {
-    useMemoryCache?: boolean;
-    useRedis?: boolean;
-    deserialize?: boolean;
-  } = {}): Promise<{ [key: string]: T | null }> {
-    const startTime = Date.now();
-    const result: { [key: string]: T | null } = {};
-    const {
-      useMemoryCache = true,
-      useRedis = true,
-      deserialize = true,
-    } = options;
-
-    try {
-      // Try memory cache first
-      const missingKeys: string[] = [];
-      
-      if (useMemoryCache) {
-        for (const key of keys) {
-          const memoryItem = this.memoryCache.get(key);
-          if (memoryItem && !this.isExpired(memoryItem)) {
-            result[key] = memoryItem.data;
-            this.metrics.hits++;
-          } else {
-            missingKeys.push(key);
-            this.metrics.misses++;
-          }
-        }
-      } else {
-        missingKeys.push(...keys);
+      // Delete from Redis if available
+      if (this.redisClient && this.stats.redisConnected) {
+        await this.redisClient.del(key);
       }
 
-      // Fetch missing keys from Redis
-      if (useRedis && missingKeys.length > 0) {
-        const redisResults = await this.redis.mget(...missingKeys);
-        
-        for (let i = 0; i < missingKeys.length; i++) {
-          const key = missingKeys[i];
-          const redisData = redisResults[i];
-          
-          if (redisData) {
-            let data: T;
-            
-            if (deserialize) {
-              data = await this.deserializeData(redisData);
-            } else {
-              data = redisData as T;
-            }
-
-            result[key] = data;
-            
-            // Store in memory cache
-            if (useMemoryCache) {
-              this.setMemoryCache(key, data, this.config.defaultTTL);
-            }
-            
-            this.metrics.hits++;
-          } else {
-            result[key] = null;
-            this.metrics.misses++;
-          }
-        }
-      }
-
-      this.metrics.totalRequests += keys.length;
-      this.updateResponseTime(startTime);
-      return result;
-
-    } catch (error) {
-      logger.error('Cache mget operation failed', error as Error, { keys });
-      
-      // Return null for all keys on error
-      for (const key of keys) {
-        result[key] = null;
-      }
-      
-      this.metrics.totalRequests += keys.length;
-      this.updateResponseTime(startTime);
-      return result;
-    }
-  }
-
-  /**
-   * Multi-set operation for batch storing
-   */
-  async mset<T = any>(data: { [key: string]: T }, options: {
-    ttl?: number;
-    useMemoryCache?: boolean;
-    useRedis?: boolean;
-    compress?: boolean;
-    serialize?: boolean;
-  } = {}): Promise<boolean> {
-    const startTime = Date.now();
-    
-    try {
-      const {
-        ttl = this.config.defaultTTL,
-        useMemoryCache = true,
-        useRedis = true,
-        compress = true,
-        serialize = true,
-      } = options;
-
-      const keys = Object.keys(data);
-      
-      // Set in memory cache
-      if (useMemoryCache) {
-        for (const key of keys) {
-          this.setMemoryCache(key, data[key], ttl);
-        }
-      }
-
-      // Set in Redis cache
-      if (useRedis) {
-        const pipeline = this.redis.pipeline();
-        
-        for (const key of keys) {
-          let serializedData: string;
-          
-          if (serialize) {
-            serializedData = await this.serializeData(data[key], compress);
-          } else {
-            serializedData = data[key] as string;
-          }
-
-          if (ttl > 0) {
-            pipeline.setex(key, ttl, serializedData);
-          } else {
-            pipeline.set(key, serializedData);
-          }
-        }
-        
-        await pipeline.exec();
-      }
-
-      this.metrics.sets += keys.length;
-      this.updateResponseTime(startTime);
+      this.stats.deletes++;
+      this.updateMemoryUsage();
       return true;
-
     } catch (error) {
-      logger.error('Cache mset operation failed', error as Error);
-      this.updateResponseTime(startTime);
+      logger.error('Cache delete error', { key, error });
       return false;
     }
   }
 
-  /**
-   * Cache warming - preload frequently accessed data
-   */
-  async warmCache(dataLoader: () => Promise<{ [key: string]: any }>, options: {
-    ttl?: number;
-    compress?: boolean;
-  } = {}): Promise<void> {
+  public async clear(): Promise<boolean> {
     try {
-      logger.info('Starting cache warming process');
-      
-      const data = await dataLoader();
-      const keys = Object.keys(data);
-      
-      await this.mset(data, {
-        ttl: options.ttl || this.config.defaultTTL * 2, // Longer TTL for warmed data
-        compress: options.compress !== false,
-      });
-      
-      logger.info('Cache warming completed', { keysWarmed: keys.length });
-      
+      // Clear memory cache
+      this.memoryCache.clear();
+
+      // Clear Redis if available
+      if (this.redisClient && this.stats.redisConnected) {
+        await this.redisClient.flushDb();
+      }
+
+      this.updateMemoryUsage();
+      return true;
     } catch (error) {
-      logger.error('Cache warming failed', error as Error);
+      logger.error('Cache clear error', error);
+      return false;
     }
   }
 
-  /**
-   * Intelligent cache invalidation
-   */
-  async invalidatePattern(pattern: string): Promise<number> {
+  public async invalidatePattern(pattern: string): Promise<number> {
     try {
-      // Get all keys matching pattern
-      const keys = await this.redis.keys(pattern);
-      
-      if (keys.length === 0) {
-        return 0;
-      }
-      
-      // Delete from Redis
-      const redisDeleted = await this.redis.del(...keys);
-      
-      // Delete from memory cache
-      let memoryDeleted = 0;
-      for (const key of keys) {
-        const cleanKey = key.replace(this.config.redis.keyPrefix, '');
-        if (this.memoryCache.delete(cleanKey)) {
-          memoryDeleted++;
+      let deletedCount = 0;
+
+      // Handle memory cache
+      const keysToDelete: string[] = [];
+      for (const key of this.memoryCache.keys()) {
+        if (this.matchesPattern(key, pattern)) {
+          keysToDelete.push(key);
         }
       }
-      
-      logger.info('Cache invalidation completed', { 
-        pattern, 
-        redisDeleted, 
-        memoryDeleted 
+
+      keysToDelete.forEach(key => {
+        this.memoryCache.delete(key);
+        deletedCount++;
       });
-      
-      return redisDeleted;
-      
+
+      // Handle Redis if available
+      if (this.redisClient && this.stats.redisConnected) {
+        const redisKeys = await this.redisClient.keys(pattern);
+        if (redisKeys.length > 0) {
+          await this.redisClient.del(redisKeys);
+          deletedCount += redisKeys.length;
+        }
+      }
+
+      this.updateMemoryUsage();
+      return deletedCount;
     } catch (error) {
-      logger.error('Cache invalidation failed', error as Error, { pattern });
+      logger.error('Cache invalidate pattern error', { pattern, error });
       return 0;
     }
   }
 
-  /**
-   * Get cache statistics and health
-   */
-  getMetrics(): CacheMetrics & {
-    hitRate: number;
-    missRate: number;
-    memoryCacheSize: number;
-    redisStatus: string;
-  } {
-    const hitRate = this.metrics.totalRequests > 0 
-      ? (this.metrics.hits / this.metrics.totalRequests) * 100 
-      : 0;
-    
-    const missRate = this.metrics.totalRequests > 0 
-      ? (this.metrics.misses / this.metrics.totalRequests) * 100 
-      : 0;
+  public getStats(): CacheStats {
+    this.updateMemoryUsage();
+    return { ...this.stats };
+  }
 
-    // Calculate memory usage
-    let memoryUsage = 0;
-    for (const [, item] of this.memoryCache) {
-      memoryUsage += item.size || this.estimateSize(item.data);
+  public async healthCheck(): Promise<{
+    status: 'healthy' | 'degraded' | 'unhealthy';
+    redis: boolean;
+    memory: boolean;
+    stats: CacheStats;
+  }> {
+    const memoryHealthy = this.memoryCache.size < this.config.maxMemoryItems;
+    const redisHealthy = this.stats.redisConnected;
+
+    let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
+    if (!redisHealthy && !memoryHealthy) {
+      status = 'unhealthy';
+    } else if (!redisHealthy || !memoryHealthy) {
+      status = 'degraded';
     }
 
     return {
-      ...this.metrics,
-      hitRate: Number(hitRate.toFixed(2)),
-      missRate: Number(missRate.toFixed(2)),
-      memoryCacheSize: this.memoryCache.size,
-      redisStatus: this.redis.status,
-      memoryUsage,
+      status,
+      redis: redisHealthy,
+      memory: memoryHealthy,
+      stats: this.getStats()
     };
   }
 
-  /**
-   * Clear all caches
-   */
-  async clearAll(): Promise<void> {
-    try {
-      // Clear memory cache
-      this.memoryCache.clear();
-      
-      // Clear Redis cache (only keys with our prefix)
-      const keys = await this.redis.keys(`${this.config.redis.keyPrefix}*`);
-      if (keys.length > 0) {
-        await this.redis.del(...keys);
-      }
-      
-      // Reset metrics
-      this.metrics = {
-        hits: 0,
-        misses: 0,
-        sets: 0,
-        deletes: 0,
-        evictions: 0,
-        totalRequests: 0,
-        averageResponseTime: 0,
-        memoryUsage: 0,
-        redisConnections: this.metrics.redisConnections,
-      };
-      
-      logger.info('All caches cleared');
-      
-    } catch (error) {
-      logger.error('Failed to clear caches', error as Error);
-    }
-  }
-
-  /**
-   * Health check for cache system
-   */
-  async healthCheck(): Promise<{
-    healthy: boolean;
-    redis: boolean;
-    memoryCache: boolean;
-    metrics: any;
-  }> {
-    try {
-      // Test Redis connection
-      const redisPing = await this.redis.ping();
-      const redisHealthy = redisPing === 'PONG';
-      
-      // Test memory cache
-      const testKey = '_health_check_';
-      this.memoryCache.set(testKey, { data: 'test', timestamp: Date.now(), ttl: 60 });
-      const memoryHealthy = this.memoryCache.has(testKey);
-      this.memoryCache.delete(testKey);
-      
-      const overall = redisHealthy && memoryHealthy;
-      
-      return {
-        healthy: overall,
-        redis: redisHealthy,
-        memoryCache: memoryHealthy,
-        metrics: this.getMetrics(),
-      };
-      
-    } catch (error) {
-      logger.error('Cache health check failed', error as Error);
-      return {
-        healthy: false,
-        redis: false,
-        memoryCache: false,
-        metrics: this.getMetrics(),
-      };
-    }
-  }
-
-  /**
-   * Graceful shutdown
-   */
-  async shutdown(): Promise<void> {
-    try {
-      this.memoryCache.clear();
-      await this.redis.quit();
-      logger.info('Cache manager shutdown completed');
-    } catch (error) {
-      logger.error('Failed to shutdown cache manager', error as Error);
-    }
-  }
-
-  // Private helper methods
-
-  private setMemoryCache<T>(key: string, data: T, ttl: number): void {
-    // Evict old items if at capacity
+  private setMemoryCache<T>(key: string, item: CacheItem<T>): void {
+    // Enforce memory limits
     if (this.memoryCache.size >= this.config.maxMemoryItems) {
-      const oldestKey = this.memoryCache.keys().next().value;
-      if (oldestKey) {
-        this.memoryCache.delete(oldestKey);
-        this.metrics.evictions++;
-      }
+      this.evictOldestItems();
     }
 
-    const size = this.estimateSize(data);
-    this.memoryCache.set(key, {
-      data,
-      timestamp: Date.now(),
-      ttl: ttl * 1000, // Convert to milliseconds
-      size,
-    });
+    this.memoryCache.set(key, item);
   }
 
-  private isExpired(item: CacheItem): boolean {
-    if (item.ttl <= 0) return false; // No expiration
-    return Date.now() - item.timestamp > item.ttl;
-  }
-
-  private async serializeData<T>(data: T, compress: boolean): Promise<string> {
-    try {
-      const serialized = JSON.stringify(data);
-      
-      if (compress && this.compressionEnabled && serialized.length > this.config.compressionThreshold) {
-        // In a real implementation, you'd use a compression library like zlib
-        // For now, we'll just return the serialized data
-        return serialized;
-      }
-      
-      return serialized;
-    } catch (error) {
-      logger.error('Failed to serialize data', error as Error);
-      throw error;
+  private evictOldestItems(): void {
+    const entries = Array.from(this.memoryCache.entries());
+    entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+    
+    // Remove oldest 25% of items
+    const toRemove = Math.floor(entries.length * 0.25);
+    for (let i = 0; i < toRemove; i++) {
+      this.memoryCache.delete(entries[i][0]);
     }
   }
 
-  private async deserializeData<T>(data: string): Promise<T> {
-    try {
-      return JSON.parse(data) as T;
-    } catch (error) {
-      logger.error('Failed to deserialize data', error as Error);
-      throw error;
-    }
+  private isItemValid<T>(item: CacheItem<T>): boolean {
+    return Date.now() - item.timestamp < item.ttl;
+  }
+
+  private matchesPattern(key: string, pattern: string): boolean {
+    // Simple pattern matching (convert Redis pattern to regex)
+    const regexPattern = pattern
+      .replace(/\*/g, '.*')
+      .replace(/\?/g, '.');
+    return new RegExp(`^${regexPattern}$`).test(key);
   }
 
   private estimateSize(data: any): number {
     try {
-      return JSON.stringify(data).length * 2; // Rough estimate in bytes
+      return JSON.stringify(data).length;
     } catch {
       return 0;
     }
   }
 
-  private updateResponseTime(startTime: number): void {
-    const responseTime = Date.now() - startTime;
-    this.metrics.averageResponseTime = 
-      (this.metrics.averageResponseTime + responseTime) / 2;
+  private updateMemoryUsage(): void {
+    this.stats.totalItems = this.memoryCache.size;
+    this.stats.memoryUsage = Array.from(this.memoryCache.values())
+      .reduce((total, item) => total + (item.metadata?.size || 0), 0);
   }
 
-  private startMetricsCollection(): void {
-    if (!this.config.enableMetrics) return;
-
-    // Collect metrics every 30 seconds
+  private startCleanupTimer(): void {
     setInterval(() => {
-      this.collectMetrics();
-    }, 30000);
+      this.cleanupExpiredItems();
+    }, 60000); // Clean up every minute
   }
 
-  private collectMetrics(): void {
-    // Update memory usage
-    let memoryUsage = 0;
-    for (const [, item] of this.memoryCache) {
-      memoryUsage += item.size || this.estimateSize(item.data);
+  private cleanupExpiredItems(): void {
+    const keysToDelete: string[] = [];
+    
+    for (const [key, item] of this.memoryCache.entries()) {
+      if (!this.isItemValid(item)) {
+        keysToDelete.push(key);
+      }
     }
-    this.metrics.memoryUsage = memoryUsage;
 
-    // Log metrics if enabled
-    if (this.config.enableMetrics) {
-      logger.info('Cache metrics collected', this.getMetrics());
+    keysToDelete.forEach(key => this.memoryCache.delete(key));
+    
+    if (keysToDelete.length > 0) {
+      logger.debug(`Cleaned up ${keysToDelete.length} expired cache items`);
+      this.updateMemoryUsage();
+    }
+  }
+
+  public async disconnect(): Promise<void> {
+    if (this.redisClient) {
+      await this.redisClient.disconnect();
+      this.stats.redisConnected = false;
     }
   }
 }
 
-// Export default configuration
-export const createCacheConfig = (): CacheConfig => ({
-  redis: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-    password: process.env.REDIS_PASSWORD,
-    db: parseInt(process.env.REDIS_CACHE_DB || '1'),
-    keyPrefix: process.env.REDIS_KEY_PREFIX || 'thrive:cache:',
-  },
-  defaultTTL: parseInt(process.env.CACHE_DEFAULT_TTL || '3600'), // 1 hour
-  maxMemoryItems: parseInt(process.env.CACHE_MAX_MEMORY_ITEMS || '10000'),
-  compressionThreshold: parseInt(process.env.CACHE_COMPRESSION_THRESHOLD || '1024'), // 1KB
-  enableMetrics: process.env.CACHE_ENABLE_METRICS === 'true',
-});
+export function createCacheConfig(): CacheConfig {
+  return {
+    redis: {
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT || '6379'),
+      password: process.env.REDIS_PASSWORD,
+      db: parseInt(process.env.REDIS_DB || '0'),
+    },
+    defaultTTL: parseInt(process.env.CACHE_DEFAULT_TTL || '300000'), // 5 minutes
+    maxMemoryItems: parseInt(process.env.CACHE_MAX_MEMORY_ITEMS || '1000'),
+    enableCompression: process.env.CACHE_ENABLE_COMPRESSION === 'true',
+    enableAnalytics: process.env.CACHE_ENABLE_ANALYTICS !== 'false',
+  };
+}

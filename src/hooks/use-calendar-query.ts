@@ -489,3 +489,6 @@ export function useCacheStats() {
     staleTime: 30000
   });
 }
+
+// Export the main query hook for backward compatibility
+export const useCalendarQuery = useCalendarEvents;

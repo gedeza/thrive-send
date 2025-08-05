@@ -20,30 +20,63 @@ export const LazyFunnelManager = lazy(() =>
   }))
 );
 
-// Lazy load chart components
-export const LazyRechartsBarChart = lazy(() => 
-  import('@/components/analytics/charts/RechartsBarChart').then(module => ({
-    default: module.RechartsBarChart
+// Lazy load chart components - using Chart.js optimized components
+export const LazyOptimizedBarChart = lazy(() => 
+  import('@/components/analytics/OptimizedChartComponents').then(module => ({
+    default: module.OptimizedBarChart
   }))
 );
 
-export const LazyRechartsPieChart = lazy(() => 
-  import('@/components/analytics/charts/RechartsPieChart').then(module => ({
-    default: module.RechartsPieChart
+export const LazyOptimizedPieChart = lazy(() => 
+  import('@/components/analytics/OptimizedChartComponents').then(module => ({
+    default: module.OptimizedPieChart
   }))
 );
 
-export const LazyRechartsLineChart = lazy(() => 
-  import('@/components/analytics/charts/RechartsLineChart').then(module => ({
-    default: module.RechartsLineChart
+export const LazyOptimizedLineChart = lazy(() => 
+  import('@/components/analytics/OptimizedChartComponents').then(module => ({
+    default: module.OptimizedLineChart
   }))
 );
 
-export const LazyRechartsHeatMap = lazy(() => 
-  import('@/components/analytics/charts/RechartsHeatMap').then(module => ({
-    default: module.RechartsHeatMap
+export const LazyHeatMapWidget = lazy(() => 
+  import('@/components/analytics/HeatMapWidget').then(module => ({
+    default: module.HeatMapWidget
   }))
 );
+
+// Wrapped chart components with appropriate skeletons for backward compatibility
+export function RechartsBarChartLazy(props: any) {
+  return (
+    <LazyWrapper fallback={<ChartSkeleton />}>
+      <LazyOptimizedBarChart {...props} />
+    </LazyWrapper>
+  );
+}
+
+export function RechartsPieChartLazy(props: any) {
+  return (
+    <LazyWrapper fallback={<ChartSkeleton />}>
+      <LazyOptimizedPieChart {...props} />
+    </LazyWrapper>
+  );
+}
+
+export function RechartsLineChartLazy(props: any) {
+  return (
+    <LazyWrapper fallback={<ChartSkeleton />}>
+      <LazyOptimizedLineChart {...props} />
+    </LazyWrapper>
+  );
+}
+
+export function RechartsHeatMapLazy(props: any) {
+  return (
+    <LazyWrapper fallback={<ChartSkeleton />}>
+      <LazyHeatMapWidget {...props} />
+    </LazyWrapper>
+  );
+}
 
 // Lazy load content components
 export const LazyContentCalendar = lazy(() => 
@@ -94,37 +127,6 @@ export function FunnelManagerLazy(props: any) {
   );
 }
 
-export function RechartsBarChartLazy(props: any) {
-  return (
-    <LazyWrapper fallback={<ChartSkeleton />}>
-      <LazyRechartsBarChart {...props} />
-    </LazyWrapper>
-  );
-}
-
-export function RechartsPieChartLazy(props: any) {
-  return (
-    <LazyWrapper fallback={<ChartSkeleton />}>
-      <LazyRechartsPieChart {...props} />
-    </LazyWrapper>
-  );
-}
-
-export function RechartsLineChartLazy(props: any) {
-  return (
-    <LazyWrapper fallback={<ChartSkeleton />}>
-      <LazyRechartsLineChart {...props} />
-    </LazyWrapper>
-  );
-}
-
-export function RechartsHeatMapLazy(props: any) {
-  return (
-    <LazyWrapper fallback={<ChartSkeleton />}>
-      <LazyRechartsHeatMap {...props} />
-    </LazyWrapper>
-  );
-}
 
 export function ContentCalendarLazy(props: any) {
   return (

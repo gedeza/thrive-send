@@ -1,5 +1,5 @@
 import { prisma, queryOptimizations, connectionManager } from './optimizations';
-import { User, Campaign, Analytics, ContentPiece, CampaignStatus } from '@prisma/client';
+import { User, Campaign, Analytics, Content, CampaignStatus } from '@prisma/client';
 
 // Example 1: Basic query optimization
 async function getUsersWithOptimization() {
@@ -34,7 +34,7 @@ async function getPaginatedCampaigns(page: number = 1, pageSize: number = 10) {
       skip,
       take,
       include: {
-        contentPieces: true,
+        content: true,
         analytics: true
       },
       orderBy: {
@@ -73,14 +73,14 @@ async function ensureDatabaseConnection() {
 // Example 6: Complex query with optimization
 async function getCampaignPerformance(campaignId: string) {
   return prisma.optimizeQuery(async () => {
-    const [campaign, analytics, contentPieces] = await Promise.all([
+    const [campaign, analytics, content] = await Promise.all([
       prisma.campaign.findUnique({
         where: { id: campaignId }
       }),
       prisma.analytics.findFirst({
         where: { campaignId }
       }),
-      prisma.contentPiece.findMany({
+      prisma.content.findMany({
         where: { campaignId }
       })
     ]);
@@ -88,7 +88,7 @@ async function getCampaignPerformance(campaignId: string) {
     return {
       campaign,
       analytics,
-      contentPieces,
+      content,
       performance: {
         engagement: analytics?.engagements || 0,
         reach: analytics?.views || 0
@@ -98,7 +98,7 @@ async function getCampaignPerformance(campaignId: string) {
 }
 
 // Example 7: Transaction with optimization
-async function updateCampaignWithContent(campaignId: string, contentData: Partial<ContentPiece>) {
+async function updateCampaignWithContent(campaignId: string, contentData: Partial<Content>) {
   return prisma.optimizeQuery(async () => {
     return prisma.$transaction(async (tx) => {
       const campaign = await tx.campaign.update({
@@ -109,14 +109,14 @@ async function updateCampaignWithContent(campaignId: string, contentData: Partia
         }
       });
 
-      const content = await tx.contentPiece.create({
+      const newContent = await tx.content.create({
         data: {
           ...contentData,
           campaignId
         } as any // Type assertion needed due to partial data
       });
 
-      return { campaign, content };
+      return { campaign, content: newContent };
     });
   });
 }

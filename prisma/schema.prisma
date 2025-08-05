@@ -35,9 +35,7 @@ model User {
   content                 Content[]
   assignedApprovals       ContentApproval[]     @relation("AssignedApprovals")
   createdApprovals        ContentApproval[]     @relation("CreatedApprovals")
-  contentItems            ContentItem[]
   contentLists            ContentList[]
-  createdContent          ContentPiece[]
   integrations            Integration[]
   marketplaceListings     MarketplaceListing[]  @relation("MarketplaceListingCreator")
   marketplacePurchases    MarketplacePurchase[] @relation("MarketplacePurchaseBuyer")
@@ -51,6 +49,10 @@ model User {
   targetingRules          TargetingRule[]
   Template                Template[]
   workflows               Workflow[]
+  // Advanced Reporting Relations
+  scheduledReports        ScheduledReport[]
+  teamInvitations         TeamMemberInvitation[]
+  boostPurchases          BoostPurchase[]
 
   @@index([clerkId])
   @@index([email])
@@ -67,6 +69,11 @@ model Organization {
   updatedAt              DateTime                 @updatedAt
   clerkOrganizationId    String?                  @unique
   settings               Json?                    @default("{}")
+  // Service Provider Enhancements
+  type                   String?                  @default("service_provider") @db.VarChar(50)
+  subscriptionTier       String?                  @default("basic") @db.VarChar(50)
+  maxClients            Int?                     @default(10)
+  marketplaceEnabled    Boolean?                 @default(true)
   assets                 Asset[]
   audiences              Audience[]
   audienceSegments       AudienceSegment[]
@@ -75,9 +82,8 @@ model Organization {
   campaignTemplates      CampaignTemplate[]
   clients                Client[]
   contactLists           ContactList[]
-  contentItems           ContentItem[]
+  content                Content[]                @relation("OrganizationContent")  // Consolidated content relationship
   contentLists           ContentList[]
-  contentPieces          ContentPiece[]
   crossCampaignAnalytics CrossCampaignAnalytics[]
   integrations           Integration[]
   invitations            Invitation[]
@@ -87,20 +93,34 @@ model Organization {
   reports                Report[]
   socialAccounts         SocialAccount[]
   subscription           Subscription?
+  // Service Provider Relations
+  serviceProviderMetrics ServiceProviderMetrics[]
+  clientPerformanceRankings ClientPerformanceRanking[]
+  crossClientAnalytics   CrossClientAnalytics[]
+  marketplaceRevenue     MarketplaceRevenue[]
   targetingRules         TargetingRule[]
   Template               Template[]
   workflows              Workflow[]
+  // Advanced Reporting Relations
+  scheduledReports       ScheduledReport[]
+  analyticsDetails       CrossClientAnalyticsDetail[]
+  teamInvitations        TeamMemberInvitation[]
+  boostProducts          BoostProduct[]
+  boostPurchases         BoostPurchase[]
+  metricsDetails         ServiceProviderMetricsDetail[]
 }
 
 model OrganizationMember {
-  id             String       @id @default(cuid())
-  role           String       @default("MEMBER")
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  userId         String
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Restrict)
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  id                   String               @id @default(cuid())
+  role                 String               @default("MEMBER")
+  serviceProviderRole  ServiceProviderRole? @default(CONTENT_CREATOR)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  userId               String
+  organizationId       String
+  organization         Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  user                 User                 @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  clientAssignments    ClientAssignment[]
 
   @@unique([userId, organizationId])
 }
@@ -119,6 +139,12 @@ model Client {
   website        String?
   status         ClientStatus     @default(ACTIVE)
   logoUrl        String?
+  // Service Provider Enhancements
+  serviceProviderId String?
+  onboardedAt       DateTime?
+  contractStartDate DateTime?
+  contractEndDate   DateTime?
+  monthlyBudget     Decimal?       @db.Decimal(10,2)
   analytics      Analytics[]
   budgets        Budget[]
   campaigns      Campaign[]
@@ -128,8 +154,15 @@ model Client {
   goals          ClientGoal[]
   projects       Project[]
   socialAccounts SocialAccount[]
+  // Service Provider Relations
+  clientAssignments     ClientAssignment[]
+  performanceRankings   ClientPerformanceRanking[]
+  marketplaceRevenue    MarketplaceRevenue[]
+  analyticsDetails      CrossClientAnalyticsDetail[]
+  boostPurchases        BoostPurchase[]
 
   @@index([organizationId])
+  @@index([serviceProviderId])
 }
 
 model Project {
@@ -147,8 +180,7 @@ model Project {
   budgets        Budget[]
   campaigns      Campaign[]
   feedback       ClientFeedback[]
-  contentItems   ContentItem[]
-  contentPieces  ContentPiece[]
+  content        Content[]        @relation("ProjectContent")  // Consolidated content relationship
   client         Client?          @relation(fields: [clientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   manager        User?            @relation(fields: [managerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -177,33 +209,6 @@ model SocialAccount {
   @@unique([platform, handle, organizationId])
 }
 
-model ContentPiece {
-  id             String       @id @default(cuid())
-  title          String
-  content        String
-  contentType    String       @default("SOCIAL_POST")
-  mediaUrls      String[]
-  status         String       @default("DRAFT")
-  scheduledFor   DateTime?
-  publishedAt    DateTime?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  authorId       String
-  organizationId String
-  projectId      String?
-  campaignId     String?
-  color          String?
-  recurrence     Json?
-  author         User         @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  campaign       Campaign?    @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  project        Project?     @relation(fields: [projectId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  engagements    Engagement[]
-  socialPosts    SocialPost[]
-
-  @@index([organizationId, status])
-  @@index([authorId, createdAt])
-}
 
 model SocialPost {
   id              String        @id @default(cuid())
@@ -214,9 +219,9 @@ model SocialPost {
   metrics         Json?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
-  contentPieceId  String
+  contentId       String        // Updated to use Content model
   socialAccountId String
-  contentPiece    ContentPiece  @relation(fields: [contentPieceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  contentItem     Content       @relation("ContentSocialPosts", fields: [contentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   socialAccount   SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
@@ -224,14 +229,14 @@ model Engagement {
   id                String             @id @default(cuid())
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
-  contentPieceId    String?
+  contentId         String?            // Updated to use Content model
   clicks            Int                @default(0)
   conversions       Int                @default(0)
   lastEngagement    DateTime?
   opens             Int                @default(0)
   score             Float              @default(0)
   audienceAnalytics AudienceAnalytics?
-  contentPiece      ContentPiece?      @relation(fields: [contentPieceId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  content           Content?           @relation("ContentEngagements", fields: [contentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model Analytics {
@@ -300,23 +305,6 @@ model Subscription {
   organization         Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
 
-model ContentItem {
-  id             String       @id @default(cuid())
-  title          String
-  body           String
-  status         String       @default("DRAFT")
-  scheduledFor   DateTime?
-  publishedAt    DateTime?
-  previewData    Json?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  authorId       String
-  organizationId String
-  projectId      String?
-  author         User         @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  project        Project?     @relation(fields: [projectId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-}
 
 model Activity {
   id         String   @id @default(cuid())
@@ -361,7 +349,7 @@ model Campaign {
   organization           Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   project                Project?                 @relation(fields: [projectId], references: [id], onUpdate: NoAction)
   template               CampaignTemplate?        @relation(fields: [templateId], references: [id])
-  contentPieces          ContentPiece[]
+  content                Content[]                @relation("CampaignContent")  // Consolidated content relationship
   conversionFunnels      ConversionFunnel[]
   crossCampaignAnalytics CrossCampaignAnalytics[]
   roiTracking            ROITracking[]
@@ -443,6 +431,9 @@ model Content {
   slug              String            @unique
   metadata          Json?
   templateId        String?
+  projectId         String?           // Added for project relationship
+  campaignId        String?           // Added for campaign relationship
+  organizationId    String?           // Added for organization relationship
   status            ContentStatus
   type              ContentType
   platforms         String[]
@@ -450,17 +441,25 @@ model Content {
   calendarEvents    CalendarEvent[]
   author            User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
   template          Template?         @relation(fields: [templateId], references: [id])
+  project           Project?          @relation("ProjectContent", fields: [projectId], references: [id])
+  campaign          Campaign?         @relation("CampaignContent", fields: [campaignId], references: [id])
+  organization      Organization?     @relation("OrganizationContent", fields: [organizationId], references: [id])
   analytics         ContentAnalytics?
   approval          ContentApproval?
   contentListItems  ContentListItem[]
   mediaItems        MediaItem[]
   seo               SEO?
   schedule          Schedule?
+  socialPosts       SocialPost[]      @relation("ContentSocialPosts")
+  engagements       Engagement[]      @relation("ContentEngagements")
 
   @@index([authorId])
   @@index([type])
   @@index([status])
   @@index([templateId])
+  @@index([projectId])
+  @@index([campaignId])
+  @@index([organizationId])
 }
 
 model Schedule {
@@ -1605,4 +1604,283 @@ enum ClientStatus {
   INACTIVE
   LEAD
   ARCHIVED
+}
+
+// Service Provider Enhancements
+
+enum ServiceProviderRole {
+  OWNER
+  ADMIN
+  MANAGER
+  CONTENT_CREATOR
+  REVIEWER
+  APPROVER
+  PUBLISHER
+  ANALYST
+  CLIENT_MANAGER
+}
+
+model ClientAssignment {
+  id                   String             @id @default(cuid())
+  organizationMemberId String
+  clientId             String
+  role                 String             @default("CONTRIBUTOR")
+  permissions          Json               @default("[]")
+  assignedAt           DateTime           @default(now())
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  organizationMember   OrganizationMember @relation(fields: [organizationMemberId], references: [id], onDelete: Cascade)
+  client               Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationMemberId, clientId])
+  @@index([organizationMemberId])
+  @@index([clientId])
+}
+
+model ServiceProviderMetrics {
+  id                     String       @id @default(cuid())
+  organizationId         String
+  date                   DateTime     @db.Date
+  totalClients           Int          @default(0)
+  activeClients          Int          @default(0)
+  totalCampaigns         Int          @default(0)
+  activeCampaigns        Int          @default(0)
+  totalContent           Int          @default(0)
+  publishedContent       Int          @default(0)
+  totalRevenue           Decimal      @default(0) @db.Decimal(10,2)
+  marketplaceRevenue     Decimal      @default(0) @db.Decimal(10,2)
+  teamUtilization        Decimal      @default(0) @db.Decimal(5,2)
+  avgClientSatisfaction  Decimal      @default(0) @db.Decimal(3,2)
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+  organization           Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, date])
+  @@index([organizationId, date])
+}
+
+model ClientPerformanceRanking {
+  id               String       @id @default(cuid())
+  organizationId   String
+  clientId         String
+  rankingDate      DateTime     @db.Date
+  performanceScore Decimal      @default(0) @db.Decimal(5,2)
+  engagementRate   Decimal      @default(0) @db.Decimal(5,2)
+  growthRate       Decimal      @default(0) @db.Decimal(5,2)
+  contentVelocity  Int          @default(0)
+  budgetEfficiency Decimal      @default(0) @db.Decimal(5,2)
+  rankingPosition  Int          @default(0)
+  createdAt        DateTime     @default(now())
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client           Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, clientId, rankingDate])
+  @@index([organizationId, rankingDate])
+}
+
+model CrossClientAnalytics {
+  id               String       @id @default(cuid())
+  organizationId   String
+  metricType       String       @db.VarChar(100)
+  metricValue      Decimal      @db.Decimal(15,2)
+  comparisonPeriod String       @db.VarChar(50)
+  clientBreakdown  Json         @default("{}")
+  trendData        Json         @default("[]")
+  dateRangeStart   DateTime
+  dateRangeEnd     DateTime
+  createdAt        DateTime     @default(now())
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+model MarketplaceRevenue {
+  id              String        @id @default(cuid())
+  organizationId  String
+  clientId        String?
+  revenueType     String        @db.VarChar(50) // 'commission', 'boost', 'content', 'subscription'
+  amount          Decimal       @db.Decimal(10,2)
+  commissionRate  Decimal       @default(0) @db.Decimal(5,2)
+  transactionDate DateTime
+  description     String?
+  metadata        Json          @default("{}")
+  createdAt       DateTime      @default(now())
+  organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client          Client?       @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([clientId])
+}
+
+// Advanced Reporting Models
+model ScheduledReport {
+  id               String            @id @default(cuid())
+  title            String
+  description      String?
+  type             String            // 'performance', 'revenue', 'engagement', 'cross-client', 'executive-summary'
+  frequency        String            // 'once', 'daily', 'weekly', 'monthly', 'quarterly'
+  status           String            @default("active") // 'active', 'paused', 'completed', 'failed'
+  recipients       String[]          // Array of email addresses
+  format           String            @default("pdf") // 'pdf', 'excel', 'email'
+  nextRun          DateTime?
+  lastRun          DateTime?
+  organizationId   String
+  createdById      String
+  parameters       Json              @default("{}")
+  deliverySettings Json              @default("{}")
+  performance      Json              @default("{\"totalRuns\": 0, \"successfulRuns\": 0, \"avgGenerationTime\": 0}")
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  
+  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy        User              @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  executions       ReportExecution[]
+
+  @@index([organizationId])
+  @@index([createdById])
+  @@index([nextRun])
+  @@index([status])
+}
+
+model ReportExecution {
+  id                String         @id @default(cuid())
+  scheduledReportId String
+  status            String         @default("running") // 'running', 'completed', 'failed'
+  startedAt         DateTime       @default(now())
+  completedAt       DateTime?
+  executionTime     Int?           // milliseconds
+  fileUrl           String?
+  fileSize          Int?
+  errorMessage      String?
+  metadata          Json           @default("{}")
+  
+  scheduledReport   ScheduledReport @relation(fields: [scheduledReportId], references: [id], onDelete: Cascade)
+
+  @@index([scheduledReportId])
+  @@index([status])
+  @@index([startedAt])
+}
+
+model CrossClientAnalyticsDetail {
+  id                     String       @id @default(cuid())
+  organizationId         String
+  clientId               String
+  reportDate             DateTime     @db.Date
+  metrics                Json         @default("{}")
+  socialPlatforms        Json         @default("[]")
+  contentTypes           Json         @default("[]")
+  topPerformingContent   Json         @default("[]")
+  industryBenchmarks     Json         @default("{}")
+  performanceVsBenchmark Json         @default("{}")
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+  
+  organization           Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client                 Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, clientId, reportDate])
+  @@index([organizationId])
+  @@index([clientId])
+  @@index([reportDate])
+}
+
+model TeamMemberInvitation {
+  id             String   @id @default(cuid())
+  email          String
+  role           String   // 'ADMIN', 'MANAGER', 'CONTENT_CREATOR', 'REVIEWER'
+  organizationId String
+  invitedById    String
+  clientIds      String[] // Array of client IDs they can access
+  permissions    Json     @default("{}")
+  status         String   @default("pending") // 'pending', 'accepted', 'expired', 'rejected'
+  token          String   @unique
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedBy      User         @relation(fields: [invitedById], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([email])
+  @@index([status])
+  @@index([token])
+}
+
+model BoostProduct {
+  id             String          @id @default(cuid())
+  name           String
+  description    String
+  type           String          // 'engagement', 'conversion', 'reach', 'premium', 'awareness'
+  category       String          // 'Government', 'Business', 'Startup', 'Branding', 'Social Impact'
+  price          Decimal         @db.Decimal(10,2)
+  originalPrice  Decimal?        @db.Decimal(10,2)
+  duration       String          // '14 days', '30 days', etc.
+  features       String[]
+  metrics        Json            @default("{}")
+  clientTypes    String[]
+  popularity     String          @default("new") // 'bestseller', 'hot', 'trending', 'new'
+  rating         Decimal         @default(0) @db.Decimal(2,1)
+  reviews        Int             @default(0)
+  estimatedROI   String?
+  isRecommended  Boolean         @default(false)
+  isActive       Boolean         @default(true)
+  organizationId String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  
+  organization   Organization?   @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  purchases      BoostPurchase[]
+
+  @@index([category])
+  @@index([type])
+  @@index([isActive])
+}
+
+model BoostPurchase {
+  id              String       @id @default(cuid())
+  boostProductId  String
+  clientId        String
+  organizationId  String
+  userId          String
+  status          String       @default("active") // 'active', 'expired', 'cancelled'
+  purchaseDate    DateTime     @default(now())
+  price           Decimal      @db.Decimal(10,2)
+  duration        String
+  expiresAt       DateTime
+  performance     Json         @default("{\"impressions\": 0, \"engagements\": 0, \"conversions\": 0, \"roi\": 0}")
+  paymentMethod   String?
+  billingAddress  Json?
+  notes           String?
+  metadata        Json         @default("{}")
+  
+  boostProduct    BoostProduct @relation(fields: [boostProductId], references: [id], onDelete: Cascade)
+  client          Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([organizationId])
+  @@index([status])
+  @@index([purchaseDate])
+}
+
+model ServiceProviderMetricsDetail {
+  id                  String       @id @default(cuid())
+  organizationId      String
+  date                DateTime     @db.Date
+  revenueMetrics      Json         @default("{}")
+  clientMetrics       Json         @default("{}")
+  performanceMetrics  Json         @default("{}")
+  marketplaceMetrics  Json         @default("{}")
+  teamMetrics         Json         @default("{}")
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, date])
+  @@index([organizationId])
+  @@index([date])
 }

@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import { useOrganization } from "@clerk/nextjs";
+import { useServiceProvider } from '@/context/ServiceProviderContext';
 
 // Form validation schema
 const clientSchema = z.object({
@@ -64,6 +65,7 @@ type ClientFormData = z.infer<typeof clientSchema>;
 export default function AddClientPage() {
   const router = useRouter();
   const { organization } = useOrganization();
+  const { state: { organizationId: serviceProviderOrgId } } = useServiceProvider();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const {
@@ -86,25 +88,30 @@ export default function AddClientPage() {
     },
   });
 
-  // Update organization ID when it becomes available
+  // Update organization ID when it becomes available - prioritize ServiceProviderContext
   useEffect(() => {
-    if (organization?.id) {
+    if (serviceProviderOrgId) {
+      console.log('Using ServiceProvider organizationId:', serviceProviderOrgId);
+      setValue('organizationId', serviceProviderOrgId);
+    } else if (organization?.id) {
+      console.log('Fallback to Clerk organization.id:', organization.id);
       setValue('organizationId', organization.id);
     }
-  }, [organization?.id, setValue]);
+  }, [serviceProviderOrgId, organization?.id, setValue]);
 
   const onSubmit = async (data: ClientFormData) => {
     try {
       setIsSubmitting(true);
       console.log("Form submission started with data:", data);
       
-      if (!organization?.id) {
-        console.error("No organization found:", { organization });
+      const effectiveOrgId = serviceProviderOrgId || organization?.id;
+      if (!effectiveOrgId) {
+        console.error("No organization found:", { serviceProviderOrgId, organization });
         toast.error("No organization selected. Please select an organization first.");
         return;
       }
 
-      console.log("Organization found:", organization.id);
+      console.log("Using organizationId:", effectiveOrgId);
       
       // Clean up the data before sending
       const cleanData = {
@@ -114,11 +121,11 @@ export default function AddClientPage() {
         industry: data.industry || null,
         address: data.address || null,
         logoUrl: data.logoUrl || null,
-        organizationId: organization.id,
+        organizationId: effectiveOrgId,
       };
 
       console.log("Sending data to API:", cleanData);
-      const response = await fetch("/api/clients", {
+      const response = await fetch("/api/service-provider/clients", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -141,14 +148,24 @@ export default function AddClientPage() {
         throw new Error(responseData.error || `Failed to create client (${response.status})`);
       }
 
-      toast.success("Client created successfully!");
+      console.log('Client creation successful:', responseData);
       
-      // Redirect to the client details page or client list
-      if (responseData.id) {
-        router.push(`/clients/${responseData.id}`);
+      const successMessage = responseData.message || "Client created successfully!";
+      if (responseData.demoMode) {
+        toast.success(`${successMessage} (Running in demo mode)`);
       } else {
-        router.push("/clients");
+        toast.success(successMessage);
       }
+      
+      console.log('Toast displayed, redirecting to client list...');
+      
+      // Add a small delay to ensure API state is updated
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Redirect to the client list with a cache-busting parameter
+      const redirectUrl = `/clients?refresh=${Date.now()}`;
+      console.log('Redirecting to:', redirectUrl);
+      router.push(redirectUrl);
       
       // Force a refresh of the client list
       router.refresh();
@@ -161,7 +178,7 @@ export default function AddClientPage() {
     }
   };
 
-  if (!organization) {
+  if (!serviceProviderOrgId && !organization) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -187,7 +204,7 @@ export default function AddClientPage() {
           <h1 className="text-3xl font-bold tracking-tight">Add Client</h1>
           <p className="text-muted-foreground">Create a new client in ThriveSend</p>
           <p className="text-sm text-muted-foreground mt-2">
-            Organization: {organization.name}
+            Organization: {organization?.name || 'Demo Service Provider'} ({serviceProviderOrgId || organization?.id})
           </p>
         </div>
         <Link
