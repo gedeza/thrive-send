@@ -5,7 +5,6 @@ import {
   FileText, 
   Settings, 
   BarChart3, 
-  Calendar, 
   Users, 
   Mail, 
   FileCode, 
@@ -47,29 +46,6 @@ export const defaultSidebarItems: SidebarItemWithRoles[] = [
     icon: <BarChart3 size={18} />,
     href: "/analytics",
     roles: ["admin", "manager"], // Only admins and managers
-  },
-  {
-    key: "calendar",
-    label: "Calendar",
-    icon: <Calendar size={18} />,
-    href: "/content/calendar",
-    roles: ["admin", "manager", "user"], // Not for viewers or guests
-    children: [
-      {
-        key: "calendar-overview",
-        label: "Calendar Overview",
-        icon: <Calendar size={16} />,
-        href: "/content/calendar",
-        roles: ["admin", "manager", "user"],
-      },
-      {
-        key: "calendar-multi-client",
-        label: "Multi-Client View",
-        icon: <Users size={16} />,
-        href: "/content/calendar/multi-client",
-        roles: ["admin", "manager"], // Service provider multi-client view
-      }
-    ]
   },
   {
     key: "clients",

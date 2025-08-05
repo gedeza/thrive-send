@@ -323,7 +323,9 @@ function AnalyticsPageContent() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Campaigns</SelectItem>
-                  <SelectItem value="summer-2024">Summer 2024</SelectItem>
+                  {/* Dynamic campaign options would be loaded from content API */}
+                  <SelectItem value="welcome-series">Welcome Series</SelectItem>
+                  <SelectItem value="monthly-newsletter">Monthly Newsletter</SelectItem>
                   <SelectItem value="product-launch">Product Launch</SelectItem>
                   <SelectItem value="holiday-special">Holiday Special</SelectItem>
                 </SelectContent>

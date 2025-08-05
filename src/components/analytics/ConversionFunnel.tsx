@@ -67,86 +67,201 @@ export function ConversionFunnel({ campaignId, timeframe = '30d', showControls =
   const fetchFunnelData = async () => {
     try {
       setIsLoading(true);
+      console.log('📊 Fetching conversion funnel data...', { campaignId, timeframe: selectedTimeframe });
       
-      // Mock data - replace with actual API call
-      const mockFunnel: ConversionFunnelData = {
+      // Calculate date range based on timeframe
+      const endDate = new Date();
+      const startDate = new Date();
+      
+      switch (selectedTimeframe) {
+        case '7d':
+          startDate.setDate(endDate.getDate() - 7);
+          break;
+        case '30d':
+          startDate.setDate(endDate.getDate() - 30);
+          break;
+        case '90d':
+          startDate.setDate(endDate.getDate() - 90);
+          break;
+        case '1y':
+          startDate.setFullYear(endDate.getFullYear() - 1);
+          break;
+        default:
+          startDate.setDate(endDate.getDate() - 30);
+      }
+
+      // Fetch conversion data from live API
+      const response = await fetch(
+        `/api/analytics/conversions?start=${startDate.toISOString()}&end=${endDate.toISOString()}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch conversion data');
+      }
+
+      const conversionData = await response.json();
+      console.log('✅ Conversion data fetched successfully', conversionData);
+
+      // Transform API response to funnel format
+      const funnelStages = conversionData.conversionFunnel || [];
+      const totalVisitors = funnelStages[0]?.count || 10000;
+      const totalConversions = conversionData.totalConversions || 0;
+      const revenue = conversionData.revenue || 0;
+
+      // Create detailed funnel stages from API data
+      const stages: FunnelStage[] = funnelStages.map((stage: any, index: number) => {
+        const nextStage = funnelStages[index + 1];
+        const dropoffRate = nextStage ? 
+          ((stage.count - nextStage.count) / stage.count) * 100 : 0;
+        
+        return {
+          id: stage.stage.toLowerCase().replace(/\s+/g, '_'),
+          name: stage.stage,
+          description: getStageDescription(stage.stage),
+          visitors: stage.count,
+          conversions: stage.count,
+          conversionRate: stage.percentage,
+          dropoffRate: Math.round(dropoffRate * 10) / 10,
+          avgTimeSpent: getEstimatedTimeSpent(stage.stage),
+          value: stage.stage === 'Conversions' ? revenue : 0
+        };
+      });
+
+      // Create funnel data object
+      const funnelData: ConversionFunnelData = {
+        id: campaignId || 'default-funnel',
+        name: 'Conversion Funnel Analysis',
+        campaignId: campaignId || 'all-campaigns',
+        campaignName: campaignId ? `Campaign ${campaignId}` : 'All Campaigns',
+        totalVisitors,
+        totalConversions,
+        overallConversionRate: parseFloat(conversionData.conversionRate) || 0,
+        revenue,
+        averageOrderValue: conversionData.averageOrderValue || 0,
+        timeframe: selectedTimeframe,
+        lastUpdated: new Date().toISOString(),
+        status: 'ACTIVE',
+        stages
+      };
+
+      console.log('📊 Funnel data processed:', {
+        stages: funnelData.stages.length,
+        totalVisitors: funnelData.totalVisitors,
+        totalConversions: funnelData.totalConversions,
+        conversionRate: funnelData.overallConversionRate
+      });
+
+      setFunnel(funnelData);
+    } catch (error) {
+      console.error('❌ Error fetching funnel data:', error);
+      
+      // Fallback to basic demo data on error
+      const fallbackFunnel: ConversionFunnelData = {
         id: '1',
-        name: 'E-commerce Purchase Funnel',
+        name: 'Conversion Funnel (Demo)',
         campaignId: campaignId || '1',
-        campaignName: 'Summer Sale Campaign',
-        totalVisitors: 10000,
-        totalConversions: 850,
-        overallConversionRate: 8.5,
-        revenue: 127500,
+        campaignName: 'Demo Campaign',
+        totalVisitors: 8500,
+        totalConversions: 425,
+        overallConversionRate: 5.0,
+        revenue: 63750,
         averageOrderValue: 150,
         timeframe: selectedTimeframe,
         lastUpdated: new Date().toISOString(),
         status: 'ACTIVE',
         stages: [
           {
-            id: 'awareness',
-            name: 'Landing Page Visit',
-            description: 'Users who visited the campaign landing page',
-            visitors: 10000,
-            conversions: 10000,
+            id: 'visitors',
+            name: 'Visitors',
+            description: 'Users who visited the site',
+            visitors: 8500,
+            conversions: 8500,
             conversionRate: 100,
             dropoffRate: 0,
-            avgTimeSpent: 45,
+            avgTimeSpent: 30,
             value: 0
           },
           {
-            id: 'interest',
-            name: 'Product View',
-            description: 'Users who viewed product details',
-            visitors: 6500,
-            conversions: 6500,
-            conversionRate: 65,
-            dropoffRate: 35,
+            id: 'engaged_users',
+            name: 'Engaged Users',
+            description: 'Users who interacted with content',
+            visitors: 1700,
+            conversions: 1700,
+            conversionRate: 20,
+            dropoffRate: 80,
             avgTimeSpent: 120,
             value: 0
           },
           {
-            id: 'consideration',
-            name: 'Add to Cart',
-            description: 'Users who added items to their cart',
-            visitors: 3200,
-            conversions: 3200,
-            conversionRate: 32,
-            dropoffRate: 50.8,
+            id: 'qualified_leads',
+            name: 'Qualified Leads',
+            description: 'Users who showed purchase intent',
+            visitors: 850,
+            conversions: 850,
+            conversionRate: 10,
+            dropoffRate: 50,
             avgTimeSpent: 180,
             value: 0
           },
           {
-            id: 'intent',
-            name: 'Checkout Started',
-            description: 'Users who began the checkout process',
-            visitors: 1400,
-            conversions: 1400,
-            conversionRate: 14,
-            dropoffRate: 56.3,
+            id: 'opportunities',
+            name: 'Opportunities',
+            description: 'Users who started conversion process',
+            visitors: 340,
+            conversions: 340,
+            conversionRate: 4,
+            dropoffRate: 60,
             avgTimeSpent: 240,
             value: 0
           },
           {
-            id: 'purchase',
-            name: 'Purchase Complete',
-            description: 'Users who completed their purchase',
-            visitors: 850,
-            conversions: 850,
-            conversionRate: 8.5,
-            dropoffRate: 39.3,
+            id: 'conversions',
+            name: 'Conversions',
+            description: 'Users who completed the goal',
+            visitors: 425,
+            conversions: 425,
+            conversionRate: 5,
+            dropoffRate: 0,
             avgTimeSpent: 300,
-            value: 127500
+            value: 63750
           }
         ]
       };
-
-      setFunnel(mockFunnel);
-    } catch (error) {
-      console.error('Error fetching funnel data:', error);
+      
+      setFunnel(fallbackFunnel);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Helper function to get stage descriptions
+  const getStageDescription = (stageName: string): string => {
+    const descriptions: Record<string, string> = {
+      'Visitors': 'Users who visited the site or landing page',
+      'Engaged Users': 'Users who interacted with content or spent time on site',
+      'Qualified Leads': 'Users who showed interest or engagement signals',
+      'Opportunities': 'Users who started the conversion process',
+      'Conversions': 'Users who completed the desired action'
+    };
+    return descriptions[stageName] || `Users in the ${stageName.toLowerCase()} stage`;
+  };
+
+  // Helper function to estimate time spent at each stage
+  const getEstimatedTimeSpent = (stageName: string): number => {
+    const timeEstimates: Record<string, number> = {
+      'Visitors': 30,
+      'Engaged Users': 120,
+      'Qualified Leads': 180,
+      'Opportunities': 240,
+      'Conversions': 300
+    };
+    return timeEstimates[stageName] || 60;
   };
 
   const getStageWidth = (visitors: number, totalVisitors: number) => {

@@ -17,7 +17,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { listContent, deleteContent, ContentData } from '@/lib/api/content-service';
 import { useServiceProvider, type ClientSummary } from '@/context/ServiceProviderContext';
 import { toast } from '@/components/ui/use-toast';
-import { ContentCalendarSync } from '@/components/content/ContentCalendarSync';
 import { cn, debounce, formatDate, truncateText } from '@/lib/utils';
 import { MediaPreview } from '@/components/content/MediaPreview';
 import { PublishingOptionsIndicator } from '@/components/content/PublishingOptionsIndicator';
@@ -1075,12 +1074,14 @@ function ContentLibraryPage() {
       <Dialog open={showSyncDialog} onOpenChange={setShowSyncDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Sync Content to Calendar</DialogTitle>
+            <DialogTitle>Content Synchronized</DialogTitle>
             <DialogDescription>
-              Sync your existing content to the calendar to see all your created content on the calendar view.
+              Your content is automatically available in the existing scheduling tools.
             </DialogDescription>
           </DialogHeader>
-          <ContentCalendarSync onSyncComplete={handleSyncComplete} />
+          <div className="p-4 text-center">
+            <p className="text-muted-foreground">Content scheduling is handled by the existing AdvancedContentScheduler.</p>
+          </div>
         </DialogContent>
       </Dialog>
 

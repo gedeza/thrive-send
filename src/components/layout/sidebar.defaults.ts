@@ -32,10 +32,10 @@ export const defaultSidebarItems: SidebarItem[] = [
     // icon: <DashboardIcon />,
   },
   {
-    key: 'calendar',
-    label: 'Calendar',
-    href: '/content/calendar',
-    // icon: <CalendarIcon />,
+    key: 'scheduling',
+    label: 'Content Scheduling',
+    href: '/content/scheduling',
+    // icon: <SchedulingIcon />,
   },
   {
     key: 'clients',

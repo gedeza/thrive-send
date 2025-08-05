@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
-import calendarRoutes from './routes/calendarRoutes';
 import contentRoutes from './routes/contentRoutes';
 import mediaRoutes from './routes/mediaRoutes';
 
@@ -68,7 +67,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, '../../public/uploads')));
 
 // Routes
-app.use('/api/calendar', calendarRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/media', mediaRoutes);
 

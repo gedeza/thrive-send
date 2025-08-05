@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoadingPage, LoadingSkeleton } from '@/components/common/LoadingSpinner';
 import { useServiceProvider } from '@/context/ServiceProviderContext';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
 // Components
@@ -19,32 +19,55 @@ import FeedbackSection from '@/components/clients/FeedbackSection';
 import GoalsSection from '@/components/clients/GoalsSection';
 import ClientProjectsSection from '@/components/clients/ClientProjectsSection';
 
-export default function ClientDashboard({
+// Create a QueryClient instance
+const queryClient = new QueryClient();
+
+function ClientDashboardContent({
   params,
 }: {
   params: { id: string };
 }) {
-  const { organizationId, switchClient } = useServiceProvider();
+  const { state: { organizationId }, switchClient } = useServiceProvider();
   const clientId = params.id;
 
   // Fetch client data using service provider API
   const { data: client, isLoading, error } = useQuery({
     queryKey: ['client-detail', clientId, organizationId],
     queryFn: async () => {
+      console.log('🔍 Fetching client data:', { clientId, organizationId });
+      
       if (!organizationId) {
         throw new Error('No organization ID');
       }
 
-      const response = await fetch(`/api/service-provider/clients/${clientId}?organizationId=${organizationId}`);
+      const apiUrl = `/api/service-provider/clients/${clientId}?organizationId=${organizationId}`;
+      console.log('📡 API call:', apiUrl);
+      
+      const response = await fetch(apiUrl);
+      
+      console.log('📊 API response:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: response.url
+      });
+      
       if (response.status === 404) {
+        const errorData = await response.text();
+        console.error('❌ Client not found:', errorData);
         throw new Error('Client not found');
       }
       if (!response.ok) {
-        throw new Error('Failed to fetch client');
+        const errorData = await response.text();
+        console.error('❌ API error:', errorData);
+        throw new Error(`Failed to fetch client: ${response.status} ${response.statusText}`);
       }
-      return response.json();
+      
+      const data = await response.json();
+      console.log('✅ Client data received:', data);
+      return data;
     },
     enabled: !!organizationId && !!clientId,
+    retry: 1,
   });
 
   // Auto-switch client context when viewing client detail
@@ -232,5 +255,17 @@ function KPILoadingState() {
         </Card>
       ))}
     </>
+  );
+}
+
+export default function ClientDashboard({
+  params,
+}: {
+  params: { id: string };
+}) {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ClientDashboardContent params={params} />
+    </QueryClientProvider>
   );
 } 

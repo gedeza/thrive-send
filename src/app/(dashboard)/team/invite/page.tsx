@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { toast } from 'sonner';
+import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -32,8 +32,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Alert,
   AlertDescription,
-  AlertTitle,
-} from '@/components/ui/alert';
+} from '@/components/ui/alert-new';
 import {
   Tooltip,
   TooltipContent,
@@ -168,11 +167,17 @@ const clientRoleOptions = [
 
 export default function InviteTeamMemberPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const { state: { organizationId } } = useServiceProvider();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [availableClients, setAvailableClients] = useState<ClientOption[]>([]);
   const [clientAssignments, setClientAssignments] = useState<ClientAssignment[]>([]);
   const [loadingClients, setLoadingClients] = useState(true);
+
+  // Debug: Log when component mounts
+  useEffect(() => {
+    console.log('🎯 InviteTeamMemberPage mounted', { organizationId });
+  }, [organizationId]);
 
   const {
     register,
@@ -214,7 +219,11 @@ export default function InviteTeamMemberPage() {
         }
       } catch (error) {
         console.error('Failed to load clients:', error);
-        toast.error('Failed to load clients');
+        toast({
+          title: "Error",
+          description: "Failed to load clients",
+          variant: "destructive",
+        });
       } finally {
         setLoadingClients(false);
       }
@@ -229,7 +238,11 @@ export default function InviteTeamMemberPage() {
     if (!client) return;
 
     if (clientAssignments.find(ca => ca.clientId === clientId)) {
-      toast.error('Client already assigned');
+      toast({
+        title: "Error",
+        description: "Client already assigned",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -265,7 +278,11 @@ export default function InviteTeamMemberPage() {
       setIsSubmitting(true);
 
       if (!organizationId) {
-        toast.error('No organization selected');
+        toast({
+          title: "Error",
+          description: "No organization selected",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -276,6 +293,8 @@ export default function InviteTeamMemberPage() {
         rolePermissions: selectedRoleConfig?.permissions || []
       };
 
+      console.log('Sending invitation data:', invitationData);
+
       const response = await fetch('/api/service-provider/team/invitations', {
         method: 'POST',
         headers: {
@@ -285,28 +304,56 @@ export default function InviteTeamMemberPage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to send invitation');
+        let errorMessage = 'Failed to send invitation';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || `API Error: ${response.status} ${response.statusText}`;
+        } catch (parseError) {
+          errorMessage = `API Error: ${response.status} ${response.statusText}`;
+        }
+        console.error('API Response Error:', { status: response.status, statusText: response.statusText });
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
       console.log('Invitation sent successfully:', result);
 
-      toast.success(
-        data.sendEmail 
+      toast({
+        title: "Success!",
+        description: data.sendEmail 
           ? `Invitation sent to ${data.email} successfully!`
-          : `Team member ${data.firstName} ${data.lastName} added successfully!`
-      );
+          : `Team member ${data.firstName} ${data.lastName} added successfully!`,
+      });
 
       router.push('/team');
 
     } catch (error) {
       console.error('Failed to send invitation:', error);
-      toast.error('Failed to send invitation. Please try again.');
+      toast({
+        title: "Error",
+        description: `Failed to send invitation: ${error instanceof Error ? error.message : 'Please try again.'}`,
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // Show error if no organization context
+  if (!organizationId) {
+    return (
+      <div className="container mx-auto py-8 max-w-4xl">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Organization Context Missing</strong>
+            <br />
+            Unable to load organization context. Please refresh the page or contact support if the issue persists.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <TooltipProvider>
@@ -325,6 +372,11 @@ export default function InviteTeamMemberPage() {
             <p className="text-muted-foreground">
               Add a new team member to your service provider organization
             </p>
+            {loadingClients && (
+              <p className="text-sm text-muted-foreground mt-1">
+                🔄 Loading client data...
+              </p>
+            )}
           </div>
         </div>
 
@@ -417,9 +469,9 @@ export default function InviteTeamMemberPage() {
               {selectedRoleConfig && (
                 <Alert>
                   <Info className="h-4 w-4" />
-                  <AlertTitle>{selectedRoleConfig.label} Role</AlertTitle>
                   <AlertDescription>
-                    <p className="mb-2">{selectedRoleConfig.description}</p>
+                    <strong>{selectedRoleConfig.label} Role</strong>
+                    <p className="mb-2 mt-1">{selectedRoleConfig.description}</p>
                     <div className="space-y-1">
                       <p className="font-medium text-sm">Permissions included:</p>
                       <div className="flex flex-wrap gap-1">
@@ -545,8 +597,9 @@ export default function InviteTeamMemberPage() {
                 {clientAssignments.length === 0 && (
                   <Alert>
                     <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>No Client Assignments</AlertTitle>
                     <AlertDescription>
+                      <strong>No Client Assignments</strong>
+                      <br />
                       This team member won't have access to any specific clients. They will only have organization-level access based on their role.
                     </AlertDescription>
                   </Alert>

@@ -3,36 +3,71 @@
 import { 
   Activity, 
   BarChart, 
-  Calendar, 
   FileText, 
   Users, 
   Mail, 
   MousePointerClick,
   TrendingUp,
-  UserPlus
+  UserPlus,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-
-// Mock data - would be replaced with actual data from API
-const mockCampaignData = [
-  { id: 1, name: 'Welcome Series', sent: 1247, opened: 876, clicked: 432, status: 'Active' },
-  { id: 2, name: 'Monthly Newsletter', sent: 3500, opened: 2100, clicked: 980, status: 'Completed' },
-  { id: 3, name: 'Product Launch', sent: 2800, opened: 1400, clicked: 750, status: 'Draft' },
-];
-
-const mockSubscriberGrowth = [
-  { month: 'Jan', count: 1200 },
-  { month: 'Feb', count: 1350 },
-  { month: 'Mar', count: 1500 },
-  { month: 'Apr', count: 1720 },
-  { month: 'May', count: 2100 },
-];
+import { useDashboardData } from "@/hooks/use-dashboard-data";
 
 export default function DashboardPage() {
+  const { data: dashboardData, isLoading, error } = useDashboardData();
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-6 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2">
+                <Skeleton className="h-4 w-24" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-16 mb-2" />
+                <Skeleton className="h-3 w-20" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex flex-col gap-6 p-6">
+        <div className="text-center py-20">
+          <p className="text-lg font-semibold text-destructive">Error loading dashboard</p>
+          <p className="text-muted-foreground">Please try refreshing the page</p>
+        </div>
+      </div>
+    );
+  }
+
+  const { metrics, campaigns, subscriberGrowth } = dashboardData || {
+    metrics: { totalSubscribers: 0, subscriberGrowth: 0, averageOpenRate: 0, averageClickRate: 0, activeCampaigns: 0, scheduledCampaigns: 0 },
+    campaigns: [],
+    subscriberGrowth: []
+  };
+
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
@@ -55,9 +90,11 @@ export default function DashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">8,720</div>
+            <div className="text-2xl font-bold">{metrics.totalSubscribers.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-emerald-500">+18%</span> from last month
+              <span className={`${metrics.subscriberGrowth >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                {metrics.subscriberGrowth >= 0 ? '+' : ''}{metrics.subscriberGrowth}%
+              </span> from last month
             </p>
           </CardContent>
         </Card>
@@ -68,7 +105,7 @@ export default function DashboardPage() {
             <Mail className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">24.8%</div>
+            <div className="text-2xl font-bold">{metrics.averageOpenRate}%</div>
             <p className="text-xs text-muted-foreground">
               Industry average: 21.5%
             </p>
@@ -81,7 +118,7 @@ export default function DashboardPage() {
             <MousePointerClick className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3.2%</div>
+            <div className="text-2xl font-bold">{metrics.averageClickRate}%</div>
             <p className="text-xs text-muted-foreground">
               Industry average: 2.8%
             </p>
@@ -94,9 +131,9 @@ export default function DashboardPage() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">4</div>
+            <div className="text-2xl font-bold">{metrics.activeCampaigns}</div>
             <p className="text-xs text-muted-foreground">
-              2 scheduled for next week
+              {metrics.scheduledCampaigns} scheduled for next week
             </p>
           </CardContent>
         </Card>
@@ -109,8 +146,8 @@ export default function DashboardPage() {
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
           <TabsTrigger value="subscribers">Subscribers</TabsTrigger>
-          <TabsTrigger value="calendar" asChild>
-            <Link href="/calendar">Calendar</Link>
+          <TabsTrigger value="scheduling" asChild>
+            <Link href="/content/create">Scheduling</Link>
           </TabsTrigger>
           <TabsTrigger value="clients" asChild>
             <Link href="/clients">Clients</Link>
@@ -126,13 +163,13 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {mockCampaignData.map(campaign => (
+                  {campaigns.length > 0 ? campaigns.map(campaign => (
                     <div key={campaign.id} className="space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
                           <p className="text-sm font-medium leading-none">{campaign.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {campaign.sent} sent • {campaign.status}
+                            {campaign.sent.toLocaleString()} sent • {campaign.status}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -141,11 +178,18 @@ export default function DashboardPage() {
                       </div>
                       <Progress value={campaign.opened/campaign.sent*100} className="h-2" />
                       <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>Opened: {campaign.opened}</span>
-                        <span>Clicked: {campaign.clicked}</span>
+                        <span>Opened: {campaign.opened.toLocaleString()}</span>
+                        <span>Clicked: {campaign.clicked.toLocaleString()}</span>
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>No recent campaigns found</p>
+                      <Button variant="outline" size="sm" className="mt-2" asChild>
+                        <Link href="/content/create">Create Your First Campaign</Link>
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -158,19 +202,34 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="h-[200px] flex items-end justify-between gap-2">
-                  {mockSubscriberGrowth.map((month) => (
-                    <div key={month.month} className="flex flex-col items-center gap-2">
-                      <div
-                        className="bg-primary/90 w-10 rounded-md"
-                        style={{ height: `${(month.count / 2100) * 160}px` }}
-                      ></div>
-                      <span className="text-xs font-medium">{month.month}</span>
+                  {subscriberGrowth.length > 0 ? subscriberGrowth.map((month) => {
+                    const maxCount = Math.max(...subscriberGrowth.map(m => m.count));
+                    return (
+                      <div key={month.month} className="flex flex-col items-center gap-2">
+                        <div
+                          className="bg-primary/90 w-10 rounded-md"
+                          style={{ height: `${(month.count / maxCount) * 160}px` }}
+                        ></div>
+                        <span className="text-xs font-medium">{month.month}</span>
+                      </div>
+                    );
+                  }) : (
+                    <div className="text-center text-muted-foreground w-full">
+                      <p>No growth data available</p>
                     </div>
-                  ))}
+                  )}
                 </div>
                 <div className="mt-4 text-center">
-                  <div className="text-xl font-bold">+75%</div>
-                  <p className="text-xs text-muted-foreground">Growth in 5 months</p>
+                  {subscriberGrowth.length > 1 && (
+                    <>
+                      <div className="text-xl font-bold">
+                        +{Math.round(((subscriberGrowth[subscriberGrowth.length - 1]?.count || 0) - 
+                                     (subscriberGrowth[0]?.count || 0)) / 
+                                     (subscriberGrowth[0]?.count || 1) * 100)}%
+                      </div>
+                      <p className="text-xs text-muted-foreground">Growth in {subscriberGrowth.length} months</p>
+                    </>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -221,39 +280,53 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
           
-          {/* Calendar Preview Section */}
+          {/* Content Scheduling Section */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Upcoming Schedule</CardTitle>
+              <CardTitle>Content Scheduling</CardTitle>
               <Button variant="outline" size="sm" asChild>
-                <Link href="/calendar" className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
-                  View Full Calendar
+                <Link href="/content/create" className="flex items-center gap-1">
+                  <FileText className="h-4 w-4" />
+                  Create Content
                 </Link>
               </Button>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {[
-                  { date: "Today", title: "Team Meeting", time: "2:00 PM" },
-                  { date: "Tomorrow", title: "Content Publishing", time: "10:00 AM" },
-                  { date: "May 15", title: "Campaign Launch", time: "9:00 AM" }
-                ].map((event, i) => (
-                  <div key={i} className="flex justify-between items-center p-3 border rounded-md">
-                    <div>
-                      <p className="font-medium">{event.title}</p>
-                      <p className="text-sm text-muted-foreground">{event.time}</p>
-                    </div>
-                    <div className="text-sm text-muted-foreground">{event.date}</div>
+                <div className="flex justify-between items-center p-3 border rounded-md">
+                  <div>
+                    <p className="font-medium">AdvancedContentScheduler</p>
+                    <p className="text-sm text-muted-foreground">Professional scheduling tool</p>
                   </div>
-                ))}
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href="/content/create">Open Scheduler</Link>
+                  </Button>
+                </div>
+                <div className="flex justify-between items-center p-3 border rounded-md">
+                  <div>
+                    <p className="font-medium">Service Provider Tools</p>
+                    <p className="text-sm text-muted-foreground">Multi-client scheduling</p>
+                  </div>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href="/service-provider">View Tools</Link>
+                  </Button>
+                </div>
+                <div className="flex justify-between items-center p-3 border rounded-md">
+                  <div>
+                    <p className="font-medium">Content Templates</p>
+                    <p className="text-sm text-muted-foreground">Reusable content templates</p>
+                  </div>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href="/templates">Browse Templates</Link>
+                  </Button>
+                </div>
               </div>
               <div className="mt-4 text-center">
                 <Link 
-                  href="/calendar" 
+                  href="/content" 
                   className="text-sm text-primary hover:underline"
                 >
-                  View all scheduled events
+                  View all content
                 </Link>
               </div>
             </CardContent>
@@ -267,9 +340,14 @@ export default function DashboardPage() {
               <CardDescription>Detailed performance metrics for all your campaigns</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-center py-20 text-muted-foreground">
-                Detailed analytics will be implemented here. Stay tuned!
-              </p>
+              <div className="text-center py-20">
+                <p className="text-muted-foreground mb-4">
+                  Access comprehensive analytics and reporting tools
+                </p>
+                <Button asChild>
+                  <Link href="/analytics">View Analytics Dashboard</Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -280,9 +358,14 @@ export default function DashboardPage() {
               <CardTitle>All Campaigns</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-center py-20 text-muted-foreground">
-                Campaign list with detailed metrics will be displayed here.
-              </p>
+              <div className="text-center py-20">
+                <p className="text-muted-foreground mb-4">
+                  Manage and view all your content campaigns
+                </p>
+                <Button asChild>
+                  <Link href="/content">View All Content</Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -293,9 +376,14 @@ export default function DashboardPage() {
               <CardTitle>Subscriber Management</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-center py-20 text-muted-foreground">
-                Subscriber management interface will be implemented here.
-              </p>
+              <div className="text-center py-20">
+                <p className="text-muted-foreground mb-4">
+                  Manage your audience and subscriber lists
+                </p>
+                <Button asChild>
+                  <Link href="/audiences">Manage Audiences</Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

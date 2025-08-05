@@ -22,8 +22,8 @@ export function DashboardNav() {
       href: "/analytics",
     },
     {
-      title: "Calendar",
-      href: "/content/calendar",
+      title: "Content Scheduling",
+      href: "/content/create",
     },
     {
       title: "Clients",

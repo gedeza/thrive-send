@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { useState, useEffect } from "react";
 import { OnboardingProvider } from "@/context/OnboardingContext";
-import { CalendarCacheProvider } from "@/context/CalendarCacheContext";
 import { WelcomeFlowGlobal } from '@/components/onboarding/WelcomeFlowGlobal';
 import { Toaster } from '@/components/ui/toaster'; // Add this line
 
@@ -54,11 +53,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         disableTransitionOnChange
       >
         <OnboardingProvider>
-          <CalendarCacheProvider>
-            <Toaster />
-            {children}
-            <WelcomeFlowGlobal />
-          </CalendarCacheProvider>
+          <Toaster />
+          {children}
+          <WelcomeFlowGlobal />
         </OnboardingProvider>
       </ThemeProvider>
     </QueryClientProvider>

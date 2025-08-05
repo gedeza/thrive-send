@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   BarChart3,
-  Calendar,
   FolderArchive,
   Mail,
   MessageSquare,
@@ -81,12 +80,6 @@ export function SidebarNavigation({ className, ...props }: SidebarNavProps) {
       title: "Analytics",
       href: "/analytics",
       icon: <BarChart3 className="h-5 w-5" />,
-      variant: "default"
-    },
-    {
-      title: "Calendar",
-      href: "/content/calendar",
-      icon: <Calendar className="h-5 w-5" />,
       variant: "default"
     },
     {

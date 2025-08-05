@@ -1,6 +1,6 @@
 
 > thrive-send@0.1.0 dev /Users/nhla/Desktop/PROJECTS/2025/thrive-send
-> pnpm hooks:check && next dev --port 3000
+> pnpm hooks:check && next dev
 
 
 > thrive-send@0.1.0 hooks:check /Users/nhla/Desktop/PROJECTS/2025/thrive-send
@@ -14,362 +14,290 @@
     · forceSwcTransforms
 
  ✓ Starting...
- ✓ Ready in 3.5s
- ✓ Compiled /middleware in 388ms (195 modules)
- ○ Compiling /api/profile/onboarding ...
- ✓ Compiled /api/profile/onboarding in 1137ms (174 modules)
- POST /api/profile/onboarding 200 in 3585ms
- POST /api/profile/onboarding 200 in 5470ms
- GET /api/profile/onboarding 200 in 1967ms
- GET /api/profile/onboarding 200 in 907ms
- ✓ Compiled /api/service-provider/metrics in 131ms (176 modules)
- GET /api/service-provider/metrics?organizationId=org_2xhH7xfnNAWnpvKl5gNd4ZGRP5t 403 in 791ms
- ○ Compiling /analytics ...
- ✓ Compiled /analytics in 22.7s (6554 modules)
- ✓ Compiled in 1076ms (3162 modules)
- GET /api/profile/onboarding 200 in 1155ms
- GET /api/profile/onboarding 200 in 775ms
+ ✓ Ready in 2.5s
+ ✓ Compiled /middleware in 340ms (195 modules)
  ○ Compiling /_not-found ...
- ✓ Compiled /_not-found in 2.6s (6541 modules)
- GET /.well-known/appspecific/com.chrome.devtools.json 404 in 2969ms
- ○ Compiling /dashboard ...
- ✓ Compiled /dashboard in 3.2s (6650 modules)
- ○ Compiling /api/service-provider/clients ...
- GET /api/profile/onboarding 200 in 4192ms
- ✓ Compiled /api/service-provider/clients in 1364ms (3450 modules)
-Attempting to connect to database...
-prisma:error 
-Invalid `prisma.client.findMany()` invocation:
+ ✓ Compiled /_not-found in 12s (2187 modules)
+ GET /content/calendar 404 in 12739ms
+ ✓ Compiled in 1463ms (996 modules)
+ ○ Compiling /content/calendar ...
+ ⚠ ./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
 
-{
-  where: {
-    organizationId: "org_2xhH7xfnNAWnpvKl5gNd4ZGRP5t",
-    status: "ACTIVE"
-  },
-  include: {
-    campaigns: {
-      where: {
-        status: {
-          in: [
-            "ACTIVE",
-            "SCHEDULED",
-            "COMPLETED"
-          ]
-          ~~~~~~~~~~~~~
-        }
-      },
-      select: {
-        id: true,
-        name: true,
-        status: true
-      }
-    },
-    projects: {
-      where: {
-        status: {
-          in: [
-            "ACTIVE",
-            "PLANNED",
-            "COMPLETED"
-          ]
-        }
-      },
-      select: {
-        id: true,
-        name: true,
-        status: true
-      }
-    },
-    socialAccounts: {
-      select: {
-        id: true,
-        platform: true,
-        handle: true
-      }
-    },
-    _count: {
-      select: {
-        campaigns: true,
-        projects: true
-      }
-    }
-  },
-  orderBy: {
-    createdAt: "desc"
-  }
-}
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
 
-Invalid value for argument `in`. Expected CampaignStatus.
-Database unavailable, using demo-only mode: PrismaClientValidationError: 
-Invalid `prisma.client.findMany()` invocation:
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
 
-{
-  where: {
-    organizationId: "org_2xhH7xfnNAWnpvKl5gNd4ZGRP5t",
-    status: "ACTIVE"
-  },
-  include: {
-    campaigns: {
-      where: {
-        status: {
-          in: [
-            "ACTIVE",
-            "SCHEDULED",
-            "COMPLETED"
-          ]
-          ~~~~~~~~~~~~~
-        }
-      },
-      select: {
-        id: true,
-        name: true,
-        status: true
-      }
-    },
-    projects: {
-      where: {
-        status: {
-          in: [
-            "ACTIVE",
-            "PLANNED",
-            "COMPLETED"
-          ]
-        }
-      },
-      select: {
-        id: true,
-        name: true,
-        status: true
-      }
-    },
-    socialAccounts: {
-      select: {
-        id: true,
-        platform: true,
-        handle: true
-      }
-    },
-    _count: {
-      select: {
-        campaigns: true,
-        projects: true
-      }
-    }
-  },
-  orderBy: {
-    createdAt: "desc"
-  }
-}
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
 
-Invalid value for argument `in`. Expected CampaignStatus.
-    at kn (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:29:1363)
-    at Zn.handleRequestError (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:121:7102)
-    at Zn.handleAndLogRequestError (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:121:6784)
-    at Zn.request (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:121:6491)
-    at async l (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:130:9778)
-    at async GET (webpack-internal:///(rsc)/./src/app/api/service-provider/clients/route.ts:145:33)
-    at async /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
-    at async eT.execute (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
-    at async eT.handle (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
-    at async doRender (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1366:42)
-    at async cacheEntry.responseCache.get.routeKind (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1588:28)
-    at async DevServer.renderToResponseWithComponentsImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1496:28)
-    at async DevServer.renderPageComponent (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1924:24)
-    at async DevServer.renderToResponseImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1962:32)
-    at async DevServer.pipeImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:922:25)
-    at async NextNodeServer.handleCatchallRenderRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/next-server.js:272:17)
-    at async DevServer.handleRequestImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:818:17)
-    at async /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/dev/next-dev-server.js:339:20
-    at async Span.traceAsyncFn (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/trace/trace.js:154:20)
-    at async DevServer.handleRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
-    at async invokeRender (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:178:21)
-    at async handleRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:355:24)
-    at async requestHandlerImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:379:13)
-    at async Server.requestListener (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/start-server.js:141:13) {
-  clientVersion: '6.9.0'
-}
-Session storage debug: {
-  sessionKey: 'org_2xhH7xfnNAWnpvKl5gNd4ZGRP5t-user_2xCfWWtekyWSMVmLALqnr6z0Nfo',
-  sessionClientsFound: 0,
-  allSessionKeys: [],
-  sessionClientIds: []
-}
-Returning 2 total clients (2 static demo + 0 database + 0 session demo)
- GET /api/service-provider/clients?organizationId=org_2xhH7xfnNAWnpvKl5gNd4ZGRP5t 200 in 1497ms
-Attempting to connect to database...
-prisma:error 
-Invalid `prisma.client.findMany()` invocation:
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
 
-{
-  where: {
-    organizationId: "org_2xhH7xfnNAWnpvKl5gNd4ZGRP5t",
-    status: "ACTIVE"
-  },
-  include: {
-    campaigns: {
-      where: {
-        status: {
-          in: [
-            "ACTIVE",
-            "SCHEDULED",
-            "COMPLETED"
-          ]
-          ~~~~~~~~~~~~~
-        }
-      },
-      select: {
-        id: true,
-        name: true,
-        status: true
-      }
-    },
-    projects: {
-      where: {
-        status: {
-          in: [
-            "ACTIVE",
-            "PLANNED",
-            "COMPLETED"
-          ]
-        }
-      },
-      select: {
-        id: true,
-        name: true,
-        status: true
-      }
-    },
-    socialAccounts: {
-      select: {
-        id: true,
-        platform: true,
-        handle: true
-      }
-    },
-    _count: {
-      select: {
-        campaigns: true,
-        projects: true
-      }
-    }
-  },
-  orderBy: {
-    createdAt: "desc"
-  }
-}
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
 
-Invalid value for argument `in`. Expected CampaignStatus.
-Database unavailable, using demo-only mode: PrismaClientValidationError: 
-Invalid `prisma.client.findMany()` invocation:
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
 
-{
-  where: {
-    organizationId: "org_2xhH7xfnNAWnpvKl5gNd4ZGRP5t",
-    status: "ACTIVE"
-  },
-  include: {
-    campaigns: {
-      where: {
-        status: {
-          in: [
-            "ACTIVE",
-            "SCHEDULED",
-            "COMPLETED"
-          ]
-          ~~~~~~~~~~~~~
-        }
-      },
-      select: {
-        id: true,
-        name: true,
-        status: true
-      }
-    },
-    projects: {
-      where: {
-        status: {
-          in: [
-            "ACTIVE",
-            "PLANNED",
-            "COMPLETED"
-          ]
-        }
-      },
-      select: {
-        id: true,
-        name: true,
-        status: true
-      }
-    },
-    socialAccounts: {
-      select: {
-        id: true,
-        platform: true,
-        handle: true
-      }
-    },
-    _count: {
-      select: {
-        campaigns: true,
-        projects: true
-      }
-    }
-  },
-  orderBy: {
-    createdAt: "desc"
-  }
-}
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
 
-Invalid value for argument `in`. Expected CampaignStatus.
-    at kn (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:29:1363)
-    at Zn.handleRequestError (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:121:7102)
-    at Zn.handleAndLogRequestError (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:121:6784)
-    at Zn.request (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:121:6491)
-    at async l (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:130:9778)
-    at async GET (webpack-internal:///(rsc)/./src/app/api/service-provider/clients/route.ts:145:33)
-    at async /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
-    at async eT.execute (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
-    at async eT.handle (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
-    at async doRender (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1366:42)
-    at async cacheEntry.responseCache.get.routeKind (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1588:28)
-    at async DevServer.renderToResponseWithComponentsImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1496:28)
-    at async DevServer.renderPageComponent (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1924:24)
-    at async DevServer.renderToResponseImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1962:32)
-    at async DevServer.pipeImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:922:25)
-    at async NextNodeServer.handleCatchallRenderRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/next-server.js:272:17)
-    at async DevServer.handleRequestImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:818:17)
-    at async /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/dev/next-dev-server.js:339:20
-    at async Span.traceAsyncFn (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/trace/trace.js:154:20)
-    at async DevServer.handleRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
-    at async invokeRender (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:178:21)
-    at async handleRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:355:24)
-    at async requestHandlerImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:379:13)
-    at async Server.requestListener (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/start-server.js:141:13) {
-  clientVersion: '6.9.0'
-}
-Session storage debug: {
-  sessionKey: 'org_2xhH7xfnNAWnpvKl5gNd4ZGRP5t-user_2xCfWWtekyWSMVmLALqnr6z0Nfo',
-  sessionClientsFound: 0,
-  allSessionKeys: [],
-  sessionClientIds: []
-}
-Returning 2 total clients (2 static demo + 0 database + 0 session demo)
- GET /api/service-provider/clients?organizationId=org_2xhH7xfnNAWnpvKl5gNd4ZGRP5t 200 in 273ms
- GET /api/profile/onboarding 200 in 887ms
- ✓ Compiled in 1466ms (3216 modules)
- ✓ Compiled in 720ms (3216 modules)
- ✓ Compiled in 622ms (3216 modules)
- ✓ Compiled in 585ms (3216 modules)
- ✓ Compiled in 726ms (3216 modules)
- ○ Compiling /dashboard ...
- ✓ Compiled /dashboard in 2.3s (1819 modules)
- GET /dashboard 200 in 3357ms
- ○ Compiling /_not-found ...
- ✓ Compiled /_not-found in 994ms (1821 modules)
- GET /.well-known/appspecific/com.chrome.devtools.json 404 in 1400ms
- ○ Compiling /api/notifications/stream ...
- ✓ Compiled /api/notifications/stream in 577ms (1844 modules)
- ✓ Compiled (1850 modules)
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+ GET /content/calendar 200 in 6802ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 148ms
+ ⚠ ./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+ ⚠ ./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+ ⚠ ./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+ ⚠ ./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
 🔄 Service Provider Organization API: {
   userId: 'user_2xCfWWtekyWSMVmLALqnr6z0Nfo',
   organizationId: 'org_2xhH7xfnNAWnpvKl5gNd4ZGRP5t'
@@ -395,292 +323,1593 @@ Returning 2 total clients (2 static demo + 0 database + 0 session demo)
     at async handleRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:355:24)
     at async requestHandlerImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:379:13)
     at async Server.requestListener (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/start-server.js:141:13)
- GET /api/service-provider/organization/org_2xhH7xfnNAWnpvKl5gNd4ZGRP5t 200 in 2797ms
+ GET /api/service-provider/organization/org_2xhH7xfnNAWnpvKl5gNd4ZGRP5t 200 in 2916ms
+ ⚠ ./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+ ⚠ ./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+ GET /api/profile/onboarding 200 in 4705ms
+ GET /api/profile/onboarding 200 in 597ms
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+{
+  where: {
+    id: "user_2xCfWWtekyWSMVmLALqnr6z0Nfo"
+  },
+  include: {
+    organizations: {
+    ~~~~~~~~~~~~~
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            type: true
+          }
+        }
+      }
+    },
+?   accounts?: true,
+?   activities?: true,
+?   approvalHistory?: true,
+?   assets?: true,
+?   createdAudiences?: true,
+?   audienceSegments?: true,
+?   calendarEvents?: true,
+?   campaignTemplates?: true,
+?   uploadedDocuments?: true,
+?   comments?: true,
+?   contactLists?: true,
+?   content?: true,
+?   assignedApprovals?: true,
+?   createdApprovals?: true,
+?   contentLists?: true,
+?   integrations?: true,
+?   marketplaceListings?: true,
+?   marketplacePurchases?: true,
+?   marketplaceReviews?: true,
+?   notifications?: true,
+?   organizationMemberships?: true,
+?   projects?: true,
+?   reports?: true,
+?   reportShares?: true,
+?   sessions?: true,
+?   targetingRules?: true,
+?   Template?: true,
+?   workflows?: true,
+?   scheduledReports?: true,
+?   teamInvitations?: true,
+?   boostPurchases?: true
+  }
+}
+
+Unknown field `organizations` for include statement on model `User`. Available options are marked with ?.
+Service provider user error: PrismaClientValidationError: 
+Invalid `prisma.user.findUnique()` invocation:
+
+{
+  where: {
+    id: "user_2xCfWWtekyWSMVmLALqnr6z0Nfo"
+  },
+  include: {
+    organizations: {
+    ~~~~~~~~~~~~~
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            type: true
+          }
+        }
+      }
+    },
+?   accounts?: true,
+?   activities?: true,
+?   approvalHistory?: true,
+?   assets?: true,
+?   createdAudiences?: true,
+?   audienceSegments?: true,
+?   calendarEvents?: true,
+?   campaignTemplates?: true,
+?   uploadedDocuments?: true,
+?   comments?: true,
+?   contactLists?: true,
+?   content?: true,
+?   assignedApprovals?: true,
+?   createdApprovals?: true,
+?   contentLists?: true,
+?   integrations?: true,
+?   marketplaceListings?: true,
+?   marketplacePurchases?: true,
+?   marketplaceReviews?: true,
+?   notifications?: true,
+?   organizationMemberships?: true,
+?   projects?: true,
+?   reports?: true,
+?   reportShares?: true,
+?   sessions?: true,
+?   targetingRules?: true,
+?   Template?: true,
+?   workflows?: true,
+?   scheduledReports?: true,
+?   teamInvitations?: true,
+?   boostPurchases?: true
+  }
+}
+
+Unknown field `organizations` for include statement on model `User`. Available options are marked with ?.
+    at kn (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:29:1363)
+    at Zn.handleRequestError (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:121:7102)
+    at Zn.handleAndLogRequestError (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:121:6784)
+    at Zn.request (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:121:6491)
+    at async l (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:130:9778)
+    at async GET (webpack-internal:///(rsc)/./src/app/api/service-provider/user/[userId]/route.ts:32:22)
+    at async /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+    at async eT.execute (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+    at async eT.handle (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+    at async doRender (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1576:40)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1496:28)
+    at async DevServer.renderPageComponent (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:818:17)
+    at async /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:178:21)
+    at async handleRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:355:24)
+    at async requestHandlerImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:379:13)
+    at async Server.requestListener (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  clientVersion: '6.9.0'
+}
+ GET /api/service-provider/user/user_2xCfWWtekyWSMVmLALqnr6z0Nfo 500 in 3417ms
+ GET /api/notifications 200 in 8025ms
+ ⚠ ./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+ ⚠ ./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+ GET / 200 in 3826ms
+ GET /api/profile/onboarding 200 in 3590ms
+ GET /api/notifications/stream?userId=user_2xCfWWtekyWSMVmLALqnr6z0Nfo 200 in 719013ms
+ ⚠ ./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+ ⚠ ./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+🔄 Service Provider Organization API: {
+  userId: 'user_2xCfWWtekyWSMVmLALqnr6z0Nfo',
+  organizationId: 'org_2xhH7xfnNAWnpvKl5gNd4ZGRP5t'
+}
+📋 Database error, providing demo data: TypeError: Cannot read properties of undefined (reading 'findFirst')
+    at GET (webpack-internal:///(rsc)/./src/app/api/service-provider/organization/[organizationId]/route.ts:29:100)
+    at async /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+    at async eT.execute (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+    at async eT.handle (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+    at async doRender (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1576:40)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1496:28)
+    at async DevServer.renderPageComponent (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:818:17)
+    at async /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:178:21)
+    at async handleRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:355:24)
+    at async requestHandlerImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:379:13)
+    at async Server.requestListener (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/start-server.js:141:13)
+ GET /api/service-provider/organization/org_2xhH7xfnNAWnpvKl5gNd4ZGRP5t 200 in 1121ms
+ ⚠ ./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+ ⚠ ./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+ GET /api/profile/onboarding 200 in 1749ms
+ GET /api/profile/onboarding 200 in 1757ms
+ ⚠ ./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+ ⚠ ./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+{
+  where: {
+    id: "user_2xCfWWtekyWSMVmLALqnr6z0Nfo"
+  },
+  include: {
+    organizations: {
+    ~~~~~~~~~~~~~
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            type: true
+          }
+        }
+      }
+    },
+?   accounts?: true,
+?   activities?: true,
+?   approvalHistory?: true,
+?   assets?: true,
+?   createdAudiences?: true,
+?   audienceSegments?: true,
+?   calendarEvents?: true,
+?   campaignTemplates?: true,
+?   uploadedDocuments?: true,
+?   comments?: true,
+?   contactLists?: true,
+?   content?: true,
+?   assignedApprovals?: true,
+?   createdApprovals?: true,
+?   contentLists?: true,
+?   integrations?: true,
+?   marketplaceListings?: true,
+?   marketplacePurchases?: true,
+?   marketplaceReviews?: true,
+?   notifications?: true,
+?   organizationMemberships?: true,
+?   projects?: true,
+?   reports?: true,
+?   reportShares?: true,
+?   sessions?: true,
+?   targetingRules?: true,
+?   Template?: true,
+?   workflows?: true,
+?   scheduledReports?: true,
+?   teamInvitations?: true,
+?   boostPurchases?: true
+  }
+}
+
+Unknown field `organizations` for include statement on model `User`. Available options are marked with ?.
+Service provider user error: PrismaClientValidationError: 
+Invalid `prisma.user.findUnique()` invocation:
+
+{
+  where: {
+    id: "user_2xCfWWtekyWSMVmLALqnr6z0Nfo"
+  },
+  include: {
+    organizations: {
+    ~~~~~~~~~~~~~
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            type: true
+          }
+        }
+      }
+    },
+?   accounts?: true,
+?   activities?: true,
+?   approvalHistory?: true,
+?   assets?: true,
+?   createdAudiences?: true,
+?   audienceSegments?: true,
+?   calendarEvents?: true,
+?   campaignTemplates?: true,
+?   uploadedDocuments?: true,
+?   comments?: true,
+?   contactLists?: true,
+?   content?: true,
+?   assignedApprovals?: true,
+?   createdApprovals?: true,
+?   contentLists?: true,
+?   integrations?: true,
+?   marketplaceListings?: true,
+?   marketplacePurchases?: true,
+?   marketplaceReviews?: true,
+?   notifications?: true,
+?   organizationMemberships?: true,
+?   projects?: true,
+?   reports?: true,
+?   reportShares?: true,
+?   sessions?: true,
+?   targetingRules?: true,
+?   Template?: true,
+?   workflows?: true,
+?   scheduledReports?: true,
+?   teamInvitations?: true,
+?   boostPurchases?: true
+  }
+}
+
+Unknown field `organizations` for include statement on model `User`. Available options are marked with ?.
+    at kn (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:29:1363)
+    at Zn.handleRequestError (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:121:7102)
+    at Zn.handleAndLogRequestError (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:121:6784)
+    at Zn.request (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:121:6491)
+    at async l (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:130:9778)
+    at async GET (webpack-internal:///(rsc)/./src/app/api/service-provider/user/[userId]/route.ts:32:22)
+    at async /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+    at async eT.execute (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+    at async eT.handle (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+    at async doRender (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1576:40)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1496:28)
+    at async DevServer.renderPageComponent (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:818:17)
+    at async /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:178:21)
+    at async handleRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:355:24)
+    at async requestHandlerImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:379:13)
+    at async Server.requestListener (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  clientVersion: '6.9.0'
+}
+ GET /api/service-provider/user/user_2xCfWWtekyWSMVmLALqnr6z0Nfo 500 in 948ms
+ GET /api/notifications 200 in 4963ms
+ ⚠ ./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+ ⚠ ./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+ ⚠ ./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'ContentType' (reexported as 'ContentType') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'SocialPlatform' (reexported as 'SocialPlatform') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarEvent' (reexported as 'CalendarEvent') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+
+./src/components/content/content-calendar.tsx
+export 'CalendarView' (reexported as 'CalendarView') was not found in './types' (module has no exports)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+ ⨯ ./src/components/content/content-calendar.tsx
+Error: Failed to read source code from /Users/nhla/Desktop/PROJECTS/2025/thrive-send/src/components/content/content-calendar.tsx
+
+Caused by:
+    No such file or directory (os error 2)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+ GET /api/profile/onboarding 200 in 400ms
+ ⨯ ./src/components/content/content-calendar.tsx
+Error: Failed to read source code from /Users/nhla/Desktop/PROJECTS/2025/thrive-send/src/components/content/content-calendar.tsx
+
+Caused by:
+    No such file or directory (os error 2)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+ ⨯ ./src/components/content/content-calendar.tsx
+Error: Failed to read source code from /Users/nhla/Desktop/PROJECTS/2025/thrive-send/src/components/content/content-calendar.tsx
+
+Caused by:
+    No such file or directory (os error 2)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+ ⨯ ./src/components/content/content-calendar.tsx
+Error: Failed to read source code from /Users/nhla/Desktop/PROJECTS/2025/thrive-send/src/components/content/content-calendar.tsx
+
+Caused by:
+    No such file or directory (os error 2)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/app/(dashboard)/content/calendar/page.tsx
+ GET /api/profile/onboarding 500 in 7525ms
+ GET /analytics 500 in 180ms
+ GET /api/notifications/stream?userId=user_2xCfWWtekyWSMVmLALqnr6z0Nfo 200 in 37960ms
+ GET /favicon.ico 500 in 18ms
+ ⨯ ./src/components/content/content-calendar.tsx
+Error: Failed to read source code from /Users/nhla/Desktop/PROJECTS/2025/thrive-send/src/components/content/content-calendar.tsx
+
+Caused by:
+    No such file or directory (os error 2)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/components/lazy/LazyComponents.tsx
+./src/app/(dashboard)/analytics/page.tsx
+ GET /analytics 200 in 1444ms
+ GET /analytics 500 in 35ms
+ GET /favicon.ico 500 in 12ms
+ ⨯ ./src/components/content/content-calendar.tsx
+Error: Failed to read source code from /Users/nhla/Desktop/PROJECTS/2025/thrive-send/src/components/content/content-calendar.tsx
+
+Caused by:
+    No such file or directory (os error 2)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/components/lazy/LazyComponents.tsx
+./src/app/(dashboard)/analytics/page.tsx
+ GET /analytics 500 in 1447ms
+ GET /analytics 500 in 55ms
+ GET /favicon.ico 500 in 6ms
+ ⨯ ./src/components/content/content-calendar.tsx
+Error: Failed to read source code from /Users/nhla/Desktop/PROJECTS/2025/thrive-send/src/components/content/content-calendar.tsx
+
+Caused by:
+    No such file or directory (os error 2)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/components/lazy/LazyComponents.tsx
+./src/app/(dashboard)/analytics/page.tsx
+ ⨯ ./src/components/content/content-calendar.tsx
+Error: Failed to read source code from /Users/nhla/Desktop/PROJECTS/2025/thrive-send/src/components/content/content-calendar.tsx
+
+Caused by:
+    No such file or directory (os error 2)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/components/lazy/LazyComponents.tsx
+./src/app/(dashboard)/analytics/page.tsx
+ GET / 500 in 78ms
+ GET /favicon.ico 500 in 21ms
+ ⨯ ./src/components/content/content-calendar.tsx
+Error: Failed to read source code from /Users/nhla/Desktop/PROJECTS/2025/thrive-send/src/components/content/content-calendar.tsx
+
+Caused by:
+    No such file or directory (os error 2)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/components/lazy/LazyComponents.tsx
+./src/app/(dashboard)/analytics/page.tsx
+ ⨯ ./src/components/content/content-calendar.tsx
+Error: Failed to read source code from /Users/nhla/Desktop/PROJECTS/2025/thrive-send/src/components/content/content-calendar.tsx
+
+Caused by:
+    No such file or directory (os error 2)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/components/lazy/LazyComponents.tsx
+./src/app/(dashboard)/analytics/page.tsx
+ ⨯ ./src/components/content/content-calendar.tsx
+Error: Failed to read source code from /Users/nhla/Desktop/PROJECTS/2025/thrive-send/src/components/content/content-calendar.tsx
+
+Caused by:
+    No such file or directory (os error 2)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/components/lazy/LazyComponents.tsx
+./src/app/(dashboard)/analytics/page.tsx
+ GET / 500 in 1160ms
+ GET / 500 in 183ms
+ GET /favicon.ico 500 in 13ms
+ ⨯ ./src/components/content/content-calendar.tsx
+Error: Failed to read source code from /Users/nhla/Desktop/PROJECTS/2025/thrive-send/src/components/content/content-calendar.tsx
+
+Caused by:
+    No such file or directory (os error 2)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/components/lazy/LazyComponents.tsx
+./src/app/(dashboard)/analytics/page.tsx
+ GET / 500 in 1336ms
+ GET / 500 in 38ms
+ GET /favicon.ico 500 in 10ms
+ ⨯ ./src/components/content/content-calendar.tsx
+Error: Failed to read source code from /Users/nhla/Desktop/PROJECTS/2025/thrive-send/src/components/content/content-calendar.tsx
+
+Caused by:
+    No such file or directory (os error 2)
+
+Import trace for requested module:
+./src/components/content/content-calendar.tsx
+./src/components/lazy/LazyComponents.tsx
+./src/app/(dashboard)/analytics/page.tsx
+ ⨯ ./src/lib/cache/calendar-cache.ts
+Error: Failed to read source code from /Users/nhla/Desktop/PROJECTS/2025/thrive-send/src/lib/cache/calendar-cache.ts
+
+Caused by:
+    No such file or directory (os error 2)
+
+Import trace for requested module:
+./src/lib/cache/calendar-cache.ts
+./src/context/CalendarCacheContext.tsx
+./src/components/providers.tsx
+./src/components/layout/client-layout.tsx
+ ⨯ ./src/lib/cache/calendar-cache.ts
+Error: Failed to read source code from /Users/nhla/Desktop/PROJECTS/2025/thrive-send/src/lib/cache/calendar-cache.ts
+
+Caused by:
+    No such file or directory (os error 2)
+
+Import trace for requested module:
+./src/lib/cache/calendar-cache.ts
+./src/context/CalendarCacheContext.tsx
+./src/components/providers.tsx
+./src/components/layout/client-layout.tsx
+ ⨯ ./src/context/CalendarCacheContext.tsx
+Error: Failed to read source code from /Users/nhla/Desktop/PROJECTS/2025/thrive-send/src/context/CalendarCacheContext.tsx
+
+Caused by:
+    No such file or directory (os error 2)
+
+Import trace for requested module:
+./src/context/CalendarCacheContext.tsx
+./src/components/providers.tsx
+./src/components/layout/client-layout.tsx
+ ⨯ ./src/context/CalendarCacheContext.tsx
+Error: Failed to read source code from /Users/nhla/Desktop/PROJECTS/2025/thrive-send/src/context/CalendarCacheContext.tsx
+
+Caused by:
+    No such file or directory (os error 2)
+
+Import trace for requested module:
+./src/context/CalendarCacheContext.tsx
+./src/components/providers.tsx
+./src/components/layout/client-layout.tsx
+ ⨯ ./src/context/CalendarCacheContext.tsx
+Error: Failed to read source code from /Users/nhla/Desktop/PROJECTS/2025/thrive-send/src/context/CalendarCacheContext.tsx
+
+Caused by:
+    No such file or directory (os error 2)
+
+Import trace for requested module:
+./src/context/CalendarCacheContext.tsx
+./src/components/providers.tsx
+./src/components/layout/client-layout.tsx
+ ✓ Compiled /_error in 975ms (4956 modules)
+ ✓ Compiled /_not-found in 391ms (2516 modules)
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /_next/static/webpack/bc154290f75dcd61.webpack.hot-update.json 404 in 1111ms
+ GET / 200 in 107ms
+ ✓ Compiled in 1353ms (4958 modules)
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET / 200 in 514ms
+ ○ Compiling /api/notifications/stream ...
+ ✓ Compiled /api/notifications/stream in 529ms (2521 modules)
+ ✓ Compiled (2529 modules)
+🔄 Service Provider Organization API: {
+  userId: 'user_2xCfWWtekyWSMVmLALqnr6z0Nfo',
+  organizationId: 'org_2xhH7xfnNAWnpvKl5gNd4ZGRP5t'
+}
+📋 Database error, providing demo data: TypeError: Cannot read properties of undefined (reading 'findFirst')
+    at GET (webpack-internal:///(rsc)/./src/app/api/service-provider/organization/[organizationId]/route.ts:29:100)
+    at async /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+    at async eT.execute (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+    at async eT.handle (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+    at async doRender (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1576:40)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1496:28)
+    at async DevServer.renderPageComponent (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:818:17)
+    at async /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:178:21)
+    at async handleRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:355:24)
+    at async requestHandlerImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:379:13)
+    at async Server.requestListener (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/start-server.js:141:13)
+ GET /api/service-provider/organization/org_2xhH7xfnNAWnpvKl5gNd4ZGRP5t 200 in 1366ms
+ GET /api/profile/onboarding 200 in 1899ms
  ○ Compiling /api/service-provider/user/[userId] ...
- ✓ Compiled /api/service-provider/user/[userId] in 510ms (1852 modules)
-🔍 Service Provider User API Debug: {
-  authUserId: 'user_2xCfWWtekyWSMVmLALqnr6z0Nfo',
-  requestedUserId: 'user_2xCfWWtekyWSMVmLALqnr6z0Nfo',
-  hasAuth: true
-}
-🔍 Searching for user in database...
- GET /api/profile/onboarding 200 in 5076ms
- ⚠ The "images.domains" configuration is deprecated. Please use "images.remotePatterns" configuration instead.
- GET /docs/images/analytics-dashboard-screenshot.png 404 in 245ms
- ⨯ The requested resource isn't a valid image for /docs/images/analytics-dashboard-screenshot.png received text/html; charset=utf-8
- GET /api/profile/onboarding 200 in 1602ms
- GET /api/notifications 200 in 7025ms
-🔍 Database query result: {
-  found: true,
-  userId: 'cmdfvvuf3000b8jus7u6vfstj',
-  clerkId: 'user_2xCfWWtekyWSMVmLALqnr6z0Nfo',
-  membershipCount: 1
-}
-✅ Service provider user data prepared successfully
- GET /api/service-provider/user/user_2xCfWWtekyWSMVmLALqnr6z0Nfo 200 in 5483ms
- ○ Compiling /api/service-provider/clients ...
- ✓ Compiled /api/service-provider/clients in 940ms (1854 modules)
- GET /api/service-provider/clients?organizationId= 400 in 1031ms
- ✓ Compiled /api/service-provider/metrics in 422ms (1856 modules)
-Attempting to connect to database...
- GET /api/service-provider/metrics?organizationId= 400 in 914ms
-Successfully loaded 0 clients from database
-Session storage debug: {
-  sessionKey: 'org_2xhH7xfnNAWnpvKl5gNd4ZGRP5t-user_2xCfWWtekyWSMVmLALqnr6z0Nfo',
-  sessionClientsFound: 0,
-  allSessionKeys: [],
-  sessionClientIds: []
-}
-Returning 2 total clients (2 static demo + 0 database + 0 session demo)
- GET /api/service-provider/clients?organizationId=org_2xhH7xfnNAWnpvKl5gNd4ZGRP5t 200 in 1529ms
- ○ Compiling /_error ...
- GET /api/profile/onboarding 200 in 2620ms
- GET /docs/images/analytics-dashboard-screenshot.png 404 in 338ms
- ⨯ The requested resource isn't a valid image for /docs/images/analytics-dashboard-screenshot.png received text/html; charset=utf-8
-Attempting to connect to database...
-Successfully loaded 0 clients from database
-Session storage debug: {
-  sessionKey: 'org_2xhH7xfnNAWnpvKl5gNd4ZGRP5t-user_2xCfWWtekyWSMVmLALqnr6z0Nfo',
-  sessionClientsFound: 0,
-  allSessionKeys: [],
-  sessionClientIds: []
-}
-Returning 2 total clients (2 static demo + 0 database + 0 session demo)
- GET /api/service-provider/clients?organizationId=org_2xhH7xfnNAWnpvKl5gNd4ZGRP5t 200 in 802ms
- GET /api/profile/onboarding 200 in 1117ms
- ✓ Compiled /_error in 2.9s (5283 modules)
- GET /favicon.ico 500 in 3643ms
- GET /api/profile/onboarding 200 in 901ms
- GET /docs/images/analytics-dashboard-screenshot.png 404 in 159ms
- ⨯ The requested resource isn't a valid image for /docs/images/analytics-dashboard-screenshot.png received text/html; charset=utf-8
- GET /api/profile/onboarding 200 in 973ms
+ GET /api/notifications 200 in 3340ms
+ ✓ Compiled /api/service-provider/user/[userId] in 2.8s (4973 modules)
 prisma:error 
-Invalid `prisma.notification.findMany()` invocation:
+Invalid `prisma.user.findUnique()` invocation:
 
+{
+  where: {
+    id: "user_2xCfWWtekyWSMVmLALqnr6z0Nfo"
+  },
+  include: {
+    organizations: {
+    ~~~~~~~~~~~~~
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            type: true
+          }
+        }
+      }
+    },
+?   accounts?: true,
+?   activities?: true,
+?   approvalHistory?: true,
+?   assets?: true,
+?   createdAudiences?: true,
+?   audienceSegments?: true,
+?   calendarEvents?: true,
+?   campaignTemplates?: true,
+?   uploadedDocuments?: true,
+?   comments?: true,
+?   contactLists?: true,
+?   content?: true,
+?   assignedApprovals?: true,
+?   createdApprovals?: true,
+?   contentLists?: true,
+?   integrations?: true,
+?   marketplaceListings?: true,
+?   marketplacePurchases?: true,
+?   marketplaceReviews?: true,
+?   notifications?: true,
+?   organizationMemberships?: true,
+?   projects?: true,
+?   reports?: true,
+?   reportShares?: true,
+?   sessions?: true,
+?   targetingRules?: true,
+?   Template?: true,
+?   workflows?: true,
+?   scheduledReports?: true,
+?   teamInvitations?: true,
+?   boostPurchases?: true
+  }
+}
 
-Can't reach database server at `ep-damp-band-a4gkavja-pooler.us-east-1.aws.neon.tech:5432`
+Unknown field `organizations` for include statement on model `User`. Available options are marked with ?.
+Service provider user error: PrismaClientValidationError: 
+Invalid `prisma.user.findUnique()` invocation:
 
-Please make sure your database server is running at `ep-damp-band-a4gkavja-pooler.us-east-1.aws.neon.tech:5432`.
-Error in notification stream: PrismaClientKnownRequestError: 
-Invalid `prisma.notification.findMany()` invocation:
+{
+  where: {
+    id: "user_2xCfWWtekyWSMVmLALqnr6z0Nfo"
+  },
+  include: {
+    organizations: {
+    ~~~~~~~~~~~~~
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            type: true
+          }
+        }
+      }
+    },
+?   accounts?: true,
+?   activities?: true,
+?   approvalHistory?: true,
+?   assets?: true,
+?   createdAudiences?: true,
+?   audienceSegments?: true,
+?   calendarEvents?: true,
+?   campaignTemplates?: true,
+?   uploadedDocuments?: true,
+?   comments?: true,
+?   contactLists?: true,
+?   content?: true,
+?   assignedApprovals?: true,
+?   createdApprovals?: true,
+?   contentLists?: true,
+?   integrations?: true,
+?   marketplaceListings?: true,
+?   marketplacePurchases?: true,
+?   marketplaceReviews?: true,
+?   notifications?: true,
+?   organizationMemberships?: true,
+?   projects?: true,
+?   reports?: true,
+?   reportShares?: true,
+?   sessions?: true,
+?   targetingRules?: true,
+?   Template?: true,
+?   workflows?: true,
+?   scheduledReports?: true,
+?   teamInvitations?: true,
+?   boostPurchases?: true
+  }
+}
 
-
-Can't reach database server at `ep-damp-band-a4gkavja-pooler.us-east-1.aws.neon.tech:5432`
-
-Please make sure your database server is running at `ep-damp-band-a4gkavja-pooler.us-east-1.aws.neon.tech:5432`.
-    at Zn.handleRequestError (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:121:7459)
+Unknown field `organizations` for include statement on model `User`. Available options are marked with ?.
+    at kn (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:29:1363)
+    at Zn.handleRequestError (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:121:7102)
     at Zn.handleAndLogRequestError (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:121:6784)
     at Zn.request (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:121:6491)
     at async l (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:130:9778)
-    at async Timeout.eval [as _onTimeout] (webpack-internal:///(rsc)/./src/app/api/notifications/stream/route.ts:31:46) {
-  code: 'P1001',
-  meta: {
-    modelName: 'Notification',
-    database_host: 'ep-damp-band-a4gkavja-pooler.us-east-1.aws.neon.tech',
-    database_port: 5432
-  },
+    at async GET (webpack-internal:///(rsc)/./src/app/api/service-provider/user/[userId]/route.ts:32:22)
+    at async /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+    at async eT.execute (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+    at async eT.handle (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+    at async doRender (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1576:40)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1496:28)
+    at async DevServer.renderPageComponent (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:818:17)
+    at async /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:178:21)
+    at async handleRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:355:24)
+    at async requestHandlerImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:379:13)
+    at async Server.requestListener (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/start-server.js:141:13) {
   clientVersion: '6.9.0'
 }
+ GET /api/service-provider/user/user_2xCfWWtekyWSMVmLALqnr6z0Nfo 500 in 2981ms
+ GET /api/profile/onboarding 200 in 2862ms
+ GET /api/profile/onboarding 200 in 349ms
+ GET /api/profile/onboarding 200 in 349ms
+ ✓ Compiled in 613ms (2442 modules)
+ GET /api/profile/onboarding 200 in 370ms
+ GET /api/profile/onboarding 200 in 621ms
+ ✓ Compiled in 5.8s (5139 modules)
+ GET /api/profile/onboarding 200 in 611ms
+ GET /api/profile/onboarding 200 in 293ms
+ GET /dashboard 200 in 251ms
+ GET /api/notifications/stream?userId=user_2xCfWWtekyWSMVmLALqnr6z0Nfo 200 in 289510ms
+ GET /dashboard 200 in 57ms
+ GET /dashboard 200 in 60ms
+ GET /dashboard 200 in 67ms
+ GET /dashboard 200 in 40ms
+ GET /dashboard 200 in 52ms
+ GET /dashboard 200 in 53ms
+ GET /dashboard 200 in 37ms
+ GET /dashboard 200 in 43ms
+ GET /dashboard 200 in 37ms
+ GET /dashboard 200 in 53ms
+ GET /dashboard 200 in 111ms
+ ○ Compiling /api/notifications/stream ...
+ ✓ Compiled /api/notifications/stream in 658ms (2506 modules)
+ ✓ Compiled (2510 modules)
+🔄 Service Provider Organization API: {
+  userId: 'user_2xCfWWtekyWSMVmLALqnr6z0Nfo',
+  organizationId: 'org_2xhH7xfnNAWnpvKl5gNd4ZGRP5t'
+}
+📋 Database error, providing demo data: TypeError: Cannot read properties of undefined (reading 'findFirst')
+    at GET (webpack-internal:///(rsc)/./src/app/api/service-provider/organization/[organizationId]/route.ts:29:100)
+    at async /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+    at async eT.execute (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+    at async eT.handle (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+    at async doRender (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1576:40)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1496:28)
+    at async DevServer.renderPageComponent (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:818:17)
+    at async /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:178:21)
+    at async handleRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:355:24)
+    at async requestHandlerImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:379:13)
+    at async Server.requestListener (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/start-server.js:141:13)
+ GET /api/service-provider/organization/org_2xhH7xfnNAWnpvKl5gNd4ZGRP5t 200 in 1116ms
+ ✓ Compiled /api/service-provider/user/[userId] in 515ms (2512 modules)
+ GET /api/profile/onboarding 200 in 3941ms
 prisma:error 
-Invalid `prisma.notification.findMany()` invocation:
+Invalid `prisma.user.findUnique()` invocation:
 
+{
+  where: {
+    id: "user_2xCfWWtekyWSMVmLALqnr6z0Nfo"
+  },
+  include: {
+    organizations: {
+    ~~~~~~~~~~~~~
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            type: true
+          }
+        }
+      }
+    },
+?   accounts?: true,
+?   activities?: true,
+?   approvalHistory?: true,
+?   assets?: true,
+?   createdAudiences?: true,
+?   audienceSegments?: true,
+?   calendarEvents?: true,
+?   campaignTemplates?: true,
+?   uploadedDocuments?: true,
+?   comments?: true,
+?   contactLists?: true,
+?   content?: true,
+?   assignedApprovals?: true,
+?   createdApprovals?: true,
+?   contentLists?: true,
+?   integrations?: true,
+?   marketplaceListings?: true,
+?   marketplacePurchases?: true,
+?   marketplaceReviews?: true,
+?   notifications?: true,
+?   organizationMemberships?: true,
+?   projects?: true,
+?   reports?: true,
+?   reportShares?: true,
+?   sessions?: true,
+?   targetingRules?: true,
+?   Template?: true,
+?   workflows?: true,
+?   scheduledReports?: true,
+?   teamInvitations?: true,
+?   boostPurchases?: true
+  }
+}
 
-Can't reach database server at `ep-damp-band-a4gkavja-pooler.us-east-1.aws.neon.tech:5432`
+Unknown field `organizations` for include statement on model `User`. Available options are marked with ?.
+Service provider user error: PrismaClientValidationError: 
+Invalid `prisma.user.findUnique()` invocation:
 
-Please make sure your database server is running at `ep-damp-band-a4gkavja-pooler.us-east-1.aws.neon.tech:5432`.
-Error in notification stream: PrismaClientKnownRequestError: 
-Invalid `prisma.notification.findMany()` invocation:
+{
+  where: {
+    id: "user_2xCfWWtekyWSMVmLALqnr6z0Nfo"
+  },
+  include: {
+    organizations: {
+    ~~~~~~~~~~~~~
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            type: true
+          }
+        }
+      }
+    },
+?   accounts?: true,
+?   activities?: true,
+?   approvalHistory?: true,
+?   assets?: true,
+?   createdAudiences?: true,
+?   audienceSegments?: true,
+?   calendarEvents?: true,
+?   campaignTemplates?: true,
+?   uploadedDocuments?: true,
+?   comments?: true,
+?   contactLists?: true,
+?   content?: true,
+?   assignedApprovals?: true,
+?   createdApprovals?: true,
+?   contentLists?: true,
+?   integrations?: true,
+?   marketplaceListings?: true,
+?   marketplacePurchases?: true,
+?   marketplaceReviews?: true,
+?   notifications?: true,
+?   organizationMemberships?: true,
+?   projects?: true,
+?   reports?: true,
+?   reportShares?: true,
+?   sessions?: true,
+?   targetingRules?: true,
+?   Template?: true,
+?   workflows?: true,
+?   scheduledReports?: true,
+?   teamInvitations?: true,
+?   boostPurchases?: true
+  }
+}
 
-
-Can't reach database server at `ep-damp-band-a4gkavja-pooler.us-east-1.aws.neon.tech:5432`
-
-Please make sure your database server is running at `ep-damp-band-a4gkavja-pooler.us-east-1.aws.neon.tech:5432`.
-    at Zn.handleRequestError (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:121:7459)
+Unknown field `organizations` for include statement on model `User`. Available options are marked with ?.
+    at kn (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:29:1363)
+    at Zn.handleRequestError (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:121:7102)
     at Zn.handleAndLogRequestError (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:121:6784)
     at Zn.request (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:121:6491)
     at async l (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:130:9778)
-    at async Timeout.eval [as _onTimeout] (webpack-internal:///(rsc)/./src/app/api/notifications/stream/route.ts:31:46) {
-  code: 'P1001',
-  meta: {
-    modelName: 'Notification',
-    database_host: 'ep-damp-band-a4gkavja-pooler.us-east-1.aws.neon.tech',
-    database_port: 5432
-  },
+    at async GET (webpack-internal:///(rsc)/./src/app/api/service-provider/user/[userId]/route.ts:32:22)
+    at async /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+    at async eT.execute (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+    at async eT.handle (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+    at async doRender (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1576:40)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1496:28)
+    at async DevServer.renderPageComponent (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/base-server.js:818:17)
+    at async /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:178:21)
+    at async handleRequest (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:355:24)
+    at async requestHandlerImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js:379:13)
+    at async Server.requestListener (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/start-server.js:141:13) {
   clientVersion: '6.9.0'
 }
-prisma:error 
-Invalid `prisma.notification.findMany()` invocation:
-
-
-Can't reach database server at `ep-damp-band-a4gkavja-pooler.us-east-1.aws.neon.tech:5432`
-
-Please make sure your database server is running at `ep-damp-band-a4gkavja-pooler.us-east-1.aws.neon.tech:5432`.
-Error in notification stream: PrismaClientKnownRequestError: 
-Invalid `prisma.notification.findMany()` invocation:
-
-
-Can't reach database server at `ep-damp-band-a4gkavja-pooler.us-east-1.aws.neon.tech:5432`
-
-Please make sure your database server is running at `ep-damp-band-a4gkavja-pooler.us-east-1.aws.neon.tech:5432`.
-    at Zn.handleRequestError (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:121:7459)
-    at Zn.handleAndLogRequestError (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:121:6784)
-    at Zn.request (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:121:6491)
-    at async l (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/@prisma/client/runtime/library.js:130:9778)
-    at async Timeout.eval [as _onTimeout] (webpack-internal:///(rsc)/./src/app/api/notifications/stream/route.ts:31:46) {
-  code: 'P1001',
-  meta: {
-    modelName: 'Notification',
-    database_host: 'ep-damp-band-a4gkavja-pooler.us-east-1.aws.neon.tech',
-    database_port: 5432
-  },
-  clientVersion: '6.9.0'
-}
- GET /api/profile/onboarding 404 in 46ms
- GET /api/profile/onboarding 404 in 90ms
- GET /api/profile/onboarding 404 in 47ms
- GET /api/profile/onboarding 404 in 42ms
- ✓ Compiled in 1347ms (3400 modules)
- ○ Compiling /_error ...
- ✓ Compiled /_error in 1291ms (5262 modules)
- GET /api/notifications/stream?userId=user_2xCfWWtekyWSMVmLALqnr6z0Nfo 200 in 976625ms
- GET /dashboard 200 in 378ms
- GET /_next/static/css/app/layout.css?v=1754295194262 404 in 100ms
- GET /_next/static/chunks/main-app.js?v=1754295194262 404 in 193ms
- GET /_next/static/chunks/app-pages-internals.js 404 in 168ms
- GET /_next/static/chunks/app/dashboard/page.js 404 in 98ms
- GET /_next/static/chunks/app/dashboard/layout.js 404 in 45ms
- GET /_next/static/chunks/app/error.js 404 in 50ms
- GET /_next/static/chunks/app/not-found.js 404 in 34ms
- ✓ Compiled in 5s (5457 modules)
- ✓ Compiled in 741ms (3401 modules)
- ✓ Compiled in 652ms (3400 modules)
- ✓ Compiled in 808ms (3400 modules)
- ✓ Compiled in 3.7s (5453 modules)
- ✓ Compiled in 717ms (3400 modules)
- ✓ Compiled in 656ms (3400 modules)
- ✓ Compiled in 661ms (3400 modules)
- ✓ Compiled in 702ms (3400 modules)
- ✓ Compiled in 734ms (3400 modules)
- ✓ Compiled in 633ms (3400 modules)
- ✓ Compiled in 674ms (3400 modules)
- ○ Compiling /_error ...
- ✓ Compiled /_error in 1879ms (5246 modules)
- ✓ Compiled in 7.8s (5260 modules)
- ✓ Compiled in 3.6s (5260 modules)
- ✓ Compiled in 5.8s (5258 modules)
- ✓ Compiled in 4.8s (5258 modules)
- ✓ Compiled in 2.8s (5258 modules)
- ✓ Compiled in 1574ms (3400 modules)
- ✓ Compiled in 3.2s (5258 modules)
- ✓ Compiled in 1107ms (3400 modules)
- ✓ Compiled in 1608ms (3400 modules)
- ✓ Compiled in 1041ms (3400 modules)
- ✓ Compiled in 1083ms (3400 modules)
-<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/nhla/Desktop/PROJECTS/2025/thrive-send/.next/server/app/api/profile'
-<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/profile/onboarding/route' in /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/nhla/Desktop/PROJECTS/2025/thrive-send/.next/server/app/api/profile/onboarding/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/profile/onboarding/route' in '/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
-<w>  at resolve commonjs file ../../../../.next/server/app/api/profile/onboarding/route (expected /Users/nhla/Desktop/PROJECTS/2025/thrive-send/.next/server/app/api/profile/onboarding/route.js)
-<w>  at file dependencies /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/require.js
-<w>  at file /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/require.js
-<w>  at file dependencies /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/load-components.js
-<w>  at file /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/load-components.js
-<w>  at file dependencies /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/build/utils.js
-<w>  at file /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/build/utils.js
-<w>  at file dependencies /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
-<w>  at file /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
-<w>  at resolve commonjs /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
- ✓ Compiled in 865ms (3400 modules)
- ✓ Compiled in 5.9s (5258 modules)
- ✓ Compiled in 1716ms (3400 modules)
- ✓ Compiled in 1063ms (3400 modules)
- ✓ Compiled in 1156ms (3400 modules)
- ✓ Compiled in 1031ms (3400 modules)
-<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/Users/nhla/Desktop/PROJECTS/2025/thrive-send/.next/cache/webpack/client-development/9.pack.gz_' -> '/Users/nhla/Desktop/PROJECTS/2025/thrive-send/.next/cache/webpack/client-development/9.pack.gz'
- ✓ Compiled in 1314ms (3400 modules)
- ✓ Compiled in 1735ms (3400 modules)
- ✓ Compiled in 982ms (3400 modules)
- ✓ Compiled in 986ms (3400 modules)
- ✓ Compiled in 1255ms (3400 modules)
- ✓ Compiled in 1529ms (3400 modules)
- ✓ Compiled in 900ms (3400 modules)
- ✓ Compiled in 1449ms (3400 modules)
- ✓ Compiled in 7.2s (5258 modules)
- ✓ Compiled in 1323ms (3400 modules)
- ✓ Compiled in 2.6s (5258 modules)
- ✓ Compiled in 868ms (3400 modules)
- ✓ Compiled in 4.8s (5258 modules)
- ✓ Compiled in 1435ms (3400 modules)
- ✓ Compiled in 4.2s (5258 modules)
- ✓ Compiled in 1747ms (3400 modules)
- ✓ Compiled in 2.8s (5258 modules)
- ✓ Compiled in 2.8s (3400 modules)
- ✓ Compiled in 1927ms (3400 modules)
- ✓ Compiled in 986ms (3400 modules)
- ✓ Compiled in 631ms (3400 modules)
- ✓ Compiled in 674ms (3400 modules)
- ✓ Compiled in 589ms (3400 modules)
- ✓ Compiled in 3.7s (5258 modules)
- ✓ Compiled in 687ms (3400 modules)
- ✓ Compiled in 823ms (3400 modules)
- ✓ Compiled in 802ms (3400 modules)
- ○ Compiling /_error ...
- ✓ Compiled /_error in 1328ms (5246 modules)
- ⨯ Error: Cannot find module './1682.js'
-Require stack:
-- /Users/nhla/Desktop/PROJECTS/2025/thrive-send/.next/server/webpack-runtime.js
-- /Users/nhla/Desktop/PROJECTS/2025/thrive-send/.next/server/pages/_document.js
-- /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/require.js
-- /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/load-components.js
-- /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/build/utils.js
-- /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/dev/hot-middleware.js
-- /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/dev/hot-reloader-webpack.js
-- /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
-- /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js
-- /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/start-server.js
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1405:15)
-    at /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/require-hook.js:55:36
-    at defaultResolveImpl (node:internal/modules/cjs/loader:1061:19)
-    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1066:22)
-    at Function._load (node:internal/modules/cjs/loader:1215:37)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
-    at mod.require (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/require-hook.js:65:28)
-    at require (node:internal/modules/helpers:135:16)
-    at __webpack_require__.f.require (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/.next/server/webpack-runtime.js:208:28)
-    at /Users/nhla/Desktop/PROJECTS/2025/thrive-send/.next/server/webpack-runtime.js:116:40
-    at Array.reduce (<anonymous>)
-    at __webpack_require__.e (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/.next/server/webpack-runtime.js:115:67)
-    at Array.map (<anonymous>)
-    at __webpack_require__.X (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/.next/server/webpack-runtime.js:167:22)
-    at /Users/nhla/Desktop/PROJECTS/2025/thrive-send/.next/server/pages/_document.js:1:340
-    at Object.<anonymous> (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/.next/server/pages/_document.js:1:383)
-    at Module._compile (node:internal/modules/cjs/loader:1734:14)
-    at Object..js (node:internal/modules/cjs/loader:1899:10)
-    at Module.load (node:internal/modules/cjs/loader:1469:32)
-    at Function._load (node:internal/modules/cjs/loader:1286:12)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
-    at mod.require (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/require-hook.js:65:28)
-    at require (node:internal/modules/helpers:135:16)
-    at requirePage (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/require.js:109:84)
-    at /Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/load-components.js:72:65
-    at async Promise.all (index 0)
-    at async loadComponentsImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/load-components.js:71:33)
-    at async DevServer.findPageComponentsImpl (/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/next-server.js:714:36) {
-  code: 'MODULE_NOT_FOUND',
-  requireStack: [
-    '/Users/nhla/Desktop/PROJECTS/2025/thrive-send/.next/server/webpack-runtime.js',
-    '/Users/nhla/Desktop/PROJECTS/2025/thrive-send/.next/server/pages/_document.js',
-    '/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/require.js',
-    '/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/load-components.js',
-    '/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/build/utils.js',
-    '/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/dev/hot-middleware.js',
-    '/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
-    '/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
-    '/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/router-server.js',
-    '/Users/nhla/Desktop/PROJECTS/2025/thrive-send/node_modules/next/dist/server/lib/start-server.js'
-  ]
-}
- ELIFECYCLE  Command failed.
+ GET /api/service-provider/user/user_2xCfWWtekyWSMVmLALqnr6z0Nfo 500 in 2752ms
+ GET /api/profile/onboarding 200 in 595ms
+ GET /api/notifications 200 in 5068ms
 [?25h

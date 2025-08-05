@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useTeamData } from '@/hooks/use-team-data';
+import type { TeamMember, TeamStats, ClientAssignment, ServiceProviderRole } from '@/hooks/use-team-data';
 import { 
   Plus, 
   Users, 
@@ -50,59 +52,19 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import ClientAssignmentManager from '@/components/team/ClientAssignmentManager';
 
-// Types for team management
-interface TeamMember {
-  id: string;
-  name: string;
-  email: string;
-  role: ServiceProviderRole;
-  status: 'ACTIVE' | 'PENDING' | 'INACTIVE';
-  joinedAt: string;
-  lastActivity: string;
-  avatarUrl?: string;
-  phone?: string;
-  // Client assignments
-  clientAssignments: ClientAssignment[];
-  // Performance metrics
-  performance: {
-    contentCreated: number;
-    reviewsCompleted: number;
-    approvalsGiven: number;
-    clientsManaged: number;
-    averageRating: number;
-  };
-}
-
-interface ClientAssignment {
-  id: string;
-  clientId: string;
-  clientName: string;
-  role: 'MANAGER' | 'CREATOR' | 'REVIEWER' | 'ANALYST';
-  permissions: string[];
-  assignedAt: string;
-}
-
-type ServiceProviderRole = 
-  | 'OWNER'
-  | 'ADMIN' 
-  | 'MANAGER'
-  | 'CONTENT_CREATOR'
-  | 'REVIEWER'
-  | 'APPROVER'
-  | 'PUBLISHER'
-  | 'ANALYST'
-  | 'CLIENT_MANAGER';
-
-interface TeamStats {
-  totalMembers: number;
-  activeMembers: number;
-  pendingInvitations: number;
-  averagePerformance: number;
-  membersByRole: Record<ServiceProviderRole, number>;
-  topPerformers: TeamMember[];
-}
+// Types are now imported from the hook
 
 // Role configuration
 const roleConfig = {
@@ -389,21 +351,25 @@ function TeamMemberCard({ member, onEdit, onDelete, onViewDetails }: TeamMemberC
 }
 
 export default function TeamManagementPage() {
-  const [members, setMembers] = useState<TeamMember[]>([]);
-  const [stats, setStats] = useState<TeamStats | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [activeTab, setActiveTab] = useState('members');
   
+  // Modal state
+  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  
   // Client-related state
   const [clients, setClients] = useState<any[]>([]);
-  const [clientAssignments, setClientAssignments] = useState<ClientAssignment[]>([]);
   const [loadingClients, setLoadingClients] = useState(true);
   
   const { state: { organizationId } } = useServiceProvider();
+  
+  // Use live data hook instead of hardcoded demo data
+  const { members, stats, isLoading: loading, error, refetch } = useTeamData(organizationId);
 
   // Load clients
   useEffect(() => {
@@ -427,154 +393,19 @@ export default function TeamManagementPage() {
     loadClients();
   }, [organizationId]);
 
-  // Demo data - in real implementation, this would come from API
-  useEffect(() => {
-    const loadDemoData = () => {
-      const demoMembers: TeamMember[] = [
-        {
-          id: 'tm-1',
-          name: 'Sarah Johnson',
-          email: 'sarah.johnson@thrivesend.com',
-          role: 'ADMIN',
-          status: 'ACTIVE',
-          joinedAt: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(),
-          lastActivity: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          avatarUrl: 'https://api.dicebear.com/7.x/personas/svg?seed=Sarah&backgroundColor=c0aede',
-          phone: '+1 (555) 123-4567',
-          clientAssignments: [
-            {
-              id: 'ca-1',
-              clientId: 'demo-client-1',
-              clientName: 'City of Springfield',
-              role: 'MANAGER',
-              permissions: ['read', 'write', 'approve', 'publish'],
-              assignedAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-            },
-            {
-              id: 'ca-2',
-              clientId: 'demo-client-2',
-              clientName: 'Regional Health District',
-              role: 'REVIEWER',
-              permissions: ['read', 'write', 'review'],
-              assignedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-            }
-          ],
-          performance: {
-            contentCreated: 127,
-            reviewsCompleted: 89,
-            approvalsGiven: 45,
-            clientsManaged: 2,
-            averageRating: 4.8,
-          }
-        },
-        {
-          id: 'tm-2',
-          name: 'Michael Chen',
-          email: 'michael.chen@thrivesend.com',
-          role: 'CONTENT_CREATOR',
-          status: 'ACTIVE',
-          joinedAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-          lastActivity: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-          avatarUrl: 'https://api.dicebear.com/7.x/personas/svg?seed=Michael&backgroundColor=a7f3d0',
-          phone: '+1 (555) 987-6543',
-          clientAssignments: [
-            {
-              id: 'ca-3',
-              clientId: 'demo-client-1',
-              clientName: 'City of Springfield',
-              role: 'CREATOR',
-              permissions: ['read', 'write'],
-              assignedAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
-            }
-          ],
-          performance: {
-            contentCreated: 203,
-            reviewsCompleted: 15,
-            approvalsGiven: 0,
-            clientsManaged: 1,
-            averageRating: 4.6,
-          }
-        },
-        {
-          id: 'tm-3',
-          name: 'Emily Rodriguez',
-          email: 'emily.rodriguez@thrivesend.com',
-          role: 'REVIEWER',
-          status: 'ACTIVE',
-          joinedAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
-          lastActivity: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-          avatarUrl: 'https://api.dicebear.com/7.x/personas/svg?seed=Emily&backgroundColor=fde68a',
-          clientAssignments: [
-            {
-              id: 'ca-4',
-              clientId: 'demo-client-2',
-              clientName: 'Regional Health District',
-              role: 'REVIEWER',
-              permissions: ['read', 'review'],
-              assignedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-            }
-          ],
-          performance: {
-            contentCreated: 45,
-            reviewsCompleted: 156,
-            approvalsGiven: 12,
-            clientsManaged: 1,
-            averageRating: 4.9,
-          }
-        },
-        {
-          id: 'tm-4',
-          name: 'David Thompson',
-          email: 'david.thompson@thrivesend.com',
-          role: 'CLIENT_MANAGER',
-          status: 'PENDING',
-          joinedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-          lastActivity: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-          clientAssignments: [],
-          performance: {
-            contentCreated: 0,
-            reviewsCompleted: 0,
-            approvalsGiven: 0,
-            clientsManaged: 0,
-            averageRating: 0,
-          }
-        }
-      ];
-
-      const demoStats: TeamStats = {
-        totalMembers: demoMembers.length,
-        activeMembers: demoMembers.filter(m => m.status === 'ACTIVE').length,
-        pendingInvitations: demoMembers.filter(m => m.status === 'PENDING').length,
-        averagePerformance: 4.7,
-        membersByRole: demoMembers.reduce((acc, member) => {
-          acc[member.role] = (acc[member.role] || 0) + 1;
-          return acc;
-        }, {} as Record<ServiceProviderRole, number>),
-        topPerformers: demoMembers
-          .filter(m => m.status === 'ACTIVE')
-          .sort((a, b) => b.performance.averageRating - a.performance.averageRating)
-          .slice(0, 3)
-      };
-
-      setMembers(demoMembers);
-      setStats(demoStats);
-      
-      // Initialize client assignments from member data
-      const allAssignments = demoMembers.flatMap(member => 
+  // Initialize client assignments from live team data using useMemo
+  const clientAssignments = useMemo(() => {
+    if (members.length > 0) {
+      return members.flatMap(member => 
         member.clientAssignments.map(assignment => ({
           ...assignment,
           memberId: member.id,
           memberName: member.name
         }))
       );
-      setClientAssignments(allAssignments);
-      
-      setLoading(false);
-    };
-
-    // Simulate API loading delay
-    setTimeout(loadDemoData, 1000);
-  }, []);
+    }
+    return [];
+  }, [members]);
 
   // Filtered members
   const filteredMembers = useMemo(() => {
@@ -604,24 +435,45 @@ export default function TeamManagementPage() {
   }, [members, search, roleFilter, statusFilter]);
 
   const handleEditMember = (member: TeamMember) => {
-    // TODO: Implement edit functionality
-    console.log('Edit member:', member);
+    setSelectedMember(member);
+    setShowEditModal(true);
   };
 
   const handleDeleteMember = (member: TeamMember) => {
-    // TODO: Implement delete functionality
-    console.log('Delete member:', member);
+    setSelectedMember(member);
+    setShowDeleteModal(true);
   };
 
   const handleViewDetails = (member: TeamMember) => {
-    // TODO: Implement view details functionality
-    console.log('View details:', member);
+    setSelectedMember(member);
+    setShowDetailModal(true);
+  };
+
+  const handleSaveEdit = () => {
+    // TODO: Implement API call to save changes
+    console.log('Saving edits for:', selectedMember);
+    setShowEditModal(false);
+    setSelectedMember(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    // TODO: Implement API call to delete member
+    if (selectedMember) {
+      console.log('Deleting member:', selectedMember.id);
+      // In a real implementation, this would call DELETE API
+      // await deleteTeamMember(selectedMember.id);
+      // For now, just refetch data to show any changes
+      refetch();
+    }
+    setShowDeleteModal(false);
+    setSelectedMember(null);
   };
 
   const handleAssignmentChange = (assignments: ClientAssignment[]) => {
-    setClientAssignments(assignments);
     // In a real implementation, this would sync with the API
+    // For now, just log the changes since clientAssignments is derived from members
     console.log('Updated assignments:', assignments);
+    // TODO: Update member assignments via API call
   };
 
   return (
@@ -642,8 +494,8 @@ export default function TeamManagementPage() {
 
         {/* Action buttons */}
         <div className="flex items-center justify-end gap-2 mb-8">
-          <Button asChild>
-            <Link href="/team/invite">
+          <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Link href="/team/invite" className="inline-flex items-center">
               <UserPlus className="mr-2 h-4 w-4" />
               Invite Team Member
             </Link>
@@ -774,10 +626,10 @@ export default function TeamManagementPage() {
                     </div>
                   </div>
                   <h3 className="text-lg font-semibold mb-2">Failed to load team members</h3>
-                  <p className="text-muted-foreground mb-4">{error}</p>
+                  <p className="text-muted-foreground mb-4">{error instanceof Error ? error.message : 'Unknown error occurred'}</p>
                   <Button
                     variant="outline"
-                    onClick={() => window.location.reload()}
+                    onClick={() => refetch()}
                   >
                     Try Again
                   </Button>
@@ -802,8 +654,8 @@ export default function TeamManagementPage() {
                     }
                   </p>
                   {members.length === 0 ? (
-                    <Button asChild>
-                      <Link href="/team/invite">
+                    <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                      <Link href="/team/invite" className="inline-flex items-center">
                         <UserPlus className="h-4 w-4 mr-2" />
                         Invite First Team Member
                       </Link>
@@ -847,6 +699,229 @@ export default function TeamManagementPage() {
             />
           </TabsContent>
         </Tabs>
+
+        {/* Team Member Detail Modal */}
+        <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-3">
+                {selectedMember?.avatarUrl ? (
+                  <img
+                    src={selectedMember.avatarUrl}
+                    alt={`${selectedMember.name} avatar`}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10 text-primary font-semibold">
+                    {selectedMember && getInitials(selectedMember.name)}
+                  </div>
+                )}
+                {selectedMember?.name}
+              </DialogTitle>
+              <DialogDescription>
+                {selectedMember?.email} • {selectedMember && roleConfig[selectedMember.role].label}
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedMember && (
+              <div className="space-y-6">
+                {/* Basic Info */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Status</Label>
+                    <div className="mt-1">
+                      <Badge className={cn("text-xs px-2 py-1", statusConfig[selectedMember.status].color)}>
+                        {statusConfig[selectedMember.status].label}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Phone</Label>
+                    <p className="mt-1 text-sm">{selectedMember.phone || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Joined</Label>
+                    <p className="mt-1 text-sm">{formatDate(selectedMember.joinedAt)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Last Activity</Label>
+                    <p className="mt-1 text-sm">{formatRelativeTime(selectedMember.lastActivity)}</p>
+                  </div>
+                </div>
+
+                {/* Performance Metrics */}
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground mb-3 block">Performance Metrics</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center p-3 bg-muted/50 rounded-lg">
+                      <p className="text-2xl font-bold text-primary">{selectedMember.performance.contentCreated}</p>
+                      <p className="text-xs text-muted-foreground">Content Created</p>
+                    </div>
+                    <div className="text-center p-3 bg-muted/50 rounded-lg">
+                      <p className="text-2xl font-bold text-green-600">{selectedMember.performance.reviewsCompleted}</p>
+                      <p className="text-xs text-muted-foreground">Reviews Completed</p>
+                    </div>
+                    <div className="text-center p-3 bg-muted/50 rounded-lg">
+                      <p className="text-2xl font-bold text-orange-600">{selectedMember.performance.approvalsGiven}</p>
+                      <p className="text-xs text-muted-foreground">Approvals Given</p>
+                    </div>
+                    <div className="text-center p-3 bg-muted/50 rounded-lg">
+                      <p className="text-2xl font-bold text-blue-600">{selectedMember.performance.averageRating}/5</p>
+                      <p className="text-xs text-muted-foreground">Avg Rating</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Client Assignments */}
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground mb-3 block">
+                    Client Assignments ({selectedMember.clientAssignments.length})
+                  </Label>
+                  {selectedMember.clientAssignments.length > 0 ? (
+                    <div className="space-y-3">
+                      {selectedMember.clientAssignments.map((assignment) => (
+                        <div key={assignment.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div>
+                            <p className="font-medium">{assignment.clientName}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {assignment.role} • Assigned {formatDate(assignment.assignedAt)}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {assignment.permissions.map((permission) => (
+                              <Badge key={permission} variant="outline" className="text-xs">
+                                {permission}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground p-3 border rounded-lg text-center">
+                      No client assignments
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Member Modal */}
+        <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Team Member</DialogTitle>
+              <DialogDescription>
+                Update member information and role
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedMember && (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="memberName">Name</Label>
+                  <Input
+                    id="memberName"
+                    defaultValue={selectedMember.name}
+                    className="mt-1"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="memberEmail">Email</Label>
+                  <Input
+                    id="memberEmail"
+                    type="email"
+                    defaultValue={selectedMember.email}
+                    className="mt-1"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="memberRole">Role</Label>
+                  <Select defaultValue={selectedMember.role}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(roleConfig).map(([role, config]) => (
+                        <SelectItem key={role} value={role}>
+                          {config.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="memberPhone">Phone</Label>
+                  <Input
+                    id="memberPhone"
+                    defaultValue={selectedMember.phone || ''}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+            )}
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowEditModal(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveEdit}>
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Modal */}
+        <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Remove Team Member</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to remove {selectedMember?.name} from the team? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedMember && (
+              <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-lg">
+                <div className="flex items-center gap-3">
+                  {selectedMember.avatarUrl ? (
+                    <img
+                      src={selectedMember.avatarUrl}
+                      alt={`${selectedMember.name} avatar`}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10 text-primary font-semibold">
+                      {getInitials(selectedMember.name)}
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-medium">{selectedMember.name}</p>
+                    <p className="text-sm text-muted-foreground">{selectedMember.email}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {roleConfig[selectedMember.role].label} • {selectedMember.clientAssignments.length} client assignments
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleConfirmDelete}>
+                Remove Member
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </TooltipProvider>
   );

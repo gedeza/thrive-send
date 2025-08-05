@@ -79,11 +79,6 @@ export function RechartsHeatMapLazy(props: any) {
 }
 
 // Lazy load content components
-export const LazyContentCalendar = lazy(() => 
-  import('@/components/content/content-calendar').then(module => ({
-    default: module.ContentCalendar
-  }))
-);
 
 export const LazyRichTextEditor = lazy(() => 
   import('@/components/content/RichTextEditor').then(module => ({
@@ -128,13 +123,6 @@ export function FunnelManagerLazy(props: any) {
 }
 
 
-export function ContentCalendarLazy(props: any) {
-  return (
-    <LazyWrapper fallback={<CalendarSkeleton />}>
-      <LazyContentCalendar {...props} />
-    </LazyWrapper>
-  );
-}
 
 export function RichTextEditorLazy(props: any) {
   return (
