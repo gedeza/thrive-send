@@ -18,7 +18,11 @@ import {
   Settings,
   Eye,
   Edit,
-  Trash2
+  Trash2,
+  Upload,
+  X,
+  FileText,
+  CheckCircle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,6 +31,9 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import Link from 'next/link';
 
@@ -39,6 +46,14 @@ export default function AudiencesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  
+  // Import contacts state
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [importMethod, setImportMethod] = useState<'csv' | 'manual'>('csv');
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [manualContacts, setManualContacts] = useState('');
+  const [audienceName, setAudienceName] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
   
   // Use live data hook instead of hardcoded demo data
   const { audiences, stats, isLoading, error, refetch } = useAudienceData(organizationId);
@@ -66,7 +81,96 @@ export default function AudiencesPage() {
     return filtered;
   }, [audiences, searchQuery, statusFilter, typeFilter]);
 
+  // Import contacts functionality
+  const handleImportContacts = async () => {
+    if (!audienceName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter an audience name",
+        variant: "destructive",
+      });
+      return;
+    }
 
+    if (importMethod === 'csv' && !csvFile) {
+      toast({
+        title: "Error", 
+        description: "Please select a CSV file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (importMethod === 'manual' && !manualContacts.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter contact information",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsImporting(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('audienceName', audienceName);
+      formData.append('organizationId', organizationId);
+      formData.append('importMethod', importMethod);
+      
+      if (importMethod === 'csv' && csvFile) {
+        formData.append('csvFile', csvFile);
+      } else if (importMethod === 'manual') {
+        formData.append('contacts', manualContacts);
+      }
+
+      const response = await fetch('/api/service-provider/audiences/import', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to import contacts');
+      }
+
+      const result = await response.json();
+      
+      toast({
+        title: "Success!",
+        description: `Imported ${result.contactCount} contacts into "${audienceName}" audience`,
+      });
+
+      // Reset form and close modal
+      setIsImportOpen(false);
+      setAudienceName('');
+      setCsvFile(null);
+      setManualContacts('');
+      refetch(); // Refresh the audiences list
+
+    } catch (error) {
+      console.error('Import error:', error);
+      toast({
+        title: "Import failed",
+        description: "There was an error importing your contacts. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type === 'text/csv') {
+      setCsvFile(file);
+    } else {
+      toast({
+        title: "Invalid file",
+        description: "Please select a valid CSV file",
+        variant: "destructive",
+      });
+    }
+  };
 
   const getStatusConfig = (status: string) => {
     const configs = {
@@ -117,10 +221,122 @@ export default function AudiencesPage() {
               Shared Segments
             </Button>
           </Link>
-          <Button variant="outline">
-            <Settings className="h-4 w-4 mr-2" />
+          <Button variant="outline" onClick={() => setIsImportOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" />
             Import Contacts
           </Button>
+          <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
+            <DialogContent className="sm:max-w-[525px]">
+              <DialogHeader>
+                <DialogTitle>Import Contacts</DialogTitle>
+                <DialogDescription>
+                  Import contacts from CSV file or add them manually to create a new audience
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                {/* Audience Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="audienceName">Audience Name</Label>
+                  <Input
+                    id="audienceName"
+                    value={audienceName}
+                    onChange={(e) => setAudienceName(e.target.value)}
+                    placeholder="Enter audience name"
+                  />
+                </div>
+
+                {/* Import Method Selection */}
+                <div className="space-y-2">
+                  <Label>Import Method</Label>
+                  <Tabs value={importMethod} onValueChange={(value) => setImportMethod(value as 'csv' | 'manual')}>
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="csv">CSV File</TabsTrigger>
+                      <TabsTrigger value="manual">Manual Entry</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="csv" className="space-y-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="csvFile">CSV File</Label>
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                          <input
+                            id="csvFile"
+                            type="file"
+                            accept=".csv"
+                            onChange={handleFileChange}
+                            className="hidden"
+                          />
+                          <label 
+                            htmlFor="csvFile" 
+                            className="cursor-pointer flex flex-col items-center space-y-2"
+                          >
+                            {csvFile ? (
+                              <>
+                                <FileText className="h-8 w-8 text-green-600" />
+                                <div className="text-sm">
+                                  <span className="font-medium">{csvFile.name}</span>
+                                  <p className="text-gray-500">Click to change file</p>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="h-8 w-8 text-gray-400" />
+                                <div className="text-sm">
+                                  <span className="font-medium">Click to upload CSV file</span>
+                                  <p className="text-gray-500">or drag and drop</p>
+                                </div>
+                              </>
+                            )}
+                          </label>
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          CSV should have columns: name, email, phone (optional)
+                        </p>
+                      </div>
+                    </TabsContent>
+                    <TabsContent value="manual" className="space-y-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="manualContacts">Contact Information</Label>
+                        <Textarea
+                          id="manualContacts"
+                          value={manualContacts}
+                          onChange={(e) => setManualContacts(e.target.value)}
+                          placeholder="Enter contacts (one per line)&#10;Format: Name, Email, Phone&#10;&#10;John Doe, john@example.com, +1234567890&#10;Jane Smith, jane@example.com"
+                          rows={6}
+                        />
+                        <p className="text-xs text-gray-500">
+                          Enter contacts one per line in format: Name, Email, Phone (optional)
+                        </p>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsImportOpen(false)}
+                  disabled={isImporting}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleImportContacts}
+                  disabled={isImporting}
+                >
+                  {isImporting ? (
+                    <>
+                      <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Importing...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Import Contacts
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
