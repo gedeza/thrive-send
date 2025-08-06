@@ -17,20 +17,66 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Organization ID is required' }, { status: 400 });
     }
 
-    // Verify user has access to the organization
-    const organization = await prisma.organization.findFirst({
-      where: {
-        id: organizationId,
-        members: {
-          some: {
-            userId: userId
-          }
-        }
-      }
+    console.log('🔍 Audience API Debug:', { userId, organizationId });
+
+    // First, check if organization exists
+    const orgExists = await prisma.organization.findUnique({
+      where: { id: organizationId }
     });
 
-    if (!organization) {
-      return NextResponse.json({ error: 'Organization not found or access denied' }, { status: 403 });
+    if (!orgExists) {
+      console.log('❌ Organization not found:', organizationId);
+      return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+    }
+
+    // First get the user's database ID from their clerkId
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId }
+    });
+
+    if (!user) {
+      console.log('❌ User not found:', userId);
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Check if user has access to the organization using the database user ID
+    const userMembership = await prisma.organizationMember.findFirst({
+      where: {
+        userId: user.id, // Use database user ID, not clerkId
+        organizationId: organizationId,
+      },
+    });
+
+    console.log('👤 User membership check:', { 
+      clerkId: userId,
+      dbUserId: user.id,
+      organizationId, 
+      hasMembership: !!userMembership,
+      membershipId: userMembership?.id 
+    });
+
+    if (!userMembership) {
+      // For development/demo purposes, create a basic organization membership if none exists
+      // In production, this should be handled through proper onboarding
+      console.log('⚠️ No organization membership found, creating demo membership');
+      
+      try {
+        const newMembership = await prisma.organizationMember.create({
+          data: {
+            userId: user.id,
+            organizationId: organizationId,
+            role: 'ADMIN',
+            serviceProviderRole: 'ADMIN',
+          },
+        });
+        console.log('✅ Demo membership created:', newMembership);
+      } catch (createError) {
+        console.log('❌ Could not create demo membership:', createError);
+        return NextResponse.json({ 
+          error: 'Access denied - not a member of this organization. Please contact your administrator to be added to this organization.',
+          details: 'No organization membership found and unable to create demo membership'
+        }, { status: 403 });
+      }
     }
 
     // Fetch actual audiences from database
@@ -140,20 +186,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Name and type are required' }, { status: 400 });
     }
 
-    // Verify user has access to the organization
-    const organization = await prisma.organization.findFirst({
-      where: {
-        id: organizationId,
-        members: {
-          some: {
-            userId: userId
-          }
-        }
-      }
+    // First get the user's database ID from their clerkId
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId }
     });
 
-    if (!organization) {
-      return NextResponse.json({ error: 'Organization not found or access denied' }, { status: 403 });
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Check if user has access to the organization using the database user ID
+    const userMembership = await prisma.organizationMember.findFirst({
+      where: {
+        userId: user.id, // Use database user ID, not clerkId
+        organizationId: organizationId,
+      },
+    });
+
+    if (!userMembership) {
+      return NextResponse.json({ error: 'Access denied - not a member of this organization' }, { status: 403 });
     }
 
     // Create the audience with transaction to ensure consistency
@@ -168,7 +219,7 @@ export async function POST(request: NextRequest) {
           tags: tags || [],
           source: 'Manual',
           organizationId,
-          createdBy: userId,
+          createdBy: user.id,
         },
       });
 
@@ -183,7 +234,7 @@ export async function POST(request: NextRequest) {
             size: 0,
             audienceId: newAudience.id,
             organizationId,
-            createdById: userId,
+            createdById: user.id,
             rules: {
               conditions: conditions.map(condition => ({
                 type: condition.type,
@@ -222,7 +273,7 @@ export async function POST(request: NextRequest) {
               segmentId: segment.id,
               audienceId: newAudience.id,
               organizationId,
-              createdById: userId,
+              createdById: user.id,
             },
           });
         }

@@ -17,20 +17,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Organization ID is required' }, { status: 400 });
     }
 
-    // Verify user has access to the organization
-    const organization = await prisma.organization.findFirst({
-      where: {
-        id: organizationId,
-        members: {
-          some: {
-            userId: userId
-          }
-        }
-      }
+    // First get the user's database ID from their clerkId
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId }
     });
 
-    if (!organization) {
-      return NextResponse.json({ error: 'Organization not found or access denied' }, { status: 403 });
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Check if user has access to the organization using the database user ID
+    const userMembership = await prisma.organizationMember.findFirst({
+      where: {
+        userId: user.id, // Use database user ID, not clerkId
+        organizationId: organizationId,
+      },
+    });
+
+    if (!userMembership) {
+      return NextResponse.json({ error: 'Access denied - not a member of this organization' }, { status: 403 });
     }
 
     // Fetch shared segments - segments that are used across multiple audiences
@@ -156,20 +161,25 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Verify user has access to the organization
-    const organization = await prisma.organization.findFirst({
-      where: {
-        id: organizationId,
-        members: {
-          some: {
-            userId: userId
-          }
-        }
-      }
+    // First get the user's database ID from their clerkId
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId }
     });
 
-    if (!organization) {
-      return NextResponse.json({ error: 'Organization not found or access denied' }, { status: 403 });
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Check if user has access to the organization using the database user ID
+    const userMembership = await prisma.organizationMember.findFirst({
+      where: {
+        userId: user.id, // Use database user ID, not clerkId
+        organizationId: organizationId,
+      },
+    });
+
+    if (!userMembership) {
+      return NextResponse.json({ error: 'Access denied - not a member of this organization' }, { status: 403 });
     }
 
     // Verify all audience IDs belong to the organization
@@ -229,7 +239,7 @@ export async function POST(request: NextRequest) {
                 segmentId: segment.id,
                 audienceId,
                 organizationId,
-                createdById: userId,
+                createdById: user.id,
               },
             });
           }
