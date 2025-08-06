@@ -13,7 +13,8 @@ const isPublicRoute = createRouteMatcher([
 // TODO: Remove this in production - only for testing live data integration
 const isDevServiceProviderAPI = createRouteMatcher([
   "/api/service-provider(.*)",
-  "/service-provider(.*)"
+  "/service-provider(.*)",
+  "/api/approvals(.*)"
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
