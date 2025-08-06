@@ -24,6 +24,14 @@ export default function ContentAnalyticsPage() {
     state: { organizationId, selectedClient } 
   } = useServiceProvider();
 
+  // Calculate date range based on timeframe
+  const getDateRange = (timeframe: TimeframeType) => {
+    const now = new Date();
+    const days = timeframe === '7d' ? 7 : timeframe === '30d' ? 30 : timeframe === '90d' ? 90 : 365;
+    const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+    return { startDate, endDate: now };
+  };
+
   // Fetch all content for analytics with service provider context
   const {
     data: contentData,
@@ -33,16 +41,24 @@ export default function ContentAnalyticsPage() {
   } = useQuery({
     queryKey: ['service-provider-content', 'analytics', { 
       limit: 100, 
-      organizationId: organizationId || 'demo-org',
-      clientId: selectedClient?.id 
+      organizationId,
+      clientId: selectedClient?.id,
+      timeframe 
     }],
-    queryFn: () => listContent({ 
-      limit: 100, 
-      sortBy: 'createdAt', 
-      sortOrder: 'desc',
-      organizationId: organizationId || 'demo-org',
-      ...(selectedClient && { clientId: selectedClient.id })
-    }),
+    queryFn: () => {
+      if (!organizationId) {
+        throw new Error('Organization ID is required for analytics');
+      }
+      const { startDate } = getDateRange(timeframe);
+      return listContent({ 
+        limit: 100, 
+        sortBy: 'createdAt', 
+        sortOrder: 'desc',
+        organizationId,
+        startDate: startDate.toISOString(),
+        ...(selectedClient && { clientId: selectedClient.id })
+      });
+    },
     enabled: !!organizationId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     cacheTime: 15 * 60 * 1000, // 15 minutes
@@ -54,15 +70,19 @@ export default function ContentAnalyticsPage() {
     [content]
   );
 
-  // Fetch analytics for all content
-  const { analyticsMap, isLoading: analyticsLoading } = useBulkContentAnalytics(contentIds);
+  // Fetch analytics for all content with timeframe filtering
+  const { analyticsMap, isLoading: analyticsLoading } = useBulkContentAnalytics(contentIds, {
+    timeframe,
+    startDate: getDateRange(timeframe).startDate.toISOString(),
+    endDate: getDateRange(timeframe).endDate.toISOString()
+  });
 
-  // Real-time analytics updates
+  // Real-time analytics updates via WebSocket
   const realtimeAnalytics = useRealTimeAnalytics({
     contentIds,
     enabled: true,
-    interval: 30000, // Update every 30 seconds for analytics page
-    simulateUpdates: true
+    interval: 30000, // Fallback polling interval if WebSocket fails
+    simulateUpdates: false // Use real WebSocket connection instead of simulation
   });
 
   // Merge real-time updates with analytics data
@@ -96,14 +116,47 @@ export default function ContentAnalyticsPage() {
     }
   };
 
-  const handleTimeframeChange = (newTimeframe: TimeframeType) => {
+  const handleTimeframeChange = async (newTimeframe: TimeframeType) => {
     setTimeframe(newTimeframe);
-    // In a real implementation, this would trigger a new API call with date filters
-    toast({
-      title: "Timeframe Updated",
-      description: `Now showing data for the last ${newTimeframe === '7d' ? '7 days' : newTimeframe === '30d' ? '30 days' : newTimeframe === '90d' ? '90 days' : 'year'}.`,
-    });
+    
+    // Trigger refetch with new timeframe - React Query will automatically use new queryKey
+    try {
+      await refetchContent();
+      toast({
+        title: "Timeframe Updated",
+        description: `Now showing analytics data for the last ${newTimeframe === '7d' ? '7 days' : newTimeframe === '30d' ? '30 days' : newTimeframe === '90d' ? '90 days' : 'year'}.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Filter Update Failed",
+        description: "Failed to update timeframe filter. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
+
+  // Handle missing organization ID
+  if (!organizationId) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <BarChart3 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h2 className="text-xl font-semibold mb-2">Organization Required</h2>
+            <p className="text-muted-foreground mb-4">
+              Analytics requires an active organization context. Please ensure you're logged in and have access to an organization.
+            </p>
+            <Button asChild>
+              <Link href="/dashboard">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Dashboard
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (contentError) {
     return (

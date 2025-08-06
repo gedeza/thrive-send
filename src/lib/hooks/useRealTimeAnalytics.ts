@@ -69,73 +69,123 @@ export function useRealTimeAnalytics({
     });
   }, [safeContentIds, simulateUpdates, queryClient]);
 
-  // Initialize WebSocket connection (for production)
+  // Initialize WebSocket connection for real-time analytics
   const initializeWebSocket = useCallback(() => {
     if (typeof window === 'undefined' || !enabled) return;
 
-    // In a real implementation, this would connect to your WebSocket server
-    // For now, we'll use a mock WebSocket for demonstration
     const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3001/analytics';
     
     try {
       const ws = new WebSocket(wsUrl);
       
       ws.onopen = () => {
-        console.log('Analytics WebSocket connected');
+        console.log('Analytics WebSocket connected to:', wsUrl);
         setIsConnected(true);
         
         // Subscribe to analytics updates for specific content
         ws.send(JSON.stringify({
           type: 'subscribe',
-          contentIds: safeContentIds
+          contentIds: safeContentIds,
+          organizationId: process.env.NEXT_PUBLIC_ORGANIZATION_ID, // Add org context if available
+          clientId: process.env.NEXT_PUBLIC_CLIENT_ID // Add client context if available
         }));
       };
 
       ws.onmessage = (event) => {
         try {
-          const update: RealTimeUpdate = JSON.parse(event.data);
+          const message = JSON.parse(event.data);
           
-          setRealtimeUpdates(prev => ({
-            ...prev,
-            [update.contentId]: {
-              ...prev[update.contentId],
-              [update.field]: update.value,
-              updatedAt: new Date(update.timestamp).toISOString()
-            }
-          }));
+          switch (message.type) {
+            case 'connected':
+              console.log('WebSocket connection established, client ID:', message.clientId);
+              break;
+              
+            case 'subscribed':
+              console.log('Successfully subscribed to analytics for', message.contentIds.length, 'content items');
+              break;
+              
+            case 'analytics_update':
+              // Handle real-time analytics update
+              setRealtimeUpdates(prev => ({
+                ...prev,
+                [message.contentId]: {
+                  ...prev[message.contentId],
+                  [message.field]: message.value,
+                  updatedAt: new Date(message.timestamp).toISOString()
+                }
+              }));
 
-          setLastUpdateTime(new Date(update.timestamp));
-          
-          // Invalidate relevant queries
-          queryClient.invalidateQueries({ 
-            queryKey: ['content-analytics', update.contentId] 
-          });
+              setLastUpdateTime(new Date(message.timestamp));
+              
+              // Invalidate relevant queries to trigger refetch
+              queryClient.invalidateQueries({ 
+                queryKey: ['content-analytics', message.contentId] 
+              });
+              
+              console.log(`Analytics update: ${message.field} = ${message.value} for content ${message.contentId}`);
+              break;
+              
+            case 'pong':
+              // Handle heartbeat response
+              break;
+              
+            case 'error':
+              console.error('WebSocket error message:', message.error);
+              break;
+              
+            default:
+              console.log('Unknown WebSocket message type:', message.type);
+          }
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);
         }
       };
 
-      ws.onclose = () => {
-        console.log('Analytics WebSocket disconnected');
+      ws.onclose = (event) => {
+        console.log('Analytics WebSocket disconnected, code:', event.code, 'reason:', event.reason);
         setIsConnected(false);
         
-        // Attempt to reconnect after 5 seconds
-        setTimeout(() => {
-          if (enabled) initializeWebSocket();
-        }, 5000);
+        // Attempt to reconnect after delay unless it was a clean close
+        if (event.code !== 1000 && enabled) {
+          const reconnectDelay = 5000;
+          console.log(`Attempting to reconnect in ${reconnectDelay}ms...`);
+          setTimeout(() => {
+            if (enabled) initializeWebSocket();
+          }, reconnectDelay);
+        }
       };
 
       ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
+        console.error('Analytics WebSocket error:', error);
         setIsConnected(false);
       };
 
+      // Send periodic ping to keep connection alive
+      const pingInterval = setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'ping' }));
+        }
+      }, 30000); // Ping every 30 seconds
+
       wsRef.current = ws;
+      
+      // Cleanup ping interval when connection is closed
+      ws.addEventListener('close', () => {
+        clearInterval(pingInterval);
+      });
+
     } catch (error) {
-      console.error('Failed to initialize WebSocket:', error);
+      console.error('Failed to initialize Analytics WebSocket:', error);
       setIsConnected(false);
+      
+      // Fallback to simulation mode if WebSocket fails
+      if (simulateUpdates && enabled) {
+        console.log('Falling back to simulation mode');
+        intervalRef.current = setInterval(simulateRealTimeUpdate, interval);
+        setIsConnected(true);
+      }
     }
-  }, [safeContentIds, enabled, queryClient]);
+  }, [safeContentIds, enabled, queryClient, simulateUpdates, interval, simulateRealTimeUpdate]);
 
   // Start real-time updates
   useEffect(() => {
