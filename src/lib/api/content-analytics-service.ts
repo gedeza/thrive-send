@@ -64,38 +64,58 @@ export async function getBulkContentAnalytics(contentIds: string[]): Promise<Rec
 }
 
 // Calculate performance score (0-100) based on analytics metrics
-export function calculatePerformanceScore(analytics: ContentAnalytics): number {
+export function calculatePerformanceScore(analytics: ContentAnalytics | null | undefined): number {
   if (!analytics) return 0;
   
-  // Weighted score calculation
-  const viewsScore = Math.min((analytics.views / 1000) * 20, 20); // Max 20 points
-  const engagementScore = analytics.engagementRate * 30; // Max 30 points (if 100% engagement)
-  const sharesScore = Math.min((analytics.shares / 50) * 15, 15); // Max 15 points
-  const conversionScore = analytics.conversionRate * 35; // Max 35 points
+  // Weighted score calculation with null safety
+  const views = analytics.views || 0;
+  const engagementRate = analytics.engagementRate || 0;
+  const shares = analytics.shares || 0;
+  const conversionRate = analytics.conversionRate || 0;
+  
+  const viewsScore = Math.min((views / 1000) * 20, 20); // Max 20 points
+  const engagementScore = engagementRate * 30; // Max 30 points (if 100% engagement)
+  const sharesScore = Math.min((shares / 50) * 15, 15); // Max 15 points
+  const conversionScore = conversionRate * 35; // Max 35 points
   
   return Math.round(viewsScore + engagementScore + sharesScore + conversionScore);
 }
 
 // Determine if content is trending based on recent performance
-export function isTrendingContent(analytics: ContentAnalytics): boolean {
+export function isTrendingContent(analytics: ContentAnalytics | null | undefined): boolean {
   if (!analytics) return false;
   
-  // Simple trending logic - can be enhanced with time-based calculations
+  // Simple trending logic with null safety - can be enhanced with time-based calculations
+  const engagementRate = analytics.engagementRate || 0;
+  const views = analytics.views || 0;
+  const shares = analytics.shares || 0;
+  
   return (
-    analytics.engagementRate > 0.05 && // 5% engagement rate
-    analytics.views > 500 &&
-    analytics.shares > 10
+    engagementRate > 0.05 && // 5% engagement rate
+    views > 500 &&
+    shares > 10
   );
 }
 
 // Format analytics numbers for display
-export function formatAnalyticsNumber(num: number): string {
-  if (num >= 1000000) {
-    return (num / 1000000).toFixed(1) + 'M';
-  } else if (num >= 1000) {
-    return (num / 1000).toFixed(1) + 'K';
+export function formatAnalyticsNumber(num: number | undefined | null): string {
+  // Handle null/undefined cases
+  if (num === null || num === undefined || isNaN(num)) {
+    return '0';
   }
-  return num.toString();
+  
+  // Ensure we have a valid number
+  const validNum = Number(num);
+  if (isNaN(validNum)) {
+    return '0';
+  }
+  
+  if (validNum >= 1000000) {
+    return (validNum / 1000000).toFixed(1) + 'M';
+  } else if (validNum >= 1000) {
+    return (validNum / 1000).toFixed(1) + 'K';
+  }
+  return validNum.toString();
 }
 
 // Generate performance insights text
