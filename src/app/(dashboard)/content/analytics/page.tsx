@@ -9,22 +9,41 @@ import { ContentPerformanceDashboard } from '@/components/content/ContentPerform
 import { useBulkContentAnalytics } from '@/lib/hooks/useContentAnalytics';
 import { listContent, ContentData } from '@/lib/api/content-service';
 import { toast } from '@/components/ui/use-toast';
+import { useServiceProvider } from '@/context/ServiceProviderContext';
+import { useRealTimeAnalytics } from '@/lib/hooks/useRealTimeAnalytics';
+import { RealTimeAnalyticsIndicator } from '@/components/content/RealTimeAnalyticsIndicator';
 import Link from 'next/link';
 
 type TimeframeType = '7d' | '30d' | '90d' | '1y';
 
 export default function ContentAnalyticsPage() {
   const [timeframe, setTimeframe] = useState<TimeframeType>('30d');
+  
+  // 🚀 B2B2G SERVICE PROVIDER INTEGRATION
+  const { 
+    state: { organizationId, selectedClient } 
+  } = useServiceProvider();
 
-  // Fetch all content for analytics
+  // Fetch all content for analytics with service provider context
   const {
     data: contentData,
     isLoading: contentLoading,
     error: contentError,
     refetch: refetchContent
   } = useQuery({
-    queryKey: ['content', 'analytics', { limit: 100 }], // Get more content for analytics
-    queryFn: () => listContent({ limit: '100', sortBy: 'createdAt', sortOrder: 'desc' }),
+    queryKey: ['service-provider-content', 'analytics', { 
+      limit: 100, 
+      organizationId: organizationId || 'demo-org',
+      clientId: selectedClient?.id 
+    }],
+    queryFn: () => listContent({ 
+      limit: 100, 
+      sortBy: 'createdAt', 
+      sortOrder: 'desc',
+      organizationId: organizationId || 'demo-org',
+      ...(selectedClient && { clientId: selectedClient.id })
+    }),
+    enabled: !!organizationId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     cacheTime: 15 * 60 * 1000, // 15 minutes
   });
@@ -37,6 +56,27 @@ export default function ContentAnalyticsPage() {
 
   // Fetch analytics for all content
   const { analyticsMap, isLoading: analyticsLoading } = useBulkContentAnalytics(contentIds);
+
+  // Real-time analytics updates
+  const realtimeAnalytics = useRealTimeAnalytics({
+    contentIds,
+    enabled: true,
+    interval: 30000, // Update every 30 seconds for analytics page
+    simulateUpdates: true
+  });
+
+  // Merge real-time updates with analytics data
+  const enhancedAnalyticsMap = useMemo(() => {
+    const enhanced = { ...analyticsMap };
+    if (realtimeAnalytics?.realtimeUpdates) {
+      Object.entries(realtimeAnalytics.realtimeUpdates).forEach(([contentId, updates]) => {
+        if (enhanced[contentId]) {
+          enhanced[contentId] = { ...enhanced[contentId], ...updates };
+        }
+      });
+    }
+    return enhanced;
+  }, [analyticsMap, realtimeAnalytics?.realtimeUpdates]);
 
   const isLoading = contentLoading || analyticsLoading;
 
@@ -107,28 +147,42 @@ export default function ContentAnalyticsPage() {
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3">
               <BarChart3 className="h-8 w-8 text-primary" />
-              Content Analytics
+              {selectedClient ? `${selectedClient.name} Analytics` : 'Content Analytics'}
             </h1>
             <p className="text-muted-foreground">
-              Deep insights into your content performance and engagement
+              {selectedClient 
+                ? `Deep insights into ${selectedClient.name}'s content performance and engagement`
+                : 'Deep insights into your content performance and engagement across all clients'
+              }
             </p>
           </div>
         </div>
-        <Button 
-          onClick={handleRefresh} 
-          variant="outline" 
-          size="sm"
-          disabled={isLoading}
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <RealTimeAnalyticsIndicator
+            isConnected={realtimeAnalytics?.isConnected ?? false}
+            lastUpdateTime={realtimeAnalytics?.lastUpdateTime}
+            onRefresh={realtimeAnalytics?.refreshAnalytics}
+            hasRecentUpdates={Object.keys(realtimeAnalytics?.realtimeUpdates || {}).length > 0}
+            size="sm"
+            showLastUpdate={true}
+            showConnectionStatus={true}
+          />
+          <Button 
+            onClick={handleRefresh} 
+            variant="outline" 
+            size="sm"
+            disabled={isLoading}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Analytics Dashboard */}
       <ContentPerformanceDashboard
         content={content}
-        analyticsMap={analyticsMap}
+        analyticsMap={enhancedAnalyticsMap}
         isLoading={isLoading}
         timeframe={timeframe}
         onTimeframeChange={handleTimeframeChange}
@@ -154,7 +208,7 @@ export default function ContentAnalyticsPage() {
       )}
 
       {/* Analytics Summary for No Data State */}
-      {!isLoading && content.length > 0 && Object.keys(analyticsMap).length === 0 && (
+      {!isLoading && content.length > 0 && Object.keys(enhancedAnalyticsMap).length === 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

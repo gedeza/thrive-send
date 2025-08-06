@@ -70,13 +70,17 @@ export function ContentPerformanceDashboard({
     if (contentWithAnalytics.length === 0) {
       return {
         totalContent: content.length,
+        contentWithAnalytics: 0,
+        totalViews: 0,
+        totalEngagement: 0,
         averageViews: 0,
         averageEngagement: 0,
         averagePerformanceScore: 0,
         topPerformers: [],
         underPerformers: [],
         trendingContent: [],
-        insights: []
+        insights: [],
+        typePerformance: {}
       };
     }
 
@@ -122,7 +126,7 @@ export function ContentPerformanceDashboard({
         type: 'success',
         title: 'Excellent Top Performer',
         description: `"${topPerformers[0].title}" is performing exceptionally well with a score of ${topPerformers[0].performanceScore}/100`,
-        metric: `${formatAnalyticsNumber(topPerformers[0].analytics.views)} views`,
+        metric: `${formatAnalyticsNumber(topPerformers[0].analytics?.views || 0)} views`,
         icon: <Award className="h-4 w-4" />
       });
     }
@@ -142,11 +146,11 @@ export function ContentPerformanceDashboard({
 
     // Content type performance
     const typePerformance = contentWithScores.reduce((acc, item) => {
-      const type = item.type.toLowerCase();
+      const type = (item.type || 'unknown').toLowerCase();
       if (!acc[type]) {
         acc[type] = { total: 0, score: 0, count: 0 };
       }
-      acc[type].total += item.analytics.views;
+      acc[type].total += (item.analytics?.views || 0);
       acc[type].score += item.performanceScore;
       acc[type].count += 1;
       return acc;
@@ -239,9 +243,46 @@ export function ContentPerformanceDashboard({
                 </SelectContent>
               </Select>
             )}
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => {
+                // Generate CSV data
+                const csvData = content.map(item => {
+                  const analytics = analyticsMap[item.id!];
+                  return {
+                    title: item.title || 'Untitled',
+                    type: item.type || 'unknown',
+                    status: item.status || 'draft',
+                    views: analytics?.views || 0,
+                    likes: analytics?.likes || 0,
+                    shares: analytics?.shares || 0,
+                    comments: analytics?.comments || 0,
+                    engagementRate: ((analytics?.engagementRate || 0) * 100).toFixed(2) + '%',
+                    performanceScore: analytics ? calculatePerformanceScore(analytics) : 0,
+                    createdAt: item.createdAt || new Date().toISOString()
+                  };
+                });
+                
+                // Convert to CSV string
+                const headers = Object.keys(csvData[0] || {}).join(',');
+                const rows = csvData.map(row => Object.values(row).join(',')).join('\n');
+                const csv = headers + '\n' + rows;
+                
+                // Download CSV
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `content-analytics-${timeframe}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+              }}
+            >
               <Download className="h-4 w-4 mr-2" />
-              Export
+              Export CSV
             </Button>
           </div>
         </div>
@@ -254,10 +295,10 @@ export function ContentPerformanceDashboard({
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-muted-foreground">Total Views</p>
                   <p className="text-3xl font-bold text-blue-600">
-                    {formatAnalyticsNumber(dashboardMetrics.totalViews)}
+                    {formatAnalyticsNumber(dashboardMetrics.totalViews || 0)}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Avg: {formatAnalyticsNumber(dashboardMetrics.averageViews)} per content
+                    Avg: {formatAnalyticsNumber(dashboardMetrics.averageViews || 0)} per content
                   </p>
                 </div>
                 <div className="p-3 bg-blue-100 rounded-full">
@@ -273,10 +314,10 @@ export function ContentPerformanceDashboard({
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-muted-foreground">Total Engagement</p>
                   <p className="text-3xl font-bold text-pink-600">
-                    {formatAnalyticsNumber(dashboardMetrics.totalEngagement)}
+                    {formatAnalyticsNumber(dashboardMetrics.totalEngagement || 0)}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Avg: {dashboardMetrics.averageEngagement} per content
+                    Avg: {dashboardMetrics.averageEngagement || 0} per content
                   </p>
                 </div>
                 <div className="p-3 bg-pink-100 rounded-full">
@@ -356,7 +397,7 @@ export function ContentPerformanceDashboard({
                           Avg Score ({data.count} pieces)
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {formatAnalyticsNumber(data.total)} total views
+                          {formatAnalyticsNumber(data.total || 0)} total views
                         </p>
                       </div>
                     ))}
@@ -389,11 +430,11 @@ export function ContentPerformanceDashboard({
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Eye className="h-3 w-3" />
-                            {formatAnalyticsNumber(item.analytics.views)}
+                            {formatAnalyticsNumber(item.analytics?.views || 0)}
                           </span>
                           <span className="flex items-center gap-1">
                             <Heart className="h-3 w-3" />
-                            {formatAnalyticsNumber(item.analytics.likes)}
+                            {formatAnalyticsNumber(item.analytics?.likes || 0)}
                           </span>
                           <Badge variant="outline" className="text-xs">
                             Score: {item.performanceScore}
@@ -426,11 +467,11 @@ export function ContentPerformanceDashboard({
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Eye className="h-3 w-3" />
-                            {formatAnalyticsNumber(item.analytics.views)}
+                            {formatAnalyticsNumber(item.analytics?.views || 0)}
                           </span>
                           <span className="flex items-center gap-1">
                             <Heart className="h-3 w-3" />
-                            {formatAnalyticsNumber(item.analytics.likes)}
+                            {formatAnalyticsNumber(item.analytics?.likes || 0)}
                           </span>
                           <Badge variant="outline" className="text-xs">
                             Score: {item.performanceScore}
@@ -511,8 +552,8 @@ export function ContentPerformanceDashboard({
                         <div className="flex-1">
                           <h4 className="font-medium">{item.title}</h4>
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span>{formatAnalyticsNumber(analyticsMap[item.id!].views)} views</span>
-                            <span>{(analyticsMap[item.id!].engagementRate * 100).toFixed(1)}% engagement</span>
+                            <span>{formatAnalyticsNumber(analyticsMap[item.id!]?.views || 0)} views</span>
+                            <span>{((analyticsMap[item.id!]?.engagementRate || 0) * 100).toFixed(1)}% engagement</span>
                             <Badge variant="outline" className="text-orange-600 border-orange-200">
                               Trending
                             </Badge>

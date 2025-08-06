@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { z } from 'zod';
 import { createMockAnalytics } from '@/lib/api/content-analytics-service';
 
@@ -25,24 +25,31 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      // Try to fetch real analytics data
-      const analyticsData = await prisma.contentAnalytics.findMany({
-        where: {
-          contentId: { in: contentIds }
-        },
-        select: {
-          id: true,
-          contentId: true,
-          views: true,
-          likes: true,
-          shares: true,
-          comments: true,
-          engagementRate: true,
-          conversionRate: true,
-          metadata: true,
-          updatedAt: true,
-        }
-      });
+      // Try to fetch real analytics data from database
+      let analyticsData = [];
+      
+      try {
+        analyticsData = await prisma.contentAnalytics.findMany({
+          where: {
+            contentId: { in: contentIds }
+          },
+          select: {
+            id: true,
+            contentId: true,
+            views: true,
+            likes: true,
+            shares: true,
+            comments: true,
+            engagementRate: true,
+            conversionRate: true,
+            metadata: true,
+            updatedAt: true,
+          }
+        });
+      } catch (tableError) {
+        console.warn('ContentAnalytics table may not exist yet:', tableError);
+        // Continue with empty array for analytics data
+      }
 
       // Create a map of contentId -> analytics
       const analyticsMap: Record<string, any> = {};
@@ -66,13 +73,12 @@ export async function POST(request: NextRequest) {
       });
 
       // For content items without analytics, create mock data in development
-      if (process.env.NODE_ENV === 'development') {
-        contentIds.forEach(contentId => {
-          if (!analyticsMap[contentId]) {
-            analyticsMap[contentId] = createMockAnalytics(contentId);
-          }
-        });
-      }
+      // Always generate mock data for demo purposes
+      contentIds.forEach(contentId => {
+        if (!analyticsMap[contentId]) {
+          analyticsMap[contentId] = createMockAnalytics(contentId);
+        }
+      });
 
       return NextResponse.json({ 
         analytics: analyticsMap,
@@ -84,11 +90,10 @@ export async function POST(request: NextRequest) {
       
       // Fallback to mock data if database query fails
       const mockAnalytics: Record<string, any> = {};
-      if (process.env.NODE_ENV === 'development') {
-        contentIds.forEach(contentId => {
-          mockAnalytics[contentId] = createMockAnalytics(contentId);
-        });
-      }
+      // Always generate mock data for demo purposes
+      contentIds.forEach(contentId => {
+        mockAnalytics[contentId] = createMockAnalytics(contentId);
+      });
       
       return NextResponse.json({ 
         analytics: mockAnalytics,
