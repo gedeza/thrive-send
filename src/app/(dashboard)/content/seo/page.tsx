@@ -2,13 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/nextjs';
-import { Search, TrendingUp, Target, BookOpen, Settings, Plus, FileText } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Search, TrendingUp, Target, BookOpen, Settings, Plus, FileText, RefreshCw, AlertCircle, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SEOOptimizer } from '@/components/seo/SEOOptimizer';
+import { useServiceProvider } from '@/context/ServiceProviderContext';
+import { toast } from '@/components/ui/use-toast';
 import Link from 'next/link';
 
 interface ContentItem {
@@ -19,52 +22,68 @@ interface ContentItem {
   seoScore: number;
   lastOptimized: string;
   focusKeyword?: string;
+  excerpt?: string;
+  content?: string;
+  slug?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  wordCount?: number;
+  readabilityScore?: number;
+  keywordDensity?: number;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+  contentAnalytics?: {
+    views: number;
+    likes: number;
+    shares: number;
+    comments: number;
+  };
+  analytics?: {
+    views: number;
+    likes: number;
+    shares: number;
+    comments: number;
+  };
 }
 
-const mockContentItems: ContentItem[] = [
-  {
-    id: '1',
-    title: 'Complete Guide to Content Marketing Strategy',
-    type: 'BLOG_POST',
-    status: 'DRAFT',
-    seoScore: 85,
-    lastOptimized: '2024-01-15',
-    focusKeyword: 'content marketing strategy'
-  },
-  {
-    id: '2',
-    title: 'Email Marketing Best Practices for 2024',
-    type: 'BLOG_POST',
-    status: 'PUBLISHED',
-    seoScore: 72,
-    lastOptimized: '2024-01-10',
-    focusKeyword: 'email marketing'
-  },
-  {
-    id: '3',
-    title: 'Social Media Content Calendar Template',
-    type: 'TEMPLATE',
-    status: 'REVIEW',
-    seoScore: 45,
-    lastOptimized: '2024-01-05',
-    focusKeyword: 'social media calendar'
-  },
-  {
-    id: '4',
-    title: 'How to Increase Website Traffic',
-    type: 'BLOG_POST',
-    status: 'DRAFT',
-    seoScore: 30,
-    lastOptimized: 'Never',
-  }
-];
 
 export default function SEOContentPage() {
   const { userId } = useAuth();
-  const [contentItems, setContentItems] = useState<ContentItem[]>(mockContentItems);
+  const queryClient = useQueryClient();
+  const { state: { organizationId, selectedClient } } = useServiceProvider();
   const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
   const [filterType, setFilterType] = useState('all');
   const [sortBy, setSortBy] = useState('seo-score');
+
+  // Fetch SEO content with React Query
+  const {
+    data: contentItems = [],
+    isLoading,
+    error,
+    refetch
+  } = useQuery<ContentItem[]>({
+    queryKey: ['seo-content', organizationId, selectedClient?.id, filterType],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (organizationId) params.append('organizationId', organizationId);
+      if (selectedClient?.id) params.append('clientId', selectedClient.id);
+      if (filterType !== 'all') params.append('type', filterType);
+      
+      const response = await fetch(`/api/seo?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch SEO content');
+      }
+      return response.json();
+    },
+    enabled: !!organizationId,
+    staleTime: 30 * 1000, // 30 seconds
+    refetchInterval: 2 * 60 * 1000, // Refetch every 2 minutes
+  });
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-600 bg-green-100';
@@ -97,8 +116,79 @@ export default function SEOContentPage() {
       }
     });
 
+  // Handle refresh
+  const handleRefresh = async () => {
+    try {
+      await refetch();
+      toast({
+        title: "SEO Data Refreshed",
+        description: "Latest SEO content data has been loaded successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh Failed",
+        description: "Failed to refresh SEO data. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const needsOptimization = contentItems.filter(item => item.seoScore < 60).length;
-  const averageScore = Math.round(contentItems.reduce((sum, item) => sum + item.seoScore, 0) / contentItems.length);
+  const averageScore = contentItems.length > 0 
+    ? Math.round(contentItems.reduce((sum, item) => sum + item.seoScore, 0) / contentItems.length)
+    : 0;
+
+  // Handle missing organization ID
+  if (!organizationId) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h2 className="text-xl font-semibold mb-2">Organization Required</h2>
+            <p className="text-muted-foreground mb-4">
+              SEO content optimization requires an active organization context. Please ensure you're logged in and have access to an organization.
+            </p>
+            <Button asChild>
+              <Link href="/dashboard">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Dashboard
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Handle loading and error states
+  if (error) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h2 className="text-xl font-semibold mb-2">Failed to Load SEO Content</h2>
+            <p className="text-muted-foreground mb-4">
+              There was an error loading your SEO content data.
+            </p>
+            <div className="flex items-center gap-2 justify-center">
+              <Button onClick={handleRefresh} variant="outline">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Try Again
+              </Button>
+              <Button asChild>
+                <Link href="/content">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Content
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (selectedContent) {
     return (
@@ -117,10 +207,37 @@ export default function SEOContentPage() {
 
         <SEOOptimizer
           initialTitle={selectedContent.title}
+          initialContent={selectedContent.content || ''}
+          initialExcerpt={selectedContent.excerpt || ''}
           initialFocusKeyword={selectedContent.focusKeyword || ''}
-          onUpdate={(field, value) => {
-            // Handle content updates
-            console.log(`Updated ${field}:`, value);
+          onUpdate={async (field, value) => {
+            try {
+              const response = await fetch('/api/seo', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  contentId: selectedContent.id,
+                  [field]: value
+                })
+              });
+              
+              if (!response.ok) {
+                throw new Error('Failed to update SEO data');
+              }
+              
+              await queryClient.invalidateQueries({ queryKey: ['seo-content'] });
+              toast({
+                title: 'SEO Updated',
+                description: `${field} has been updated successfully`,
+              });
+            } catch (error) {
+              console.error('Error updating SEO data:', error);
+              toast({
+                title: 'Update Failed',
+                description: 'Failed to update SEO data. Please try again.',
+                variant: 'destructive',
+              });
+            }
           }}
         />
       </div>
@@ -132,17 +249,34 @@ export default function SEOContentPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold mb-2">SEO Content Optimization</h1>
+          <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
+            <Search className="h-8 w-8 text-primary" />
+            {selectedClient ? `${selectedClient.name} SEO` : 'SEO Content Optimization'}
+          </h1>
           <p className="text-muted-foreground">
-            Optimize your content for search engines and improve rankings
+            {selectedClient 
+              ? `Optimize ${selectedClient.name}'s content for search engines and improve rankings`
+              : 'Optimize your content for search engines and improve rankings'
+            }
           </p>
         </div>
-        <Link href="/content/new">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Create New Content
+        <div className="flex items-center gap-2">
+          <Button 
+            onClick={handleRefresh} 
+            variant="outline" 
+            size="sm"
+            disabled={isLoading}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
           </Button>
-        </Link>
+          <Link href="/content/new">
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Create New Content
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -229,49 +363,86 @@ export default function SEOContentPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {filteredContent.map((item) => (
-              <div 
-                key={item.id} 
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="font-semibold">{item.title}</h3>
-                    <Badge variant="outline">{item.type.replace('_', ' ')}</Badge>
-                    <Badge variant={item.status === 'PUBLISHED' ? 'default' : 'secondary'}>
-                      {item.status}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span>Last optimized: {item.lastOptimized === 'Never' ? 'Never' : new Date(item.lastOptimized).toLocaleDateString()}</span>
-                    {item.focusKeyword && (
-                      <span className="flex items-center gap-1">
-                        <Target className="h-3 w-3" />
-                        {item.focusKeyword}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-4">
-                  <div className="text-center">
-                    <div className={`text-2xl font-bold px-3 py-1 rounded ${getScoreColor(item.seoScore)}`}>
-                      {item.seoScore}
+            {isLoading ? (
+              <div className="text-center py-8">
+                <RefreshCw className="h-8 w-8 mx-auto mb-4 animate-spin text-muted-foreground" />
+                <p className="text-muted-foreground">Loading SEO content data...</p>
+              </div>
+            ) : filteredContent.length > 0 ? (
+              filteredContent.map((item) => (
+                <div 
+                  key={item.id} 
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="font-semibold">{item.title}</h3>
+                      <Badge variant="outline">{item.type.replace('_', ' ')}</Badge>
+                      <Badge variant={item.status === 'PUBLISHED' ? 'default' : 'secondary'}>
+                        {item.status}
+                      </Badge>
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {getScoreLabel(item.seoScore)}
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <span>Last optimized: {item.lastOptimized === 'Never' ? 'Never' : new Date(item.lastOptimized).toLocaleDateString()}</span>
+                      {item.focusKeyword && (
+                        <span className="flex items-center gap-1">
+                          <Target className="h-3 w-3" />
+                          {item.focusKeyword}
+                        </span>
+                      )}
+                      {item.createdBy && (
+                        <span>
+                          by {item.createdBy.firstName} {item.createdBy.lastName}
+                        </span>
+                      )}
                     </div>
                   </div>
                   
-                  <Button 
-                    onClick={() => setSelectedContent(item)}
-                    variant={item.seoScore < 60 ? 'default' : 'outline'}
-                  >
-                    {item.seoScore < 60 ? 'Optimize Now' : 'Review SEO'}
-                  </Button>
+                  <div className="flex items-center gap-4">
+                    <div className="text-center">
+                      <div className={`text-2xl font-bold px-3 py-1 rounded ${getScoreColor(item.seoScore)}`}>
+                        {item.seoScore}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {getScoreLabel(item.seoScore)}
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Link href={`/content/${item.id}`}>
+                        <Button variant="outline" size="sm">
+                          View Content
+                        </Button>
+                      </Link>
+                      <Button 
+                        onClick={() => setSelectedContent(item)}
+                        variant={item.seoScore < 60 ? 'default' : 'outline'}
+                        size="sm"
+                      >
+                        {item.seoScore < 60 ? 'Optimize Now' : 'Review SEO'}
+                      </Button>
+                    </div>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <h3 className="text-lg font-semibold mb-2">No Content Found</h3>
+                <p className="text-muted-foreground mb-4">
+                  {selectedClient 
+                    ? `No content found for ${selectedClient.name}. Create some content to start optimizing for SEO.`
+                    : 'No content found for your organization. Create some content to start optimizing for SEO.'
+                  }
+                </p>
+                <Link href="/content/new">
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create New Content
+                  </Button>
+                </Link>
               </div>
-            ))}
+            )}
           </div>
         </CardContent>
       </Card>

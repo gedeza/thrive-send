@@ -173,6 +173,23 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
     }
   }, [isLoaded, userId, orgId]);
 
+  // Helper functions for fetching data with organizationId parameter
+  const fetchClients = async (organizationId: string) => {
+    console.log('ServiceProviderContext fetchClients: using organizationId =', organizationId);
+    const response = await fetch(`/api/service-provider/clients?organizationId=${organizationId}`);
+    if (!response.ok) throw new Error('Failed to fetch clients');
+    const clients = await response.json();
+    console.log('ServiceProviderContext fetchClients: fetched', clients.length, 'clients');
+    dispatch({ type: 'SET_CLIENTS', payload: clients });
+  };
+
+  const fetchMetrics = async (organizationId: string) => {
+    const response = await fetch(`/api/service-provider/metrics?organizationId=${organizationId}`);
+    if (!response.ok) throw new Error('Failed to fetch metrics');
+    const metrics = await response.json();
+    dispatch({ type: 'SET_METRICS', payload: metrics });
+  };
+
   // Initialize service provider data
   const initializeServiceProvider = async (organizationId: string) => {
     try {
@@ -234,7 +251,7 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
 
       // Fetch clients - add some demo clients if API fails
       try {
-        await refreshClients();
+        await fetchClients(organizationId);
       } catch (error) {
         // Add demo clients for testing
         dispatch({
@@ -282,7 +299,7 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
       
       // Fetch metrics - add demo metrics if API fails  
       try {
-        await refreshMetrics();
+        await fetchMetrics(organizationId);
       } catch (error) {
         // Add demo metrics for testing
         dispatch({
@@ -395,6 +412,10 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
   // Refresh clients data
   const refreshClients = async () => {
     try {
+      if (!state.organizationId) {
+        console.warn('ServiceProviderContext refreshClients: organizationId is empty, skipping fetch');
+        return;
+      }
       console.log('ServiceProviderContext refreshClients: using organizationId =', state.organizationId);
       const response = await fetch(`/api/service-provider/clients?organizationId=${state.organizationId}`);
       if (!response.ok) throw new Error('Failed to fetch clients');
@@ -413,6 +434,10 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
   // Refresh metrics data
   const refreshMetrics = async () => {
     try {
+      if (!state.organizationId) {
+        console.warn('ServiceProviderContext refreshMetrics: organizationId is empty, skipping fetch');
+        return;
+      }
       const response = await fetch(`/api/service-provider/metrics?organizationId=${state.organizationId}`);
       if (!response.ok) throw new Error('Failed to fetch metrics');
       const metrics = await response.json();
