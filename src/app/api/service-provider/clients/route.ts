@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/prisma';
+import { db as prisma } from '@/lib/db';
 
 // Simple in-memory storage for demo fallback only when database is unavailable
 // This is temporary - the real solution is to fix database connectivity
@@ -20,12 +20,67 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Organization ID required' }, { status: 400 });
     }
 
+    // 🔍 Handle organization ID mapping - check both database ID and Clerk organization ID
+    let orgExists = await prisma.organization.findUnique({
+      where: { id: organizationId }
+    });
+
+    if (!orgExists && organizationId.startsWith('org_')) {
+      console.log('🔍 Searching by clerkOrganizationId:', organizationId);
+      orgExists = await prisma.organization.findUnique({
+        where: { clerkOrganizationId: organizationId }
+      });
+    }
+
+    // Create organization if it doesn't exist (development mode)
+    if (!orgExists) {
+      console.log('⚠️ Organization not found, creating for development:', organizationId);
+      try {
+        orgExists = await prisma.organization.create({
+          data: {
+            id: organizationId.startsWith('org_') ? `org-${Date.now()}` : organizationId,
+            name: 'Auto-created Organization',
+            clerkOrganizationId: organizationId.startsWith('org_') ? organizationId : null,
+          }
+        });
+        
+        // Also create organization membership for the user if needed
+        const user = await prisma.user.findUnique({
+          where: { clerkId: userId }
+        });
+        
+        if (user) {
+          await prisma.organizationMember.upsert({
+            where: {
+              userId_organizationId: {
+                userId: user.id,
+                organizationId: orgExists.id
+              }
+            },
+            create: {
+              userId: user.id,
+              organizationId: orgExists.id,
+              role: 'ADMIN'
+            },
+            update: {}
+          });
+        }
+      } catch (createError) {
+        console.error('Failed to create organization:', createError);
+        return NextResponse.json({ error: 'Organization access denied' }, { status: 403 });
+      }
+    }
+
+    // Use the database organization ID for queries
+    const dbOrganizationId = orgExists.id;
+    console.log('🔍 Using organization ID for database queries:', dbOrganizationId);
+
     // Create demo clients with real, inspiring data
     const demoClients = [
       {
         id: 'demo-client-1',
         name: 'City of Springfield',
-        organizationId,
+        organizationId: dbOrganizationId,
         email: 'communications@springfield.gov',
         type: 'Government',
         status: 'active' as const,
@@ -53,7 +108,7 @@ export async function GET(request: NextRequest) {
       {
         id: 'demo-client-2',
         name: 'Regional Health District',
-        organizationId,
+        organizationId: dbOrganizationId,
         email: 'marketing@healthdistrict.org',
         type: 'Healthcare',
         status: 'active' as const,
@@ -87,7 +142,7 @@ export async function GET(request: NextRequest) {
       console.log('Attempting to connect to database...');
       const userClients = await prisma.client.findMany({
         where: {
-          organizationId,
+          organizationId: dbOrganizationId,
           status: 'ACTIVE',
         },
         include: {
@@ -232,6 +287,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 🔍 Handle organization ID mapping for POST method as well
+    let orgExists = await prisma.organization.findUnique({
+      where: { id: organizationId }
+    });
+
+    if (!orgExists && organizationId.startsWith('org_')) {
+      orgExists = await prisma.organization.findUnique({
+        where: { clerkOrganizationId: organizationId }
+      });
+    }
+
+    if (!orgExists) {
+      try {
+        orgExists = await prisma.organization.create({
+          data: {
+            id: organizationId.startsWith('org_') ? `org-${Date.now()}` : organizationId,
+            name: 'Auto-created Organization',
+            clerkOrganizationId: organizationId.startsWith('org_') ? organizationId : null,
+          }
+        });
+      } catch (createError) {
+        console.error('Failed to create organization:', createError);
+        return NextResponse.json({ error: 'Organization access denied' }, { status: 403 });
+      }
+    }
+
+    const dbOrganizationId = orgExists.id;
+
     let clientResponse: any;
 
     try {
@@ -241,7 +324,7 @@ export async function POST(request: NextRequest) {
       const existingClient = await prisma.client.findFirst({
         where: {
           email,
-          organizationId,
+          organizationId: dbOrganizationId,
         },
       });
 
@@ -258,7 +341,7 @@ export async function POST(request: NextRequest) {
           name,
           email,
           type,
-          organizationId,
+          organizationId: dbOrganizationId,
           industry: otherData.industry || null,
           website: otherData.website || null,
           phone: otherData.phone || null,
