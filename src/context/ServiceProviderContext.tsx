@@ -165,18 +165,21 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
 
   // Initialize context when auth is ready
   useEffect(() => {
-    if (isLoaded && userId && orgId) {
-      initializeServiceProvider();
+    if (isLoaded && userId) {
+      // Use orgId if available, otherwise create a default organization for the user
+      const organizationId = orgId || `user-org-${userId}`;
+      console.log('🔍 ServiceProvider: Initializing with organizationId:', organizationId);
+      initializeServiceProvider(organizationId);
     }
   }, [isLoaded, userId, orgId]);
 
   // Initialize service provider data
-  const initializeServiceProvider = async () => {
+  const initializeServiceProvider = async (organizationId: string) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       
       // Fetch organization data
-      const orgResponse = await fetch(`/api/service-provider/organization/${orgId}`);
+      const orgResponse = await fetch(`/api/service-provider/organization/${organizationId}`);
       if (!orgResponse.ok) {
         // For demo/testing purposes, let's default to service provider
         // TODO: In production, this should be based on actual organization data
@@ -184,7 +187,7 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
         dispatch({ 
           type: 'SET_ORGANIZATION', 
           payload: { 
-            id: orgId!, 
+            id: organizationId, 
             name: 'Demo Service Provider', 
             type: 'service_provider' 
           } 
@@ -304,7 +307,7 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
       dispatch({
         type: 'SET_ORGANIZATION',
         payload: {
-          id: orgId!,
+          id: organizationId,
           name: 'Demo Service Provider',
           type: 'service_provider',
         },

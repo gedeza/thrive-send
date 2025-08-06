@@ -26,11 +26,57 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Check if user has access to the organization using the database user ID
+    // Apply same organization lookup logic as other APIs
+    let orgExists = await prisma.organization.findUnique({
+      where: { id: organizationId }
+    });
+
+    if (!orgExists && organizationId.startsWith('org_')) {
+      console.log('🔍 Shared-segments: Searching by clerkOrganizationId:', organizationId);
+      orgExists = await prisma.organization.findUnique({
+        where: { clerkOrganizationId: organizationId }
+      });
+    }
+
+    if (!orgExists) {
+      console.log('⚠️ Shared-segments: Organization not found, creating for development:', organizationId);
+      try {
+        orgExists = await prisma.organization.create({
+          data: {
+            id: organizationId.startsWith('org_') ? `org-${Date.now()}` : organizationId,
+            name: 'Auto-created Organization',
+            clerkOrganizationId: organizationId.startsWith('org_') ? organizationId : null,
+          }
+        });
+        
+        // Also create organization membership for the user if needed
+        await prisma.organizationMember.upsert({
+          where: {
+            userId_organizationId: {
+              userId: user.id,
+              organizationId: orgExists.id
+            }
+          },
+          create: {
+            userId: user.id,
+            organizationId: orgExists.id,
+            role: 'ADMIN'
+          },
+          update: {}
+        });
+      } catch (createError) {
+        console.error('Failed to create organization:', createError);
+        return NextResponse.json({ error: 'Organization access denied' }, { status: 403 });
+      }
+    }
+
+    const dbOrganizationId = orgExists.id;
+
+    // Check if user has access to the organization using the database organization ID
     const userMembership = await prisma.organizationMember.findFirst({
       where: {
         userId: user.id, // Use database user ID, not clerkId
-        organizationId: organizationId,
+        organizationId: dbOrganizationId,
       },
     });
 
@@ -41,7 +87,7 @@ export async function GET(request: NextRequest) {
     // Fetch shared segments - segments that are used across multiple audiences
     const segments = await prisma.audienceSegment.findMany({
       where: {
-        organizationId,
+        organizationId: dbOrganizationId,
         status: 'ACTIVE',
       },
       include: {
@@ -170,11 +216,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Check if user has access to the organization using the database user ID
+    // Apply same organization lookup logic as GET method
+    let orgExists = await prisma.organization.findUnique({
+      where: { id: organizationId }
+    });
+
+    if (!orgExists && organizationId.startsWith('org_')) {
+      orgExists = await prisma.organization.findUnique({
+        where: { clerkOrganizationId: organizationId }
+      });
+    }
+
+    if (!orgExists) {
+      return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+    }
+
+    const dbOrganizationId = orgExists.id;
+
+    // Check if user has access to the organization using the database organization ID
     const userMembership = await prisma.organizationMember.findFirst({
       where: {
         userId: user.id, // Use database user ID, not clerkId
-        organizationId: organizationId,
+        organizationId: dbOrganizationId,
       },
     });
 
@@ -186,7 +249,7 @@ export async function POST(request: NextRequest) {
     const audiences = await prisma.audience.findMany({
       where: {
         id: { in: audienceIds },
-        organizationId,
+        organizationId: dbOrganizationId,
       },
     });
 
@@ -210,7 +273,7 @@ export async function POST(request: NextRequest) {
             status: 'ACTIVE',
             size: 0,
             audienceId,
-            organizationId,
+            organizationId: dbOrganizationId,
             createdById: userId,
             rules: {
               shared: true,
@@ -238,7 +301,7 @@ export async function POST(request: NextRequest) {
                 },
                 segmentId: segment.id,
                 audienceId,
-                organizationId,
+                organizationId: dbOrganizationId,
                 createdById: user.id,
               },
             });
