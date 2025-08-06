@@ -1,4 +1,11 @@
 import { ContentData } from './content-service';
+import { 
+  getPerformanceConfig, 
+  getContentTypeWeights, 
+  getPerformanceLevel, 
+  getPerformanceColor,
+  getPerformanceLabel 
+} from '@/lib/config/performance-thresholds';
 
 // Analytics data structure for content items
 export interface ContentAnalytics {
@@ -63,37 +70,64 @@ export async function getBulkContentAnalytics(contentIds: string[]): Promise<Rec
   }
 }
 
-// Calculate performance score (0-100) based on analytics metrics
-export function calculatePerformanceScore(analytics: ContentAnalytics | null | undefined): number {
+// Calculate performance score (0-100) based on analytics metrics and configurable weights
+export function calculatePerformanceScore(
+  analytics: ContentAnalytics | null | undefined,
+  contentType: string = 'default'
+): number {
   if (!analytics) return 0;
   
-  // Weighted score calculation with null safety
+  const config = getPerformanceConfig();
+  const weights = getContentTypeWeights(contentType, config);
+  
+  // Extract metrics with null safety
   const views = analytics.views || 0;
-  const engagementRate = analytics.engagementRate || 0;
+  const likes = analytics.likes || 0;
   const shares = analytics.shares || 0;
-  const conversionRate = analytics.conversionRate || 0;
+  const comments = analytics.comments || 0;
+  const engagementRate = analytics.engagementRate || 0;
   
-  const viewsScore = Math.min((views / 1000) * 20, 20); // Max 20 points
-  const engagementScore = engagementRate * 30; // Max 30 points (if 100% engagement)
-  const sharesScore = Math.min((shares / 50) * 15, 15); // Max 15 points
-  const conversionScore = conversionRate * 35; // Max 35 points
+  // Calculate engagement metrics
+  const totalEngagement = likes + shares + comments;
+  const calculatedEngagementRate = views > 0 ? totalEngagement / views : 0;
   
-  return Math.round(viewsScore + engagementScore + sharesScore + conversionScore);
+  // Normalize metrics to 0-100 scale with configurable scaling factors
+  const viewsScore = Math.min((views / (contentType === 'social' ? 1000 : 500)) * 100, 100);
+  const likesScore = Math.min((likes / (views * 0.1)) * 100, 100);
+  const sharesScore = Math.min((shares / (views * 0.05)) * 100, 100);
+  const commentsScore = Math.min((comments / (views * 0.02)) * 100, 100);
+  
+  // Apply content-type specific weights
+  const weightedScore = 
+    (viewsScore * weights.views) +
+    (likesScore * weights.likes) +
+    (sharesScore * weights.shares) +
+    (commentsScore * weights.comments);
+  
+  // Apply engagement ratio multiplier
+  const finalScore = weightedScore * (1 + (calculatedEngagementRate * (weights.engagementRatio || 1)));
+  
+  return Math.round(Math.min(finalScore, 100));
 }
 
-// Determine if content is trending based on recent performance
+// Determine if content is trending based on configurable thresholds
 export function isTrendingContent(analytics: ContentAnalytics | null | undefined): boolean {
   if (!analytics) return false;
   
-  // Simple trending logic with null safety - can be enhanced with time-based calculations
-  const engagementRate = analytics.engagementRate || 0;
+  const config = getPerformanceConfig();
+  const thresholds = config.trendingThresholds;
+  
+  // Extract metrics with null safety
   const views = analytics.views || 0;
+  const likes = analytics.likes || 0;
   const shares = analytics.shares || 0;
+  const comments = analytics.comments || 0;
+  
+  const totalEngagement = likes + shares + comments;
   
   return (
-    engagementRate > 0.05 && // 5% engagement rate
-    views > 500 &&
-    shares > 10
+    views >= thresholds.minViews &&
+    totalEngagement >= thresholds.minEngagement
   );
 }
 
@@ -118,17 +152,43 @@ export function formatAnalyticsNumber(num: number | undefined | null): string {
   return validNum.toString();
 }
 
-// Generate performance insights text
-export function getPerformanceInsight(analytics: ContentAnalytics): string {
+// Generate performance insights text using configurable thresholds
+export function getPerformanceInsight(
+  analytics: ContentAnalytics, 
+  contentType: string = 'default'
+): string {
   if (!analytics) return 'No performance data';
   
-  const score = calculatePerformanceScore(analytics);
+  const score = calculatePerformanceScore(analytics, contentType);
+  const config = getPerformanceConfig();
+  const level = getPerformanceLevel(score, config);
+  const label = getPerformanceLabel(score, config);
   
-  if (score >= 80) return 'Excellent performance';
-  if (score >= 60) return 'Good performance';
-  if (score >= 40) return 'Average performance';
-  if (score >= 20) return 'Below average';
-  return 'Needs improvement';
+  return `${label} performance`;
+}
+
+// Get performance color for UI display
+export function getPerformanceScoreColor(
+  analytics: ContentAnalytics,
+  contentType: string = 'default'
+): string {
+  if (!analytics) return '#6B7280'; // gray-500
+  
+  const score = calculatePerformanceScore(analytics, contentType);
+  const config = getPerformanceConfig();
+  return getPerformanceColor(score, config);
+}
+
+// Get performance level for categorization
+export function getPerformanceScoreLevel(
+  analytics: ContentAnalytics,
+  contentType: string = 'default'
+): 'excellent' | 'good' | 'average' | 'poor' {
+  if (!analytics) return 'poor';
+  
+  const score = calculatePerformanceScore(analytics, contentType);
+  const config = getPerformanceConfig();
+  return getPerformanceLevel(score, config) as 'excellent' | 'good' | 'average' | 'poor';
 }
 
 // Create mock analytics data for development/testing

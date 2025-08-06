@@ -24,6 +24,8 @@
     "analyze:performance": "pnpm analyze:bundle && echo 'Bundle analysis complete!'",
     "worker:start": "ts-node scripts/start-email-worker.ts",
     "worker:dev": "nodemon --exec ts-node scripts/start-email-worker.ts",
+    "analytics-ws:start": "ts-node src/scripts/start-analytics-ws.ts",
+    "analytics-ws:dev": "nodemon --exec ts-node src/scripts/start-analytics-ws.ts",
     "queue:stats": "ts-node -e \"import('./src/lib/queue/index').then(q => q.EmailQueueManager.getQueueStats()).then(console.log)\"",
     "queue:clear": "ts-node -e \"import('./src/lib/queue/index').then(q => q.EmailQueueManager.clearQueue('all')).then(() => console.log('Queue cleared'))\"",
     "db:optimize": "ts-node scripts/apply-database-optimizations.ts",
@@ -94,6 +96,7 @@
     "@types/ioredis": "^5.0.0",
     "@types/jszip": "^3.4.1",
     "@types/nodemailer": "^6.4.17",
+    "@types/ws": "^8.18.1",
     "bullmq": "^5.56.4",
     "chart.js": "^4.4.9",
     "class-variance-authority": "^0.7.0",
@@ -132,6 +135,7 @@
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^11.1.0",
     "winston": "^3.17.0",
+    "ws": "^8.18.3",
     "zod": "^3.25.55"
   },
   "devDependencies": {
