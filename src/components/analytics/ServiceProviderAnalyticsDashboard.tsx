@@ -217,16 +217,16 @@ const fetchRevenueAnalytics = async (
   throw new Error('Failed to fetch revenue analytics');
 };
 
-export function ServiceProviderAnalyticsDashboard({
+export const ServiceProviderAnalyticsDashboard = React.memo(function ServiceProviderAnalyticsDashboard({
   organizationId,
   defaultTimeRange = '30d',
   initialView = 'overview'
 }: ServiceProviderAnalyticsDashboardProps) {
   const { state } = useServiceProvider();
   
-  // Component State
-  const [currentView, setCurrentView] = useState<'overview' | 'cross-client' | 'revenue' | 'rankings'>(initialView);
-  const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>(defaultTimeRange);
+  // Component State - memoize initial values to prevent re-initialization
+  const [currentView, setCurrentView] = useState<'overview' | 'cross-client' | 'revenue' | 'rankings'>(() => initialView);
+  const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>(() => defaultTimeRange);
   const [isExporting, setIsExporting] = useState(false);
 
   // Data Queries
@@ -406,7 +406,7 @@ export function ServiceProviderAnalyticsDashboard({
         </div>
         
         <div className="flex flex-wrap gap-2">
-          <Select value={timeRange} onValueChange={(value: any) => setTimeRange(value)}>
+          <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
@@ -423,19 +423,12 @@ export function ServiceProviderAnalyticsDashboard({
             Refresh
           </Button>
           
-          <Select onValueChange={(value) => handleExport(value as 'csv' | 'excel' | 'pdf')} disabled={isExporting}>
-            <SelectTrigger asChild>
-              <Button variant="outline" size="sm" disabled={isExporting}>
-                <Download className="h-4 w-4 mr-2" />
-                {isExporting ? 'Exporting...' : 'Export'}
-              </Button>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="csv">Export as CSV</SelectItem>
-              <SelectItem value="excel">Export as Excel</SelectItem>
-              <SelectItem value="pdf">Export as PDF</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="relative">
+            <Button variant="outline" size="sm" disabled={isExporting} onClick={() => handleExport('csv')}>
+              <Download className="h-4 w-4 mr-2" />
+              {isExporting ? 'Exporting...' : 'Export CSV'}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -618,4 +611,4 @@ export function ServiceProviderAnalyticsDashboard({
       </div>
     </div>
   );
-}
+});

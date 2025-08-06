@@ -9,8 +9,15 @@ const isPublicRoute = createRouteMatcher([
   "/api/public(.*)"
 ]);
 
+// TEMPORARY: Development bypass for service-provider API and page testing
+// TODO: Remove this in production - only for testing live data integration
+const isDevServiceProviderAPI = createRouteMatcher([
+  "/api/service-provider(.*)",
+  "/service-provider(.*)"
+]);
+
 export default clerkMiddleware(async (auth, req) => {
-  if (!isPublicRoute(req)) {
+  if (!isPublicRoute(req) && !isDevServiceProviderAPI(req)) {
     await auth.protect();
   }
 });

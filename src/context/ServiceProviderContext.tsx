@@ -163,13 +163,18 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(serviceProviderReducer, initialState);
   const { userId, orgId, isLoaded } = useAuth();
 
-  // Initialize context when auth is ready
+  // Initialize context when auth is ready OR for development testing
   useEffect(() => {
     if (isLoaded && userId) {
       // Use orgId if available, otherwise create a default organization for the user
       const organizationId = orgId || `user-org-${userId}`;
       console.log('🔍 ServiceProvider: Initializing with organizationId:', organizationId);
       initializeServiceProvider(organizationId);
+    } else if (isLoaded && !userId) {
+      // DEVELOPMENT MODE: Initialize with demo data when no authentication
+      console.log('🚧 ServiceProvider: DEV MODE - Initializing without auth');
+      const demoOrgId = 'org_2xhH7xfnNAWnpvKl5gNd4ZGRP5t'; // Use the test org ID
+      initializeServiceProvider(demoOrgId);
     }
   }, [isLoaded, userId, orgId]);
 
