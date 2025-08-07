@@ -29,6 +29,7 @@ import {
 import { useServiceProvider } from '@/context/ServiceProviderContext';
 import { cn } from '@/lib/utils';
 import { useCurrency } from '@/hooks/useCurrency';
+import { REVENUE_DASHBOARD_TEXT, SEMANTIC_COLORS } from '@/constants/dashboard-text';
 import { useQuery } from '@tanstack/react-query';
 import {
   Select,
@@ -43,6 +44,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { SimpleRevenueChart } from './SimpleRevenueChart';
 
 // Types for revenue dashboard
 interface RevenueMetrics {
@@ -113,13 +115,7 @@ function formatDate(dateString: string): string {
 }
 
 function getClientStatusColor(status: string): string {
-  switch (status) {
-    case 'high-value': return 'bg-green-100 text-green-800';
-    case 'growing': return 'bg-blue-100 text-blue-800';
-    case 'stable': return 'bg-yellow-100 text-yellow-800';
-    case 'at-risk': return 'bg-red-100 text-red-800';
-    default: return 'bg-gray-100 text-gray-800';
-  }
+  return SEMANTIC_COLORS.CLIENT_STATUS[status as keyof typeof SEMANTIC_COLORS.CLIENT_STATUS] || 'bg-muted text-muted-foreground';
 }
 
 function getPopularityIcon(popularity: string) {
@@ -203,6 +199,15 @@ function ClientRevenueTable({ clients, showAll = false, onClientClick }: ClientR
           key={client.clientId} 
           className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
           onClick={() => onClientClick?.(client.clientId, client.clientName)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onClientClick?.(client.clientId, client.clientName);
+            }
+          }}
+          tabIndex={0}
+          role="button"
+          aria-label={`View details for client ${client.clientName}`}
         >
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
@@ -211,27 +216,27 @@ function ClientRevenueTable({ clients, showAll = false, onClientClick }: ClientR
                 {client.clientType}
               </Badge>
               <Badge className={cn("text-xs", getClientStatusColor(client.status))}>
-                {client.status.replace('-', ' ')}
+                {REVENUE_DASHBOARD_TEXT.CLIENT_STATUS[client.status as keyof typeof REVENUE_DASHBOARD_TEXT.CLIENT_STATUS]}
               </Badge>
             </div>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>{client.ordersCount} orders</span>
-              <span>Last: {formatDate(client.lastPurchase)}</span>
-              <span>ROI: {client.averageROI}%</span>
+              <span>{client.ordersCount} {REVENUE_DASHBOARD_TEXT.TABLES.ORDERS}</span>
+              <span>{REVENUE_DASHBOARD_TEXT.TABLES.LAST_PURCHASE}: {formatDate(client.lastPurchase)}</span>
+              <span>{REVENUE_DASHBOARD_TEXT.TABLES.ROI}: {client.averageROI}%</span>
             </div>
           </div>
           
           <div className="text-right">
             <p className="text-xl font-bold">{formatCurrency(client.totalSpent)}</p>
             <p className="text-sm text-muted-foreground">
-              {formatCurrency(client.monthlySpent)}/month
+              {formatCurrency(client.monthlySpent)}{REVENUE_DASHBOARD_TEXT.TIME_LABELS.PER_MONTH}
             </p>
           </div>
         </div>
       ))}
       {!showAll && clients.length > 5 && (
         <div className="text-center text-sm text-muted-foreground py-2">
-          Showing 5 of {clients.length} clients
+          {REVENUE_DASHBOARD_TEXT.TABLES.SHOWING_COUNT(5, clients.length)} clients
         </div>
       )}
     </div>
@@ -256,6 +261,15 @@ function ProductRevenueTable({ products, showAll = false, onProductClick }: Prod
           key={product.productId} 
           className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
           onClick={() => onProductClick?.(product.productId, product.productName)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onProductClick?.(product.productId, product.productName);
+            }
+          }}
+          tabIndex={0}
+          role="button"
+          aria-label={`View details for product ${product.productName}`}
         >
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
@@ -269,23 +283,23 @@ function ProductRevenueTable({ products, showAll = false, onProductClick }: Prod
               </Badge>
             </div>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>{product.unitssold} units sold</span>
-              <span>Avg: {formatCurrency(product.averagePrice)}</span>
-              <span>Margin: {product.profitMargin}%</span>
+              <span>{product.unitssold} {REVENUE_DASHBOARD_TEXT.TABLES.UNITS_SOLD}</span>
+              <span>{REVENUE_DASHBOARD_TEXT.TABLES.AVERAGE_PRICE}: {formatCurrency(product.averagePrice)}</span>
+              <span>{REVENUE_DASHBOARD_TEXT.TABLES.PROFIT_MARGIN}: {product.profitMargin}%</span>
             </div>
           </div>
           
           <div className="text-right">
             <p className="text-xl font-bold">{formatCurrency(product.totalSales)}</p>
             <p className="text-sm text-green-600">
-              +{formatCurrency(product.totalSales * (product.profitMargin / 100))} profit
+              +{formatCurrency(product.totalSales * (product.profitMargin / 100))} {REVENUE_DASHBOARD_TEXT.TABLES.PROFIT}
             </p>
           </div>
         </div>
       ))}
       {!showAll && products.length > 5 && (
         <div className="text-center text-sm text-muted-foreground py-2">
-          Showing 5 of {products.length} products
+          {REVENUE_DASHBOARD_TEXT.TABLES.SHOWING_COUNT(5, products.length)} products
         </div>
       )}
     </div>
@@ -320,27 +334,22 @@ export default function ServiceProviderRevenueDashboard() {
 
   const handleExport = () => {
     // TODO: Implement revenue report export
-    console.log('Exporting revenue report...');
   };
 
   const handleViewAllClients = () => {
     setShowAllClients(!showAllClients);
-    console.log('Toggle view all clients:', !showAllClients);
   };
 
   const handleViewAllProducts = () => {
     setShowAllProducts(!showAllProducts);
-    console.log('Toggle view all products:', !showAllProducts);
   };
 
   const handleClientClick = (clientId: string, clientName: string) => {
-    console.log('Navigate to client details:', { clientId, clientName });
     // TODO: Navigate to detailed client revenue page
     // router.push(`/service-provider/clients/${clientId}/revenue`);
   };
 
   const handleProductClick = (productId: string, productName: string) => {
-    console.log('Navigate to product details:', { productId, productName });
     // TODO: Navigate to detailed product revenue page
     // router.push(`/service-provider/products/${productId}/revenue`);
   };
@@ -402,13 +411,13 @@ export default function ServiceProviderRevenueDashboard() {
         <div className="flex justify-center mb-4">
           <DollarSign className="h-8 w-8 text-red-500" />
         </div>
-        <h3 className="text-lg font-semibold mb-2 text-red-700">Revenue Data Unavailable</h3>
+        <h3 className="text-lg font-semibold mb-2 text-red-700">{REVENUE_DASHBOARD_TEXT.ERRORS.DATA_UNAVAILABLE}</h3>
         <p className="text-muted-foreground mb-4">
-          Unable to load revenue data. Please try refreshing or contact support.
+          {REVENUE_DASHBOARD_TEXT.ERRORS.UNABLE_TO_LOAD}
         </p>
         <Button variant="outline" onClick={handleRefresh}>
           <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh Data
+          {REVENUE_DASHBOARD_TEXT.ACTIONS.REFRESH_DATA}
         </Button>
       </Card>
     );
@@ -416,46 +425,55 @@ export default function ServiceProviderRevenueDashboard() {
 
   return (
     <TooltipProvider>
-      <div className="space-y-8">
+      <div className="space-y-8" role="main" aria-label={REVENUE_DASHBOARD_TEXT.TITLE}>
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold flex items-center gap-3">
               <DollarSign className="h-8 w-8 text-primary" />
-              Revenue Dashboard
+              {REVENUE_DASHBOARD_TEXT.TITLE}
             </h2>
             <p className="text-muted-foreground mt-1">
-              Track your marketplace revenue and client spending across all boost purchases
+              {REVENUE_DASHBOARD_TEXT.SUBTITLE}
             </p>
           </div>
           
           <div className="flex items-center gap-3">
             <Select value={timeRange} onValueChange={setTimeRange}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-40" aria-label="Select time range for revenue data">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="monthly">Monthly</SelectItem>
-                <SelectItem value="quarterly">Quarterly</SelectItem>
-                <SelectItem value="yearly">Yearly</SelectItem>
-                <SelectItem value="all-time">All Time</SelectItem>
+                <SelectItem value="monthly">{REVENUE_DASHBOARD_TEXT.TIME_PERIODS.MONTHLY}</SelectItem>
+                <SelectItem value="quarterly">{REVENUE_DASHBOARD_TEXT.TIME_PERIODS.QUARTERLY}</SelectItem>
+                <SelectItem value="yearly">{REVENUE_DASHBOARD_TEXT.TIME_PERIODS.YEARLY}</SelectItem>
+                <SelectItem value="all-time">{REVENUE_DASHBOARD_TEXT.TIME_PERIODS.ALL_TIME}</SelectItem>
               </SelectContent>
             </Select>
             
-            <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
-              <RefreshCw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
-              Refresh
+            <Button 
+              variant="outline" 
+              onClick={handleRefresh} 
+              disabled={isLoading}
+              aria-label={`${REVENUE_DASHBOARD_TEXT.ACTIONS.REFRESH} revenue data`}
+            >
+              <RefreshCw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} aria-hidden="true" />
+              {REVENUE_DASHBOARD_TEXT.ACTIONS.REFRESH}
             </Button>
             
-            <Button onClick={handleExport}>
-              <Download className="h-4 w-4 mr-2" />
-              Export Report
+            <Button 
+              onClick={handleExport}
+              aria-label="Export revenue report data"
+            >
+              <Download className="h-4 w-4 mr-2" aria-hidden="true" />
+              {REVENUE_DASHBOARD_TEXT.ACTIONS.EXPORT_REPORT}
             </Button>
           </div>
         </div>
 
         {/* Revenue Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <section aria-label="Revenue metrics overview">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" role="group" aria-label="Key revenue metrics">
           <RevenueCard
             title={`Revenue (${timeRange.charAt(0).toUpperCase() + timeRange.slice(1)})`}
             value={getCurrentRevenue()}
@@ -466,29 +484,30 @@ export default function ServiceProviderRevenueDashboard() {
           />
           
           <RevenueCard
-            title="Average Order Value"
+            title={REVENUE_DASHBOARD_TEXT.METRICS.AVERAGE_ORDER_VALUE}
             value={formatCurrency(revenueData.metrics.averageOrderValue)}
             change={12.5}
-            period="vs last month"
+            period={REVENUE_DASHBOARD_TEXT.TIME_LABELS.VS_LAST_MONTH}
             icon={<ShoppingCart className="h-6 w-6" />}
           />
           
           <RevenueCard
-            title="Active Boosts"
+            title={REVENUE_DASHBOARD_TEXT.METRICS.ACTIVE_BOOSTS}
             value={revenueData.metrics.activeBoosts}
             change={8.3}
-            period="vs last month"
+            period={REVENUE_DASHBOARD_TEXT.TIME_LABELS.VS_LAST_MONTH}
             icon={<Rocket className="h-6 w-6" />}
           />
           
           <RevenueCard
-            title="Client Retention"
+            title={REVENUE_DASHBOARD_TEXT.METRICS.CLIENT_RETENTION}
             value={`${revenueData.metrics.clientRetentionRate}%`}
             change={2.1}
-            period="vs last quarter"
+            period={REVENUE_DASHBOARD_TEXT.TIME_LABELS.VS_LAST_QUARTER}
             icon={<Users className="h-6 w-6" />}
           />
-        </div>
+          </div>
+        </section>
 
         {/* Revenue Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -496,17 +515,15 @@ export default function ServiceProviderRevenueDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <LineChart className="h-5 w-5" />
-                Revenue Trends
+                {REVENUE_DASHBOARD_TEXT.CHARTS.REVENUE_TRENDS}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64 flex items-center justify-center text-muted-foreground">
-                <div className="text-center">
-                  <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Revenue trend chart would be displayed here</p>
-                  <p className="text-sm">Integration with Chart.js or Recharts</p>
-                </div>
-              </div>
+              <SimpleRevenueChart 
+                data={revenueData.revenueTimeline} 
+                title={REVENUE_DASHBOARD_TEXT.CHARTS.REVENUE_TRENDS}
+                type="trend"
+              />
             </CardContent>
           </Card>
 
@@ -514,33 +531,32 @@ export default function ServiceProviderRevenueDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <PieChart className="h-5 w-5" />
-                Revenue by Category
+                {REVENUE_DASHBOARD_TEXT.CHARTS.REVENUE_BY_CATEGORY}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64 flex items-center justify-center text-muted-foreground">
-                <div className="text-center">
-                  <PieChart className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Category breakdown chart would be displayed here</p>
-                  <p className="text-sm">Government: 45% • Business: 35% • Startup: 20%</p>
-                </div>
-              </div>
+              <SimpleRevenueChart 
+                data={[]}
+                title={REVENUE_DASHBOARD_TEXT.CHARTS.REVENUE_BY_CATEGORY}
+                type="category"
+              />
             </CardContent>
           </Card>
         </div>
 
         {/* Revenue Tables */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <section aria-label="Revenue data tables">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Users className="h-5 w-5" />
-                  Top Clients by Revenue
+                  {REVENUE_DASHBOARD_TEXT.TABLES.TOP_CLIENTS}
                 </div>
                 <Button variant="ghost" size="sm" onClick={handleViewAllClients}>
                   <Eye className="h-4 w-4 mr-2" />
-                  {showAllClients ? 'Show Less' : 'View All'}
+                  {showAllClients ? REVENUE_DASHBOARD_TEXT.TABLES.SHOW_LESS : REVENUE_DASHBOARD_TEXT.TABLES.VIEW_ALL}
                 </Button>
               </CardTitle>
             </CardHeader>
@@ -558,11 +574,11 @@ export default function ServiceProviderRevenueDashboard() {
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Target className="h-5 w-5" />
-                  Top Products by Revenue
+                  {REVENUE_DASHBOARD_TEXT.TABLES.TOP_PRODUCTS}
                 </div>
                 <Button variant="ghost" size="sm" onClick={handleViewAllProducts}>
                   <Eye className="h-4 w-4 mr-2" />
-                  {showAllProducts ? 'Show Less' : 'View All'}
+                  {showAllProducts ? REVENUE_DASHBOARD_TEXT.TABLES.SHOW_LESS : REVENUE_DASHBOARD_TEXT.TABLES.VIEW_ALL}
                 </Button>
               </CardTitle>
             </CardHeader>
@@ -574,39 +590,40 @@ export default function ServiceProviderRevenueDashboard() {
               />
             </CardContent>
           </Card>
-        </div>
+          </div>
+        </section>
 
         {/* Quick Insights */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Award className="h-5 w-5" />
-              Revenue Insights
+              {REVENUE_DASHBOARD_TEXT.INSIGHTS.HEADER}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <TrendingUp className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                <h4 className="font-semibold text-green-800">Growing Segments</h4>
-                <p className="text-sm text-green-600 mt-1">
-                  Municipal clients show 28% growth this quarter
+              <div className={cn("text-center p-4 rounded-lg", SEMANTIC_COLORS.INSIGHTS.GROWING)}>
+                <TrendingUp className="h-8 w-8 mx-auto mb-2" />
+                <h4 className="font-semibold">{REVENUE_DASHBOARD_TEXT.INSIGHTS.GROWING_SEGMENTS}</h4>
+                <p className="text-sm mt-1">
+                  {REVENUE_DASHBOARD_TEXT.INSIGHTS.GROWING_SEGMENTS_DESC}
                 </p>
               </div>
               
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <Target className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                <h4 className="font-semibold text-blue-800">Best Performers</h4>
-                <p className="text-sm text-blue-600 mt-1">
-                  Premium boosts have 72% profit margin
+              <div className={cn("text-center p-4 rounded-lg", SEMANTIC_COLORS.INSIGHTS.PERFORMING)}>
+                <Target className="h-8 w-8 mx-auto mb-2" />
+                <h4 className="font-semibold">{REVENUE_DASHBOARD_TEXT.INSIGHTS.BEST_PERFORMERS}</h4>
+                <p className="text-sm mt-1">
+                  {REVENUE_DASHBOARD_TEXT.INSIGHTS.BEST_PERFORMERS_DESC}
                 </p>
               </div>
               
-              <div className="text-center p-4 bg-orange-50 rounded-lg">
-                <Users className="h-8 w-8 text-orange-600 mx-auto mb-2" />
-                <h4 className="font-semibold text-orange-800">Client Health</h4>
-                <p className="text-sm text-orange-600 mt-1">
-                  94.2% retention rate across all client types
+              <div className={cn("text-center p-4 rounded-lg", SEMANTIC_COLORS.INSIGHTS.HEALTH)}>
+                <Users className="h-8 w-8 mx-auto mb-2" />
+                <h4 className="font-semibold">{REVENUE_DASHBOARD_TEXT.INSIGHTS.CLIENT_HEALTH}</h4>
+                <p className="text-sm mt-1">
+                  {REVENUE_DASHBOARD_TEXT.INSIGHTS.CLIENT_HEALTH_DESC}
                 </p>
               </div>
             </div>
