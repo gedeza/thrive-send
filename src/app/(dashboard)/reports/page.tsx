@@ -35,6 +35,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useServiceProvider } from '@/context/ServiceProviderContext';
 import { cn } from '@/lib/utils';
+import { REPORTS_TEXT, REPORTS_COLORS } from '@/constants/reports-text';
 import {
   Tabs,
   TabsContent,
@@ -297,14 +298,7 @@ function formatDate(dateString: string): string {
 }
 
 function getStatusColor(status: string): string {
-  switch (status) {
-    case 'completed': return 'bg-green-100 text-green-800';
-    case 'generating': return 'bg-blue-100 text-blue-800';
-    case 'scheduled': return 'bg-yellow-100 text-yellow-800';
-    case 'failed': return 'bg-red-100 text-red-800';
-    case 'draft': return 'bg-gray-100 text-gray-800';
-    default: return 'bg-gray-100 text-gray-800';
-  }
+  return REPORTS_COLORS.STATUS[status as keyof typeof REPORTS_COLORS.STATUS] || 'bg-muted text-muted-foreground';
 }
 
 function getStatusIcon(status: string) {
@@ -429,16 +423,22 @@ function ReportCard({ report, onDownload, onDelete, onDuplicate }: ReportCardPro
               onClick={() => onDownload(report)}
               size="sm"
               className="flex-1"
+              aria-label={REPORTS_TEXT.ARIA.DOWNLOAD_REPORT(report.title)}
             >
-              <Download className="h-4 w-4 mr-2" />
-              Download
+              <Download className="h-4 w-4 mr-2" aria-hidden="true" />
+              {REPORTS_TEXT.ACTIONS.DOWNLOAD}
             </Button>
           )}
           
           {report.status === 'generating' && (
-            <Button size="sm" disabled className="flex-1">
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              Generating...
+            <Button 
+              size="sm" 
+              disabled 
+              className="flex-1"
+              aria-label={REPORTS_TEXT.LOADING.GENERATING_REPORT}
+            >
+              <RefreshCw className="h-4 w-4 mr-2 animate-spin" aria-hidden="true" />
+              {REPORTS_TEXT.LOADING.GENERATING_REPORT}
             </Button>
           )}
           
@@ -481,7 +481,12 @@ function TemplateCard({ template, onUse }: TemplateCardProps) {
   const typeIcon = getTypeIcon(template.type);
 
   return (
-    <Card className="hover:shadow-lg transition-all duration-200">
+    <Card 
+      className="hover:shadow-lg transition-all duration-200"
+      role="article"
+      aria-labelledby={`template-title-${template.id}`}
+      aria-describedby={`template-desc-${template.id}`}
+    >
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2 mb-2">
@@ -489,8 +494,11 @@ function TemplateCard({ template, onUse }: TemplateCardProps) {
               {typeIcon}
             </div>
             {template.isPopular && (
-              <Badge className="bg-orange-100 text-orange-800 text-xs">
-                <Zap className="h-3 w-3 mr-1" />
+              <Badge 
+                className="bg-orange-100 text-orange-800 text-xs"
+                aria-label="Popular template"
+              >
+                <Zap className="h-3 w-3 mr-1" aria-hidden="true" />
                 Popular
               </Badge>
             )}
@@ -500,8 +508,18 @@ function TemplateCard({ template, onUse }: TemplateCardProps) {
           </Badge>
         </div>
         
-        <CardTitle className="text-lg">{template.name}</CardTitle>
-        <p className="text-sm text-muted-foreground">{template.description}</p>
+        <CardTitle 
+          className="text-lg" 
+          id={`template-title-${template.id}`}
+        >
+          {template.name}
+        </CardTitle>
+        <p 
+          className="text-sm text-muted-foreground" 
+          id={`template-desc-${template.id}`}
+        >
+          {template.description}
+        </p>
         
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <span>{template.usageCount} uses</span>
@@ -544,9 +562,10 @@ function TemplateCard({ template, onUse }: TemplateCardProps) {
         <Button 
           onClick={() => onUse(template)}
           className="w-full"
+          aria-label={`Use ${template.name} template to create new report`}
         >
-          <Plus className="h-4 w-4 mr-2" />
-          Use Template
+          <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
+          {REPORTS_TEXT.ACTIONS.USE_TEMPLATE}
         </Button>
       </CardContent>
     </Card>
@@ -589,38 +608,34 @@ export default function AdvancedReportsPage() {
 
   const handleDownloadReport = (report: Report) => {
     // TODO: Implement report download
-    console.log('Downloading report:', report);
   };
 
   const handleDeleteReport = (report: Report) => {
     // TODO: Implement report deletion
-    console.log('Deleting report:', report);
   };
 
   const handleDuplicateReport = (report: Report) => {
     // TODO: Implement report duplication
-    console.log('Duplicating report:', report);
   };
 
   const handleUseTemplate = (template: ReportTemplate) => {
     // TODO: Implement template usage
-    console.log('Using template:', template);
     setIsCreateDialogOpen(true);
   };
 
   return (
     <TooltipProvider>
-      <div className="container mx-auto py-8 space-y-8">
+      <div className="container mx-auto py-8 space-y-8" role="main" aria-label={REPORTS_TEXT.TITLE}>
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
             <FileBarChart className="h-8 w-8 text-primary" />
             <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              Advanced Reports
+              {REPORTS_TEXT.TITLE}
             </h1>
           </div>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Generate comprehensive analytics reports, schedule automated delivery, and gain deep insights across all your clients
+            {REPORTS_TEXT.SUBTITLE}
           </p>
         </div>
 
@@ -628,14 +643,14 @@ export default function AdvancedReportsPage() {
         <div className="flex items-center justify-end gap-2 mb-8">
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button aria-label={REPORTS_TEXT.ACTIONS.CREATE_REPORT}>
                 <Plus className="mr-2 h-4 w-4" />
-                Create Report
+                {REPORTS_TEXT.ACTIONS.CREATE_REPORT}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>Create New Report</DialogTitle>
+                <DialogTitle>{REPORTS_TEXT.ACTIONS.CREATE_REPORT}</DialogTitle>
                 <DialogDescription>
                   Generate a custom report with your preferred metrics and settings
                 </DialogDescription>
@@ -644,31 +659,35 @@ export default function AdvancedReportsPage() {
               <div className="space-y-6 py-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="report-title">Report Title</Label>
-                    <Input id="report-title" placeholder="Enter report title" />
+                    <Label htmlFor="report-title">{REPORTS_TEXT.FORMS.REPORT_TITLE}</Label>
+                    <Input 
+                      id="report-title" 
+                      placeholder={REPORTS_TEXT.FORMS.ENTER_REPORT_TITLE}
+                      aria-label={REPORTS_TEXT.FORMS.REPORT_TITLE}
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="report-type">Report Type</Label>
-                    <Select>
+                    <Label htmlFor="report-type">{REPORTS_TEXT.FORMS.SELECT_TYPE}</Label>
+                    <Select aria-label={REPORTS_TEXT.FORMS.SELECT_TYPE}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
+                        <SelectValue placeholder={REPORTS_TEXT.FORMS.SELECT_TYPE} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="performance">Performance</SelectItem>
-                        <SelectItem value="revenue">Revenue</SelectItem>
-                        <SelectItem value="engagement">Engagement</SelectItem>
-                        <SelectItem value="cross-client">Cross-Client</SelectItem>
-                        <SelectItem value="custom">Custom</SelectItem>
+                        <SelectItem value="performance">{REPORTS_TEXT.REPORT_TYPES.PERFORMANCE}</SelectItem>
+                        <SelectItem value="revenue">{REPORTS_TEXT.REPORT_TYPES.REVENUE}</SelectItem>
+                        <SelectItem value="engagement">{REPORTS_TEXT.REPORT_TYPES.ENGAGEMENT}</SelectItem>
+                        <SelectItem value="cross-client">{REPORTS_TEXT.REPORT_TYPES.CROSS_CLIENT}</SelectItem>
+                        <SelectItem value="custom">{REPORTS_TEXT.REPORT_TYPES.CUSTOM}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="report-description">Description</Label>
+                  <Label htmlFor="report-description">{REPORTS_TEXT.FORMS.REPORT_DESCRIPTION}</Label>
                   <Textarea 
                     id="report-description" 
-                    placeholder="Describe what this report will analyze"
+                    placeholder={REPORTS_TEXT.FORMS.DESCRIBE_REPORT}
                     rows={3}
                   />
                 </div>
@@ -741,9 +760,9 @@ export default function AdvancedReportsPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Reports</p>
+                  <p className="text-sm font-medium text-muted-foreground">{REPORTS_TEXT.STATS.TOTAL_REPORTS}</p>
                   <p className="text-3xl font-bold">{reports.length}</p>
-                  <p className="text-xs text-green-600 mt-1">+3 this month</p>
+                  <p className="text-xs text-green-600 mt-1">+3 {REPORTS_TEXT.STATS.THIS_MONTH.toLowerCase()}</p>
                 </div>
                 <div className="p-3 bg-primary/10 rounded-full">
                   <FileText className="h-6 w-6 text-primary" />
@@ -756,9 +775,9 @@ export default function AdvancedReportsPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Scheduled Reports</p>
+                  <p className="text-sm font-medium text-muted-foreground">{REPORTS_TEXT.STATS.SCHEDULED_REPORTS}</p>
                   <p className="text-3xl font-bold">{scheduledReports.length}</p>
-                  <p className="text-xs text-blue-600 mt-1">2 running weekly</p>
+                  <p className="text-xs text-blue-600 mt-1">2 running {REPORTS_TEXT.FREQUENCY.WEEKLY.toLowerCase()}</p>
                 </div>
                 <div className="p-3 bg-blue-500/10 rounded-full">
                   <Calendar className="h-6 w-6 text-blue-600" />
@@ -771,7 +790,7 @@ export default function AdvancedReportsPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Templates Available</p>
+                  <p className="text-sm font-medium text-muted-foreground">{REPORTS_TEXT.STATS.TEMPLATES_AVAILABLE}</p>
                   <p className="text-3xl font-bold">{templates.length}</p>
                   <p className="text-xs text-purple-600 mt-1">3 popular picks</p>
                 </div>
@@ -786,9 +805,9 @@ export default function AdvancedReportsPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Reports Generated</p>
+                  <p className="text-sm font-medium text-muted-foreground">{REPORTS_TEXT.STATS.REPORTS_GENERATED}</p>
                   <p className="text-3xl font-bold">47</p>
-                  <p className="text-xs text-green-600 mt-1">This quarter</p>
+                  <p className="text-xs text-green-600 mt-1">{REPORTS_TEXT.TIME_PERIODS.THIS_QUARTER}</p>
                 </div>
                 <div className="p-3 bg-green-500/10 rounded-full">
                   <Award className="h-6 w-6 text-green-600" />
@@ -799,13 +818,43 @@ export default function AdvancedReportsPage() {
         </div>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="reports">My Reports</TabsTrigger>
-            <TabsTrigger value="templates">Templates</TabsTrigger>
-            <TabsTrigger value="scheduled">Scheduled</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="automation">Automation</TabsTrigger>
+        <Tabs 
+          value={activeTab} 
+          onValueChange={setActiveTab} 
+          className="w-full"
+          aria-label="Reports navigation tabs"
+        >
+          <TabsList className="grid w-full grid-cols-5" role="tablist">
+            <TabsTrigger 
+              value="reports"
+              aria-label="View and manage reports"
+            >
+              My Reports
+            </TabsTrigger>
+            <TabsTrigger 
+              value="templates"
+              aria-label="Browse and use report templates"
+            >
+              Templates
+            </TabsTrigger>
+            <TabsTrigger 
+              value="scheduled"
+              aria-label="Manage scheduled and automated reports"
+            >
+              Scheduled
+            </TabsTrigger>
+            <TabsTrigger 
+              value="analytics"
+              aria-label="View cross-client analytics and insights"
+            >
+              Analytics
+            </TabsTrigger>
+            <TabsTrigger 
+              value="automation"
+              aria-label="Configure automated reporting features"
+            >
+              Automation
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="reports" className="space-y-6">
@@ -814,48 +863,50 @@ export default function AdvancedReportsPage() {
               <div className="flex flex-col lg:flex-row gap-4">
                 <div className="flex-1">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" aria-hidden="true" />
                     <Input
-                      placeholder="Search reports..."
+                      placeholder={REPORTS_TEXT.FILTERS.SEARCH_REPORTS}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="pl-10 bg-background"
+                      aria-label={REPORTS_TEXT.ARIA.SEARCH_REPORTS}
+                      role="searchbox"
                     />
                   </div>
                 </div>
                 
                 <div className="flex gap-2 flex-wrap">
                   <Select value={typeFilter} onValueChange={setTypeFilter}>
-                    <SelectTrigger className="w-[150px] bg-background">
-                      <SelectValue placeholder="Type" />
+                    <SelectTrigger className="w-[150px] bg-background" aria-label={REPORTS_TEXT.FILTERS.FILTER_BY_TYPE}>
+                      <SelectValue placeholder={REPORTS_TEXT.FILTERS.ALL_TYPES} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="performance">Performance</SelectItem>
-                      <SelectItem value="revenue">Revenue</SelectItem>
-                      <SelectItem value="engagement">Engagement</SelectItem>
-                      <SelectItem value="cross-client">Cross-Client</SelectItem>
-                      <SelectItem value="custom">Custom</SelectItem>
+                      <SelectItem value="all">{REPORTS_TEXT.FILTERS.ALL_TYPES}</SelectItem>
+                      <SelectItem value="performance">{REPORTS_TEXT.REPORT_TYPES.PERFORMANCE}</SelectItem>
+                      <SelectItem value="revenue">{REPORTS_TEXT.REPORT_TYPES.REVENUE}</SelectItem>
+                      <SelectItem value="engagement">{REPORTS_TEXT.REPORT_TYPES.ENGAGEMENT}</SelectItem>
+                      <SelectItem value="cross-client">{REPORTS_TEXT.REPORT_TYPES.CROSS_CLIENT}</SelectItem>
+                      <SelectItem value="custom">{REPORTS_TEXT.REPORT_TYPES.CUSTOM}</SelectItem>
                     </SelectContent>
                   </Select>
                   
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[150px] bg-background">
-                      <SelectValue placeholder="Status" />
+                    <SelectTrigger className="w-[150px] bg-background" aria-label={REPORTS_TEXT.FILTERS.FILTER_BY_STATUS}>
+                      <SelectValue placeholder={REPORTS_TEXT.FILTERS.ALL_STATUS} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="generating">Generating</SelectItem>
-                      <SelectItem value="scheduled">Scheduled</SelectItem>
-                      <SelectItem value="failed">Failed</SelectItem>
-                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="all">{REPORTS_TEXT.FILTERS.ALL_STATUS}</SelectItem>
+                      <SelectItem value="completed">{REPORTS_TEXT.STATUS.COMPLETED}</SelectItem>
+                      <SelectItem value="generating">{REPORTS_TEXT.STATUS.GENERATING}</SelectItem>
+                      <SelectItem value="scheduled">{REPORTS_TEXT.STATUS.SCHEDULED}</SelectItem>
+                      <SelectItem value="failed">{REPORTS_TEXT.STATUS.FAILED}</SelectItem>
+                      <SelectItem value="draft">{REPORTS_TEXT.STATUS.DRAFT}</SelectItem>
                     </SelectContent>
                   </Select>
                   
                   <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-[150px] bg-background">
-                      <SelectValue placeholder="Sort by" />
+                    <SelectTrigger className="w-[150px] bg-background" aria-label={REPORTS_TEXT.ARIA.SORT_REPORTS}>
+                      <SelectValue placeholder={REPORTS_TEXT.FILTERS.SORT_BY} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="newest">Newest</SelectItem>
@@ -869,7 +920,11 @@ export default function AdvancedReportsPage() {
             </div>
 
             {/* Reports Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div 
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              role="grid"
+              aria-label="Reports collection"
+            >
               {filteredReports.map((report) => (
                 <ReportCard
                   key={report.id}
@@ -882,14 +937,14 @@ export default function AdvancedReportsPage() {
             </div>
 
             {filteredReports.length === 0 && (
-              <Card className="border-dashed">
+              <Card className="border-dashed" role="status" aria-live="polite">
                 <CardContent className="p-8 text-center">
                   <div className="flex justify-center mb-4">
-                    <FileText className="h-8 w-8 text-muted-foreground" />
+                    <FileText className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">No reports found</h3>
+                  <h3 className="text-lg font-semibold mb-2">{REPORTS_TEXT.EMPTY_STATES.NO_REPORTS_FOUND}</h3>
                   <p className="text-muted-foreground">
-                    Try adjusting your search criteria or create a new report
+                    {REPORTS_TEXT.EMPTY_STATES.NO_REPORTS_DESCRIPTION}
                   </p>
                 </CardContent>
               </Card>
@@ -898,7 +953,11 @@ export default function AdvancedReportsPage() {
 
           <TabsContent value="templates" className="space-y-6">
             {/* Templates Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div 
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              role="grid"
+              aria-label="Report templates collection"
+            >
               {templates.map((template) => (
                 <TemplateCard
                   key={template.id}
@@ -911,7 +970,11 @@ export default function AdvancedReportsPage() {
 
           <TabsContent value="scheduled" className="space-y-6">
             {/* Scheduled Reports */}
-            <div className="space-y-4">
+            <div 
+              className="space-y-4"
+              role="list"
+              aria-label="Scheduled reports list"
+            >
               {scheduledReports.map((schedule) => (
                 <Card key={schedule.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-6">
@@ -927,10 +990,13 @@ export default function AdvancedReportsPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <Badge className={cn(
-                          "mb-2",
-                          schedule.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                        )}>
+                        <Badge 
+                          className={cn(
+                            "mb-2",
+                            schedule.isActive ? "bg-secondary/20 text-secondary-foreground" : "bg-muted text-muted-foreground"
+                          )}
+                          aria-label={`Schedule status: ${schedule.isActive ? 'Active' : 'Inactive'}`}
+                        >
                           {schedule.isActive ? 'Active' : 'Inactive'}
                         </Badge>
                         <p className="text-sm text-muted-foreground">
@@ -949,13 +1015,21 @@ export default function AdvancedReportsPage() {
                       </div>
                       
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline">
-                          <Settings className="h-4 w-4 mr-2" />
-                          Edit
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          aria-label={`Edit ${schedule.reportTitle} schedule settings`}
+                        >
+                          <Settings className="h-4 w-4 mr-2" aria-hidden="true" />
+                          {REPORTS_TEXT.ACTIONS.EDIT}
                         </Button>
-                        <Button size="sm" variant="outline">
-                          <Eye className="h-4 w-4 mr-2" />
-                          View
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          aria-label={`View ${schedule.reportTitle} details`}
+                        >
+                          <Eye className="h-4 w-4 mr-2" aria-hidden="true" />
+                          {REPORTS_TEXT.ACTIONS.VIEW_ALL}
                         </Button>
                       </div>
                     </div>
@@ -965,18 +1039,21 @@ export default function AdvancedReportsPage() {
             </div>
 
             {scheduledReports.length === 0 && (
-              <Card className="border-dashed">
+              <Card className="border-dashed" role="status" aria-live="polite">
                 <CardContent className="p-8 text-center">
                   <div className="flex justify-center mb-4">
-                    <Calendar className="h-8 w-8 text-muted-foreground" />
+                    <Calendar className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">No scheduled reports</h3>
+                  <h3 className="text-lg font-semibold mb-2">{REPORTS_TEXT.EMPTY_STATES.NO_SCHEDULED_REPORTS}</h3>
                   <p className="text-muted-foreground mb-4">
                     Set up automated report generation and delivery
                   </p>
-                  <Button onClick={() => setIsCreateDialogOpen(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Schedule Report
+                  <Button 
+                    onClick={() => setIsCreateDialogOpen(true)}
+                    aria-label="Schedule new automated report"
+                  >
+                    <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
+                    {REPORTS_TEXT.ACTIONS.SCHEDULE} {REPORTS_TEXT.TITLE}
                   </Button>
                 </CardContent>
               </Card>
