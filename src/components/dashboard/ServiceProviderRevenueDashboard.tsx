@@ -28,6 +28,8 @@ import {
 } from 'lucide-react';
 import { useServiceProvider } from '@/context/ServiceProviderContext';
 import { cn } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils/currency';
+import { useQuery } from '@tanstack/react-query';
 import {
   Select,
   SelectContent,
@@ -90,112 +92,14 @@ interface RevenueTimeline {
   averageOrderValue: number;
 }
 
-// Demo revenue data
-const demoRevenueMetrics: RevenueMetrics = {
-  totalRevenue: 47650,
-  monthlyRevenue: 8940,
-  quarterlyRevenue: 23580,
-  yearlyRevenue: 47650,
-  revenueGrowth: {
-    monthly: 15.3,
-    quarterly: 28.7,
-    yearly: 145.2
-  },
-  averageOrderValue: 387,
-  totalOrders: 123,
-  activeBoosts: 34,
-  clientRetentionRate: 94.2
+// Revenue data fetching function
+const fetchRevenueData = async (organizationId: string, timeRange: string) => {
+  const response = await fetch(`/api/service-provider/revenue?organizationId=${organizationId}&timeRange=${timeRange}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch revenue data');
+  }
+  return response.json();
 };
-
-const demoRevenueByClient: RevenueByClient[] = [
-  {
-    clientId: 'demo-client-1',
-    clientName: 'City of Springfield',
-    clientType: 'Municipality',
-    totalSpent: 12450,
-    monthlySpent: 2100,
-    ordersCount: 18,
-    lastPurchase: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    averageROI: 340,
-    status: 'high-value'
-  },
-  {
-    clientId: 'demo-client-2',
-    clientName: 'Regional Health District',
-    clientType: 'Government',
-    totalSpent: 8920,
-    monthlySpent: 1580,
-    ordersCount: 12,
-    lastPurchase: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    averageROI: 275,
-    status: 'growing'
-  },
-  {
-    clientId: 'demo-client-3',
-    clientName: 'TechFlow Innovations',
-    clientType: 'Startup',
-    totalSpent: 6780,
-    monthlySpent: 890,
-    ordersCount: 15,
-    lastPurchase: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
-    averageROI: 485,
-    status: 'stable'
-  },
-  {
-    clientId: 'demo-client-4',
-    clientName: 'Metro Business Council',
-    clientType: 'Business',
-    totalSpent: 4200,
-    monthlySpent: 320,
-    ordersCount: 8,
-    lastPurchase: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString(),
-    averageROI: 180,
-    status: 'at-risk'
-  }
-];
-
-const demoRevenueByProduct: RevenueByProduct[] = [
-  {
-    productId: 'boost-1',
-    productName: 'Municipal Engagement Pro',
-    category: 'Government',
-    totalSales: 15670,
-    unitsold: 52,
-    averagePrice: 301,
-    profitMargin: 68,
-    popularity: 'bestseller'
-  },
-  {
-    productId: 'boost-2',
-    productName: 'Business Growth Accelerator',
-    category: 'Business',
-    totalSales: 12340,
-    unitsold: 27,
-    averagePrice: 457,
-    profitMargin: 72,
-    popularity: 'hot'
-  },
-  {
-    productId: 'boost-3',
-    productName: 'Startup Viral Launch',
-    category: 'Startup',
-    totalSales: 8950,
-    unitsold: 45,
-    averagePrice: 199,
-    profitMargin: 45,
-    popularity: 'trending'
-  }
-];
-
-// Utility functions
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
 
 function formatPercentage(value: number): string {
   return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`;
@@ -283,13 +187,21 @@ function RevenueCard({ title, value, change, period, icon, trend = 'neutral', is
 // Client revenue table component
 interface ClientRevenueTableProps {
   clients: RevenueByClient[];
+  showAll?: boolean;
+  onClientClick?: (clientId: string, clientName: string) => void;
 }
 
-function ClientRevenueTable({ clients }: ClientRevenueTableProps) {
+function ClientRevenueTable({ clients, showAll = false, onClientClick }: ClientRevenueTableProps) {
+  const displayClients = showAll ? clients : clients.slice(0, 5);
+  
   return (
     <div className="space-y-3">
-      {clients.map((client) => (
-        <div key={client.clientId} className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow">
+      {displayClients.map((client) => (
+        <div 
+          key={client.clientId} 
+          className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
+          onClick={() => onClientClick?.(client.clientId, client.clientName)}
+        >
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
               <h4 className="font-semibold">{client.clientName}</h4>
@@ -315,6 +227,11 @@ function ClientRevenueTable({ clients }: ClientRevenueTableProps) {
           </div>
         </div>
       ))}
+      {!showAll && clients.length > 5 && (
+        <div className="text-center text-sm text-muted-foreground py-2">
+          Showing 5 of {clients.length} clients
+        </div>
+      )}
     </div>
   );
 }
@@ -322,13 +239,21 @@ function ClientRevenueTable({ clients }: ClientRevenueTableProps) {
 // Product revenue table component
 interface ProductRevenueTableProps {
   products: RevenueByProduct[];
+  showAll?: boolean;
+  onProductClick?: (productId: string, productName: string) => void;
 }
 
-function ProductRevenueTable({ products }: ProductRevenueTableProps) {
+function ProductRevenueTable({ products, showAll = false, onProductClick }: ProductRevenueTableProps) {
+  const displayProducts = showAll ? products : products.slice(0, 5);
+  
   return (
     <div className="space-y-3">
-      {products.map((product) => (
-        <div key={product.productId} className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow">
+      {displayProducts.map((product) => (
+        <div 
+          key={product.productId} 
+          className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
+          onClick={() => onProductClick?.(product.productId, product.productName)}
+        >
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
               {getPopularityIcon(product.popularity)}
@@ -341,7 +266,7 @@ function ProductRevenueTable({ products }: ProductRevenueTableProps) {
               </Badge>
             </div>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>{product.unitsold} units sold</span>
+              <span>{product.unitssold} units sold</span>
               <span>Avg: {formatCurrency(product.averagePrice)}</span>
               <span>Margin: {product.profitMargin}%</span>
             </div>
@@ -355,22 +280,38 @@ function ProductRevenueTable({ products }: ProductRevenueTableProps) {
           </div>
         </div>
       ))}
+      {!showAll && products.length > 5 && (
+        <div className="text-center text-sm text-muted-foreground py-2">
+          Showing 5 of {products.length} products
+        </div>
+      )}
     </div>
   );
 }
 
 export default function ServiceProviderRevenueDashboard() {
   const [timeRange, setTimeRange] = useState('monthly');
-  const [revenueMetrics] = useState<RevenueMetrics>(demoRevenueMetrics);
-  const [clientRevenue] = useState<RevenueByClient[]>(demoRevenueByClient);
-  const [productRevenue] = useState<RevenueByProduct[]>(demoRevenueByProduct);
-  const [isLoading, setIsLoading] = useState(false);
+  const [showAllClients, setShowAllClients] = useState(false);
+  const [showAllProducts, setShowAllProducts] = useState(false);
   const { state: { organizationId } } = useServiceProvider();
 
+  // Fetch revenue data with React Query
+  const { 
+    data: revenueData, 
+    isLoading, 
+    error, 
+    refetch 
+  } = useQuery({
+    queryKey: ['service-provider-revenue', organizationId, timeRange, Math.floor(Date.now() / 30000)], // 30s refresh
+    queryFn: () => fetchRevenueData(organizationId || 'demo-org', timeRange),
+    enabled: !!organizationId,
+    staleTime: 15 * 1000, // 15 seconds
+    refetchInterval: 30 * 1000, // Auto-refetch every 30 seconds
+    refetchOnWindowFocus: true,
+  });
+
   const handleRefresh = async () => {
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => setIsLoading(false), 1500);
+    refetch();
   };
 
   const handleExport = () => {
@@ -378,24 +319,96 @@ export default function ServiceProviderRevenueDashboard() {
     console.log('Exporting revenue report...');
   };
 
+  const handleViewAllClients = () => {
+    setShowAllClients(!showAllClients);
+    console.log('Toggle view all clients:', !showAllClients);
+  };
+
+  const handleViewAllProducts = () => {
+    setShowAllProducts(!showAllProducts);
+    console.log('Toggle view all products:', !showAllProducts);
+  };
+
+  const handleClientClick = (clientId: string, clientName: string) => {
+    console.log('Navigate to client details:', { clientId, clientName });
+    // TODO: Navigate to detailed client revenue page
+    // router.push(`/service-provider/clients/${clientId}/revenue`);
+  };
+
+  const handleProductClick = (productId: string, productName: string) => {
+    console.log('Navigate to product details:', { productId, productName });
+    // TODO: Navigate to detailed product revenue page
+    // router.push(`/service-provider/products/${productId}/revenue`);
+  };
+
   // Calculate metrics based on time range
   const getCurrentRevenue = () => {
+    if (!revenueData?.metrics) return 0;
+    const metrics = revenueData.metrics;
     switch (timeRange) {
-      case 'monthly': return revenueMetrics.monthlyRevenue;
-      case 'quarterly': return revenueMetrics.quarterlyRevenue;
-      case 'yearly': return revenueMetrics.yearlyRevenue;
-      default: return revenueMetrics.totalRevenue;
+      case 'monthly': return metrics.monthlyRevenue;
+      case 'quarterly': return metrics.quarterlyRevenue;
+      case 'yearly': return metrics.yearlyRevenue;
+      default: return metrics.totalRevenue;
     }
   };
 
   const getCurrentGrowth = () => {
+    if (!revenueData?.metrics?.revenueGrowth) return 0;
+    const growth = revenueData.metrics.revenueGrowth;
     switch (timeRange) {
-      case 'monthly': return revenueMetrics.revenueGrowth.monthly;
-      case 'quarterly': return revenueMetrics.revenueGrowth.quarterly;
-      case 'yearly': return revenueMetrics.revenueGrowth.yearly;
+      case 'monthly': return growth.monthly;
+      case 'quarterly': return growth.quarterly;
+      case 'yearly': return growth.yearly;
       default: return 0;
     }
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-8">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-3xl font-bold flex items-center gap-3">
+              <DollarSign className="h-8 w-8 text-primary" />
+              Revenue Dashboard
+            </h2>
+            <div className="w-64 h-4 bg-gray-200 rounded animate-pulse mt-2" />
+          </div>
+          <div className="flex gap-2">
+            <div className="w-32 h-10 bg-gray-200 rounded animate-pulse" />
+            <div className="w-24 h-10 bg-gray-200 rounded animate-pulse" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-32 bg-gray-200 rounded-lg animate-pulse" />
+          ))}
+        </div>
+        <div className="h-80 bg-gray-200 rounded-lg animate-pulse" />
+      </div>
+    );
+  }
+
+  // Error state
+  if (error || !revenueData) {
+    return (
+      <Card className="p-8 text-center border-red-200">
+        <div className="flex justify-center mb-4">
+          <DollarSign className="h-8 w-8 text-red-500" />
+        </div>
+        <h3 className="text-lg font-semibold mb-2 text-red-700">Revenue Data Unavailable</h3>
+        <p className="text-muted-foreground mb-4">
+          Unable to load revenue data. Please try refreshing or contact support.
+        </p>
+        <Button variant="outline" onClick={handleRefresh}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh Data
+        </Button>
+      </Card>
+    );
+  }
 
   return (
     <TooltipProvider>
@@ -450,7 +463,7 @@ export default function ServiceProviderRevenueDashboard() {
           
           <RevenueCard
             title="Average Order Value"
-            value={revenueMetrics.averageOrderValue}
+            value={formatCurrency(revenueData.metrics.averageOrderValue)}
             change={12.5}
             period="vs last month"
             icon={<ShoppingCart className="h-6 w-6" />}
@@ -458,7 +471,7 @@ export default function ServiceProviderRevenueDashboard() {
           
           <RevenueCard
             title="Active Boosts"
-            value={revenueMetrics.activeBoosts}
+            value={revenueData.metrics.activeBoosts}
             change={8.3}
             period="vs last month"
             icon={<Rocket className="h-6 w-6" />}
@@ -466,7 +479,7 @@ export default function ServiceProviderRevenueDashboard() {
           
           <RevenueCard
             title="Client Retention"
-            value={`${revenueMetrics.clientRetentionRate}%`}
+            value={`${revenueData.metrics.clientRetentionRate}%`}
             change={2.1}
             period="vs last quarter"
             icon={<Users className="h-6 w-6" />}
@@ -521,14 +534,18 @@ export default function ServiceProviderRevenueDashboard() {
                   <Users className="h-5 w-5" />
                   Top Clients by Revenue
                 </div>
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" onClick={handleViewAllClients}>
                   <Eye className="h-4 w-4 mr-2" />
-                  View All
+                  {showAllClients ? 'Show Less' : 'View All'}
                 </Button>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ClientRevenueTable clients={clientRevenue} />
+              <ClientRevenueTable 
+                clients={revenueData.revenueByClient} 
+                showAll={showAllClients} 
+                onClientClick={handleClientClick}
+              />
             </CardContent>
           </Card>
 
@@ -539,14 +556,18 @@ export default function ServiceProviderRevenueDashboard() {
                   <Target className="h-5 w-5" />
                   Top Products by Revenue
                 </div>
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" onClick={handleViewAllProducts}>
                   <Eye className="h-4 w-4 mr-2" />
-                  View All
+                  {showAllProducts ? 'Show Less' : 'View All'}
                 </Button>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ProductRevenueTable products={productRevenue} />
+              <ProductRevenueTable 
+                products={revenueData.revenueByProduct} 
+                showAll={showAllProducts} 
+                onProductClick={handleProductClick}
+              />
             </CardContent>
           </Card>
         </div>

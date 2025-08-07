@@ -59,6 +59,7 @@ export function TemplateLibrary({ onTemplateSelect, onTemplateApply }: TemplateL
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [applyDialogOpen, setApplyDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   // Template data query
   const { 
@@ -192,7 +193,10 @@ export function TemplateLibrary({ onTemplateSelect, onTemplateApply }: TemplateL
         </div>
         
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <Button className="w-full sm:w-auto">
+          <Button 
+            className="w-full sm:w-auto"
+            onClick={() => setCreateDialogOpen(true)}
+          >
             <Plus className="h-4 w-4 mr-2" />
             <span className="hidden xs:inline">Create Template</span>
             <span className="xs:hidden">Create</span>
@@ -524,6 +528,24 @@ export function TemplateLibrary({ onTemplateSelect, onTemplateApply }: TemplateL
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Create Template Dialog */}
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-base sm:text-lg">Create New Template</DialogTitle>
+          </DialogHeader>
+          
+          <TemplateCreateDialog
+            shareableClients={shareableClients}
+            onClose={() => setCreateDialogOpen(false)}
+            onSuccess={() => {
+              setCreateDialogOpen(false);
+              refetch();
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -541,7 +563,7 @@ function TemplateShareDialog({
   shareableClients: Array<{ id: string; name: string; type: string }>;
   onShare: (template: ServiceProviderTemplate, clientIds: string[]) => void;
   onClose: () => void;
-}) {
+}): React.JSX.Element {
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
 
   return (
@@ -622,6 +644,65 @@ function TemplateShareDialog({
   );
 }
 
+// Helper function to render template preview with sample data
+function renderTemplatePreview(content: string, fields: Array<{field: string, label: string, type: string}>): string {
+  let previewContent = content;
+  
+  // Create sample data for template variables
+  const sampleData: Record<string, string> = {
+    'EVENT_TITLE': 'Sample Event: Technology Conference 2024',
+    'EVENT_SUBTITLE': 'Join us for an exciting day of innovation and networking',
+    'EVENT_DATE': '2024-03-15',
+    'EVENT_TIME': '9:00 AM - 5:00 PM',
+    'EVENT_LOCATION': 'Tech Center, Downtown',
+    'REGISTRATION_LINK': 'https://example.com/register',
+    'EVENT_DESCRIPTION': 'Experience cutting-edge presentations from industry leaders, network with peers, and discover the latest technological innovations shaping our future.',
+    'CLIENT_NAME': 'Demo Client',
+    'CAMPAIGN_MESSAGE': 'Discover our amazing new product!',
+    'BENEFIT_1': 'Save time with automated features',
+    'BENEFIT_2': 'Increase productivity by 50%',
+    'BENEFIT_3': 'Get 24/7 customer support',
+    'CALL_TO_ACTION': 'Try it free today!',
+    'CLIENT_HASHTAG': 'DemoClient',
+    'INDUSTRY_TAG': 'Innovation',
+    'BRAND_COLOR': '#3b82f6',
+    'LOGO_URL': '/demo-logo.png'
+  };
+  
+  // Generate sample data for any fields not covered above
+  fields.forEach(field => {
+    if (!sampleData[field.field]) {
+      switch (field.type) {
+        case 'date':
+          sampleData[field.field] = '2024-03-15';
+          break;
+        case 'time':
+          sampleData[field.field] = '10:00 AM';
+          break;
+        case 'url':
+          sampleData[field.field] = 'https://example.com';
+          break;
+        case 'color':
+          sampleData[field.field] = '#3b82f6';
+          break;
+        case 'textarea':
+          sampleData[field.field] = 'This is sample content for ' + field.label.toLowerCase();
+          break;
+        default:
+          sampleData[field.field] = 'Sample ' + field.label;
+      }
+    }
+  });
+  
+  // Replace template variables with sample data
+  Object.keys(sampleData).forEach(key => {
+    const regex = new RegExp(`{{${key}}}`, 'g');
+    previewContent = previewContent.replace(regex, sampleData[key]);
+  });
+  
+  return previewContent;
+}
+
 // Template Preview Dialog Component
 function TemplatePreviewDialog({ 
   template, 
@@ -630,6 +711,7 @@ function TemplatePreviewDialog({
   template: ServiceProviderTemplate;
   onClose: () => void;
 }): React.JSX.Element {
+  const [contentView, setContentView] = useState<'preview' | 'code'>('preview');
   return (
     <div className="space-y-4 sm:space-y-6">
       <div>
@@ -645,8 +727,36 @@ function TemplatePreviewDialog({
         </TabsList>
         
         <TabsContent value="content" className="mt-4">
-          <div className="p-3 sm:p-4 bg-gray-50 rounded-lg max-h-64 overflow-y-auto">
-            <pre className="whitespace-pre-wrap text-xs sm:text-sm">{template.content}</pre>
+          <div className="space-y-4">
+            {/* Preview/Code Toggle */}
+            <div className="flex gap-2">
+              <Button 
+                variant={contentView === 'preview' ? 'default' : 'outline'} 
+                size="sm"
+                onClick={() => setContentView('preview')}
+              >
+                Preview
+              </Button>
+              <Button 
+                variant={contentView === 'code' ? 'default' : 'outline'} 
+                size="sm"
+                onClick={() => setContentView('code')}
+              >
+                Code
+              </Button>
+            </div>
+            
+            {/* Content Display */}
+            <div className="p-3 sm:p-4 bg-gray-50 rounded-lg max-h-64 overflow-y-auto border">
+              {contentView === 'preview' ? (
+                <div 
+                  className="prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: renderTemplatePreview(template.content, template.customizableFields) }}
+                />
+              ) : (
+                <pre className="whitespace-pre-wrap text-xs sm:text-sm font-mono">{template.content}</pre>
+              )}
+            </div>
           </div>
         </TabsContent>
         
@@ -696,7 +806,7 @@ function TemplateApplyDialog({
   shareableClients: Array<{ id: string; name: string; type: string }>;
   onApply: (template: ServiceProviderTemplate, clientId: string, customizations: Record<string, string>) => void;
   onClose: () => void;
-}) {
+}): React.JSX.Element {
   const [selectedClient, setSelectedClient] = useState<string>('');
   const [customizations, setCustomizations] = useState<Record<string, string>>({});
 
@@ -776,3 +886,94 @@ function TemplateApplyDialog({
     </div>
   );
 }
+
+// Template Create Dialog Component
+const TemplateCreateDialog: React.FC<{
+  shareableClients: Array<{ id: string; name: string; type: string }>;
+  onClose: () => void;
+  onSuccess: () => void;
+}> = ({ shareableClients, onClose, onSuccess }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    templateType: 'email' as 'email' | 'social' | 'blog',
+    content: '',
+    tags: '',
+    category: 'General',
+    shareWithClients: [] as string[]
+  });
+
+  const { state: { organizationId } } = useServiceProvider();
+
+  const handleSubmit = async () => {
+    try {
+      const templateData = {
+        ...formData,
+        tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+        customizableFields: [{ field: 'CLIENT_NAME', label: 'Client Name', type: 'text' }],
+        serviceProviderId: organizationId!,
+        shareWithClients: formData.shareWithClients
+      };
+
+      const response = await fetch('/api/service-provider/templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(templateData),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Template Created",
+          description: `${formData.name} has been created successfully!`,
+        });
+        onSuccess();
+      } else {
+        throw new Error('Failed to create template');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create template. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="name">Template Name</Label>
+          <Input
+            id="name"
+            required
+            value={formData.name}
+            onChange={(e) => setFormData({...formData, name: e.target.value})}
+            placeholder="Enter template name..."
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="content">Template Content</Label>
+          <Textarea
+            id="content"
+            required
+            value={formData.content}
+            onChange={(e) => setFormData({...formData, content: e.target.value})}
+            placeholder="Enter your template content with {{VARIABLE_NAME}} for customizable fields..."
+            className="min-h-[200px] font-mono text-sm"
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row justify-end gap-2">
+        <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
+          Cancel
+        </Button>
+        <Button onClick={handleSubmit} className="w-full sm:w-auto">
+          Create Template
+        </Button>
+      </div>
+    </div>
+  );
+};

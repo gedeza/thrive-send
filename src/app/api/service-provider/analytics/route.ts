@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       console.log('🚧 DEV MODE: Service Provider Analytics - No auth required');
     }
 
-    // 🚀 SERVICE PROVIDER ANALYTICS - Demo Implementation
+    // 🚀 SERVICE PROVIDER ANALYTICS - Enhanced Demo Implementation with Dashboard Integration
     const now = new Date();
     const timeRanges = {
       '7d': 7,
@@ -32,27 +32,57 @@ export async function GET(request: NextRequest) {
     };
     const daysBack = timeRanges[timeRange as keyof typeof timeRanges] || 30;
 
-    // Generate realistic demo data based on clients
+    // First, try to get real data from dashboard API for consistency
+    let dashboardData = null;
+    try {
+      const dashboardResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/service-provider/dashboard?organizationId=${organizationId}`);
+      if (dashboardResponse.ok) {
+        dashboardData = await dashboardResponse.json();
+        console.log('📊 Integrated dashboard data into analytics:', {
+          totalClients: dashboardData.metrics?.totalClients,
+          activeClients: dashboardData.metrics?.activeClients,
+          totalRevenue: dashboardData.metrics?.totalRevenue
+        });
+      }
+    } catch (error) {
+      console.log('⚠️  Dashboard integration failed, using fallback data:', error);
+    }
+
+    // Use dashboard data to scale analytics appropriately with real-time variance
+    const baseMetrics = dashboardData?.metrics || {};
+    const clientCount = baseMetrics.totalClients || 3;
+    const baseRevenue = baseMetrics.totalRevenue || 45000;
+    const engagementBase = baseMetrics.avgClientSatisfaction ? (baseMetrics.avgClientSatisfaction * 2) : 8.0;
+    
+    // Add real-time variance to make data appear dynamic
+    const minuteVariance = Math.sin(now.getMinutes() * 0.105) * 0.08; // Changes every minute
+    const hourVariance = Math.cos(now.getHours() * 0.26) * 0.05; // Changes throughout the day
+    const secondVariance = Math.sin(now.getSeconds() * 0.1) * 0.02; // Subtle second-by-second changes
+    const totalVariance = minuteVariance + hourVariance + secondVariance;
+    
+    const totalRevenue = Math.floor(baseRevenue * (1 + totalVariance));
+
+    // Generate realistic demo data integrated with dashboard metrics
     const clientAnalytics = {
       'demo-client-1': {
         clientId: 'demo-client-1',
         clientName: 'City of Springfield',
         clientType: 'government',
         contentMetrics: {
-          totalContent: 45,
-          publishedContent: 42,
-          draftContent: 3,
+          totalContent: Math.floor((baseMetrics.totalCampaigns || 15) * 3 * (1 + totalVariance * 0.1)),
+          publishedContent: Math.floor((baseMetrics.totalCampaigns || 15) * 2.8 * (1 + totalVariance * 0.1)),
+          draftContent: Math.floor((baseMetrics.totalCampaigns || 15) * 0.2 * (1 + Math.abs(totalVariance))),
           contentTypes: {
-            email: 18,
-            social: 15,
-            blog: 12
+            email: Math.floor((baseMetrics.totalCampaigns || 15) * 1.2 * (1 + hourVariance)),
+            social: Math.floor((baseMetrics.totalCampaigns || 15) * 1.0 * (1 + minuteVariance)),
+            blog: Math.floor((baseMetrics.totalCampaigns || 15) * 0.8 * (1 + secondVariance * 5))
           },
-          avgEngagementRate: 8.4,
-          totalViews: 12500,
-          totalClicks: 1050,
-          conversionRate: 4.2
+          avgEngagementRate: Math.max(6.0, parseFloat((engagementBase * (1 + totalVariance * 0.3)).toFixed(1))),
+          totalViews: Math.floor(totalRevenue * 0.28 * (1 + totalVariance * 0.5)),
+          totalClicks: Math.floor(totalRevenue * 0.023 * (1 + totalVariance * 0.8)),
+          conversionRate: Math.max(3.0, parseFloat(((baseMetrics.growthRate || 4.2) * (1 + totalVariance * 0.2)).toFixed(1)))
         },
-        performanceData: generatePerformanceData(daysBack, 'government'),
+        performanceData: generatePerformanceData(daysBack, 'government', totalRevenue / clientCount),
         topContent: [
           {
             id: 'content-1',
@@ -79,20 +109,20 @@ export async function GET(request: NextRequest) {
         clientName: 'TechStart Inc.',
         clientType: 'business',
         contentMetrics: {
-          totalContent: 38,
-          publishedContent: 35,
-          draftContent: 3,
+          totalContent: Math.floor((baseMetrics.totalCampaigns || 15) * 2.5 * (1 + totalVariance * 0.15)),
+          publishedContent: Math.floor((baseMetrics.totalCampaigns || 15) * 2.3 * (1 + totalVariance * 0.12)),
+          draftContent: Math.floor((baseMetrics.totalCampaigns || 15) * 0.2 * (1 + Math.abs(minuteVariance) * 2)),
           contentTypes: {
-            email: 12,
-            social: 18,
-            blog: 8
+            email: Math.floor((baseMetrics.totalCampaigns || 15) * 0.8 * (1 + hourVariance * 0.8)),
+            social: Math.floor((baseMetrics.totalCampaigns || 15) * 1.2 * (1 + minuteVariance * 1.2)),
+            blog: Math.floor((baseMetrics.totalCampaigns || 15) * 0.5 * (1 + secondVariance * 3))
           },
-          avgEngagementRate: 12.7,
-          totalViews: 18900,
-          totalClicks: 2400,
-          conversionRate: 6.8
+          avgEngagementRate: Math.max(10.0, parseFloat((engagementBase * 1.5 * (1 + totalVariance * 0.4)).toFixed(1))),
+          totalViews: Math.floor(totalRevenue * 0.42 * (1 + totalVariance * 0.6)),
+          totalClicks: Math.floor(totalRevenue * 0.053 * (1 + totalVariance * 0.9)),
+          conversionRate: Math.max(5.0, parseFloat(((baseMetrics.growthRate || 6.8) * 1.6 * (1 + totalVariance * 0.25)).toFixed(1)))
         },
-        performanceData: generatePerformanceData(daysBack, 'business'),
+        performanceData: generatePerformanceData(daysBack, 'business', totalRevenue / clientCount),
         topContent: [
           {
             id: 'content-3',
@@ -119,20 +149,20 @@ export async function GET(request: NextRequest) {
         clientName: 'Local Coffee Co.',
         clientType: 'business',
         contentMetrics: {
-          totalContent: 32,
-          publishedContent: 29,
-          draftContent: 3,
+          totalContent: Math.floor((baseMetrics.totalCampaigns || 15) * 2.1 * (1 + totalVariance * 0.12)),
+          publishedContent: Math.floor((baseMetrics.totalCampaigns || 15) * 1.9 * (1 + totalVariance * 0.1)),
+          draftContent: Math.floor((baseMetrics.totalCampaigns || 15) * 0.2 * (1 + Math.abs(hourVariance) * 1.5)),
           contentTypes: {
-            email: 10,
-            social: 16,
-            blog: 6
+            email: Math.floor((baseMetrics.totalCampaigns || 15) * 0.7 * (1 + hourVariance * 0.6)),
+            social: Math.floor((baseMetrics.totalCampaigns || 15) * 1.1 * (1 + minuteVariance * 0.9)),
+            blog: Math.floor((baseMetrics.totalCampaigns || 15) * 0.4 * (1 + secondVariance * 4))
           },
-          avgEngagementRate: 6.8,
-          totalViews: 8900,
-          totalClicks: 605,
-          conversionRate: 3.2
+          avgEngagementRate: Math.max(5.5, parseFloat((engagementBase * 0.85 * (1 + totalVariance * 0.35)).toFixed(1))),
+          totalViews: Math.floor(totalRevenue * 0.20 * (1 + totalVariance * 0.4)),
+          totalClicks: Math.floor(totalRevenue * 0.013 * (1 + totalVariance * 0.7)),
+          conversionRate: Math.max(2.5, parseFloat(((baseMetrics.growthRate || 3.2) * 0.75 * (1 + totalVariance * 0.3)).toFixed(1)))
         },
-        performanceData: generatePerformanceData(daysBack, 'local'),
+        performanceData: generatePerformanceData(daysBack, 'local', totalRevenue / clientCount),
         topContent: [
           {
             id: 'content-5',
@@ -181,15 +211,15 @@ export async function GET(request: NextRequest) {
     // Return cross-client analytics for comparison
     const allClientsData = Object.values(clientAnalytics);
     
-    // Calculate aggregate metrics
+    // Calculate aggregate metrics with real-time variance applied
     const aggregateMetrics = {
       totalClients: allClientsData.length,
       totalContent: allClientsData.reduce((sum, client) => sum + client.contentMetrics.totalContent, 0),
       totalPublishedContent: allClientsData.reduce((sum, client) => sum + client.contentMetrics.publishedContent, 0),
-      averageEngagement: allClientsData.reduce((sum, client) => sum + client.contentMetrics.avgEngagementRate, 0) / allClientsData.length,
+      averageEngagement: parseFloat((allClientsData.reduce((sum, client) => sum + client.contentMetrics.avgEngagementRate, 0) / allClientsData.length).toFixed(1)),
       totalViews: allClientsData.reduce((sum, client) => sum + client.contentMetrics.totalViews, 0),
       totalClicks: allClientsData.reduce((sum, client) => sum + client.contentMetrics.totalClicks, 0),
-      averageConversionRate: allClientsData.reduce((sum, client) => sum + client.contentMetrics.conversionRate, 0) / allClientsData.length
+      averageConversionRate: parseFloat((allClientsData.reduce((sum, client) => sum + client.contentMetrics.conversionRate, 0) / allClientsData.length).toFixed(1))
     };
 
     // Content type distribution across all clients
@@ -264,34 +294,42 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Helper function to generate realistic performance data
-function generatePerformanceData(days: number, clientType: 'government' | 'business' | 'local') {
+// Helper function to generate realistic performance data with trends
+function generatePerformanceData(days: number, clientType: 'government' | 'business' | 'local', baseRevenue: number = 15000) {
   const baseMetrics = {
-    government: { views: 400, engagement: 8, clicks: 32 },
-    business: { views: 600, engagement: 12, clicks: 72 },
-    local: { views: 200, engagement: 6, clicks: 12 }
+    government: { views: Math.floor(baseRevenue * 0.027), engagement: 8, clicks: Math.floor(baseRevenue * 0.0021) },
+    business: { views: Math.floor(baseRevenue * 0.040), engagement: 12, clicks: Math.floor(baseRevenue * 0.0048) },
+    local: { views: Math.floor(baseRevenue * 0.013), engagement: 6, clicks: Math.floor(baseRevenue * 0.0008) }
   };
 
   const base = baseMetrics[clientType];
   const data = [];
 
+  // Add realistic weekly patterns and growth trends
   for (let i = days - 1; i >= 0; i--) {
     const date = new Date();
     date.setDate(date.getDate() - i);
+    const dayOfWeek = date.getDay();
     
-    // Add some realistic variance
-    const variance = 0.3;
-    const viewsVariance = (Math.random() - 0.5) * variance;
-    const engagementVariance = (Math.random() - 0.5) * variance;
-    const clicksVariance = (Math.random() - 0.5) * variance;
+    // Weekend effect (less engagement on weekends)
+    const weekendFactor = (dayOfWeek === 0 || dayOfWeek === 6) ? 0.6 : 1.0;
+    
+    // Growth trend over time (slight upward trend)
+    const trendFactor = 1 + (days - i) * 0.001;
+    
+    // Natural variance but less random
+    const dailyVariance = 0.15;
+    const viewsVariance = (Math.sin(i * 0.1) * 0.1) + ((Math.random() - 0.5) * dailyVariance);
+    const engagementVariance = (Math.cos(i * 0.08) * 0.1) + ((Math.random() - 0.5) * dailyVariance);
+    const clicksVariance = (Math.sin(i * 0.12) * 0.1) + ((Math.random() - 0.5) * dailyVariance);
 
     data.push({
       date: date.toISOString().split('T')[0],
-      views: Math.round(base.views * (1 + viewsVariance)),
-      engagement: parseFloat((base.engagement * (1 + engagementVariance)).toFixed(1)),
-      clicks: Math.round(base.clicks * (1 + clicksVariance)),
-      impressions: Math.round(base.views * 1.8 * (1 + viewsVariance)),
-      reach: Math.round(base.views * 0.7 * (1 + viewsVariance))
+      views: Math.max(1, Math.round(base.views * weekendFactor * trendFactor * (1 + viewsVariance))),
+      engagement: Math.max(1.0, parseFloat((base.engagement * weekendFactor * trendFactor * (1 + engagementVariance)).toFixed(1))),
+      clicks: Math.max(1, Math.round(base.clicks * weekendFactor * trendFactor * (1 + clicksVariance))),
+      impressions: Math.max(1, Math.round(base.views * 1.8 * weekendFactor * trendFactor * (1 + viewsVariance))),
+      reach: Math.max(1, Math.round(base.views * 0.7 * weekendFactor * trendFactor * (1 + viewsVariance)))
     });
   }
 
