@@ -41,6 +41,7 @@ import {
   TrendDirection
 } from '@/types/analytics';
 import { useServiceProvider } from '@/context/ServiceProviderContext';
+import { useAnalyticsCurrency } from '@/hooks/useCurrency';
 
 // Service functions for API calls
 const fetchServiceProviderMetrics = async (
@@ -229,6 +230,7 @@ export const ServiceProviderAnalyticsDashboard = React.memo(function ServiceProv
   initialView = 'overview'
 }: ServiceProviderAnalyticsDashboardProps) {
   const { state } = useServiceProvider();
+  const { formatCurrency } = useAnalyticsCurrency();
   
   // Component State - memoize initial values to prevent re-initialization
   const [currentView, setCurrentView] = useState<'overview' | 'cross-client' | 'revenue' | 'rankings'>(() => initialView);
@@ -297,14 +299,7 @@ export const ServiceProviderAnalyticsDashboard = React.memo(function ServiceProv
     }
   }, []);
 
-  const formatCurrency = useCallback((amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  }, []);
+  // Currency formatting handled by useAnalyticsCurrency hook
 
   const formatPercentage = useCallback((value: number) => {
     return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`;

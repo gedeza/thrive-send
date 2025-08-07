@@ -46,6 +46,7 @@ import {
   ChurnRiskClient,
   TrendDirection
 } from '@/types/analytics';
+import { useAnalyticsCurrency } from '@/hooks/useCurrency';
 
 // Service functions for API calls
 const fetchRevenueAnalytics = async (
@@ -63,6 +64,7 @@ export function RevenueAnalyticsDashboard({
   timeRange = '30d',
   view = 'overview'
 }: RevenueAnalyticsDashboardProps) {
+  const { formatCurrency } = useAnalyticsCurrency();
   // Component State
   const [currentTimeRange, setCurrentTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>(timeRange);
   const [currentView, setCurrentView] = useState<'overview' | 'breakdown' | 'forecasting' | 'profitability'>(view);
@@ -110,14 +112,7 @@ export function RevenueAnalyticsDashboard({
     return <Minus className="h-4 w-4 text-gray-400" />;
   }, []);
 
-  const formatCurrency = useCallback((amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  }, []);
+  // Currency formatting handled by useAnalyticsCurrency hook
 
   const formatPercentage = useCallback((value: number) => {
     return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`;

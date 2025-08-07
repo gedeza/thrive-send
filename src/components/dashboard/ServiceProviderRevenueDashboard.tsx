@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import { useServiceProvider } from '@/context/ServiceProviderContext';
 import { cn } from '@/lib/utils';
-import { formatCurrency } from '@/lib/utils/currency';
+import { useCurrency } from '@/hooks/useCurrency';
 import { useQuery } from '@tanstack/react-query';
 import {
   Select,
@@ -144,6 +144,7 @@ interface RevenueCardProps {
 }
 
 function RevenueCard({ title, value, change, period, icon, trend = 'neutral', isLoading }: RevenueCardProps) {
+  const { formatCurrency } = useCurrency();
   const getTrendColor = () => {
     if (change === undefined) return 'text-muted-foreground';
     return change >= 0 ? 'text-green-600' : 'text-red-600';
@@ -192,6 +193,7 @@ interface ClientRevenueTableProps {
 }
 
 function ClientRevenueTable({ clients, showAll = false, onClientClick }: ClientRevenueTableProps) {
+  const { formatCurrency } = useCurrency();
   const displayClients = showAll ? clients : clients.slice(0, 5);
   
   return (
@@ -244,6 +246,7 @@ interface ProductRevenueTableProps {
 }
 
 function ProductRevenueTable({ products, showAll = false, onProductClick }: ProductRevenueTableProps) {
+  const { formatCurrency } = useCurrency();
   const displayProducts = showAll ? products : products.slice(0, 5);
   
   return (
@@ -290,6 +293,7 @@ function ProductRevenueTable({ products, showAll = false, onProductClick }: Prod
 }
 
 export default function ServiceProviderRevenueDashboard() {
+  const { formatCurrency } = useCurrency();
   const [timeRange, setTimeRange] = useState('monthly');
   const [showAllClients, setShowAllClients] = useState(false);
   const [showAllProducts, setShowAllProducts] = useState(false);
