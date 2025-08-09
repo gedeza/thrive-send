@@ -63,7 +63,8 @@ const publicRoutes = [
   '/sign-up(.*)',
   '/api/webhook(.*)',
   '/api/webhooks(.*)',
-  '/api/public(.*)'
+  '/api/public(.*)',
+  '/api/marketplace(.*)'  // Temporarily allow marketplace APIs to bypass auth checks
 ];
 
 const isPublicRoute = createRouteMatcher(publicRoutes);

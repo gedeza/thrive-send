@@ -29,13 +29,15 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { useServiceProvider } from '@/context/ServiceProviderContext';
+import { useUserSettings } from '@/contexts/SettingsContext';
 import { 
   validateListing, 
   calculateRecommendedPricing, 
   generateSEOSuggestions, 
   LISTING_CATEGORIES 
 } from '@/lib/services/marketplace';
-import { formatCurrency, getUserCurrency, SUPPORTED_CURRENCIES } from '@/lib/utils/currency';
+import { formatCurrency, getUserCurrency, getUserCurrencyAsync, SUPPORTED_CURRENCIES, setUserCurrency } from '@/lib/utils/currency';
+import { MARKETPLACE_TEXT, MARKETPLACE_COLORS, MARKETPLACE_CONSTANTS } from '@/constants/marketplace-text';
 import { toast } from '@/components/ui/use-toast';
 import {
   Tooltip,
@@ -66,7 +68,8 @@ const TARGET_AUDIENCES = [
 export default function CreateBoostPage() {
   const router = useRouter();
   const { state: { organizationId } } = useServiceProvider();
-  const userCurrency = getUserCurrency();
+  const { settings: userSettings, loading: settingsLoading } = useUserSettings();
+  const userCurrency = userSettings?.preferences?.currency || getUserCurrency();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -90,6 +93,7 @@ export default function CreateBoostPage() {
   const [recommendedPricing, setRecommendedPricing] = useState(null);
   const [seoSuggestions, setSeoSuggestions] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
 
   // Add new feature input
@@ -173,19 +177,48 @@ export default function CreateBoostPage() {
     return result.isValid;
   };
 
-  // Get recommended pricing
+  // Enhanced pricing recommendations with error handling
   const getRecommendedPricing = async () => {
-    if (formData.category && formData.features.length > 0 && formData.targetAudience.length > 0) {
-      try {
-        const pricing = await calculateRecommendedPricing(
-          formData.category,
-          formData.features.filter(f => f.trim() !== ''),
-          formData.targetAudience
-        );
-        setRecommendedPricing(pricing);
-      } catch (error) {
-        console.error('Error getting pricing recommendations:', error);
-      }
+    if (!formData.category || formData.features.length === 0 || formData.targetAudience.length === 0) {
+      toast({
+        title: MARKETPLACE_CONSTANTS.ERRORS.PRICING_MISSING_INFO_TITLE,
+        description: MARKETPLACE_CONSTANTS.ERRORS.PRICING_MISSING_INFO_DESC,
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setLoadingRecommendations(true);
+    try {
+      const pricing = await calculateRecommendedPricing(
+        formData.category,
+        formData.features.filter(f => f.trim() !== ''),
+        formData.targetAudience
+      );
+      setRecommendedPricing(pricing);
+      
+      toast({
+        title: MARKETPLACE_CONSTANTS.ERRORS.PRICING_UPDATED_TITLE,
+        description: MARKETPLACE_CONSTANTS.ERRORS.PRICING_UPDATED_DESC,
+      });
+    } catch (error: any) {
+      console.error('Pricing recommendation error:', error);
+      toast({
+        title: MARKETPLACE_CONSTANTS.ERRORS.PRICING_SERVICE_ERROR_TITLE,
+        description: error.message || MARKETPLACE_CONSTANTS.ERRORS.PRICING_SERVICE_ERROR_DESC,
+        variant: 'destructive'
+      });
+      
+      // Set fallback pricing based on category
+      const fallbackPricing = {
+        recommended: formData.type === 'premium' ? 299 : 199,
+        minimum: formData.type === 'premium' ? 199 : 99,
+        maximum: formData.type === 'premium' ? 499 : 299,
+        confidence: 'low'
+      };
+      setRecommendedPricing(fallbackPricing);
+    } finally {
+      setLoadingRecommendations(false);
     }
   };
 
@@ -209,52 +242,166 @@ export default function CreateBoostPage() {
     }
   };
 
-  // Submit listing
+  // Enhanced API error handling
+  const handleApiError = (error: any, response?: Response) => {
+    if (response) {
+      // Handle HTTP errors
+      switch (response.status) {
+        case 400:
+          return MARKETPLACE_CONSTANTS.ERRORS.INVALID_DATA;
+        case 401:
+          return MARKETPLACE_CONSTANTS.ERRORS.UNAUTHORIZED;
+        case 403:
+          return MARKETPLACE_CONSTANTS.ERRORS.FORBIDDEN;
+        case 409:
+          return MARKETPLACE_CONSTANTS.ERRORS.CONFLICT;
+        case 422:
+          return MARKETPLACE_CONSTANTS.ERRORS.UNPROCESSABLE;
+        case 429:
+          return MARKETPLACE_CONSTANTS.ERRORS.RATE_LIMITED;
+        case 500:
+          return MARKETPLACE_CONSTANTS.ERRORS.SERVER_ERROR;
+        default:
+          return `Server returned error ${response.status}. Please try again.`;
+      }
+    }
+    
+    // Handle network/client errors
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      return MARKETPLACE_CONSTANTS.ERRORS.NETWORK_ERROR;
+    }
+    
+    if (error.message.includes('timeout')) {
+      return MARKETPLACE_CONSTANTS.ERRORS.TIMEOUT_ERROR;
+    }
+    
+    return error.message || MARKETPLACE_CONSTANTS.ERRORS.UNEXPECTED_ERROR;
+  };
+
+  // Retry logic for API calls
+  const submitWithRetry = async (payload: any, maxRetries = 2): Promise<Response> => {
+    let lastError: Error;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+        
+        const response = await fetch('/api/marketplace/products/manage', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        return response;
+      } catch (error) {
+        lastError = error as Error;
+        console.warn(`API call attempt ${attempt + 1} failed:`, error);
+        
+        // Don't retry on client errors (4xx) or abort
+        if (error.name === 'AbortError' || 
+            (error instanceof TypeError && !error.message.includes('fetch'))) {
+          break;
+        }
+        
+        // Wait before retry (exponential backoff)
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        }
+      }
+    }
+    
+    throw lastError!;
+  };
+
+  // Enhanced submit handler with better error handling
   const handleSubmit = async (status: 'draft' | 'review') => {
     if (!validateForm()) {
       toast({
-        title: 'Validation Error',
-        description: 'Please fix the errors before submitting.',
+        title: MARKETPLACE_TEXT.CREATE_BOOST.MESSAGES.VALIDATION_ERROR,
+        description: MARKETPLACE_TEXT.CREATE_BOOST.MESSAGES.FIX_ERRORS_BEFORE_SUBMIT,
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!organizationId) {
+      toast({
+        title: MARKETPLACE_CONSTANTS.ERRORS.ORGANIZATION_REQUIRED_TITLE,
+        description: MARKETPLACE_CONSTANTS.ERRORS.ORGANIZATION_REQUIRED_DESC,
         variant: 'destructive'
       });
       return;
     }
 
     setIsSubmitting(true);
+    
     try {
-      const cleanFormData = {
-        ...formData,
+      // Prepare API payload according to BoostProductSchema
+      const apiPayload = {
+        organizationId,
+        name: formData.name,
+        description: formData.description,
+        type: formData.type,
+        category: formData.category,
+        price: formData.price,
+        originalPrice: formData.originalPrice || undefined,
+        duration: formData.duration,
         features: formData.features.filter(f => f.trim() !== ''),
-        tags: formData.tags.filter(t => t.trim() !== ''),
-        images: formData.images.filter(i => i.trim() !== ''),
-        isBoostProduct: true
+        clientTypes: formData.clientTypes.filter(ct => ct.trim() !== ''),
+        estimatedROI: formData.estimatedROI || undefined,
+        isRecommended: formData.isRecommended,
+        isActive: status === 'review' // Set active only if submitting for review
       };
 
-      const response = await fetch('/api/marketplace/listings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(cleanFormData)
-      });
-
+      console.log('Creating boost product with payload:', apiPayload);
+      
+      const response = await submitWithRetry(apiPayload);
+      
+      // Handle response
       if (!response.ok) {
-        throw new Error('Failed to create boost product');
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.error || errorData?.message || handleApiError(null, response);
+        
+        // Handle validation errors specifically
+        if (response.status === 400 && errorData?.details) {
+          const validationErrors = Array.isArray(errorData.details) 
+            ? errorData.details.map((err: any) => err.message || err).join(', ')
+            : errorData.details.toString();
+          
+          toast({
+            title: MARKETPLACE_CONSTANTS.ERRORS.VALIDATION_FAILED_TITLE,
+            description: `${MARKETPLACE_CONSTANTS.ERRORS.VALIDATION_FAILED_PREFIX}${validationErrors}`,
+            variant: 'destructive'
+          });
+          return;
+        }
+        
+        throw new Error(errorMessage);
       }
 
-      const listing = await response.json();
+      const result = await response.json();
+      console.log('Boost product created successfully:', result);
       
       toast({
-        title: 'Success!',
-        description: `Boost product ${status === 'draft' ? 'saved as draft' : 'submitted for review'}.`,
+        title: MARKETPLACE_TEXT.CREATE_BOOST.MESSAGES.SUCCESS,
+        description: `Boost product ${status === 'draft' ? MARKETPLACE_TEXT.CREATE_BOOST.MESSAGES.DRAFT_SAVED : MARKETPLACE_TEXT.CREATE_BOOST.MESSAGES.SUBMITTED_FOR_REVIEW}.`,
       });
 
+      // Redirect after successful creation
       router.push('/marketplace');
-    } catch (error) {
-      console.error('Error creating boost product:', error);
+      
+    } catch (error: any) {
+      console.error('Boost product creation failed:', error);
+      
+      const errorMessage = handleApiError(error);
       toast({
-        title: 'Error',
-        description: 'Failed to create boost product. Please try again.',
+        title: MARKETPLACE_TEXT.CREATE_BOOST.MESSAGES.ERROR,
+        description: errorMessage,
         variant: 'destructive'
       });
     } finally {
@@ -267,6 +414,30 @@ export default function CreateBoostPage() {
     validateForm();
   }, [formData]);
 
+  // Enhanced currency detection with global settings integration
+  useEffect(() => {
+    const initializeCurrency = async () => {
+      try {
+        // Priority: Global user settings > geolocation detection > fallback
+        let targetCurrency = userSettings?.preferences?.currency;
+        
+        if (!targetCurrency || !SUPPORTED_CURRENCIES[targetCurrency]) {
+          targetCurrency = await getUserCurrencyAsync();
+        }
+        
+        if (targetCurrency && targetCurrency !== formData.currency) {
+          setFormData(prev => ({
+            ...prev,
+            currency: targetCurrency
+          }));
+        }
+      } catch (error) {
+        // Fallback to synchronous detection - error logged by currency service
+      }
+    };
+    initializeCurrency();
+  }, [userSettings?.preferences?.currency]);
+
   return (
     <TooltipProvider>
       <div className="container mx-auto py-8 max-w-4xl">
@@ -275,13 +446,13 @@ export default function CreateBoostPage() {
           <Link href="/marketplace">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Marketplace
+              {MARKETPLACE_TEXT.CREATE_BOOST.BACK_TO_MARKETPLACE}
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold">Create Boost Product</h1>
+            <h1 className="text-3xl font-bold">{MARKETPLACE_TEXT.CREATE_BOOST.TITLE}</h1>
             <p className="text-muted-foreground">
-              Create a new boost product for the ThriveSend marketplace
+              {MARKETPLACE_TEXT.CREATE_BOOST.SUBTITLE}
             </p>
           </div>
         </div>
@@ -289,10 +460,10 @@ export default function CreateBoostPage() {
         {/* Progress Steps */}
         <div className="flex items-center gap-4 mb-8 overflow-x-auto">
           {[
-            { step: 1, title: 'Basic Info', icon: <Target className="h-4 w-4" /> },
-            { step: 2, title: 'Features & Targeting', icon: <Zap className="h-4 w-4" /> },
-            { step: 3, title: 'Pricing & SEO', icon: <DollarSign className="h-4 w-4" /> },
-            { step: 4, title: 'Review & Submit', icon: <CheckCircle className="h-4 w-4" /> }
+            { step: 1, title: MARKETPLACE_TEXT.CREATE_BOOST.STEPS.BASIC_INFO, icon: <Target className="h-4 w-4" /> },
+            { step: 2, title: MARKETPLACE_TEXT.CREATE_BOOST.STEPS.FEATURES_TARGETING, icon: <Zap className="h-4 w-4" /> },
+            { step: 3, title: MARKETPLACE_TEXT.CREATE_BOOST.STEPS.PRICING_SEO, icon: <DollarSign className="h-4 w-4" /> },
+            { step: 4, title: MARKETPLACE_TEXT.CREATE_BOOST.STEPS.REVIEW_SUBMIT, icon: <CheckCircle className="h-4 w-4" /> }
           ].map(({ step, title, icon }, index) => (
             <div key={step} className="flex items-center gap-2 whitespace-nowrap">
               <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
@@ -323,24 +494,24 @@ export default function CreateBoostPage() {
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="name">Product Name *</Label>
+                    <Label htmlFor="name">{MARKETPLACE_TEXT.CREATE_BOOST.FORM.PRODUCT_NAME} *</Label>
                     <Input
                       id="name"
                       value={formData.name}
                       onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Municipal Engagement Pro"
+                      placeholder={MARKETPLACE_TEXT.CREATE_BOOST.FORM.PRODUCT_NAME_PLACEHOLDER}
                       className="mt-1"
                     />
                     {validation.errors.some(e => e.includes('name')) && (
-                      <p className="text-sm text-red-500 mt-1">Product name is required</p>
+                      <p className="text-sm text-red-500 mt-1">{MARKETPLACE_CONSTANTS.VALIDATION.NAME_REQUIRED}</p>
                     )}
                   </div>
                   
                   <div>
-                    <Label htmlFor="type">Boost Type *</Label>
+                    <Label htmlFor="type">{MARKETPLACE_TEXT.CREATE_BOOST.FORM.BOOST_TYPE} *</Label>
                     <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}>
                       <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Select boost type" />
+                        <SelectValue placeholder={MARKETPLACE_TEXT.CREATE_BOOST.FORM.SELECT_BOOST_TYPE} />
                       </SelectTrigger>
                       <SelectContent>
                         {BOOST_TYPES.map(type => (
@@ -361,10 +532,10 @@ export default function CreateBoostPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="category">Category *</Label>
+                    <Label htmlFor="category">{MARKETPLACE_TEXT.CREATE_BOOST.FORM.CATEGORY} *</Label>
                     <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
                       <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Select category" />
+                        <SelectValue placeholder={MARKETPLACE_TEXT.CREATE_BOOST.FORM.SELECT_CATEGORY} />
                       </SelectTrigger>
                       <SelectContent>
                         {LISTING_CATEGORIES.map(category => (
@@ -380,7 +551,7 @@ export default function CreateBoostPage() {
                   </div>
                   
                   <div>
-                    <Label htmlFor="duration">Duration</Label>
+                    <Label htmlFor="duration">{MARKETPLACE_TEXT.CREATE_BOOST.FORM.DURATION}</Label>
                     <Select value={formData.duration} onValueChange={(value) => setFormData(prev => ({ ...prev, duration: value }))}>
                       <SelectTrigger className="mt-1">
                         <SelectValue />
@@ -398,20 +569,20 @@ export default function CreateBoostPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="description">Description *</Label>
+                  <Label htmlFor="description">{MARKETPLACE_TEXT.CREATE_BOOST.FORM.DESCRIPTION} *</Label>
                   <Textarea
                     id="description"
                     value={formData.description}
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Detailed description of your boost product, its benefits, and how it works..."
+                    placeholder={MARKETPLACE_TEXT.CREATE_BOOST.FORM.DESCRIPTION_PLACEHOLDER}
                     rows={4}
                     className="mt-1"
                   />
                   <div className={`text-xs mt-1 ${formData.description.length >= 50 ? 'text-muted-foreground' : 'text-red-500'}`}>
-                    {formData.description.length}/2000 characters (minimum 50)
+                    {MARKETPLACE_TEXT.CREATE_BOOST.FORM.DESCRIPTION_LENGTH(formData.description.length, 50)}
                   </div>
                   {validation.errors.some(e => e.includes('Description')) && (
-                    <p className="text-sm text-red-500 mt-1">Description must be at least 50 characters</p>
+                    <p className="text-sm text-red-500 mt-1">{MARKETPLACE_CONSTANTS.VALIDATION.DESCRIPTION_REQUIRED}</p>
                   )}
                 </div>
 
@@ -420,7 +591,7 @@ export default function CreateBoostPage() {
                     onClick={() => setCurrentStep(2)}
                     disabled={!formData.name || !formData.type || !formData.category || formData.description.length < 50}
                   >
-                    Next: Features & Targeting
+                    {MARKETPLACE_TEXT.CREATE_BOOST.ACTIONS.NEXT_FEATURES}
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </div>
@@ -440,14 +611,14 @@ export default function CreateBoostPage() {
               <CardContent className="space-y-6">
                 {/* Features */}
                 <div>
-                  <Label>Features *</Label>
+                  <Label>{MARKETPLACE_TEXT.CREATE_BOOST.FORM.FEATURES} *</Label>
                   <div className="space-y-2 mt-2">
                     {formData.features.map((feature, index) => (
                       <div key={index} className="flex items-center gap-2">
                         <Input
                           value={feature}
                           onChange={(e) => updateFeature(index, e.target.value)}
-                          placeholder="Feature description"
+                          placeholder={MARKETPLACE_TEXT.CREATE_BOOST.FORM.FEATURE_PLACEHOLDER}
                           className="flex-1"
                         />
                         <Button
@@ -470,17 +641,17 @@ export default function CreateBoostPage() {
                       disabled={formData.features.length >= 15}
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Add Feature ({formData.features.length}/15)
+                      {MARKETPLACE_TEXT.CREATE_BOOST.ACTIONS.ADD_FEATURE(formData.features.length, 15)}
                     </Button>
                   </div>
                   {validation.errors.some(e => e.includes('feature')) && (
-                    <p className="text-sm text-red-500 mt-1">At least one feature is required</p>
+                    <p className="text-sm text-red-500 mt-1">{MARKETPLACE_CONSTANTS.VALIDATION.FEATURES_REQUIRED}</p>
                   )}
                 </div>
 
                 {/* Target Audience */}
                 <div>
-                  <Label>Target Audience *</Label>
+                  <Label>{MARKETPLACE_TEXT.CREATE_BOOST.FORM.TARGET_AUDIENCE} *</Label>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
                     {TARGET_AUDIENCES.map(audience => (
                       <div key={audience} className="flex items-center space-x-2">
@@ -499,13 +670,13 @@ export default function CreateBoostPage() {
                     ))}
                   </div>
                   {validation.errors.some(e => e.includes('audience')) && (
-                    <p className="text-sm text-red-500 mt-1">Target audience is required</p>
+                    <p className="text-sm text-red-500 mt-1">{MARKETPLACE_CONSTANTS.VALIDATION.AUDIENCE_REQUIRED}</p>
                   )}
                 </div>
 
                 {/* Client Types */}
                 <div>
-                  <Label>Client Types *</Label>
+                  <Label>{MARKETPLACE_TEXT.CREATE_BOOST.FORM.CLIENT_TYPES} *</Label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
                     {CLIENT_TYPES.map(clientType => (
                       <div key={clientType} className="flex items-center space-x-2">
@@ -528,13 +699,13 @@ export default function CreateBoostPage() {
                 <div className="flex justify-between">
                   <Button variant="outline" onClick={() => setCurrentStep(1)}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
-                    Previous
+                    {MARKETPLACE_TEXT.CREATE_BOOST.ACTIONS.PREVIOUS}
                   </Button>
                   <Button 
                     onClick={() => setCurrentStep(3)}
                     disabled={formData.features.filter(f => f.trim()).length === 0 || formData.targetAudience.length === 0}
                   >
-                    Next: Pricing & SEO
+                    {MARKETPLACE_TEXT.CREATE_BOOST.ACTIONS.NEXT_PRICING}
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </div>
@@ -555,7 +726,7 @@ export default function CreateBoostPage() {
                 {/* Pricing */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="price">Base Price *</Label>
+                    <Label htmlFor="price">{MARKETPLACE_TEXT.CREATE_BOOST.FORM.BASE_PRICE} *</Label>
                     <div className="flex gap-2 mt-1">
                       <Input
                         id="price"
@@ -564,39 +735,66 @@ export default function CreateBoostPage() {
                         min="0.01"
                         value={formData.basePrice || ''}
                         onChange={(e) => setFormData(prev => ({ ...prev, basePrice: parseFloat(e.target.value) || 0 }))}
-                        placeholder="299.00"
+                        placeholder={MARKETPLACE_TEXT.CREATE_BOOST.FORM.PRICE_PLACEHOLDER}
                         className="flex-1"
                       />
                       <Select value={formData.currency} onValueChange={(value) => setFormData(prev => ({ ...prev, currency: value }))}>
-                        <SelectTrigger className="w-20">
+                        <SelectTrigger className="w-24">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           {Object.entries(SUPPORTED_CURRENCIES).map(([code, config]) => (
                             <SelectItem key={code} value={code}>
-                              {config.symbol}
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-sm">{config.symbol}</span>
+                                <span>{code}</span>
+                                <span className="text-muted-foreground">- {config.code === 'ZAR' ? 'South African Rand' : config.code === 'USD' ? 'US Dollar' : config.code === 'EUR' ? 'Euro' : config.code === 'GBP' ? 'British Pound' : config.code === 'CAD' ? 'Canadian Dollar' : config.code === 'AUD' ? 'Australian Dollar' : config.code === 'JPY' ? 'Japanese Yen' : config.code === 'NGN' ? 'Nigerian Naira' : config.code === 'INR' ? 'Indian Rupee' : config.code === 'BRL' ? 'Brazilian Real' : 'Currency'}</span>
+                              </div>
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
                     {validation.errors.some(e => e.includes('price')) && (
-                      <p className="text-sm text-red-500 mt-1">Base price must be greater than 0</p>
+                      <p className="text-sm text-red-500 mt-1">{MARKETPLACE_CONSTANTS.VALIDATION.PRICE_REQUIRED}</p>
+                    )}
+                    {/* Currency preference indicator */}
+                    {formData.currency && (
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        Preview: {formatCurrency(29.99, formData.currency)}
+                        {userSettings?.preferences?.currency === formData.currency && (
+                          <span className="ml-2 text-blue-600 font-medium">
+                            ✓ Matches your account preferences
+                          </span>
+                        )}
+                        {formData.currency === 'ZAR' && (
+                          <span className="ml-2 text-green-600 font-medium">🇿🇦 South African market</span>
+                        )}
+                      </div>
                     )}
                   </div>
                   
                   <div>
-                    <Label>Recommended Pricing</Label>
+                    <Label>{MARKETPLACE_TEXT.CREATE_BOOST.FORM.RECOMMENDED_PRICING}</Label>
                     <div className="mt-1">
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
                         onClick={getRecommendedPricing}
-                        disabled={!formData.category || formData.features.filter(f => f.trim()).length === 0}
+                        disabled={loadingRecommendations || !formData.category || formData.features.filter(f => f.trim()).length === 0}
                       >
-                        <Lightbulb className="h-4 w-4 mr-2" />
-                        Get Suggestions
+                        {loadingRecommendations ? (
+                          <>
+                            <div className="h-4 w-4 mr-2 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                            Loading...
+                          </>
+                        ) : (
+                          <>
+                            <Lightbulb className="h-4 w-4 mr-2" />
+                            {MARKETPLACE_TEXT.CREATE_BOOST.FORM.GET_SUGGESTIONS}
+                          </>
+                        )}
                       </Button>
                       {recommendedPricing && (
                         <div className="mt-2 p-3 bg-muted rounded-lg">
@@ -615,7 +813,7 @@ export default function CreateBoostPage() {
                 {/* SEO */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <Label>SEO Optimization</Label>
+                    <Label>{MARKETPLACE_TEXT.CREATE_BOOST.FORM.SEO_OPTIMIZATION}</Label>
                     <Button
                       type="button"
                       variant="outline"
@@ -624,17 +822,17 @@ export default function CreateBoostPage() {
                       disabled={!formData.name || !formData.category}
                     >
                       <Lightbulb className="h-4 w-4 mr-2" />
-                      Generate SEO
+                      {MARKETPLACE_TEXT.CREATE_BOOST.FORM.GENERATE_SEO}
                     </Button>
                   </div>
                   
                   <div>
-                    <Label htmlFor="seoTitle">SEO Title</Label>
+                    <Label htmlFor="seoTitle">{MARKETPLACE_TEXT.CREATE_BOOST.FORM.SEO_TITLE}</Label>
                     <Input
                       id="seoTitle"
                       value={formData.seoTitle}
                       onChange={(e) => setFormData(prev => ({ ...prev, seoTitle: e.target.value }))}
-                      placeholder="Auto-generated or custom SEO title"
+                      placeholder={MARKETPLACE_TEXT.CREATE_BOOST.FORM.SEO_TITLE_PLACEHOLDER}
                       className="mt-1"
                       maxLength={60}
                     />
@@ -644,12 +842,12 @@ export default function CreateBoostPage() {
                   </div>
                   
                   <div>
-                    <Label htmlFor="seoDescription">SEO Description</Label>
+                    <Label htmlFor="seoDescription">{MARKETPLACE_TEXT.CREATE_BOOST.FORM.SEO_DESCRIPTION}</Label>
                     <Textarea
                       id="seoDescription"
                       value={formData.seoDescription}
                       onChange={(e) => setFormData(prev => ({ ...prev, seoDescription: e.target.value }))}
-                      placeholder="Auto-generated or custom SEO description"
+                      placeholder={MARKETPLACE_TEXT.CREATE_BOOST.FORM.SEO_DESCRIPTION_PLACEHOLDER}
                       rows={2}
                       className="mt-1"
                       maxLength={160}
@@ -662,14 +860,14 @@ export default function CreateBoostPage() {
 
                 {/* Tags */}
                 <div>
-                  <Label>Tags</Label>
+                  <Label>{MARKETPLACE_TEXT.CREATE_BOOST.FORM.TAGS}</Label>
                   <div className="space-y-2 mt-2">
                     {formData.tags.map((tag, index) => (
                       <div key={index} className="flex items-center gap-2">
                         <Input
                           value={tag}
                           onChange={(e) => updateTag(index, e.target.value)}
-                          placeholder="tag-name"
+                          placeholder={MARKETPLACE_TEXT.CREATE_BOOST.FORM.TAG_PLACEHOLDER}
                           className="flex-1"
                         />
                         <Button
@@ -692,7 +890,7 @@ export default function CreateBoostPage() {
                       disabled={formData.tags.length >= 15}
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Add Tag ({formData.tags.length}/15)
+                      {MARKETPLACE_TEXT.CREATE_BOOST.ACTIONS.ADD_TAG(formData.tags.length, 15)}
                     </Button>
                   </div>
                 </div>
@@ -700,13 +898,13 @@ export default function CreateBoostPage() {
                 <div className="flex justify-between">
                   <Button variant="outline" onClick={() => setCurrentStep(2)}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
-                    Previous
+                    {MARKETPLACE_TEXT.CREATE_BOOST.ACTIONS.PREVIOUS}
                   </Button>
                   <Button 
                     onClick={() => setCurrentStep(4)}
                     disabled={formData.basePrice <= 0}
                   >
-                    Next: Review & Submit
+                    {MARKETPLACE_TEXT.CREATE_BOOST.ACTIONS.NEXT_REVIEW}
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </div>
@@ -720,7 +918,7 @@ export default function CreateBoostPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5" />
-                  Review & Submit
+                  {MARKETPLACE_TEXT.CREATE_BOOST.STEPS.REVIEW_SUBMIT}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -729,7 +927,7 @@ export default function CreateBoostPage() {
                   <div className="p-4 border border-red-200 bg-red-50 rounded-lg">
                     <div className="flex items-center gap-2 mb-2">
                       <AlertCircle className="h-4 w-4 text-red-600" />
-                      <span className="font-medium text-red-800">Errors to Fix:</span>
+                      <span className="font-medium text-red-800">{MARKETPLACE_TEXT.CREATE_BOOST.VALIDATION.ERRORS_TO_FIX}</span>
                     </div>
                     <ul className="text-sm text-red-700 space-y-1">
                       {validation.errors.map((error, index) => (
@@ -743,7 +941,7 @@ export default function CreateBoostPage() {
                   <div className="p-4 border border-yellow-200 bg-yellow-50 rounded-lg">
                     <div className="flex items-center gap-2 mb-2">
                       <AlertCircle className="h-4 w-4 text-yellow-600" />
-                      <span className="font-medium text-yellow-800">Recommendations:</span>
+                      <span className="font-medium text-yellow-800">{MARKETPLACE_TEXT.CREATE_BOOST.VALIDATION.RECOMMENDATIONS}</span>
                     </div>
                     <ul className="text-sm text-yellow-700 space-y-1">
                       {validation.warnings.map((warning, index) => (
@@ -756,23 +954,23 @@ export default function CreateBoostPage() {
                 {/* Summary */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <h3 className="font-semibold mb-3">Product Summary</h3>
+                    <h3 className="font-semibold mb-3">{MARKETPLACE_TEXT.CREATE_BOOST.SUMMARY.PRODUCT_SUMMARY}</h3>
                     <div className="space-y-2 text-sm">
-                      <div><strong>Name:</strong> {formData.name || 'Not set'}</div>
-                      <div><strong>Type:</strong> {BOOST_TYPES.find(t => t.value === formData.type)?.label || 'Not set'}</div>
-                      <div><strong>Category:</strong> {LISTING_CATEGORIES.find(c => c.id === formData.category)?.name || 'Not set'}</div>
-                      <div><strong>Price:</strong> {formatCurrency(formData.basePrice, formData.currency)}</div>
-                      <div><strong>Duration:</strong> {formData.duration}</div>
+                      <div><strong>{MARKETPLACE_TEXT.CREATE_BOOST.SUMMARY.NAME}</strong> {formData.name || MARKETPLACE_TEXT.CREATE_BOOST.SUMMARY.NOT_SET}</div>
+                      <div><strong>{MARKETPLACE_TEXT.CREATE_BOOST.SUMMARY.TYPE}</strong> {BOOST_TYPES.find(t => t.value === formData.type)?.label || MARKETPLACE_TEXT.CREATE_BOOST.SUMMARY.NOT_SET}</div>
+                      <div><strong>{MARKETPLACE_TEXT.CREATE_BOOST.SUMMARY.CATEGORY}</strong> {LISTING_CATEGORIES.find(c => c.id === formData.category)?.name || MARKETPLACE_TEXT.CREATE_BOOST.SUMMARY.NOT_SET}</div>
+                      <div><strong>{MARKETPLACE_TEXT.CREATE_BOOST.SUMMARY.PRICE}</strong> {formatCurrency(formData.basePrice, formData.currency)}</div>
+                      <div><strong>{MARKETPLACE_TEXT.CREATE_BOOST.SUMMARY.DURATION}</strong> {formData.duration}</div>
                     </div>
                   </div>
                   
                   <div>
-                    <h3 className="font-semibold mb-3">Features & Targeting</h3>
+                    <h3 className="font-semibold mb-3">{MARKETPLACE_TEXT.CREATE_BOOST.SUMMARY.FEATURES_TARGETING}</h3>
                     <div className="space-y-2 text-sm">
-                      <div><strong>Features:</strong> {formData.features.filter(f => f.trim()).length}</div>
-                      <div><strong>Target Audiences:</strong> {formData.targetAudience.length}</div>
-                      <div><strong>Client Types:</strong> {formData.clientTypes.length}</div>
-                      <div><strong>Tags:</strong> {formData.tags.filter(t => t.trim()).length}</div>
+                      <div><strong>{MARKETPLACE_TEXT.CREATE_BOOST.SUMMARY.FEATURES}</strong> {formData.features.filter(f => f.trim()).length}</div>
+                      <div><strong>{MARKETPLACE_TEXT.CREATE_BOOST.SUMMARY.TARGET_AUDIENCES}</strong> {formData.targetAudience.length}</div>
+                      <div><strong>{MARKETPLACE_TEXT.CREATE_BOOST.SUMMARY.CLIENT_TYPES}</strong> {formData.clientTypes.length}</div>
+                      <div><strong>{MARKETPLACE_TEXT.CREATE_BOOST.SUMMARY.TAGS}</strong> {formData.tags.filter(t => t.trim()).length}</div>
                     </div>
                   </div>
                 </div>
@@ -780,24 +978,44 @@ export default function CreateBoostPage() {
                 <div className="flex justify-between">
                   <Button variant="outline" onClick={() => setCurrentStep(3)}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
-                    Previous
+                    {MARKETPLACE_TEXT.CREATE_BOOST.ACTIONS.PREVIOUS}
                   </Button>
                   
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
                       onClick={() => handleSubmit('draft')}
-                      disabled={isSubmitting || !validation.isValid}
+                      disabled={isSubmitting || !validation.isValid || !organizationId}
+                      className={!validation.isValid ? 'opacity-50 cursor-not-allowed' : ''}
                     >
-                      <Save className="h-4 w-4 mr-2" />
-                      {isSubmitting ? 'Saving...' : 'Save Draft'}
+                      {isSubmitting ? (
+                        <>
+                          <div className="h-4 w-4 mr-2 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                          {MARKETPLACE_TEXT.CREATE_BOOST.ACTIONS.SAVING}
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          {MARKETPLACE_TEXT.CREATE_BOOST.ACTIONS.SAVE_DRAFT}
+                        </>
+                      )}
                     </Button>
                     <Button
                       onClick={() => handleSubmit('review')}
-                      disabled={isSubmitting || !validation.isValid}
+                      disabled={isSubmitting || !validation.isValid || !organizationId}
+                      className={`${!validation.isValid ? 'opacity-50 cursor-not-allowed' : ''} ${MARKETPLACE_COLORS.BUTTONS.PRIMARY}`}
                     >
-                      <Send className="h-4 w-4 mr-2" />
-                      {isSubmitting ? 'Submitting...' : 'Submit for Review'}
+                      {isSubmitting ? (
+                        <>
+                          <div className="h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          {MARKETPLACE_TEXT.CREATE_BOOST.ACTIONS.SUBMITTING}
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4 mr-2" />
+                          {MARKETPLACE_TEXT.CREATE_BOOST.ACTIONS.SUBMIT_FOR_REVIEW}
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>

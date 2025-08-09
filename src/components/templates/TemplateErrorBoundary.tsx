@@ -33,7 +33,10 @@ export class TemplateErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Template Error Boundary caught an error:', error, errorInfo);
+    // Error logged for debugging in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Template Error Boundary caught an error:', error, errorInfo);
+    }
   }
 
   render() {
@@ -67,7 +70,7 @@ export class TemplateErrorBoundary extends React.Component<
               </Button>
               {this.props.showCreateButton !== false && (
                 <Button asChild>
-                  <Link href="/templates/new">
+                  <Link href="/service-provider/templates">
                     <Plus className="h-4 w-4 mr-2" />
                     Create New Template
                   </Link>
@@ -96,7 +99,10 @@ export class TemplateErrorBoundary extends React.Component<
 // Hook version for functional components
 export function useTemplateErrorHandler() {
   const handleTemplateError = (error: Error, operation: string) => {
-    console.error(`Template operation "${operation}" failed:`, error);
+    // Error logged for debugging in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error(`Template operation "${operation}" failed:`, error);
+    }
     
     // You could extend this to send to error reporting service
     // Example: Sentry, LogRocket, etc.

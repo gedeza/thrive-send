@@ -156,6 +156,7 @@ export const MARKETPLACE_TEXT = {
     LOADING_BOOSTS: 'Loading boost products...',
     LOADING_PURCHASES: 'Loading purchase history...',
     PROCESSING_PURCHASE: 'Processing purchase...',
+    LOADING_PRODUCTS: 'Loading your products...',
   },
 
   // Boost creation text
@@ -410,6 +411,8 @@ export const MARKETPLACE_CONSTANTS = {
     MANAGE_PRODUCTS: 'Manage Products',
     CREATE_PRODUCT: 'Create Product',
     EDIT_PRODUCT: 'Edit Product',
+    INTEGRATE_CAMPAIGN: 'Integrate with Campaign',
+    CAMPAIGN_INTEGRATIONS: 'Campaign Integrations',
   },
 
   // Success messages
@@ -426,6 +429,29 @@ export const MARKETPLACE_CONSTANTS = {
     PRODUCT_SAVE_FAILED: 'Failed to save product',
     PRODUCT_DELETE_FAILED: 'Failed to delete product',
     PRODUCT_LOAD_FAILED: 'Failed to load products',
+    // API Error Messages
+    INVALID_DATA: 'Invalid data provided. Please check all fields and try again.',
+    UNAUTHORIZED: 'You are not authorized to create products. Please sign in again.',
+    FORBIDDEN: 'You don\'t have permission to create products for this organization.',
+    CONFLICT: 'A product with this name already exists. Please choose a different name.',
+    UNPROCESSABLE: 'Some required fields are missing or invalid. Please review your inputs.',
+    RATE_LIMITED: 'Too many requests. Please wait a moment and try again.',
+    SERVER_ERROR: 'Server error occurred. Please try again in a few minutes.',
+    NETWORK_ERROR: 'Network connection failed. Please check your internet connection.',
+    TIMEOUT_ERROR: 'Request timed out. Please try again.',
+    UNEXPECTED_ERROR: 'An unexpected error occurred. Please try again.',
+    // Form Validation Messages
+    ORGANIZATION_REQUIRED_TITLE: 'Organization Required',
+    ORGANIZATION_REQUIRED_DESC: 'Please ensure you are part of an organization to create products.',
+    VALIDATION_FAILED_TITLE: 'Validation Failed',
+    VALIDATION_FAILED_PREFIX: 'Please fix the following: ',
+    // Pricing Service Messages
+    PRICING_MISSING_INFO_TITLE: 'Missing Information',
+    PRICING_MISSING_INFO_DESC: 'Please fill in category, features, and target audience to get pricing recommendations.',
+    PRICING_UPDATED_TITLE: 'Pricing Updated',
+    PRICING_UPDATED_DESC: 'Pricing recommendations have been generated based on your product details.',
+    PRICING_SERVICE_ERROR_TITLE: 'Pricing Service Error',
+    PRICING_SERVICE_ERROR_DESC: 'Unable to get pricing recommendations. You can set prices manually.',
   },
 
   // Validation messages
@@ -433,9 +459,10 @@ export const MARKETPLACE_CONSTANTS = {
     REQUIRED_FIELD: 'Required Field',
     INVALID_INPUT: 'Invalid Input',
     NAME_REQUIRED: 'Product name is required',
-    DESCRIPTION_REQUIRED: 'Description is required',
+    DESCRIPTION_REQUIRED: 'Description must be at least 50 characters',
     FEATURES_REQUIRED: 'At least one feature is required',
-    PRICE_REQUIRED: 'Price must be greater than 0',
+    AUDIENCE_REQUIRED: 'Target audience is required',
+    PRICE_REQUIRED: 'Base price must be greater than 0',
   },
 
   // Form labels
@@ -490,6 +517,171 @@ export const MARKETPLACE_CONSTANTS = {
   EMPTY_STATES: {
     NO_PRODUCTS: 'No products yet',
     CREATE_FIRST_PRODUCT: 'Create your first boost product to start selling in the marketplace.',
+  },
+
+  // Boosts page specific text
+  BOOSTS: {
+    // Page header
+    TITLE: 'Boost Marketplace',
+    SUBTITLE: 'Promote your listings to increase visibility and sales',
+    CREATE_BOOST: 'Create Boost',
+    
+    // Tab navigation
+    MY_BOOSTS: 'My Boosts',
+    BOOST_TYPES: 'Boost Types',
+    ANALYTICS: 'Analytics',
+    
+    // Summary metrics
+    TOTAL_IMPRESSIONS: 'Total Impressions',
+    TOTAL_CLICKS: 'Total Clicks',
+    CONVERSIONS: 'Conversions',
+    TOTAL_SPENT: 'Total Spent',
+    BUDGET_REMAINING: 'Budget remaining',
+    FROM_LAST_MONTH: 'from last month',
+    
+    // Filter options
+    FILTER_BY_STATUS: 'Filter by status',
+    ALL_STATUS: 'All Status',
+    ACTIVE_STATUS: 'Active',
+    COMPLETED_STATUS: 'Completed',
+    PAUSED_STATUS: 'Paused',
+    EXPIRED_STATUS: 'Expired',
+    
+    // Boost card content
+    CAMPAIGN_PROGRESS: 'Campaign Progress',
+    IMPRESSIONS_LABEL: 'Impressions',
+    CLICKS_LABEL: 'Clicks',
+    CONVERSIONS_LABEL: 'Conversions',
+    CTR_LABEL: 'CTR',
+    CONV_RATE_LABEL: 'Conv. Rate',
+    BUDGET_SPENT: 'Budget Spent',
+    AVG_CPC: 'Avg. CPC',
+    
+    // Actions
+    PAUSE_BOOST: 'Pause Boost',
+    RESUME_BOOST: 'Resume Boost',
+    VIEW_LISTING: 'View Listing',
+    VIEW_DETAILS: 'View Details',
+    CREATE_FIRST_BOOST: 'Create Your First Boost',
+    
+    // Boost types
+    FEATURED_NAME: 'Featured',
+    FEATURED_DESC: 'Highlight your listing at the top of search results',
+    FEATURED_COST: '$0.50 per click',
+    FEATURED_DURATION: '7-30 days',
+    FEATURED_REACH: 'High visibility',
+    
+    PROMOTED_NAME: 'Promoted',
+    PROMOTED_DESC: 'Show your listing in promoted sections',
+    PROMOTED_COST: '$0.75 per click',
+    PROMOTED_DURATION: '1-14 days',
+    PROMOTED_REACH: 'Targeted audience',
+    
+    PRIORITY_NAME: 'Priority',
+    PRIORITY_DESC: 'Higher ranking in category searches',
+    PRIORITY_COST: '$1.00 per click',
+    PRIORITY_DURATION: '3-21 days',
+    PRIORITY_REACH: 'Category focused',
+    
+    SPONSORED_NAME: 'Sponsored',
+    SPONSORED_DESC: 'Premium placement across the platform',
+    SPONSORED_COST: '$1.25 per click',
+    SPONSORED_DURATION: '1-30 days',
+    SPONSORED_REACH: 'Maximum exposure',
+    
+    // Boost type labels
+    COST_LABEL: 'Cost:',
+    DURATION_LABEL: 'Duration:',
+    REACH_LABEL: 'Reach:',
+    CREATE_BOOST_TYPE: (type: string) => `Create ${type} Boost`,
+    
+    // Empty states
+    NO_BOOSTS_FOUND: 'No boosts found',
+    NO_BOOSTS_YET: 'You haven\'t created any boosts yet.',
+    NO_BOOSTS_STATUS: (status: string) => `No boosts with status "${status}".`,
+    
+    // Analytics
+    BOOST_ANALYTICS: 'Boost Analytics',
+    ANALYTICS_COMING_SOON: 'Detailed analytics coming soon.',
+    
+    // Metrics with percentage
+    PERCENTAGE_CHANGE: (value: number) => `+${value}% from last month`,
+  },
+
+  // Manage page specific text
+  MANAGE: {
+    // Page header
+    PAGE_SUBTITLE: 'Manage your boost products and track their performance',
+    
+    // Modal titles
+    CREATE_MODAL_TITLE: 'Create New Product',
+    EDIT_MODAL_TITLE: 'Edit Product',
+    
+    // Form sections
+    BASIC_INFORMATION: 'Basic Information',
+    PRICING_DURATION: 'Pricing & Duration',
+    FEATURES_SECTION: 'Features',
+    TARGET_CLIENT_TYPES: 'Target Client Types',
+    SETTINGS_SECTION: 'Settings',
+    
+    // Form labels
+    PRODUCT_NAME_REQUIRED: 'Product Name *',
+    DESCRIPTION_REQUIRED: 'Description *',
+    TYPE_LABEL: 'Type',
+    CATEGORY_LABEL: 'Category',
+    PRICE_REQUIRED: 'Price *',
+    ORIGINAL_PRICE: 'Original Price',
+    DURATION_REQUIRED: 'Duration *',
+    ESTIMATED_ROI: 'Estimated ROI',
+    FEATURES_REQUIRED: 'Features *',
+    
+    // Placeholders
+    ENTER_PRODUCT_NAME: 'Enter product name',
+    DESCRIBE_PRODUCT: 'Describe your boost product',
+    DURATION_EXAMPLE: 'e.g. 30 days',
+    ROI_EXAMPLE: 'e.g. 200-300%',
+    ADD_FEATURE: 'Add a feature',
+    ADD_CLIENT_TYPE: 'Add a client type',
+    
+    // Settings labels and descriptions
+    RECOMMENDED_PRODUCT: 'Recommended Product',
+    RECOMMENDED_DESCRIPTION: 'Mark as recommended for higher visibility',
+    ACTIVE_PRODUCT: 'Active Product', 
+    ACTIVE_DESCRIPTION: 'Active products are visible in the marketplace',
+    
+    // Button text
+    ADD_BUTTON: 'Add',
+    CANCEL_BUTTON: 'Cancel',
+    SAVING_BUTTON: 'Saving...',
+    UPDATE_PRODUCT: 'Update Product',
+    CREATE_PRODUCT_BUTTON: 'Create Product',
+    EDIT_BUTTON: 'Edit',
+    
+    // Stats labels
+    TOTAL_PRODUCTS: 'Total Products',
+    ACTIVE_PRODUCTS: 'Active Products', 
+    TOTAL_REVENUE: 'Total Revenue',
+    TOTAL_SALES: 'Total Sales',
+    SALES_LABEL: 'Sales',
+    REVENUE_LABEL: 'Revenue',
+    ACTIVE_LABEL: 'Active',
+    MONTHLY_LABEL: 'Monthly',
+    RECOMMENDED_BADGE: 'Recommended',
+    
+    // Validation messages
+    FILL_REQUIRED_FIELDS: 'Please fill in all required fields.',
+    ADD_AT_LEAST_ONE_FEATURE: 'Please add at least one feature.',
+    
+    // Confirmation messages
+    DELETE_CONFIRMATION: 'Are you sure you want to delete this product? This action cannot be undone.',
+    PRODUCT_UPDATED_SUCCESS: 'updated',
+    PRODUCT_CREATED_SUCCESS: 'created',
+    PRODUCT_SAVED_SUCCESS: 'Product saved successfully.',
+    
+    // Error messages
+    FAILED_TO_LOAD: 'Failed to load your products.',
+    FAILED_TO_SAVE: 'Failed to save product.',
+    FAILED_TO_DELETE: 'Failed to delete product.',
   },
 
   // Loading states

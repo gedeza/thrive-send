@@ -35,7 +35,9 @@ import {
   Eye,
   EyeOff 
 } from 'lucide-react';
-import { MARKETPLACE_CONSTANTS } from '@/constants/marketplace-text';
+import { MARKETPLACE_CONSTANTS, MARKETPLACE_TEXT, MARKETPLACE_COLORS } from '@/constants/marketplace-text';
+import { useServiceProvider } from '@/context/ServiceProviderContext';
+import { formatCurrency, getUserCurrency, getUserCurrencyAsync, SUPPORTED_CURRENCIES } from '@/lib/utils/currency';
 
 interface BoostProduct {
   id: string;
@@ -82,6 +84,7 @@ const defaultFormData = {
 
 export default function MarketplaceManagePage() {
   const { userId } = useAuth();
+  const { state: { organizationId: contextOrgId } } = useServiceProvider();
   const [products, setProducts] = useState<BoostProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -91,8 +94,79 @@ export default function MarketplaceManagePage() {
   const [featureInput, setFeatureInput] = useState('');
   const [clientTypeInput, setClientTypeInput] = useState('');
   
-  // For demo purposes, using a placeholder organization ID
-  const organizationId = 'org_placeholder';
+  // Use organization ID from context
+  const organizationId = contextOrgId;
+
+  // Enhanced API error handling
+  const handleApiError = (error: any, response?: Response) => {
+    if (response) {
+      // Handle HTTP errors
+      switch (response.status) {
+        case 400:
+          return MARKETPLACE_CONSTANTS.ERRORS.INVALID_DATA;
+        case 401:
+          return MARKETPLACE_CONSTANTS.ERRORS.UNAUTHORIZED;
+        case 403:
+          return MARKETPLACE_CONSTANTS.ERRORS.FORBIDDEN;
+        case 409:
+          return MARKETPLACE_CONSTANTS.ERRORS.CONFLICT;
+        case 422:
+          return MARKETPLACE_CONSTANTS.ERRORS.UNPROCESSABLE;
+        case 429:
+          return MARKETPLACE_CONSTANTS.ERRORS.RATE_LIMITED;
+        case 500:
+          return MARKETPLACE_CONSTANTS.ERRORS.SERVER_ERROR;
+        default:
+          return `Server returned error ${response.status}. Please try again.`;
+      }
+    }
+    
+    // Handle network/client errors
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      return MARKETPLACE_CONSTANTS.ERRORS.NETWORK_ERROR;
+    }
+    
+    if (error.message.includes('timeout')) {
+      return MARKETPLACE_CONSTANTS.ERRORS.TIMEOUT_ERROR;
+    }
+    
+    return error.message || MARKETPLACE_CONSTANTS.ERRORS.UNEXPECTED_ERROR;
+  };
+
+  // Retry logic for API calls
+  const apiCallWithRetry = async (url: string, options: RequestInit, maxRetries = 2): Promise<Response> => {
+    let lastError: Error;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+        
+        const response = await fetch(url, {
+          ...options,
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        return response;
+      } catch (error) {
+        lastError = error as Error;
+        
+        // Don't retry on client errors (4xx) or abort
+        if (error.name === 'AbortError' || 
+            (error instanceof TypeError && !error.message.includes('fetch'))) {
+          break;
+        }
+        
+        // Wait before retry (exponential backoff)
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        }
+      }
+    }
+    
+    throw lastError!;
+  };
 
   useEffect(() => {
     if (userId) {
@@ -102,21 +176,23 @@ export default function MarketplaceManagePage() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch(
-        `/api/marketplace/products/manage?organizationId=${organizationId}`
+      const response = await apiCallWithRetry(
+        `/api/marketplace/products/manage?organizationId=${organizationId}`,
+        { method: 'GET' }
       );
       
       if (!response.ok) {
-        throw new Error('Failed to fetch products');
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.error || handleApiError(null, response);
+        throw new Error(errorMessage);
       }
       
       const data = await response.json();
       setProducts(data.products || []);
     } catch (error) {
-      console.error('Error fetching products:', error);
       toast({
         title: MARKETPLACE_CONSTANTS.ERRORS.GENERIC,
-        description: 'Failed to load your products.',
+        description: MARKETPLACE_CONSTANTS.MANAGE.FAILED_TO_LOAD,
         variant: 'destructive'
       });
     } finally {
@@ -153,7 +229,7 @@ export default function MarketplaceManagePage() {
     if (!formData.name.trim() || !formData.description.trim()) {
       toast({
         title: MARKETPLACE_CONSTANTS.VALIDATION.REQUIRED_FIELD,
-        description: 'Please fill in all required fields.',
+        description: MARKETPLACE_CONSTANTS.MANAGE.FILL_REQUIRED_FIELDS,
         variant: 'destructive'
       });
       return;
@@ -162,7 +238,7 @@ export default function MarketplaceManagePage() {
     if (formData.features.length === 0) {
       toast({
         title: MARKETPLACE_CONSTANTS.VALIDATION.REQUIRED_FIELD,
-        description: 'Please add at least one feature.',
+        description: MARKETPLACE_CONSTANTS.MANAGE.ADD_AT_LEAST_ONE_FEATURE,
         variant: 'destructive'
       });
       return;
@@ -180,29 +256,45 @@ export default function MarketplaceManagePage() {
         ...(editingProduct && { productId: editingProduct.id })
       };
 
-      const response = await fetch(url, {
+      const response = await apiCallWithRetry(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save product');
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.error || handleApiError(null, response);
+        
+        // Handle validation errors specifically
+        if (response.status === 400 && errorData?.details) {
+          const validationErrors = Array.isArray(errorData.details) 
+            ? errorData.details.map((err: any) => err.message || err).join(', ')
+            : errorData.details.toString();
+          
+          toast({
+            title: MARKETPLACE_CONSTANTS.ERRORS.VALIDATION_FAILED_TITLE,
+            description: `${MARKETPLACE_CONSTANTS.ERRORS.VALIDATION_FAILED_PREFIX}${validationErrors}`,
+            variant: 'destructive'
+          });
+          return;
+        }
+        
+        throw new Error(errorMessage);
       }
 
       toast({
         title: MARKETPLACE_CONSTANTS.SUCCESS.PRODUCT_SAVED,
-        description: `Product ${editingProduct ? 'updated' : 'created'} successfully.`
+        description: `Product ${editingProduct ? MARKETPLACE_CONSTANTS.MANAGE.PRODUCT_UPDATED_SUCCESS : MARKETPLACE_CONSTANTS.MANAGE.PRODUCT_CREATED_SUCCESS} successfully.`
       });
 
       setShowCreateModal(false);
       fetchProducts();
-    } catch (error) {
-      console.error('Error saving product:', error);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
       toast({
         title: MARKETPLACE_CONSTANTS.ERRORS.GENERIC,
-        description: error instanceof Error ? error.message : 'Failed to save product.',
+        description: errorMessage,
         variant: 'destructive'
       });
     } finally {
@@ -211,19 +303,20 @@ export default function MarketplaceManagePage() {
   };
 
   const handleDelete = async (productId: string) => {
-    if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
+    if (!confirm(MARKETPLACE_CONSTANTS.MANAGE.DELETE_CONFIRMATION)) {
       return;
     }
 
     try {
-      const response = await fetch(
+      const response = await apiCallWithRetry(
         `/api/marketplace/products/manage?productId=${productId}&organizationId=${organizationId}`,
         { method: 'DELETE' }
       );
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete product');
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.error || handleApiError(null, response);
+        throw new Error(errorMessage);
       }
 
       toast({
@@ -232,11 +325,11 @@ export default function MarketplaceManagePage() {
       });
 
       fetchProducts();
-    } catch (error) {
-      console.error('Error deleting product:', error);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
       toast({
         title: MARKETPLACE_CONSTANTS.ERRORS.GENERIC,
-        description: error instanceof Error ? error.message : 'Failed to delete product.',
+        description: errorMessage,
         variant: 'destructive'
       });
     }
@@ -281,14 +374,14 @@ export default function MarketplaceManagePage() {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-semantic-primary mx-auto mb-4"></div>
-          <p className="text-semantic-muted-foreground">Loading your products...</p>
+          <p className="text-semantic-muted-foreground">{MARKETPLACE_TEXT.LOADING.LOADING_PRODUCTS}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6" role="main" aria-label="Marketplace product management">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -296,25 +389,26 @@ export default function MarketplaceManagePage() {
             {MARKETPLACE_CONSTANTS.HEADERS.MANAGE_PRODUCTS}
           </h1>
           <p className="text-semantic-muted-foreground">
-            Manage your boost products and track their performance
+            {MARKETPLACE_CONSTANTS.MANAGE.PAGE_SUBTITLE}
           </p>
         </div>
         <Button 
           onClick={handleCreate}
           className="bg-semantic-primary hover:bg-semantic-primary/90 text-custom-white"
+          aria-label="Create new boost product"
         >
           <Plus className="w-4 h-4 mr-2" />
-          Create Product
+          {MARKETPLACE_CONSTANTS.ACTIONS.CREATE_PRODUCT}
         </Button>
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4" role="region" aria-label="Product statistics overview">
+        <Card role="region" aria-label="Total products statistics">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-semantic-muted-foreground">Total Products</p>
+                <p className="text-sm text-semantic-muted-foreground">{MARKETPLACE_CONSTANTS.MANAGE.TOTAL_PRODUCTS}</p>
                 <p className="text-2xl font-bold text-semantic-foreground">
                   {products.length}
                 </p>
@@ -328,7 +422,7 @@ export default function MarketplaceManagePage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-semantic-muted-foreground">Active Products</p>
+                <p className="text-sm text-semantic-muted-foreground">{MARKETPLACE_CONSTANTS.MANAGE.ACTIVE_PRODUCTS}</p>
                 <p className="text-2xl font-bold text-semantic-foreground">
                   {products.filter(p => p.isActive).length}
                 </p>
@@ -342,9 +436,9 @@ export default function MarketplaceManagePage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-semantic-muted-foreground">Total Revenue</p>
+                <p className="text-sm text-semantic-muted-foreground">{MARKETPLACE_CONSTANTS.MANAGE.TOTAL_REVENUE}</p>
                 <p className="text-2xl font-bold text-semantic-foreground">
-                  ${products.reduce((sum, p) => sum + p.analytics.totalRevenue, 0).toLocaleString()}
+                  {formatCurrency(products.reduce((sum, p) => sum + p.analytics.totalRevenue, 0), getUserCurrency())}
                 </p>
               </div>
               <DollarSign className="w-8 h-8 text-semantic-primary" />
@@ -356,7 +450,7 @@ export default function MarketplaceManagePage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-semantic-muted-foreground">Total Sales</p>
+                <p className="text-sm text-semantic-muted-foreground">{MARKETPLACE_CONSTANTS.MANAGE.TOTAL_SALES}</p>
                 <p className="text-2xl font-bold text-semantic-foreground">
                   {products.reduce((sum, p) => sum + p.analytics.totalPurchases, 0)}
                 </p>
@@ -369,26 +463,27 @@ export default function MarketplaceManagePage() {
 
       {/* Products Grid */}
       {products.length === 0 ? (
-        <Card>
+        <Card role="region" aria-label="Empty state - no products created">
           <CardContent className="p-12 text-center">
             <div className="text-semantic-muted-foreground">
               <Activity className="w-16 h-16 mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-medium mb-2">No products yet</h3>
-              <p className="mb-4">Create your first boost product to start selling in the marketplace.</p>
+              <h3 className="text-lg font-medium mb-2">{MARKETPLACE_CONSTANTS.EMPTY_STATES.NO_PRODUCTS}</h3>
+              <p className="mb-4">{MARKETPLACE_CONSTANTS.EMPTY_STATES.CREATE_FIRST_PRODUCT}</p>
               <Button 
                 onClick={handleCreate}
                 className="bg-semantic-primary hover:bg-semantic-primary/90 text-custom-white"
+                aria-label="Create your first boost product"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Create Your First Product
+                {MARKETPLACE_CONSTANTS.ACTIONS.CREATE_YOUR_FIRST_PRODUCT}
               </Button>
             </div>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6" role="region" aria-label="Products list">
           {products.map((product) => (
-            <Card key={product.id} className="hover:shadow-lg transition-shadow">
+            <Card key={product.id} className="hover:shadow-lg transition-shadow" role="article" aria-label={`Product: ${product.name}`}>
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
@@ -404,7 +499,7 @@ export default function MarketplaceManagePage() {
                       </Badge>
                       {product.isRecommended && (
                         <Badge className="text-xs bg-semantic-warning/10 text-semantic-warning border-semantic-warning">
-                          Recommended
+                          {MARKETPLACE_CONSTANTS.MANAGE.RECOMMENDED_BADGE}
                         </Badge>
                       )}
                     </div>
@@ -427,11 +522,11 @@ export default function MarketplaceManagePage() {
                 <div className="flex justify-between items-center">
                   <div>
                     <span className="text-2xl font-bold text-semantic-foreground">
-                      ${product.price}
+                      {formatCurrency(product.price, getUserCurrency())}
                     </span>
                     {product.originalPrice && product.originalPrice > product.price && (
                       <span className="text-sm text-semantic-muted-foreground line-through ml-2">
-                        ${product.originalPrice}
+                        {formatCurrency(product.originalPrice, getUserCurrency())}
                       </span>
                     )}
                   </div>
@@ -443,27 +538,27 @@ export default function MarketplaceManagePage() {
                 {/* Analytics */}
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-semantic-muted-foreground">Sales</p>
+                    <p className="text-semantic-muted-foreground">{MARKETPLACE_CONSTANTS.MANAGE.SALES_LABEL}</p>
                     <p className="font-semibold text-semantic-foreground">
                       {product.analytics.totalPurchases}
                     </p>
                   </div>
                   <div>
-                    <p className="text-semantic-muted-foreground">Revenue</p>
+                    <p className="text-semantic-muted-foreground">{MARKETPLACE_CONSTANTS.MANAGE.REVENUE_LABEL}</p>
                     <p className="font-semibold text-semantic-foreground">
-                      ${product.analytics.totalRevenue.toLocaleString()}
+                      {formatCurrency(product.analytics.totalRevenue, getUserCurrency())}
                     </p>
                   </div>
                   <div>
-                    <p className="text-semantic-muted-foreground">Active</p>
+                    <p className="text-semantic-muted-foreground">{MARKETPLACE_CONSTANTS.MANAGE.ACTIVE_LABEL}</p>
                     <p className="font-semibold text-semantic-foreground">
                       {product.analytics.activePurchases}
                     </p>
                   </div>
                   <div>
-                    <p className="text-semantic-muted-foreground">Monthly</p>
+                    <p className="text-semantic-muted-foreground">{MARKETPLACE_CONSTANTS.MANAGE.MONTHLY_LABEL}</p>
                     <p className="font-semibold text-semantic-foreground">
-                      ${product.analytics.monthlyRevenue.toLocaleString()}
+                      {formatCurrency(product.analytics.monthlyRevenue, getUserCurrency())}
                     </p>
                   </div>
                 </div>
@@ -474,15 +569,17 @@ export default function MarketplaceManagePage() {
                     size="sm" 
                     onClick={() => handleEdit(product)}
                     className="flex-1"
+                    aria-label={`Edit ${product.name} product`}
                   >
                     <Edit className="w-4 h-4 mr-2" />
-                    Edit
+                    {MARKETPLACE_CONSTANTS.MANAGE.EDIT_BUTTON}
                   </Button>
                   <Button 
                     variant="outline" 
                     size="sm" 
                     onClick={() => handleDelete(product.id)}
                     className="text-semantic-destructive hover:text-semantic-destructive"
+                    aria-label={`Delete ${product.name} product`}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -494,41 +591,45 @@ export default function MarketplaceManagePage() {
       )}
 
       {/* Create/Edit Product Modal */}
-      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal} aria-describedby="create-product-description">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" role="dialog" aria-modal="true">
           <DialogHeader>
             <DialogTitle>
-              {editingProduct ? 'Edit Product' : 'Create New Product'}
+              {editingProduct ? MARKETPLACE_CONSTANTS.MANAGE.EDIT_MODAL_TITLE : MARKETPLACE_CONSTANTS.MANAGE.CREATE_MODAL_TITLE}
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-6">
+          <div className="space-y-6" id="create-product-description">
             {/* Basic Information */}
             <div className="space-y-4">
               <div>
-                <Label htmlFor="name">Product Name *</Label>
+                <Label htmlFor="name">{MARKETPLACE_CONSTANTS.MANAGE.PRODUCT_NAME_REQUIRED}</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Enter product name"
+                  placeholder={MARKETPLACE_CONSTANTS.MANAGE.ENTER_PRODUCT_NAME}
+                  aria-required="true"
+                  aria-invalid={!formData.name.trim()}
                 />
               </div>
               
               <div>
-                <Label htmlFor="description">Description *</Label>
+                <Label htmlFor="description">{MARKETPLACE_CONSTANTS.MANAGE.DESCRIPTION_REQUIRED}</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Describe your boost product"
+                  placeholder={MARKETPLACE_CONSTANTS.MANAGE.DESCRIBE_PRODUCT}
                   rows={3}
+                  aria-required="true"
+                  aria-invalid={!formData.description.trim()}
                 />
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="type">Type</Label>
+                  <Label htmlFor="type">{MARKETPLACE_CONSTANTS.MANAGE.TYPE_LABEL}</Label>
                   <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value as any })}>
                     <SelectTrigger>
                       <SelectValue />
@@ -544,7 +645,7 @@ export default function MarketplaceManagePage() {
                 </div>
                 
                 <div>
-                  <Label htmlFor="category">Category</Label>
+                  <Label htmlFor="category">{MARKETPLACE_CONSTANTS.MANAGE.CATEGORY_LABEL}</Label>
                   <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value as any })}>
                     <SelectTrigger>
                       <SelectValue />
@@ -563,11 +664,11 @@ export default function MarketplaceManagePage() {
 
             {/* Pricing */}
             <div className="space-y-4">
-              <h4 className="font-medium text-semantic-foreground">Pricing & Duration</h4>
+              <h4 className="font-medium text-semantic-foreground">{MARKETPLACE_CONSTANTS.MANAGE.PRICING_DURATION}</h4>
               
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor="price">Price *</Label>
+                  <Label htmlFor="price">{MARKETPLACE_CONSTANTS.MANAGE.PRICE_REQUIRED}</Label>
                   <Input
                     id="price"
                     type="number"
@@ -579,7 +680,7 @@ export default function MarketplaceManagePage() {
                 </div>
                 
                 <div>
-                  <Label htmlFor="originalPrice">Original Price</Label>
+                  <Label htmlFor="originalPrice">{MARKETPLACE_CONSTANTS.MANAGE.ORIGINAL_PRICE}</Label>
                   <Input
                     id="originalPrice"
                     type="number"
@@ -591,40 +692,41 @@ export default function MarketplaceManagePage() {
                 </div>
                 
                 <div>
-                  <Label htmlFor="duration">Duration *</Label>
+                  <Label htmlFor="duration">{MARKETPLACE_CONSTANTS.MANAGE.DURATION_REQUIRED}</Label>
                   <Input
                     id="duration"
                     value={formData.duration}
                     onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                    placeholder="e.g. 30 days"
+                    placeholder={MARKETPLACE_CONSTANTS.MANAGE.DURATION_EXAMPLE}
                   />
                 </div>
               </div>
               
               <div>
-                <Label htmlFor="estimatedROI">Estimated ROI</Label>
+                <Label htmlFor="estimatedROI">{MARKETPLACE_CONSTANTS.MANAGE.ESTIMATED_ROI}</Label>
                 <Input
                   id="estimatedROI"
                   value={formData.estimatedROI}
                   onChange={(e) => setFormData({ ...formData, estimatedROI: e.target.value })}
-                  placeholder="e.g. 200-300%"
+                  placeholder={MARKETPLACE_CONSTANTS.MANAGE.ROI_EXAMPLE}
                 />
               </div>
             </div>
 
             {/* Features */}
             <div className="space-y-4">
-              <h4 className="font-medium text-semantic-foreground">Features *</h4>
+              <h4 className="font-medium text-semantic-foreground">{MARKETPLACE_CONSTANTS.MANAGE.FEATURES_REQUIRED}</h4>
               
               <div className="flex gap-2">
                 <Input
                   value={featureInput}
                   onChange={(e) => setFeatureInput(e.target.value)}
-                  placeholder="Add a feature"
+                  placeholder={MARKETPLACE_CONSTANTS.MANAGE.ADD_FEATURE}
                   onKeyPress={(e) => e.key === 'Enter' && addFeature()}
+                  aria-label="Add new product feature"
                 />
                 <Button type="button" onClick={addFeature} variant="outline">
-                  Add
+                  {MARKETPLACE_CONSTANTS.MANAGE.ADD_BUTTON}
                 </Button>
               </div>
               
@@ -644,17 +746,17 @@ export default function MarketplaceManagePage() {
 
             {/* Client Types */}
             <div className="space-y-4">
-              <h4 className="font-medium text-semantic-foreground">Target Client Types</h4>
+              <h4 className="font-medium text-semantic-foreground">{MARKETPLACE_CONSTANTS.MANAGE.TARGET_CLIENT_TYPES}</h4>
               
               <div className="flex gap-2">
                 <Input
                   value={clientTypeInput}
                   onChange={(e) => setClientTypeInput(e.target.value)}
-                  placeholder="Add a client type"
+                  placeholder={MARKETPLACE_CONSTANTS.MANAGE.ADD_CLIENT_TYPE}
                   onKeyPress={(e) => e.key === 'Enter' && addClientType()}
                 />
                 <Button type="button" onClick={addClientType} variant="outline">
-                  Add
+                  {MARKETPLACE_CONSTANTS.MANAGE.ADD_BUTTON}
                 </Button>
               </div>
               
@@ -674,13 +776,13 @@ export default function MarketplaceManagePage() {
 
             {/* Settings */}
             <div className="space-y-4">
-              <h4 className="font-medium text-semantic-foreground">Settings</h4>
+              <h4 className="font-medium text-semantic-foreground">{MARKETPLACE_CONSTANTS.MANAGE.SETTINGS_SECTION}</h4>
               
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="isRecommended">Recommended Product</Label>
+                  <Label htmlFor="isRecommended">{MARKETPLACE_CONSTANTS.MANAGE.RECOMMENDED_PRODUCT}</Label>
                   <p className="text-sm text-semantic-muted-foreground">
-                    Mark as recommended for higher visibility
+                    {MARKETPLACE_CONSTANTS.MANAGE.RECOMMENDED_DESCRIPTION}
                   </p>
                 </div>
                 <Switch
@@ -692,9 +794,9 @@ export default function MarketplaceManagePage() {
               
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="isActive">Active Product</Label>
+                  <Label htmlFor="isActive">{MARKETPLACE_CONSTANTS.MANAGE.ACTIVE_PRODUCT}</Label>
                   <p className="text-sm text-semantic-muted-foreground">
-                    Active products are visible in the marketplace
+                    {MARKETPLACE_CONSTANTS.MANAGE.ACTIVE_DESCRIPTION}
                   </p>
                 </div>
                 <Switch
@@ -712,14 +814,14 @@ export default function MarketplaceManagePage() {
                 onClick={() => setShowCreateModal(false)}
                 disabled={saving}
               >
-                Cancel
+                {MARKETPLACE_CONSTANTS.MANAGE.CANCEL_BUTTON}
               </Button>
               <Button 
                 onClick={handleSave}
                 disabled={saving}
                 className="bg-semantic-primary hover:bg-semantic-primary/90 text-custom-white"
               >
-                {saving ? 'Saving...' : editingProduct ? 'Update Product' : 'Create Product'}
+                {saving ? MARKETPLACE_CONSTANTS.MANAGE.SAVING_BUTTON : editingProduct ? MARKETPLACE_CONSTANTS.MANAGE.UPDATE_PRODUCT : MARKETPLACE_CONSTANTS.MANAGE.CREATE_PRODUCT_BUTTON}
               </Button>
             </div>
           </div>

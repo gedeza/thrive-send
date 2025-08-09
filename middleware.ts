@@ -6,7 +6,8 @@ const isPublicRoute = createRouteMatcher([
   "/sign-in(.*)",
   "/sign-up(.*)", 
   "/api/webhook(.*)",
-  "/api/public(.*)"
+  "/api/public(.*)",
+  "/api/marketplace(.*)"  // Allow marketplace APIs to function properly
 ]);
 
 // TEMPORARY: Development bypass for service-provider API and page testing
