@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Users, BarChart3, DollarSign, TrendingUp, AlertCircle, Plus, Settings } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Alert } from '@/components/ui/Alert';
+import { Alert } from '@/components/ui/alert';
 import { ClientSwitcher } from './ClientSwitcher';
 import { CrossClientAnalytics } from '@/components/analytics/CrossClientAnalytics';
 import { ServiceProviderHeader } from './ServiceProviderHeader';

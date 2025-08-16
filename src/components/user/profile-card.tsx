@@ -6,7 +6,7 @@ import { User } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
-import { Alert } from "../ui/Alert";
+import { Alert } from "../ui/alert";
 import type { ProfileFormData } from '@/lib/validations/profile';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 

@@ -1,58 +1,59 @@
-import React from "react";
-import { theme } from "@/lib/theme";
+import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
 
-type AlertIntent = "info" | "success" | "warning" | "error";
+import { cn } from "@/lib/utils"
 
-const intentColors = {
-  info: {
-    border: "var(--primary-500)",
-    background: "var(--primary-50)",
-    color: "var(--primary-700)"
-  },
-  success: {
-    border: "var(--secondary-500)",
-    background: "var(--secondary-50)",
-    color: "var(--secondary-700)"
-  },
-  warning: {
-    border: "var(--accent-500)",
-    background: "var(--accent-50)",
-    color: "var(--accent-700)"
-  },
-  error: {
-    border: "var(--accent-500)",
-    background: "var(--accent-50)",
-    color: "var(--accent-700)"
+const alertVariants = cva(
+  "relative w-full rounded-lg border px-4 py-3 text-sm [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground",
+  {
+    variants: {
+      variant: {
+        default: "bg-background text-foreground",
+        destructive:
+          "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
   }
-};
+)
 
-interface AlertProps {
-  children: React.ReactNode;
-  intent?: AlertIntent;
-  style?: React.CSSProperties;
-}
+const Alert = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof alertVariants>
+>(({ className, variant, ...props }, ref) => (
+  <div
+    ref={ref}
+    role="alert"
+    className={cn(alertVariants({ variant }), className)}
+    {...props}
+  />
+))
+Alert.displayName = "Alert"
 
-export const Alert: React.FC<AlertProps> = ({
-  children,
-  intent = "info",
-  style,
-}) => {
-  const colors = intentColors[intent];
-  return (
-    <div style={{
-      border: `1px solid ${colors.border}`,
-      background: colors.background,
-      color: colors.color,
-      borderRadius: theme.border.radius.md,
-      padding: "1em 1.5em",
-      margin: "1em 0",
-      fontSize: "1em",
-      boxShadow: theme.shadow.sm,
-      ...style
-    }}>
-      {children}
-    </div>
-  );
-};
+const AlertTitle = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLHeadingElement>
+>(({ className, ...props }, ref) => (
+  <h5
+    ref={ref}
+    className={cn("mb-1 font-medium leading-none tracking-tight", className)}
+    {...props}
+  />
+))
+AlertTitle.displayName = "AlertTitle"
 
-export default Alert;
+const AlertDescription = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("text-sm [&_p]:leading-relaxed", className)}
+    {...props}
+  />
+))
+AlertDescription.displayName = "AlertDescription"
+
+export { Alert, AlertTitle, AlertDescription }

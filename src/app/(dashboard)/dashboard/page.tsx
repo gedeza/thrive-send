@@ -202,10 +202,10 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="h-[200px] flex items-end justify-between gap-2">
-                  {subscriberGrowth.length > 0 ? subscriberGrowth.map((month) => {
+                  {subscriberGrowth.length > 0 ? subscriberGrowth.map((month, index) => {
                     const maxCount = Math.max(...subscriberGrowth.map(m => m.count));
                     return (
-                      <div key={month.month} className="flex flex-col items-center gap-2">
+                      <div key={`${month.month}-${index}`} className="flex flex-col items-center gap-2">
                         <div
                           className="bg-primary/90 w-10 rounded-md"
                           style={{ height: `${(month.count / maxCount) * 160}px` }}

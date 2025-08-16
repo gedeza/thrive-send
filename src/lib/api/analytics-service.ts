@@ -6,6 +6,9 @@ import { AnalyticMetric, AnalyticsFilter } from '@/components/analytics/analytic
 import { useAuth } from '@clerk/nextjs';
 import { useState } from 'react';
 
+// API Constants
+const SERVICE_PROVIDER_ANALYTICS_API_URL = '/api/analytics/service-provider';
+
 export type AnalyticsDateRange = {
   start: string;
   end: string;
@@ -265,9 +268,11 @@ export function useAnalytics() {
     dateRange: AnalyticsDateRange,
     comparisonType: 'week' | 'month' | 'year' = 'week'
   ): Promise<ComparisonData> => {
+    const { getApiBaseUrl, mobileFetch } = await import('./mobile-config');
+    const baseUrl = getApiBaseUrl();
     const headers = await getAuthHeaders();
-    const response = await fetch(
-      `${baseUrl}/analytics/comparison?metric=${metric}&start=${dateRange.start}&end=${dateRange.end}&type=${comparisonType}`,
+    const response = await mobileFetch(
+      `/analytics/comparison?metric=${metric}&start=${dateRange.start}&end=${dateRange.end}&type=${comparisonType}`,
       { headers }
     );
     return response.json();
@@ -279,9 +284,11 @@ export function useAnalytics() {
     dateRange: AnalyticsDateRange
   ): Promise<CampaignPerformanceMetrics[]> => {
     try {
+      const { getApiBaseUrl, mobileFetch } = await import('./mobile-config');
+      const baseUrl = getApiBaseUrl();
       const headers = await getAuthHeaders();
-      const response = await fetch(
-        `${baseUrl}/analytics/campaign-performance?campaignId=${campaignId}&start=${dateRange.start}&end=${dateRange.end}`,
+      const response = await mobileFetch(
+        `/analytics/campaign-performance?campaignId=${campaignId}&start=${dateRange.start}&end=${dateRange.end}`,
         { headers }
       );
 
@@ -348,9 +355,11 @@ export function useAnalytics() {
     dateRange: AnalyticsDateRange
   ): Promise<any> => {
     try {
+      const { getApiBaseUrl, mobileFetch } = await import('./mobile-config');
+      const baseUrl = getApiBaseUrl();
       const headers = await getAuthHeaders();
-      const response = await fetch(
-        `${baseUrl}/analytics/conversions?start=${dateRange.start}&end=${dateRange.end}`,
+      const response = await mobileFetch(
+        `/analytics/conversions?start=${dateRange.start}&end=${dateRange.end}`,
         { headers }
       );
 
@@ -371,9 +380,11 @@ export function useAnalytics() {
     dateRange: AnalyticsDateRange,
     metrics: string[]
   ): Promise<Blob> => {
+    const { getApiBaseUrl, mobileFetch } = await import('./mobile-config');
+    const baseUrl = getApiBaseUrl();
     const headers = await getAuthHeaders();
-    const response = await fetch(
-      `${baseUrl}/analytics/export?format=${format}&start=${dateRange.start}&end=${dateRange.end}&metrics=${metrics.join(',')}`,
+    const response = await mobileFetch(
+      `/analytics/export?format=${format}&start=${dateRange.start}&end=${dateRange.end}&metrics=${metrics.join(',')}`,
       {
         headers: {
           ...headers,
@@ -394,8 +405,10 @@ export function useAnalytics() {
       format: 'csv' | 'pdf';
     }
   ): Promise<{ id: string; status: 'scheduled' }> => {
+    const { getApiBaseUrl, mobileFetch } = await import('./mobile-config');
+    const baseUrl = getApiBaseUrl();
     const headers = await getAuthHeaders();
-    const response = await fetch(`${baseUrl}/analytics/schedule-report`, {
+    const response = await mobileFetch(`/analytics/schedule-report`, {
       method: 'POST',
       headers,
       body: JSON.stringify(schedule)
@@ -406,8 +419,10 @@ export function useAnalytics() {
   // Analytics Dashboard Data
   const fetchAnalyticsMetrics = async (params: AnalyticsParams) => {
     try {
+      const { getApiBaseUrl, mobileFetch } = await import('./mobile-config');
+      const baseUrl = getApiBaseUrl();
       const headers = await getAuthHeaders();
-      const response = await fetch(`${baseUrl}/analytics/metrics`, {
+      const response = await mobileFetch(`/analytics/metrics`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -576,9 +591,11 @@ export function useAnalytics() {
     dateRange: AnalyticsDateRange
   ): Promise<any> => {
     try {
+      const { getApiBaseUrl, mobileFetch } = await import('./mobile-config');
+      const baseUrl = getApiBaseUrl();
       const headers = await getAuthHeaders();
-      const response = await fetch(
-        `${baseUrl}/analytics/campaign-metrics?campaignId=${campaignId}&start=${dateRange.start}&end=${dateRange.end}`,
+      const response = await mobileFetch(
+        `/analytics/campaign-metrics?campaignId=${campaignId}&start=${dateRange.start}&end=${dateRange.end}`,
         { headers }
       );
 
@@ -599,9 +616,11 @@ export function useAnalytics() {
     dateRange: AnalyticsDateRange
   ): Promise<any> => {
     try {
+      const { getApiBaseUrl, mobileFetch } = await import('./mobile-config');
+      const baseUrl = getApiBaseUrl();
       const headers = await getAuthHeaders();
-      const response = await fetch(
-        `${baseUrl}/analytics/devices?campaignId=${campaignId}&start=${dateRange.start}&end=${dateRange.end}`,
+      const response = await mobileFetch(
+        `/analytics/devices?campaignId=${campaignId}&start=${dateRange.start}&end=${dateRange.end}`,
         { headers }
       );
 
@@ -622,9 +641,11 @@ export function useAnalytics() {
     dateRange: AnalyticsDateRange
   ): Promise<any> => {
     try {
+      const { getApiBaseUrl, mobileFetch } = await import('./mobile-config');
+      const baseUrl = getApiBaseUrl();
       const headers = await getAuthHeaders();
-      const response = await fetch(
-        `${baseUrl}/analytics/links?campaignId=${campaignId}&start=${dateRange.start}&end=${dateRange.end}`,
+      const response = await mobileFetch(
+        `/analytics/links?campaignId=${campaignId}&start=${dateRange.start}&end=${dateRange.end}`,
         { headers }
       );
 

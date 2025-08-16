@@ -5,7 +5,7 @@ import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Suspense, useState, useEffect } from 'react';
-import Alert from '@/components/ui/Alert';
+import { Alert } from '@/components/ui/alert';
 
 interface KPIData {
   activeProjects: number;

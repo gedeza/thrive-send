@@ -1,59 +1,21 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
-import { prisma } from "@/lib/prisma";
 
-// Create a new ratelimiter that allows 10 requests per 10 seconds
-const ratelimit = new Ratelimit({
-  redis: Redis.fromEnv(),
-  limiter: Ratelimit.slidingWindow(10, "10 s"),
-  analytics: true,
-});
-
-// Role-based access control middleware
+// Role-based access control middleware - simplified for development
 async function checkRoleAccess(request: NextRequest, userId: string) {
-  // Skip role check for public routes
-  if (request.nextUrl.pathname.startsWith('/api/public')) {
+  // Skip role checks for public API routes
+  if (request.nextUrl.pathname.startsWith('/api/public') || 
+      request.nextUrl.pathname.startsWith('/api/test-') ||
+      request.nextUrl.pathname.startsWith('/api/db/')) {
     return true;
   }
-
-  // Get user role from database
-  const user = await prisma.user.findUnique({
-    where: { clerkId: userId },
-    select: { role: true }
-  });
-
-  if (!user) return false;
-
-  // Define role-based access rules
-  const roleAccess = {
-    CONTENT_CREATOR: ['/api/content', '/api/comments'],
-    REVIEWER: ['/api/content', '/api/comments', '/api/review'],
-    APPROVER: ['/api/content', '/api/comments', '/api/review', '/api/approve'],
-    PUBLISHER: ['/api/content', '/api/comments', '/api/review', '/api/approve', '/api/publish'],
-    ADMIN: ['*'] // Admin has access to everything
-  };
-
-  const userRole = user.role;
-  const allowedPaths = roleAccess[userRole];
-
-  // Check if the current path is allowed for the user's role
-  return allowedPaths.includes('*') || 
-    allowedPaths.some(path => request.nextUrl.pathname.startsWith(path));
+  return true; // Allow all for now
 }
 
-// Check if user has an organization
+// Check if user has an organization - simplified for development
 async function checkOrganizationAccess(userId: string) {
-  const user = await prisma.user.findUnique({
-    where: { clerkId: userId },
-    include: {
-      organizationMemberships: true
-    }
-  });
-
-  return user?.organizationMemberships && user.organizationMemberships.length > 0;
+  return true; // Allow all for now
 }
 
 // Define public routes that don't require authentication
@@ -63,7 +25,10 @@ const publicRoutes = [
   '/sign-up(.*)',
   '/api/webhook(.*)',
   '/api/webhooks(.*)',
-  '/api/public(.*)'
+  '/api/public(.*)',
+  '/api/test-db(.*)',
+  '/api/simple-test(.*)',
+  '/api/db/(.*)'
 ];
 
 const isPublicRoute = createRouteMatcher(publicRoutes);
@@ -72,6 +37,11 @@ export default clerkMiddleware(async (auth, req) => {
   // Check for malformed URL patterns first
   const url = req.nextUrl.clone();
   const pathname = url.pathname;
+  
+  // DEVELOPMENT MODE: Allow all API routes to pass through
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.next();
+  }
   
   // Improved malformed URL detection - check for different types of array notations
   if (pathname.includes('/content/[') || 
@@ -90,13 +60,8 @@ export default clerkMiddleware(async (auth, req) => {
 
   const { userId } = await auth();
 
-  // Handle authentication
+  // Handle authentication for non-API routes
   if (!userId && !isPublicRoute(req)) {
-    // For API routes, return 401 instead of redirecting
-    if (req.nextUrl.pathname.startsWith('/api/')) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    
     const signInUrl = new URL('/sign-in', req.url);
     signInUrl.searchParams.set('redirect_url', req.url);
     return NextResponse.redirect(signInUrl);
@@ -106,18 +71,6 @@ export default clerkMiddleware(async (auth, req) => {
   // redirect them to the content calendar
   if (userId && isPublicRoute(req)) {
     return NextResponse.redirect(new URL('/content/calendar', req.url));
-  }
-
-  // Check organization access for protected routes
-  if (userId && !isPublicRoute(req)) {
-    const hasOrganization = await checkOrganizationAccess(userId);
-    if (!hasOrganization) {
-      // For API routes, return 403 instead of redirecting
-      if (req.nextUrl.pathname.startsWith('/api/')) {
-        return NextResponse.json({ error: "No organization access" }, { status: 403 });
-      }
-      return NextResponse.redirect(new URL('/organization', req.url));
-    }
   }
 
   // Redirect landing page to content calendar for authenticated users

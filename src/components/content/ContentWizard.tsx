@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { saveContent, createCalendarEventFromContent } from '@/lib/api/content-service';
 import { toast } from '@/components/ui/use-toast';
-import { Alert } from '@/components/ui/Alert';
+import { Alert } from '@/components/ui/alert';
 import { InfoIcon, AlertCircleIcon, CheckCircleIcon, Loader2 } from 'lucide-react';
 import { trackAnalyticsEvent } from '@/lib/api/analytics-service';
 import { ContentGuidance } from './ContentGuidance';

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { db as prisma } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 
 // Enhanced interfaces from TDD
 interface ServiceProviderMetrics {
