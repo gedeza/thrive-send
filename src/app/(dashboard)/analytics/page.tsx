@@ -5,6 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { DateFilter } from '@/components/ui/date-filter';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
@@ -58,11 +61,13 @@ import { ABTestingDashboard } from '@/components/analytics/ABTestingDashboard';
 import { AdvancedFilters } from '@/components/analytics/AdvancedFilters';
 import { PredictiveAnalytics } from '@/components/analytics/PredictiveAnalytics';
 import { ExportReporting } from '@/components/analytics/ExportReporting';
+import { RealTimeCollaboration } from '@/components/analytics/RealTimeCollaboration';
+import { AdvancedDataVisualization } from '@/components/analytics/AdvancedDataVisualization';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 // Types
 type AnalyticsTimeframe = 'day' | 'week' | 'month' | 'year';
-type AnalyticsTab = 'overview' | 'audience' | 'engagement' | 'revenue' | 'funnels' | 'abtesting' | 'predictive' | 'service-provider';
+type AnalyticsTab = 'overview' | 'audience' | 'engagement' | 'revenue' | 'funnels' | 'abtesting' | 'predictive' | 'collaboration' | 'visualization' | 'service-provider';
 
 interface MetricCardProps {
   title: string;
@@ -684,7 +689,7 @@ function AnalyticsPageContent() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as AnalyticsTab)} data-tour="tabs">
-          <TabsList className="grid w-full grid-cols-8">
+          <TabsList className="grid w-full grid-cols-10">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Activity className="h-4 w-4" />
               Overview
@@ -712,6 +717,14 @@ function AnalyticsPageContent() {
             <TabsTrigger value="predictive" className="flex items-center gap-2">
               <Lightbulb className="h-4 w-4" />
               AI Insights
+            </TabsTrigger>
+            <TabsTrigger value="collaboration" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Collaborate
+            </TabsTrigger>
+            <TabsTrigger value="visualization" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Advanced Viz
             </TabsTrigger>
             <TabsTrigger value="service-provider" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
@@ -1142,6 +1155,20 @@ function AnalyticsPageContent() {
 
           <TabsContent value="predictive" className="space-y-6">
             <PredictiveAnalytics />
+          </TabsContent>
+
+          <TabsContent value="collaboration" className="space-y-6">
+            <RealTimeCollaboration
+              dashboardId={`analytics-${state.organizationId || 'demo'}`}
+              currentUserId="user-current" // TODO: Get from auth context
+            />
+          </TabsContent>
+
+          <TabsContent value="visualization" className="space-y-6">
+            <AdvancedDataVisualization
+              data={chartData}
+              isInteractive={true}
+            />
           </TabsContent>
 
           <TabsContent value="service-provider" className="space-y-6">

@@ -28,7 +28,7 @@ import {
   FileImage,
   Presentation,
   Send,
-  Schedule,
+  CalendarClock,
   Repeat,
   Star,
   Eye,
@@ -278,7 +278,7 @@ export function ExportReporting({ className }: ExportReportingProps) {
             One-Time Export
           </TabsTrigger>
           <TabsTrigger value="scheduled" className="flex items-center gap-2">
-            <Schedule className="h-4 w-4" />
+            <CalendarClock className="h-4 w-4" />
             Scheduled Reports
           </TabsTrigger>
           <TabsTrigger value="templates" className="flex items-center gap-2">
@@ -684,7 +684,7 @@ export function ExportReporting({ className }: ExportReportingProps) {
                   </div>
 
                   <Button onClick={handleScheduleReport} className="w-full">
-                    <Schedule className="mr-2 h-4 w-4" />
+                    <CalendarClock className="mr-2 h-4 w-4" />
                     Schedule Report
                   </Button>
                 </CardContent>
