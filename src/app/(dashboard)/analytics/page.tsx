@@ -52,10 +52,17 @@ import {
 import { useAnalyticsData } from '@/lib/hooks/useAnalyticsData';
 import { ServiceProviderAnalyticsDashboard } from '@/components/analytics/ServiceProviderAnalyticsDashboard';
 import { useServiceProvider } from '@/context/ServiceProviderContext';
+import { useRealtimeAnalytics } from '@/lib/realtime/websocket-service';
+import { RealTimeAnalyticsIndicator } from '@/components/content/RealTimeAnalyticsIndicator';
+import { ABTestingDashboard } from '@/components/analytics/ABTestingDashboard';
+import { AdvancedFilters } from '@/components/analytics/AdvancedFilters';
+import { PredictiveAnalytics } from '@/components/analytics/PredictiveAnalytics';
+import { ExportReporting } from '@/components/analytics/ExportReporting';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 // Types
 type AnalyticsTimeframe = 'day' | 'week' | 'month' | 'year';
-type AnalyticsTab = 'overview' | 'audience' | 'engagement' | 'revenue' | 'funnels' | 'service-provider';
+type AnalyticsTab = 'overview' | 'audience' | 'engagement' | 'revenue' | 'funnels' | 'abtesting' | 'predictive' | 'service-provider';
 
 interface MetricCardProps {
   title: string;
@@ -226,6 +233,16 @@ function AnalyticsPageContent() {
     return false;
   });
   
+  // Real-time analytics integration
+  const {
+    isConnected: isRealtimeConnected,
+    lastUpdate: realtimeLastUpdate,
+    hasRecentUpdates,
+    subscribe,
+    unsubscribe,
+    requestMetrics
+  } = useRealtimeAnalytics('org-123', 'user-456'); // TODO: Get from auth context
+  
   // Tour steps configuration
   const tourSteps = [
     {
@@ -307,6 +324,30 @@ function AnalyticsPageContent() {
       return () => clearTimeout(timer);
     }
   }, [hasSeenTour, essentialMetricsLoaded, showOnboarding]);
+  
+  // Real-time analytics subscription effect
+  useEffect(() => {
+    if (isRealtimeConnected) {
+      // Subscribe to relevant channels based on current tab
+      subscribe('metrics');
+      subscribe('charts');
+      
+      if (activeTab === 'overview') {
+        subscribe('alerts');
+      }
+      
+      // Request initial metrics update
+      requestMetrics(['totalViews', 'engagementRate', 'totalReach', 'conversions']);
+    }
+
+    return () => {
+      if (isRealtimeConnected) {
+        unsubscribe('metrics');
+        unsubscribe('charts');
+        unsubscribe('alerts');
+      }
+    };
+  }, [isRealtimeConnected, activeTab, subscribe, unsubscribe, requestMetrics]);
   
   // Onboarding tour handlers
   const startTour = () => {
@@ -543,10 +584,24 @@ function AnalyticsPageContent() {
               <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Download className="mr-2 h-4 w-4" />
+                  Advanced Export
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Export & Reporting</DialogTitle>
+                </DialogHeader>
+                <ExportReporting />
+              </DialogContent>
+            </Dialog>
             <Select onValueChange={(value) => handleExport(value as 'csv' | 'pdf')}>
               <SelectTrigger className="w-32">
                 <FileDown className="mr-2 h-4 w-4" />
-                Export
+                Quick Export
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="csv">CSV</SelectItem>
@@ -619,9 +674,17 @@ function AnalyticsPageContent() {
           </CardContent>
         </Card>
 
+        {/* Advanced Filters */}
+        <AdvancedFilters 
+          onFiltersChange={(filters) => {
+            console.log('Advanced filters applied:', filters);
+            // TODO: Apply filters to analytics data
+          }}
+        />
+
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as AnalyticsTab)} data-tour="tabs">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Activity className="h-4 w-4" />
               Overview
@@ -642,6 +705,14 @@ function AnalyticsPageContent() {
               <Target className="h-4 w-4" />
               Funnels
             </TabsTrigger>
+            <TabsTrigger value="abtesting" className="flex items-center gap-2">
+              <Zap className="h-4 w-4" />
+              A/B Testing
+            </TabsTrigger>
+            <TabsTrigger value="predictive" className="flex items-center gap-2">
+              <Lightbulb className="h-4 w-4" />
+              AI Insights
+            </TabsTrigger>
             <TabsTrigger value="service-provider" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               B2B2G Analytics
@@ -659,15 +730,28 @@ function AnalyticsPageContent() {
                     Real-time overview of your most important analytics
                   </p>
                 </div>
-                {dataSource && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-full text-xs font-medium" data-tour="data-source">
-                    <div className={`w-2 h-2 rounded-full ${
-                      dataSource === 'live' ? 'bg-green-500' : 
-                      dataSource === 'service-provider' ? 'bg-blue-500' : 'bg-yellow-500'
-                    }`}></div>
-                    <span>{dataSource === 'live' ? 'Live Data' : dataSource === 'service-provider' ? 'Service Data' : 'Demo Data'}</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-3">
+                  {/* Real-time Analytics Indicator */}
+                  <RealTimeAnalyticsIndicator
+                    isConnected={isRealtimeConnected}
+                    lastUpdateTime={realtimeLastUpdate}
+                    hasRecentUpdates={hasRecentUpdates}
+                    onRefresh={() => requestMetrics(['totalViews', 'engagementRate', 'totalReach', 'conversions'])}
+                    size="sm"
+                    showLastUpdate={false}
+                  />
+                  
+                  {/* Data Source Indicator */}
+                  {dataSource && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-full text-xs font-medium" data-tour="data-source">
+                      <div className={`w-2 h-2 rounded-full ${
+                        dataSource === 'live' ? 'bg-green-500' : 
+                        dataSource === 'service-provider' ? 'bg-blue-500' : 'bg-yellow-500'
+                      }`}></div>
+                      <span>{dataSource === 'live' ? 'Live Data' : dataSource === 'service-provider' ? 'Service Data' : 'Demo Data'}</span>
+                    </div>
+                  )}
+                </div>
               </div>
               
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4" data-tour="metrics">
@@ -1052,6 +1136,14 @@ function AnalyticsPageContent() {
           </TabsContent>
 
           {/* Service Provider Analytics Tab */}
+          <TabsContent value="abtesting" className="space-y-6">
+            <ABTestingDashboard />
+          </TabsContent>
+
+          <TabsContent value="predictive" className="space-y-6">
+            <PredictiveAnalytics />
+          </TabsContent>
+
           <TabsContent value="service-provider" className="space-y-6">
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-2">Service Provider Analytics</h3>
