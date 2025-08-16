@@ -265,6 +265,8 @@ export function useAnalytics() {
     dateRange: AnalyticsDateRange,
     comparisonType: 'week' | 'month' | 'year' = 'week'
   ): Promise<ComparisonData> => {
+    const { getApiBaseUrl, mobileFetch } = await import('./mobile-config');
+    const baseUrl = getApiBaseUrl();
     const headers = await getAuthHeaders();
     const response = await fetch(
       `${baseUrl}/analytics/comparison?metric=${metric}&start=${dateRange.start}&end=${dateRange.end}&type=${comparisonType}`,
@@ -279,6 +281,8 @@ export function useAnalytics() {
     dateRange: AnalyticsDateRange
   ): Promise<CampaignPerformanceMetrics[]> => {
     try {
+      const { getApiBaseUrl } = await import('./mobile-config');
+      const baseUrl = getApiBaseUrl();
       const headers = await getAuthHeaders();
       const response = await fetch(
         `${baseUrl}/analytics/campaign-performance?campaignId=${campaignId}&start=${dateRange.start}&end=${dateRange.end}`,
@@ -348,6 +352,8 @@ export function useAnalytics() {
     dateRange: AnalyticsDateRange
   ): Promise<any> => {
     try {
+      const { getApiBaseUrl } = await import('./mobile-config');
+      const baseUrl = getApiBaseUrl();
       const headers = await getAuthHeaders();
       const response = await fetch(
         `${baseUrl}/analytics/conversions?start=${dateRange.start}&end=${dateRange.end}`,
@@ -371,6 +377,8 @@ export function useAnalytics() {
     dateRange: AnalyticsDateRange,
     metrics: string[]
   ): Promise<Blob> => {
+    const { getApiBaseUrl } = await import('./mobile-config');
+    const baseUrl = getApiBaseUrl();
     const headers = await getAuthHeaders();
     const response = await fetch(
       `${baseUrl}/analytics/export?format=${format}&start=${dateRange.start}&end=${dateRange.end}&metrics=${metrics.join(',')}`,
@@ -394,6 +402,8 @@ export function useAnalytics() {
       format: 'csv' | 'pdf';
     }
   ): Promise<{ id: string; status: 'scheduled' }> => {
+    const { getApiBaseUrl } = await import('./mobile-config');
+    const baseUrl = getApiBaseUrl();
     const headers = await getAuthHeaders();
     const response = await fetch(`${baseUrl}/analytics/schedule-report`, {
       method: 'POST',
@@ -406,6 +416,8 @@ export function useAnalytics() {
   // Analytics Dashboard Data
   const fetchAnalyticsMetrics = async (params: AnalyticsParams) => {
     try {
+      const { getApiBaseUrl } = await import('./mobile-config');
+      const baseUrl = getApiBaseUrl();
       const headers = await getAuthHeaders();
       const response = await fetch(`${baseUrl}/analytics/metrics`, {
         method: 'POST',
@@ -576,6 +588,8 @@ export function useAnalytics() {
     dateRange: AnalyticsDateRange
   ): Promise<any> => {
     try {
+      const { getApiBaseUrl } = await import('./mobile-config');
+      const baseUrl = getApiBaseUrl();
       const headers = await getAuthHeaders();
       const response = await fetch(
         `${baseUrl}/analytics/campaign-metrics?campaignId=${campaignId}&start=${dateRange.start}&end=${dateRange.end}`,
@@ -599,6 +613,8 @@ export function useAnalytics() {
     dateRange: AnalyticsDateRange
   ): Promise<any> => {
     try {
+      const { getApiBaseUrl } = await import('./mobile-config');
+      const baseUrl = getApiBaseUrl();
       const headers = await getAuthHeaders();
       const response = await fetch(
         `${baseUrl}/analytics/devices?campaignId=${campaignId}&start=${dateRange.start}&end=${dateRange.end}`,
@@ -622,6 +638,8 @@ export function useAnalytics() {
     dateRange: AnalyticsDateRange
   ): Promise<any> => {
     try {
+      const { getApiBaseUrl } = await import('./mobile-config');
+      const baseUrl = getApiBaseUrl();
       const headers = await getAuthHeaders();
       const response = await fetch(
         `${baseUrl}/analytics/links?campaignId=${campaignId}&start=${dateRange.start}&end=${dateRange.end}`,
@@ -787,6 +805,9 @@ function generateMockABTestResults(testId: string) {
     timeline,
   };
 }
+
+// API endpoint configuration
+const SERVICE_PROVIDER_ANALYTICS_API_URL = '/api/analytics/service-provider';
 
 // 🚀 B2B2G SERVICE PROVIDER ANALYTICS - Extended Interfaces and Functions
 
