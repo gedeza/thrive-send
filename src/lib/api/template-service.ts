@@ -1,4 +1,5 @@
 import { toast } from '@/components/ui/use-toast';
+import { db as prisma } from '@/lib/db';
 
 // 🚀 B2B2G SERVICE PROVIDER TEMPLATE MANAGEMENT
 const SERVICE_PROVIDER_TEMPLATE_API_URL = '/api/service-provider/templates';
@@ -473,12 +474,16 @@ export async function applyTemplateToClient(params: {
   }
 }
 
-// Helper function to get client names
-function getClientName(clientId: string): string {
-  const clientNames: Record<string, string> = {
-    'demo-client-1': 'City of Springfield',
-    'demo-client-2': 'TechStart Inc.',
-    'demo-client-3': 'Local Coffee Co.'
-  };
-  return clientNames[clientId] || `Client ${clientId}`;
+// PRODUCTION: Helper function to get real client names from database
+async function getClientName(clientId: string): Promise<string> {
+  try {
+    const client = await prisma.client.findUnique({
+      where: { id: clientId },
+      select: { name: true }
+    });
+    return client?.name || `Client ${clientId}`;
+  } catch (error) {
+    console.warn(`Failed to fetch client name for ${clientId}:`, error);
+    return `Client ${clientId}`;
+  }
 }

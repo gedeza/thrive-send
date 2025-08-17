@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Alert, AlertDescription } from '@/components/ui/alert-new';
+import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { format, addDays, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import {

@@ -37,7 +37,7 @@ import {
 import {
   Alert,
   AlertDescription,
-} from '@/components/ui/alert-new';
+} from '@/components/ui/Alert';
 
 // Form validation schema
 const audienceSchema = z.object({

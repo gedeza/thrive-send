@@ -578,11 +578,80 @@ export default function AdvancedReportsPage() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
-  const [reports] = useState<Report[]>(demoReports);
-  const [templates] = useState<ReportTemplate[]>(demoTemplates);
-  const [scheduledReports] = useState<ScheduledReport[]>(demoScheduledReports);
+  // PRODUCTION: Use real data instead of demo data
+  const [reports, setReports] = useState<Report[]>([]);
+  const [templates, setTemplates] = useState<ReportTemplate[]>([]);
+  const [scheduledReports, setScheduledReports] = useState<ScheduledReport[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { state: { organizationId } } = useServiceProvider();
+
+  // PRODUCTION: Fetch real reports data
+  useEffect(() => {
+    const fetchReportsData = async () => {
+      if (!organizationId) return;
+      
+      try {
+        setIsLoading(true);
+        
+        // Fetch automated reports from service provider API
+        const reportsResponse = await fetch(`/api/service-provider/reports/automated?organizationId=${organizationId}`);
+        if (reportsResponse.ok) {
+          const reportsData = await reportsResponse.json();
+          
+          // Transform service provider data to reports format
+          const transformedReports: Report[] = reportsData.reports?.map((report: any, index: number) => ({
+            id: report.id || `report-${index}`,
+            title: report.title || report.name || 'Report',
+            description: report.description || 'Generated report',
+            type: 'cross-client' as const,
+            format: 'pdf' as const,
+            frequency: report.frequency || 'monthly',
+            status: report.status || 'completed',
+            createdAt: report.createdAt || new Date().toISOString(),
+            lastGenerated: report.lastGenerated || new Date().toISOString(),
+            nextScheduled: report.nextScheduled || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            fileSize: report.fileSize || '1.2 MB',
+            downloadUrl: report.downloadUrl || `/api/reports/download/${report.id}`,
+            settings: {
+              dateRange: 'last-30-days',
+              clients: ['all'],
+              metrics: ['engagement', 'reach', 'conversions'],
+              includeCharts: true,
+              includeRawData: false
+            },
+            creator: {
+              id: 'user-1',
+              name: 'System',
+              email: 'system@serviceprovider.com'
+            }
+          })) || [];
+          
+          setReports(transformedReports);
+          
+          console.log(`✅ Fetched ${transformedReports.length} real reports for organization`);
+        } else {
+          console.warn('Failed to fetch reports, using empty array');
+          setReports([]);
+        }
+        
+        // For now, use empty arrays for templates and scheduled reports
+        // These can be populated when the database schema includes them
+        setTemplates([]);
+        setScheduledReports([]);
+        
+      } catch (error) {
+        console.error('Error fetching reports data:', error);
+        setReports([]);
+        setTemplates([]);
+        setScheduledReports([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchReportsData();
+  }, [organizationId]);
 
   // Filter and sort reports
   const filteredReports = reports
@@ -920,21 +989,57 @@ export default function AdvancedReportsPage() {
             </div>
 
             {/* Reports Grid */}
-            <div 
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-              role="grid"
-              aria-label="Reports collection"
-            >
-              {filteredReports.map((report) => (
-                <ReportCard
-                  key={report.id}
-                  report={report}
-                  onDownload={handleDownloadReport}
-                  onDelete={handleDeleteReport}
-                  onDuplicate={handleDuplicateReport}
-                />
-              ))}
-            </div>
+            {/* PRODUCTION: Loading and empty states for real data */}
+            {isLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, i) => (
+                  <Card key={i} className="animate-pulse">
+                    <CardHeader>
+                      <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                      <div className="h-3 bg-muted rounded w-1/2"></div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-20 bg-muted rounded"></div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : filteredReports.length > 0 ? (
+              <div 
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                role="grid"
+                aria-label="Reports collection"
+              >
+                {filteredReports.map((report) => (
+                  <ReportCard
+                    key={report.id}
+                    report={report}
+                    onDownload={handleDownloadReport}
+                    onDelete={handleDeleteReport}
+                    onDuplicate={handleDuplicateReport}
+                  />
+                ))}
+              </div>
+            ) : (
+              <Card className="p-12 text-center">
+                <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                  <FileText className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="font-semibold mb-2">No Reports Found</h3>
+                <p className="text-muted-foreground mb-4">
+                  {searchQuery || typeFilter !== 'all' || statusFilter !== 'all'
+                    ? 'No reports match your current filters. Try adjusting your search criteria.'
+                    : 'No reports have been generated yet. Create your first automated report to get started.'}
+                </p>
+                <Button 
+                  onClick={() => setIsCreateDialogOpen(true)}
+                  className="mt-2"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create First Report
+                </Button>
+              </Card>
+            )}
 
             {filteredReports.length === 0 && (
               <Card className="border-dashed" role="status" aria-live="polite">

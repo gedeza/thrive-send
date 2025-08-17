@@ -200,7 +200,11 @@ export default function CampaignTemplatesPage() {
         <Button onClick={() => window.location.reload()}>
           Try Again
         </Button>
->>>>>>> product-ready-implementation
+      </div>
+    );
+  }
+
+  return (
     <div className="container mx-auto px-4 py-6 space-y-6">
       {/* Breadcrumbs */}
       <nav className="flex items-center text-sm text-muted-foreground">

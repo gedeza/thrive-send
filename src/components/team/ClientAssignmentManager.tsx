@@ -29,7 +29,7 @@ import {
   Alert,
   AlertDescription,
   AlertTitle,
-} from '@/components/ui/alert-new';
+} from '@/components/ui/Alert';
 import {
   Tooltip,
   TooltipContent,

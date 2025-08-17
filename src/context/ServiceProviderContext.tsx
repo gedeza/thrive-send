@@ -203,35 +203,63 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
       // Fetch organization data
       const orgResponse = await fetch(`/api/service-provider/organization/${organizationId}`);
       if (!orgResponse.ok) {
-        // For demo/testing purposes, let's default to service provider
-        // TODO: In production, this should be based on actual organization data
-        // ServiceProvider: API failed, defaulting to service_provider for demo
-        dispatch({ 
-          type: 'SET_ORGANIZATION', 
-          payload: { 
-            id: organizationId, 
-            name: 'Demo Service Provider', 
-            type: 'service_provider' 
-          } 
-        });
+        console.log('🔧 Organization API failed, creating with real user data...');
         
-        // Set basic user data for demo
-        dispatch({ 
-          type: 'SET_USER', 
-          payload: {
-            id: 'demo-user',
-            name: 'Demo User',
-            email: 'demo@serviceprovider.com',
-            role: 'ADMIN',
-            permissions: [
-              {
-                resource: '*',
-                actions: ['read', 'write', 'delete', 'admin'],
-                scope: 'organization',
+        // Fetch real user data via API
+        try {
+          const userResponse = await fetch(`/api/service-provider/user/${userId}`);
+          if (userResponse.ok) {
+            const realUser = await userResponse.json();
+            
+            // Create organization based on real user
+            const defaultOrgName = realUser.name || realUser.email || 'My Organization';
+            dispatch({ 
+              type: 'SET_ORGANIZATION', 
+              payload: { 
+                id: organizationId, 
+                name: defaultOrgName, 
+                type: 'service_provider' 
+              } 
+            });
+            
+            // Set REAL user data with proper permissions
+            dispatch({ 
+              type: 'SET_USER', 
+              payload: {
+                id: realUser.id,
+                name: realUser.name || `${realUser.firstName} ${realUser.lastName}`.trim() || realUser.email,
+                email: realUser.email,
+                role: realUser.role || 'ADMIN',
+                permissions: [
+                  {
+                    resource: '*',
+                    actions: ['read', 'write', 'delete', 'admin'],
+                    scope: 'organization',
+                  }
+                ]
               }
-            ]
+            });
+            
+            console.log('✅ Real user context set:', {
+              id: realUser.id,
+              name: realUser.name || realUser.email,
+              email: realUser.email
+            });
+          } else {
+            throw new Error('Failed to fetch user data');
           }
-        });
+        } catch (userError) {
+          console.error('Failed to fetch real user data:', userError);
+          // Fallback to basic organization setup
+          dispatch({ 
+            type: 'SET_ORGANIZATION', 
+            payload: { 
+              id: organizationId, 
+              name: 'My Organization', 
+              type: 'service_provider' 
+            } 
+          });
+        }
         
         dispatch({ type: 'SET_LOADING', payload: false });
         return;
@@ -263,71 +291,106 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SET_CLIENTS', payload: [] });
       }
       
-      // Fetch metrics - add demo metrics if API fails  
+      // Fetch metrics - use zero values if API fails (no demo data in production)
       try {
         await fetchMetrics(organizationId);
       } catch (error) {
-        // Add demo metrics for testing
+        console.warn('Failed to fetch metrics from API:', error);
+        // Use zero values instead of demo data in production
         dispatch({
           type: 'SET_METRICS',
           payload: {
-            totalClients: 3,
-            activeClients: 3,
-            activeCampaigns: 25,
-            totalCampaigns: 45,
-            totalRevenue: 9500,
-            marketplaceRevenue: 1425,
-            teamUtilization: 84,
-            avgClientSatisfaction: 4.3,
+            totalClients: 0,
+            activeClients: 0,
+            activeCampaigns: 0,
+            totalCampaigns: 0,
+            totalRevenue: 0,
+            marketplaceRevenue: 0,
+            teamUtilization: 0,
+            avgClientSatisfaction: 0,
           }
         });
       }
       
       dispatch({ type: 'SET_LOADING', payload: false });
     } catch (error) {
-      // For demo purposes, default to service provider even on error
-      // ServiceProvider: Error occurred, defaulting to service_provider for demo
-      dispatch({
-        type: 'SET_ORGANIZATION',
-        payload: {
-          id: organizationId,
-          name: 'Demo Service Provider',
-          type: 'service_provider',
-        },
-      });
+      console.error('🚨 Service Provider initialization error:', error);
       
-      // Set basic user data for demo
-      dispatch({ 
-        type: 'SET_USER', 
-        payload: {
-          id: 'demo-user',
-          name: 'Demo User', 
-          email: 'demo@serviceprovider.com',
-          role: 'ADMIN',
-          permissions: [
-            {
-              resource: '*',
-              actions: ['read', 'write', 'delete', 'admin'],
-              scope: 'organization',
-            }
-          ]
+      try {
+        // Even on error, try to get real user data via API
+        try {
+          const userResponse = await fetch(`/api/service-provider/user/${userId}`);
+          if (userResponse.ok) {
+            const realUser = await userResponse.json();
+            
+            dispatch({
+              type: 'SET_ORGANIZATION',
+              payload: {
+                id: organizationId,
+                name: realUser.name || realUser.email || 'My Organization',
+                type: 'service_provider',
+              },
+            });
+            
+            // Set REAL user data even in error state
+            dispatch({ 
+              type: 'SET_USER', 
+              payload: {
+                id: realUser.id,
+                name: realUser.name || `${realUser.firstName} ${realUser.lastName}`.trim() || realUser.email,
+                email: realUser.email,
+                role: realUser.role || 'ADMIN',
+                permissions: [
+                  {
+                    resource: '*',
+                    actions: ['read', 'write', 'delete', 'admin'],
+                    scope: 'organization',
+                  }
+                ]
+              }
+            });
+            
+            console.log('✅ Real user context set in error recovery:', {
+              id: realUser.id,
+              name: realUser.name || realUser.email,
+              email: realUser.email
+            });
+          } else {
+            throw new Error('User API failed');
+          }
+        } catch (apiError) {
+          console.error('Failed to fetch user via API in error recovery:', apiError);
+          // Final fallback - basic setup
+          dispatch({
+            type: 'SET_ORGANIZATION',
+            payload: {
+              id: organizationId,
+              name: 'My Organization',
+              type: 'service_provider',
+            },
+          });
         }
-      });
+      } catch (userError) {
+        console.error('🚨 CRITICAL: Failed to get real user data:', userError);
+        // Log this as a critical error for monitoring
+        dispatch({ type: 'SET_ERROR', payload: 'Failed to initialize user context' });
+      }
       
       // No demo clients - only real database clients
       dispatch({ type: 'SET_CLIENTS', payload: [] });
       
+      // Use zero values for metrics in error state (no demo data)
       dispatch({
         type: 'SET_METRICS',
         payload: {
-          totalClients: 3,
-          activeClients: 3,
-          activeCampaigns: 25,
-          totalCampaigns: 45,
-          totalRevenue: 9500,
-          marketplaceRevenue: 1425,
-          teamUtilization: 84,
-          avgClientSatisfaction: 4.3,
+          totalClients: 0,
+          activeClients: 0,
+          activeCampaigns: 0,
+          totalCampaigns: 0,
+          totalRevenue: 0,
+          marketplaceRevenue: 0,
+          teamUtilization: 0,
+          avgClientSatisfaction: 0,
         }
       });
       
