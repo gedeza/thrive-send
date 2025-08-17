@@ -97,7 +97,7 @@ export function ABTestManager({ campaignId, campaignName, onTestCreated }: ABTes
         setTests(data.tests || []);
       }
     } catch (error) {
-      console.error('Error fetching A/B tests:', error);
+      // Error fetching A/B tests - handle silently
     } finally {
       setIsLoading(false);
     }

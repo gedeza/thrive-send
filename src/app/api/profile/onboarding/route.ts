@@ -1,6 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db as prisma } from '@/lib/db';
+import { getOrCreateUser } from '@/lib/user-utils';
 
 // GET: Return onboarding status for current user
 export async function GET() {
@@ -11,55 +12,8 @@ export async function GET() {
       { status: 401 }
     );
   }
-
-  // Auto-create user if they don't exist (first-time login)
-  let user = await prisma.user.findUnique({ where: { clerkId: userId } });
-  if (!user) {
-    console.log('Creating new user for Clerk ID:', userId);
-    user = await prisma.user.create({
-      data: {
-        clerkId: userId,
-        email: 'user@example.com', // Will be updated by webhook later
-        firstName: 'User',
-        lastName: 'User',
-        role: 'ADMIN',
-        hasCompletedOnboarding: false,
-        userType: 'SERVICE_PROVIDER',
-        phoneNumber: '',
-        timezone: 'America/New_York',
-        language: 'en',
-        marketingConsent: false,
-        preferences: {}
-      }
-    });
-
-    // Create a default organization for the user
-    const organization = await prisma.organization.create({
-      data: {
-        id: `user-org-${userId}`,
-        name: 'My Organization',
-        slug: `org-${userId}`,
-        description: 'Default organization',
-        website: '',
-        industry: 'Technology',
-        settings: {}
-      }
-    });
-
-    // Create organization membership
-    await prisma.organizationMembership.create({
-      data: {
-        userId: user.id,
-        organizationId: organization.id,
-        role: 'ADMIN',
-        status: 'ACTIVE',
-        joinedAt: new Date()
-      }
-    });
-
-    console.log('✅ User and organization created successfully');
-  }
-
+  
+  const user = await getOrCreateUser(userId);
   return NextResponse.json({ hasCompletedOnboarding: user.hasCompletedOnboarding });
 }
 

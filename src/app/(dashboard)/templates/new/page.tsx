@@ -10,7 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { TemplateEditor } from "@/components/editor/TemplateEditor";
-import { nanoid } from "nanoid";
 import { Loader2, Save, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Label } from "@/components/ui/label";
@@ -49,15 +48,16 @@ export default function NewTemplatePage() {
 
     setIsSaving(true);
     try {
-      const response = await fetch("/api/templates", {
+      const response = await fetch("/api/campaign-templates", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          ...template,
-          id: nanoid(),
-          organizationId: organization.id,
+          name: template.name,
+          description: template.description,
+          content: template.content,
+          status: template.status,
         }),
       });
 
@@ -70,7 +70,7 @@ export default function NewTemplatePage() {
         title: "Success",
         description: "Template created successfully",
       });
-      router.push(`/templates/editor/${data.id}`);
+      router.push(`/templates/${data.id}`);
     } catch (error) {
       toast({
         title: "Error",

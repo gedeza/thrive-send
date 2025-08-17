@@ -298,7 +298,7 @@ export async function POST(request: NextRequest) {
 
       // 3. Calculate expiration date based on duration
       const durationMatch = boostProduct.duration.match(/(\d+)\s*(day|week|month)s?/i);
-      let expiresAt = new Date();
+      const expiresAt = new Date();
       
       if (durationMatch) {
         const amount = parseInt(durationMatch[1]);

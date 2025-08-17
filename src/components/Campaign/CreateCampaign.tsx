@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -126,8 +127,11 @@ const CreateCampaign: React.FC = () => {
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoadingClients, setIsLoadingClients] = useState(false);
+  const [templateData, setTemplateData] = useState<any>(null);
+  const [isLoadingTemplate, setIsLoadingTemplate] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Add debug logging for organization
   useEffect(() => {
@@ -159,6 +163,53 @@ const CreateCampaign: React.FC = () => {
       fetchClients();
     }
   }, [organization?.id, form]);
+
+  // Load template data if template ID is provided in search params
+  useEffect(() => {
+    const templateId = searchParams.get('template');
+    if (templateId) {
+      loadTemplate(templateId);
+    }
+  }, [searchParams]);
+
+  const loadTemplate = async (templateId: string) => {
+    setIsLoadingTemplate(true);
+    try {
+      const response = await fetch(`/api/templates/${templateId}`);
+      if (response.ok) {
+        const template = await response.json();
+        setTemplateData(template);
+        
+        // Pre-fill form with template data
+        if (template.name) {
+          form.setValue('name', `${template.name} - Copy`);
+        }
+        if (template.description) {
+          form.setValue('description', template.description);
+        }
+        
+        toast({
+          title: "Template Loaded",
+          description: `Campaign pre-filled with "${template.name}" template data.`,
+        });
+      } else {
+        toast({
+          title: "Template Not Found",
+          description: "The selected template could not be loaded.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error loading template:', error);
+      toast({
+        title: "Error Loading Template",
+        description: "Failed to load template data.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingTemplate(false);
+    }
+  };
 
   // Fetch clients for the organization
   const fetchClients = async () => {

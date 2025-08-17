@@ -1,19 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
+import { 
+  createSuccessResponse, 
+  createUnauthorizedResponse, 
+  createValidationResponse,
+  handleApiError 
+} from '@/lib/api-utils';
 
 export async function GET(request: NextRequest) {
   try {
     const { userId } = await auth();
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return createUnauthorizedResponse();
     }
 
     const { searchParams } = new URL(request.url);
     const organizationId = searchParams.get('organizationId');
 
     if (!organizationId) {
-      return NextResponse.json({ error: 'Organization ID required' }, { status: 400 });
+      return createValidationResponse('Organization ID required');
     }
 
     // Demo team members data (in real implementation, this would come from database)
@@ -131,10 +137,10 @@ export async function GET(request: NextRequest) {
     let databaseMembers: any[] = [];
     
     try {
-      console.log('Attempting to fetch team members from database...');
+      // Attempting to fetch team members from database
       
       // Try to fetch organization members from database
-      const orgMembers = await prisma.organizationMember.findMany({
+      const orgMembers = await db.organizationMember.findMany({
         where: {
           organizationId,
         },
@@ -204,23 +210,22 @@ export async function GET(request: NextRequest) {
         };
       });
 
-      console.log(`Successfully loaded ${databaseMembers.length} team members from database`);
+      // Successfully loaded team members from database
 
     } catch (dbError) {
-      console.warn('Database unavailable for team members, using demo mode:', dbError);
+      // Database unavailable for team members, using demo mode
       databaseMembers = [];
     }
 
     // Combine database and demo data (demo data provides rich examples)
     const allMembers = databaseMembers.length > 0 ? databaseMembers : demoMembers;
 
-    console.log(`Returning ${allMembers.length} total team members`);
+    // Returning team members data
     
-    return NextResponse.json(allMembers);
+    return createSuccessResponse(allMembers, 200, 'Team members retrieved successfully');
 
   } catch (error) {
-    console.error('Service provider team members error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleApiError(error);
   }
 }
 
@@ -228,7 +233,7 @@ export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth();
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return createUnauthorizedResponse();
     }
 
     const body = await request.json();
@@ -241,16 +246,13 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!email || !role || !organizationId) {
-      return NextResponse.json(
-        { error: 'Missing required fields: email, role, organizationId' },
-        { status: 400 }
-      );
+      return createValidationResponse('Missing required fields: email, role, organizationId');
     }
 
     let memberResponse: any;
 
     try {
-      console.log('Attempting to add team member to database...');
+      // Attempting to add team member to database
       
       // In a real implementation, this would:
       // 1. Find or create user by email
@@ -272,27 +274,19 @@ export async function POST(request: NextRequest) {
         }))
       };
 
-      console.log('Team member added successfully:', memberResponse.id);
+      // Team member added successfully
 
     } catch (dbError) {
-      console.warn('Database unavailable, cannot add team member:', dbError);
+      // Database unavailable, cannot add team member
       return NextResponse.json(
         { error: 'Database unavailable. Team member could not be added.' },
         { status: 503 }
       );
     }
     
-    return NextResponse.json({
-      success: true,
-      member: memberResponse,
-      message: `Team member added successfully`
-    }, { status: 201 });
+    return createSuccessResponse(memberResponse, 201, 'Team member added successfully');
 
   } catch (error) {
-    console.error('Error adding team member:', error);
-    return NextResponse.json(
-      { error: 'Failed to add team member' },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

@@ -12,7 +12,7 @@ export interface DocPage {
 function parseFrontmatter(content: string): { data: any; content: string } {
   const lines = content.split('\n');
   let frontmatterEnd = -1;
-  let data = {};
+  const data = {};
 
   // Check if content starts with frontmatter
   if (lines[0] === '---') {

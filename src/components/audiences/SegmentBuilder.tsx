@@ -206,7 +206,7 @@ export function SegmentBuilder({ audienceId, onSave, onCancel, initialData }: Se
       
       setEstimatedSize(Math.max(Math.floor(baseSize), 10));
     } catch (error) {
-      console.error('Error calculating segment size:', error);
+      // Error calculating segment size
       setEstimatedSize(null);
     } finally {
       setIsCalculating(false);
@@ -233,7 +233,7 @@ export function SegmentBuilder({ audienceId, onSave, onCancel, initialData }: Se
         description: 'Audience segment created successfully',
       });
     } catch (error) {
-      console.error('Error saving segment:', error);
+      // Error saving segment
       toast({
         title: 'Error',
         description: 'Failed to save segment',

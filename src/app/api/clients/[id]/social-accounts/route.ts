@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { z } from "zod";
 
 // Validation schema
@@ -20,7 +20,7 @@ export async function POST(
     }
 
     // Validate client exists and user has access
-    const client = await prisma.client.findUnique({
+    const client = await db.client.findUnique({
       where: { id: params.id },
       include: {
         organization: {
@@ -53,7 +53,7 @@ export async function POST(
     const validatedData = socialAccountSchema.parse(body);
 
     // Check for duplicate social account
-    const existingAccount = await prisma.socialAccount.findFirst({
+    const existingAccount = await db.socialAccount.findFirst({
       where: {
         clientId: params.id,
         platform: validatedData.platform,
@@ -68,7 +68,7 @@ export async function POST(
     }
 
     // Create social account
-    const socialAccount = await prisma.socialAccount.create({
+    const socialAccount = await db.socialAccount.create({
       data: {
         platform: validatedData.platform,
         handle: validatedData.handle,
@@ -103,7 +103,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const socialAccounts = await prisma.socialAccount.findMany({
+    const socialAccounts = await db.socialAccount.findMany({
       where: { clientId: params.id },
       orderBy: { createdAt: "desc" },
     });

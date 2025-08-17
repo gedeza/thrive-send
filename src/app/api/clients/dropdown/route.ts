@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
+import { 
+  createSuccessResponse, 
+  createUnauthorizedResponse, 
+  handleApiError 
+} from "@/lib/api-utils";
 
 // GET: Get simplified client list for dropdown/filter usage
 export async function GET(request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return createUnauthorizedResponse();
     }
 
     // Get user's organization memberships
@@ -34,12 +39,8 @@ export async function GET(request: NextRequest) {
       }
     });
     
-    return NextResponse.json(clients);
+    return createSuccessResponse(clients, 200, "Clients retrieved successfully");
   } catch (error) {
-    console.error("Error fetching clients for dropdown:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch clients" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

@@ -6,7 +6,10 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { toast } from "sonner";
+import { useToast } from '@/components/ui/use-toast';
+import { useServiceProvider } from '@/context/ServiceProviderContext';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
+import { CLIENT_TYPES, INDUSTRY_SECTORS } from '@/lib/client-categories';
 
 // Form validation schema
 const clientSchema = z.object({
@@ -75,10 +78,17 @@ export default function EditClientPage() {
     resolver: zodResolver(clientSchema),
   });
 
+  const { state: { organizationId } } = useServiceProvider();
+  const { toast } = useToast();
+
   useEffect(() => {
     const fetchClient = async () => {
       try {
-        const response = await fetch(`/api/clients/${params.id}`);
+        if (!organizationId) {
+          throw new Error('No organization ID');
+        }
+        
+        const response = await fetch(`/api/service-provider/clients/${params.id}?organizationId=${organizationId}`);
         if (!response.ok) {
           throw new Error("Failed to fetch client");
         }
@@ -86,14 +96,20 @@ export default function EditClientPage() {
         reset(data); // This will populate the form with client data
       } catch (error) {
         console.error("Error fetching client:", error);
-        toast.error("Failed to load client data");
+        toast({
+          title: "Error",
+          description: "Failed to load client data",
+          variant: "destructive"
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchClient();
-  }, [params.id, reset]);
+    if (organizationId) {
+      fetchClient();
+    }
+  }, [params.id, reset, organizationId, toast]);
 
   const onSubmit = async (data: ClientFormData) => {
     try {
@@ -109,7 +125,11 @@ export default function EditClientPage() {
         logoUrl: data.logoUrl || null,
       };
 
-      const response = await fetch(`/api/clients/${params.id}`, {
+      if (!organizationId) {
+        throw new Error('No organization ID');
+      }
+
+      const response = await fetch(`/api/service-provider/clients/${params.id}?organizationId=${organizationId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -121,12 +141,19 @@ export default function EditClientPage() {
         throw new Error("Failed to update client");
       }
 
-      toast.success("Client updated successfully!");
+      toast({
+        title: "Success",
+        description: "Client updated successfully!"
+      });
       router.push(`/clients/${params.id}`);
       router.refresh();
     } catch (error) {
       console.error("Error updating client:", error);
-      toast.error("Failed to update client");
+      toast({
+        title: "Error",
+        description: "Failed to update client",
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -191,18 +218,18 @@ export default function EditClientPage() {
 
           <div className="space-y-2">
             <label htmlFor="type" className="text-sm font-medium">Type</label>
-            <select
-              id="type"
-              {...register("type")}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <option value="">Select type</option>
-              <option value="MUNICIPALITY">Municipality</option>
-              <option value="BUSINESS">Business</option>
-              <option value="STARTUP">Startup</option>
-              <option value="INDIVIDUAL">Individual</option>
-              <option value="NONPROFIT">Nonprofit</option>
-            </select>
+            <Select onValueChange={(value) => setValue('type', value)} disabled={isSubmitting}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select client type" />
+              </SelectTrigger>
+              <SelectContent>
+                {CLIENT_TYPES.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {errors.type && (
               <p className="text-sm text-red-500">{errors.type.message}</p>
             )}
@@ -223,12 +250,33 @@ export default function EditClientPage() {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="industry" className="text-sm font-medium">Industry</label>
-            <input
-              id="industry"
-              {...register("industry")}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            />
+            <label htmlFor="industry" className="text-sm font-medium">Industry Sector</label>
+            <Select onValueChange={(value) => setValue('industry', value)} disabled={isSubmitting}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select industry sector" />
+              </SelectTrigger>
+              <SelectContent className="max-h-80">
+                {Object.entries(INDUSTRY_SECTORS).map(([sectorName, industries]) => (
+                  <SelectGroup key={sectorName}>
+                    <SelectLabel className="font-semibold text-primary">{sectorName}</SelectLabel>
+                    {industries.map((industry) => (
+                      <SelectItem 
+                        key={industry.value} 
+                        value={industry.value}
+                        className="pl-6"
+                      >
+                        <div>
+                          <div className="font-medium">{industry.label}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {industry.description}
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                ))}
+              </SelectContent>
+            </Select>
             {errors.industry && (
               <p className="text-sm text-red-500">{errors.industry.message}</p>
             )}

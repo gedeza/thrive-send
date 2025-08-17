@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
 import type { Client, Project, Analytics, Prisma } from '@prisma/client';
 
 type ClientWithRelations = Client & {
@@ -40,7 +40,7 @@ export async function GET(
     const clientId = params.id;
 
     // Fetch client details
-    const client = await prisma.client.findUnique({
+    const client = await db.client.findUnique({
       where: { id: clientId },
       include: {
         projects: {
@@ -62,15 +62,15 @@ export async function GET(
     ).length;
 
     // Fetch additional data separately
-    const budgets = await prisma.$queryRaw<Budget[]>`
+    const budgets = await db.$queryRaw<Budget[]>`
       SELECT id, amount, spent, "clientId" FROM "Budget" WHERE "clientId" = ${clientId}
     `;
 
-    const goals = await prisma.$queryRaw<ClientGoal[]>`
+    const goals = await db.$queryRaw<ClientGoal[]>`
       SELECT id, status, "clientId" FROM "ClientGoal" WHERE "clientId" = ${clientId}
     `;
 
-    const feedback = await prisma.$queryRaw<ClientFeedback[]>`
+    const feedback = await db.$queryRaw<ClientFeedback[]>`
       SELECT id, rating, "clientId" FROM "ClientFeedback" WHERE "clientId" = ${clientId}
     `;
 

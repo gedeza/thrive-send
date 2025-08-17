@@ -148,7 +148,7 @@ export default function AudiencesPage() {
       refetch(); // Refresh the audiences list
 
     } catch (error) {
-      console.error('Import error:', error);
+      // Import error occurred
       toast({
         title: "Import failed",
         description: "There was an error importing your contacts. Please try again.",

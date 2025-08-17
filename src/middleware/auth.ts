@@ -44,7 +44,6 @@ export async function withAuth(
 
     return handler(authedRequest);
   } catch (error) {
-    console.error("Auth middleware error:", error);
     return NextResponse.json(
       { error: "Authentication failed" },
       { status: 401 }
@@ -60,7 +59,7 @@ export async function withOrganization(
     try {
       const { auth } = await import('@clerk/nextjs/server');
       const session = await auth();
-      let organizationId = session.orgId;
+      const organizationId = session.orgId;
       
       // Simplified: Don't auto-create organizations
       if (!organizationId) {

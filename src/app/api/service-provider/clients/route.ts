@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { db as prisma } from '@/lib/db';
+import { generateId } from '@/lib/id-generator';
+import { getDisplayableId } from '@/lib/enhanced-models';
+import { getOrCreateUser } from '@/lib/user-utils';
 
 // Simple in-memory storage for demo fallback only when database is unavailable
 // This is temporary - the real solution is to fix database connectivity
@@ -45,9 +48,7 @@ export async function GET(request: NextRequest) {
         });
         
         // Also create organization membership for the user if needed
-        const user = await prisma.user.findUnique({
-          where: { clerkId: userId }
-        });
+        const user = await getOrCreateUser(userId);
         
         if (user) {
           await prisma.organizationMember.upsert({
@@ -75,66 +76,6 @@ export async function GET(request: NextRequest) {
     const dbOrganizationId = orgExists.id;
     console.log('🔍 Using organization ID for database queries:', dbOrganizationId);
 
-    // Create demo clients with real, inspiring data
-    const demoClients = [
-      {
-        id: 'demo-client-1',
-        name: 'City of Springfield',
-        organizationId: dbOrganizationId,
-        email: 'communications@springfield.gov',
-        type: 'Government',
-        status: 'active' as const,
-        industry: 'Municipal Government',
-        website: 'https://springfield.gov',
-        phone: '+1 (555) 123-4567',
-        address: '123 City Hall Plaza, Springfield, IL 62701',
-        logoUrl: 'https://api.dicebear.com/7.x/initials/svg?seed=Springfield&backgroundColor=1e40af',
-        createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        performanceScore: 92,
-        monthlyBudget: 15000,
-        lastActivity: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        socialAccounts: [
-          { id: 'demo-social-1', platform: 'FACEBOOK', handle: 'CityOfSpringfield' },
-          { id: 'demo-social-2', platform: 'TWITTER', handle: '@SpringfieldGov' },
-          { id: 'demo-social-3', platform: 'INSTAGRAM', handle: '@springfieldcity' }
-        ],
-        projects: [
-          { id: 'demo-project-1', name: 'Summer Community Events 2024', status: 'ACTIVE' },
-          { id: 'demo-project-2', name: 'Public Safety Awareness Campaign', status: 'COMPLETED' },
-          { id: 'demo-project-3', name: 'Budget Transparency Initiative', status: 'PLANNED' }
-        ],
-      },
-      {
-        id: 'demo-client-2',
-        name: 'Regional Health District',
-        organizationId: dbOrganizationId,
-        email: 'marketing@healthdistrict.org',
-        type: 'Healthcare',
-        status: 'active' as const,
-        industry: 'Healthcare & Public Health',
-        website: 'https://regionalhealthdistrict.org',
-        phone: '+1 (555) 987-6543',
-        address: '456 Medical Center Dr, Metro City, CA 90210',
-        logoUrl: 'https://api.dicebear.com/7.x/initials/svg?seed=HealthDistrict&backgroundColor=059669',
-        createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        performanceScore: 88,
-        monthlyBudget: 22000,
-        lastActivity: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-        socialAccounts: [
-          { id: 'demo-social-4', platform: 'FACEBOOK', handle: 'RegionalHealthDistrict' },
-          { id: 'demo-social-5', platform: 'TWITTER', handle: '@RegionalHealth' },
-          { id: 'demo-social-6', platform: 'LINKEDIN', handle: 'regional-health-district' }
-        ],
-        projects: [
-          { id: 'demo-project-4', name: 'Vaccination Awareness Campaign', status: 'ACTIVE' },
-          { id: 'demo-project-5', name: 'Mental Health Resources Program', status: 'ACTIVE' },
-          { id: 'demo-project-6', name: 'Flu Season Preparedness', status: 'COMPLETED' }
-        ],
-      }
-    ];
-
     // Try to get user-created clients from database with fallback
     let userClientSummaries: any[] = [];
     
@@ -146,31 +87,18 @@ export async function GET(request: NextRequest) {
           status: 'ACTIVE',
         },
         include: {
-          campaigns: {
-            where: {
-              status: { in: ['ACTIVE', 'SCHEDULED', 'COMPLETED'] },
-            },
-            select: {
-              id: true,
-              name: true,
-              status: true,
-            },
-          },
-          projects: {
-            where: {
-              status: { in: ['ACTIVE', 'PLANNED', 'COMPLETED'] },
-            },
-            select: {
-              id: true,
-              name: true,
-              status: true,
-            },
-          },
           socialAccounts: {
             select: {
               id: true,
               platform: true,
               handle: true,
+            },
+          },
+          projects: {
+            select: {
+              id: true,
+              name: true,
+              status: true,
             },
           },
           _count: {
@@ -185,14 +113,21 @@ export async function GET(request: NextRequest) {
         },
       });
 
+      console.log('🔍 Raw database clients found:', userClients.map(c => ({
+        id: c.id,
+        name: c.name,
+        displayId: c.displayId,
+        organizationId: c.organizationId,
+        status: c.status
+      })));
+
       // Transform user-created clients into the expected service provider format
       userClientSummaries = userClients.map(client => {
-        const activeCampaigns = client.campaigns.filter(c => c.status === 'ACTIVE').length;
         const totalCampaigns = client._count.campaigns;
         const activeProjects = client.projects.filter(p => p.status === 'ACTIVE').length;
 
         // Calculate performance score based on activity and engagement
-        const campaignScore = Math.min((activeCampaigns / Math.max(totalCampaigns, 1)) * 40, 40);
+        const campaignScore = Math.min((totalCampaigns > 0 ? 1 : 0) * 40, 40);
         const projectScore = Math.min(activeProjects * 15, 30);
         const timeScore = Math.max(30 - Math.floor((Date.now() - client.createdAt.getTime()) / (1000 * 60 * 60 * 24 * 30)), 0);
         const performanceScore = Math.min(campaignScore + projectScore + timeScore, 100);
@@ -246,10 +181,14 @@ export async function GET(request: NextRequest) {
       sessionClientIds: sessionClients.map(c => c.id)
     });
 
-    // Combine all clients: static demos + database clients + session demo clients
-    const allClients = [...demoClients, ...userClientSummaries, ...sessionClients];
+    // Return only real database clients (no more demo/mock data)
+    const allClients = [...userClientSummaries, ...sessionClients];
 
-    console.log(`Returning ${allClients.length} total clients (${demoClients.length} static demo + ${userClientSummaries.length} database + ${sessionClients.length} session demo)`);
+    console.log(`🔍 Final client list composition:`);
+    console.log(`   Database clients: ${userClientSummaries.length}`);
+    console.log(`   Session demo clients (temporary): ${sessionClients.length}`);
+    console.log(`   Total clients: ${allClients.length}`);
+    console.log(`🔍 All client names:`, allClients.map(c => `${c.name} (${c.id})`));
     
     // Return simple array format for compatibility with existing frontend
     return NextResponse.json(allClients);
@@ -335,6 +274,9 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Generate display ID for new client
+      const displayId = generateId.client();
+      
       // Create client in database
       const newClient = await prisma.client.create({
         data: {
@@ -349,6 +291,7 @@ export async function POST(request: NextRequest) {
           logoUrl: otherData.logoUrl || null,
           monthlyBudget: otherData.monthlyBudget ? Number(otherData.monthlyBudget) : null,
           status: 'ACTIVE',
+          displayId, // Add the user-friendly display ID
         },
         include: {
           socialAccounts: {
@@ -371,6 +314,7 @@ export async function POST(request: NextRequest) {
       // Transform to expected format
       clientResponse = {
         id: newClient.id,
+        displayId: newClient.displayId, // Include the user-friendly display ID
         name: newClient.name,
         organizationId: newClient.organizationId,
         email: newClient.email,
@@ -395,9 +339,13 @@ export async function POST(request: NextRequest) {
     } catch (dbError) {
       console.warn('Database unavailable, creating demo client:', dbError);
       
+      // Generate display ID for demo client too
+      const demoDisplayId = generateId.client();
+      
       // Fallback: Create a demo client response and store in session
       clientResponse = {
         id: `demo-client-user-${Date.now()}`,
+        displayId: demoDisplayId, // Include display ID for demo clients too
         name,
         email,
         type,

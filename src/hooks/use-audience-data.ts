@@ -71,20 +71,20 @@ interface AudienceStats {
 
 // Fetch audiences from API
 async function fetchAudiences(organizationId: string): Promise<Audience[]> {
-  console.log('🔄 Fetching audiences from API...');
+  // Fetching audiences from API
   
   const response = await fetch(`/api/service-provider/audiences?organizationId=${organizationId}`);
   
   if (!response.ok) {
-    console.warn('⚠️ Failed to fetch audiences from API, status:', response.status);
+    // Failed to fetch audiences from API
     
     // Try fallback to service provider dashboard data
-    console.log('🔄 Trying service provider dashboard fallback...');
+    // Trying service provider dashboard fallback
     const fallbackResponse = await fetch(`/api/service-provider/dashboard?organizationId=${organizationId}`);
     
     if (fallbackResponse.ok) {
       const dashboardData = await response.json();
-      console.log('✅ Using service provider dashboard data for audiences');
+      // Using service provider dashboard data for audiences
       
       // Transform dashboard data into audience format
       return transformDashboardToAudiences(dashboardData);
@@ -94,7 +94,7 @@ async function fetchAudiences(organizationId: string): Promise<Audience[]> {
   }
   
   const data = await response.json();
-  console.log('✅ Audiences loaded from API:', data.length);
+  // Audiences loaded from API
   return data;
 }
 
@@ -215,14 +215,15 @@ function transformDashboardToAudiences(dashboardData: any): Audience[] {
 
 // Calculate audience statistics
 function calculateAudienceStats(audiences: Audience[]): AudienceStats {
-  const totalContacts = audiences.reduce((sum, audience) => sum + audience.size, 0);
-  const totalSegments = audiences.reduce((sum, audience) => sum + audience.segments.length, 0);
-  const avgEngagement = audiences.reduce((sum, audience) => 
+  const safeAudiences = Array.isArray(audiences) ? audiences : [];
+  const totalContacts = safeAudiences.reduce((sum, audience) => sum + audience.size, 0);
+  const totalSegments = safeAudiences.reduce((sum, audience) => sum + audience.segments.length, 0);
+  const avgEngagement = safeAudiences.reduce((sum, audience) => 
     sum + (audience.analytics?.avgEngagementRate || 0), 0
-  ) / (audiences.length || 1);
+  ) / (safeAudiences.length || 1);
 
   return {
-    totalAudiences: audiences.length,
+    totalAudiences: safeAudiences.length,
     totalContacts,
     activeSegments: totalSegments,
     avgEngagementRate: Math.round(avgEngagement * 10) / 10
@@ -249,7 +250,7 @@ export function useAudienceData(organizationId?: string) {
   // Calculate stats using useMemo to avoid infinite loops
   const stats = useMemo(() => {
     const calculatedStats = calculateAudienceStats(audiences);
-    console.log('📊 Audience stats calculated:', calculatedStats);
+    // Audience stats calculated
     return calculatedStats;
   }, [audiences]);
 

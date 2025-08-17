@@ -1,6 +1,9 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+import { db as prisma } from "@/lib/db";
 
 // Role-based access control middleware - simplified for development
 async function checkRoleAccess(request: NextRequest, userId: string) {

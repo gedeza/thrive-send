@@ -147,7 +147,7 @@ export default function CreateAudiencePage() {
         tags,
       };
 
-      console.log('Creating audience:', audienceData);
+      // Creating audience
 
       // Create audience via API
       const response = await fetch('/api/service-provider/audiences', {
@@ -162,7 +162,7 @@ export default function CreateAudiencePage() {
       }
 
       const createdAudience = await response.json();
-      console.log('✅ Audience created successfully:', createdAudience);
+      // Audience created successfully
 
       toast({
         title: "Success!",
@@ -172,7 +172,7 @@ export default function CreateAudiencePage() {
       router.push('/audiences');
 
     } catch (error) {
-      console.error('Failed to create audience:', error);
+      // Failed to create audience
       toast({
         title: "Error",
         description: "Failed to create audience. Please try again.",

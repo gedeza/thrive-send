@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { z } from "zod";
 
 // Validation schema
@@ -24,7 +24,7 @@ export async function GET(
     }
 
     // Validate client exists and user has access
-    const client = await prisma.client.findUnique({
+    const client = await db.client.findUnique({
       where: { id: params.id },
       include: {
         organization: {
@@ -53,7 +53,7 @@ export async function GET(
     }
 
     // Fetch project
-    const project = await prisma.project.findUnique({
+    const project = await db.project.findUnique({
       where: {
         id: params.projectId,
         clientId: params.id,
@@ -85,7 +85,7 @@ export async function PATCH(
     }
 
     // Validate client exists and user has access
-    const client = await prisma.client.findUnique({
+    const client = await db.client.findUnique({
       where: { id: params.id },
       include: {
         organization: {
@@ -114,7 +114,7 @@ export async function PATCH(
     }
 
     // Validate project exists
-    const existingProject = await prisma.project.findUnique({
+    const existingProject = await db.project.findUnique({
       where: {
         id: params.projectId,
         clientId: params.id,
@@ -130,7 +130,7 @@ export async function PATCH(
     const validatedData = projectSchema.parse(body);
 
     // Update project
-    const updatedProject = await prisma.project.update({
+    const updatedProject = await db.project.update({
       where: { id: params.projectId },
       data: validatedData,
     });
@@ -162,7 +162,7 @@ export async function DELETE(
     }
 
     // Validate client exists and user has access
-    const client = await prisma.client.findUnique({
+    const client = await db.client.findUnique({
       where: { id: params.id },
       include: {
         organization: {
@@ -191,7 +191,7 @@ export async function DELETE(
     }
 
     // Validate project exists
-    const project = await prisma.project.findUnique({
+    const project = await db.project.findUnique({
       where: {
         id: params.projectId,
         clientId: params.id,
@@ -203,7 +203,7 @@ export async function DELETE(
     }
 
     // Delete project
-    await prisma.project.delete({
+    await db.project.delete({
       where: { id: params.projectId },
     });
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { z } from "zod";
 
 // Validation schema
@@ -20,7 +20,7 @@ export async function GET(
     }
 
     // Validate client exists and user has access
-    const client = await prisma.client.findUnique({
+    const client = await db.client.findUnique({
       where: { id: params.id },
       include: {
         organization: {
@@ -49,7 +49,7 @@ export async function GET(
     }
 
     // Fetch social account
-    const socialAccount = await prisma.socialAccount.findUnique({
+    const socialAccount = await db.socialAccount.findUnique({
       where: {
         id: params.accountId,
         clientId: params.id,
@@ -84,7 +84,7 @@ export async function PATCH(
     }
 
     // Validate client exists and user has access
-    const client = await prisma.client.findUnique({
+    const client = await db.client.findUnique({
       where: { id: params.id },
       include: {
         organization: {
@@ -113,7 +113,7 @@ export async function PATCH(
     }
 
     // Validate social account exists
-    const existingAccount = await prisma.socialAccount.findUnique({
+    const existingAccount = await db.socialAccount.findUnique({
       where: {
         id: params.accountId,
         clientId: params.id,
@@ -132,7 +132,7 @@ export async function PATCH(
     const validatedData = socialAccountSchema.parse(body);
 
     // Check for duplicate handles
-    const duplicateHandle = await prisma.socialAccount.findFirst({
+    const duplicateHandle = await db.socialAccount.findFirst({
       where: {
         platform: validatedData.platform,
         handle: validatedData.handle,
@@ -149,7 +149,7 @@ export async function PATCH(
     }
 
     // Update social account
-    const updatedAccount = await prisma.socialAccount.update({
+    const updatedAccount = await db.socialAccount.update({
       where: { id: params.accountId },
       data: validatedData,
     });
@@ -181,7 +181,7 @@ export async function DELETE(
     }
 
     // Validate client exists and user has access
-    const client = await prisma.client.findUnique({
+    const client = await db.client.findUnique({
       where: { id: params.id },
       include: {
         organization: {
@@ -210,7 +210,7 @@ export async function DELETE(
     }
 
     // Validate social account exists and belongs to the client
-    const socialAccount = await prisma.socialAccount.findUnique({
+    const socialAccount = await db.socialAccount.findUnique({
       where: {
         id: params.accountId,
         clientId: params.id,
@@ -225,7 +225,7 @@ export async function DELETE(
     }
 
     // Delete social account
-    await prisma.socialAccount.delete({
+    await db.socialAccount.delete({
       where: { id: params.accountId },
     });
 

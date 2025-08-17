@@ -660,7 +660,7 @@ export async function DELETE(request: NextRequest) {
 // Utility function to calculate next run time based on frequency
 function calculateNextRun(frequency: string): string {
   const now = new Date();
-  let nextRun = new Date(now);
+  const nextRun = new Date(now);
 
   switch (frequency) {
     case 'daily':

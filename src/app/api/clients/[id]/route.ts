@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { z } from "zod";
+import { 
+  createSuccessResponse, 
+  createUnauthorizedResponse, 
+  createNotFoundResponse,
+  createValidationResponse,
+  handleApiError 
+} from "@/lib/api-utils";
 
 // Validation schema
 const clientSchema = z.object({
@@ -24,7 +31,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const client = await prisma.client.findUnique({
+    const client = await db.client.findUnique({
       where: { id: params.id },
       include: {
         organization: {
@@ -75,7 +82,7 @@ export async function PATCH(
     }
 
     // Validate client exists and user has access
-    const existingClient = await prisma.client.findUnique({
+    const existingClient = await db.client.findUnique({
       where: { id: params.id },
       include: {
         organization: {
@@ -109,7 +116,7 @@ export async function PATCH(
 
     // Check if email is being changed and if it's already in use
     if (validatedData.email !== existingClient.email) {
-      const emailExists = await prisma.client.findFirst({
+      const emailExists = await db.client.findFirst({
         where: {
           email: validatedData.email,
           organizationId: existingClient.organizationId,
@@ -126,7 +133,7 @@ export async function PATCH(
     }
 
     // Update client
-    const updatedClient = await prisma.client.update({
+    const updatedClient = await db.client.update({
       where: { id: params.id },
       data: validatedData,
     });
@@ -158,7 +165,7 @@ export async function DELETE(
     }
 
     // Validate client exists and user has access
-    const client = await prisma.client.findUnique({
+    const client = await db.client.findUnique({
       where: { id: params.id },
       include: {
         organization: {
@@ -187,7 +194,7 @@ export async function DELETE(
     }
 
     // Delete client and all related data
-    await prisma.client.delete({
+    await db.client.delete({
       where: { id: params.id },
     });
 
