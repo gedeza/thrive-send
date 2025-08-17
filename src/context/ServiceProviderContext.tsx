@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useCallback, ReactNode } from 'react';
 import { useAuth } from '@clerk/nextjs';
 
 // Types based on our TDD specifications
@@ -168,11 +168,11 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
     if (isLoaded && userId) {
       // Use orgId if available, otherwise create a default organization for the user
       const organizationId = orgId || `user-org-${userId}`;
-      console.log('🔍 ServiceProvider: Initializing with organizationId:', organizationId);
+      // ServiceProvider: Initializing with organizationId
       initializeServiceProvider(organizationId);
     } else if (isLoaded && !userId) {
       // DEVELOPMENT MODE: Initialize with demo data when no authentication
-      console.log('🚧 ServiceProvider: DEV MODE - Initializing without auth');
+      // ServiceProvider: DEV MODE - Initializing without auth
       const demoOrgId = 'org_2xhH7xfnNAWnpvKl5gNd4ZGRP5t'; // Use the test org ID
       initializeServiceProvider(demoOrgId);
     }
@@ -180,11 +180,11 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
 
   // Helper functions for fetching data with organizationId parameter
   const fetchClients = async (organizationId: string) => {
-    console.log('ServiceProviderContext fetchClients: using organizationId =', organizationId);
+    // ServiceProviderContext fetchClients: using organizationId
     const response = await fetch(`/api/service-provider/clients?organizationId=${organizationId}`);
     if (!response.ok) throw new Error('Failed to fetch clients');
     const clients = await response.json();
-    console.log('ServiceProviderContext fetchClients: fetched', clients.length, 'clients');
+    // ServiceProviderContext fetchClients: fetched clients
     dispatch({ type: 'SET_CLIENTS', payload: clients });
   };
 
@@ -205,7 +205,7 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
       if (!orgResponse.ok) {
         // For demo/testing purposes, let's default to service provider
         // TODO: In production, this should be based on actual organization data
-        console.log('📋 ServiceProvider: API failed, defaulting to service_provider for demo');
+        // ServiceProvider: API failed, defaulting to service_provider for demo
         dispatch({ 
           type: 'SET_ORGANIZATION', 
           payload: { 
@@ -254,52 +254,13 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
       
       dispatch({ type: 'SET_USER', payload: userData });
 
-      // Fetch clients - add some demo clients if API fails
+      // Fetch clients from database only - no more demo/mock data
       try {
         await fetchClients(organizationId);
       } catch (error) {
-        // Add demo clients for testing
-        dispatch({
-          type: 'SET_CLIENTS',
-          payload: [
-            {
-              id: 'client-1',
-              name: 'Municipal Corp',
-              type: 'municipality',
-              status: 'ACTIVE',
-              logoUrl: undefined,
-              performanceScore: 85,
-              activeCampaigns: 12,
-              engagementRate: 4.2,
-              monthlyBudget: 5000,
-              lastActivity: new Date(),
-            },
-            {
-              id: 'client-2', 
-              name: 'Tech Startup Inc',
-              type: 'startup',
-              status: 'ACTIVE',
-              logoUrl: undefined,
-              performanceScore: 92,
-              activeCampaigns: 8,
-              engagementRate: 6.8,
-              monthlyBudget: 3000,
-              lastActivity: new Date(),
-            },
-            {
-              id: 'client-3',
-              name: 'Local Coffee Shop',
-              type: 'business', 
-              status: 'ACTIVE',
-              logoUrl: undefined,
-              performanceScore: 76,
-              activeCampaigns: 5,
-              engagementRate: 3.9,
-              monthlyBudget: 1500,
-              lastActivity: new Date(),
-            }
-          ]
-        });
+        // No fallback demo clients - just show empty list if API fails
+        console.warn('Failed to fetch clients from API:', error);
+        dispatch({ type: 'SET_CLIENTS', payload: [] });
       }
       
       // Fetch metrics - add demo metrics if API fails  
@@ -325,7 +286,7 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'SET_LOADING', payload: false });
     } catch (error) {
       // For demo purposes, default to service provider even on error
-      console.log('📋 ServiceProvider: Error occurred, defaulting to service_provider for demo');
+      // ServiceProvider: Error occurred, defaulting to service_provider for demo
       dispatch({
         type: 'SET_ORGANIZATION',
         payload: {
@@ -353,48 +314,8 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
         }
       });
       
-      // Add demo clients and metrics for testing
-      dispatch({
-        type: 'SET_CLIENTS',
-        payload: [
-          {
-            id: 'client-1',
-            name: 'Municipal Corp',
-            type: 'municipality',
-            status: 'ACTIVE',
-            logoUrl: undefined,
-            performanceScore: 85,
-            activeCampaigns: 12,
-            engagementRate: 4.2,
-            monthlyBudget: 5000,
-            lastActivity: new Date(),
-          },
-          {
-            id: 'client-2', 
-            name: 'Tech Startup Inc',
-            type: 'startup',
-            status: 'ACTIVE',
-            logoUrl: undefined,
-            performanceScore: 92,
-            activeCampaigns: 8,
-            engagementRate: 6.8,
-            monthlyBudget: 3000,
-            lastActivity: new Date(),
-          },
-          {
-            id: 'client-3',
-            name: 'Local Coffee Shop',
-            type: 'business', 
-            status: 'ACTIVE',
-            logoUrl: undefined,
-            performanceScore: 76,
-            activeCampaigns: 5,
-            engagementRate: 3.9,
-            monthlyBudget: 1500,
-            lastActivity: new Date(),
-          }
-        ]
-      });
+      // No demo clients - only real database clients
+      dispatch({ type: 'SET_CLIENTS', payload: [] });
       
       dispatch({
         type: 'SET_METRICS',
@@ -414,33 +335,28 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Refresh clients data
-  const refreshClients = async () => {
+  // Refresh clients data (memoized)
+  const refreshClients = useCallback(async () => {
     try {
       if (!state.organizationId) {
-        console.warn('ServiceProviderContext refreshClients: organizationId is empty, skipping fetch');
         return;
       }
-      console.log('ServiceProviderContext refreshClients: using organizationId =', state.organizationId);
       const response = await fetch(`/api/service-provider/clients?organizationId=${state.organizationId}`);
       if (!response.ok) throw new Error('Failed to fetch clients');
       const clients = await response.json();
-      console.log('ServiceProviderContext refreshClients: fetched', clients.length, 'clients');
       dispatch({ type: 'SET_CLIENTS', payload: clients });
     } catch (error) {
-      console.error('Failed to refresh clients:', error);
       dispatch({
         type: 'SET_ERROR',
         payload: 'Failed to refresh client data',
       });
     }
-  };
+  }, [state.organizationId]);
 
-  // Refresh metrics data
-  const refreshMetrics = async () => {
+  // Refresh metrics data (memoized)
+  const refreshMetrics = useCallback(async () => {
     try {
       if (!state.organizationId) {
-        console.warn('ServiceProviderContext refreshMetrics: organizationId is empty, skipping fetch');
         return;
       }
       const response = await fetch(`/api/service-provider/metrics?organizationId=${state.organizationId}`);
@@ -448,50 +364,61 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
       const metrics = await response.json();
       dispatch({ type: 'SET_METRICS', payload: metrics });
     } catch (error) {
-      console.error('Failed to refresh metrics:', error);
       // Don't set error for metrics failure, just log it
+      console.warn('Failed to refresh metrics:', error);
     }
-  };
+  }, [state.organizationId]);
 
-  // Switch client context
-  const switchClient = async (client: ClientSummary | null) => {
+  // Switch client context (memoized to prevent infinite loops)
+  const switchClient = useCallback(async (client: ClientSummary | null) => {
+    // Skip if already selected
+    if (client && state.selectedClient?.id === client.id) {
+      return;
+    }
+    if (!client && !state.selectedClient) {
+      return;
+    }
+
     try {
-      dispatch({ type: 'SET_LOADING', payload: true });
-      
       if (client) {
         // Validate user has access to this client
         if (!hasPermission('client', 'read', client.id)) {
           throw new Error('Access denied to this client');
         }
         
-        // Update context on server
-        const response = await fetch('/api/context/switch-client', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ clientId: client.id }),
-        });
-        
-        if (!response.ok) throw new Error('Failed to switch client context');
+        // Update context on server (optional - don't fail if this fails)
+        try {
+          const response = await fetch('/api/context/switch-client', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ clientId: client.id }),
+          });
+          
+          if (!response.ok) {
+            console.warn('Failed to update server context, continuing with local update');
+          }
+        } catch (serverError) {
+          console.warn('Server context update failed:', serverError);
+        }
       }
       
       dispatch({ type: 'SELECT_CLIENT', payload: client });
-      dispatch({ type: 'SET_LOADING', payload: false });
     } catch (error) {
-      console.error('Failed to switch client:', error);
+      console.error('Error switching client:', error);
       dispatch({
         type: 'SET_ERROR',
         payload: error instanceof Error ? error.message : 'Failed to switch client',
       });
     }
-  };
+  }, [state.selectedClient?.id, hasPermission]);
 
   // Set view mode
   const setViewMode = (mode: 'overview' | 'client-specific' | 'cross-client') => {
     dispatch({ type: 'SET_VIEW_MODE', payload: mode });
   };
 
-  // Check permissions
-  const hasPermission = (resource: string, action: string, clientId?: string): boolean => {
+  // Check permissions (memoized to prevent infinite loops)
+  const hasPermission = useCallback((resource: string, action: string, clientId?: string): boolean => {
     const user = state.currentUser;
     
     // Owners and admins have all permissions
@@ -507,10 +434,10 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
       
       return resourceMatch && actionMatch && scopeMatch;
     });
-  };
+  }, [state.currentUser.role, state.currentUser.permissions]);
 
-  // Get accessible clients based on permissions
-  const getAccessibleClients = (): ClientSummary[] => {
+  // Get accessible clients based on permissions (memoized)
+  const getAccessibleClients = useCallback((): ClientSummary[] => {
     const user = state.currentUser;
     
     // Owners and admins can access all clients
@@ -522,7 +449,7 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
     return state.availableClients.filter(client =>
       hasPermission('client', 'read', client.id)
     );
-  };
+  }, [state.currentUser.role, state.availableClients, hasPermission]);
 
   const value = {
     state,
