@@ -369,6 +369,30 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
     }
   }, [state.organizationId]);
 
+  // Set view mode
+  const setViewMode = (mode: 'overview' | 'client-specific' | 'cross-client') => {
+    dispatch({ type: 'SET_VIEW_MODE', payload: mode });
+  };
+
+  // Check permissions (memoized to prevent infinite loops)
+  const hasPermission = useCallback((resource: string, action: string, clientId?: string): boolean => {
+    const user = state.currentUser;
+    
+    // Owners and admins have all permissions
+    if (user.role === 'OWNER' || user.role === 'ADMIN') {
+      return true;
+    }
+    
+    // Check specific permissions
+    return user.permissions.some(permission => {
+      const resourceMatch = permission.resource === resource || permission.resource === '*';
+      const actionMatch = permission.actions.includes(action as any) || permission.actions.includes('admin');
+      const scopeMatch = !clientId || permission.scope === 'organization' || permission.clientId === clientId;
+      
+      return resourceMatch && actionMatch && scopeMatch;
+    });
+  }, [state.currentUser.role, state.currentUser.permissions]);
+
   // Switch client context (memoized to prevent infinite loops)
   const switchClient = useCallback(async (client: ClientSummary | null) => {
     // Skip if already selected
@@ -411,30 +435,6 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
       });
     }
   }, [state.selectedClient?.id, hasPermission]);
-
-  // Set view mode
-  const setViewMode = (mode: 'overview' | 'client-specific' | 'cross-client') => {
-    dispatch({ type: 'SET_VIEW_MODE', payload: mode });
-  };
-
-  // Check permissions (memoized to prevent infinite loops)
-  const hasPermission = useCallback((resource: string, action: string, clientId?: string): boolean => {
-    const user = state.currentUser;
-    
-    // Owners and admins have all permissions
-    if (user.role === 'OWNER' || user.role === 'ADMIN') {
-      return true;
-    }
-    
-    // Check specific permissions
-    return user.permissions.some(permission => {
-      const resourceMatch = permission.resource === resource || permission.resource === '*';
-      const actionMatch = permission.actions.includes(action as any) || permission.actions.includes('admin');
-      const scopeMatch = !clientId || permission.scope === 'organization' || permission.clientId === clientId;
-      
-      return resourceMatch && actionMatch && scopeMatch;
-    });
-  }, [state.currentUser.role, state.currentUser.permissions]);
 
   // Get accessible clients based on permissions (memoized)
   const getAccessibleClients = useCallback((): ClientSummary[] => {
