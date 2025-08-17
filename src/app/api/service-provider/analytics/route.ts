@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     // DEVELOPMENT MODE: Allow testing without authentication
     // TODO: Remove this in production
     if (!userId) {
-      console.log('🚧 DEV MODE: Service Provider Analytics - No auth required');
+      // DEV MODE: Service Provider Analytics - No auth required
     }
 
     // 🚀 SERVICE PROVIDER ANALYTICS - Enhanced Demo Implementation with Dashboard Integration
@@ -38,14 +38,10 @@ export async function GET(request: NextRequest) {
       const dashboardResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/service-provider/dashboard?organizationId=${organizationId}`);
       if (dashboardResponse.ok) {
         dashboardData = await dashboardResponse.json();
-        console.log('📊 Integrated dashboard data into analytics:', {
-          totalClients: dashboardData.metrics?.totalClients,
-          activeClients: dashboardData.metrics?.activeClients,
-          totalRevenue: dashboardData.metrics?.totalRevenue
-        });
+        // Integrated dashboard data into analytics
       }
     } catch (error) {
-      console.log('⚠️  Dashboard integration failed, using fallback data:', error);
+      // Dashboard integration failed, using fallback data
     }
 
     // Use dashboard data to scale analytics appropriately with real-time variance
@@ -199,11 +195,7 @@ export async function GET(request: NextRequest) {
         generatedAt: now.toISOString()
       };
 
-      console.log('📊 Client-specific analytics requested:', {
-        clientId,
-        contentCount: clientData.contentMetrics.totalContent,
-        avgEngagement: clientData.contentMetrics.avgEngagementRate
-      });
+      // Client-specific analytics requested
 
       return NextResponse.json(response);
     }
@@ -248,11 +240,7 @@ export async function GET(request: NextRequest) {
       insights: generateInsights(allClientsData, aggregateMetrics)
     };
 
-    console.log('📊 Cross-client analytics requested:', {
-      clientCount: allClientsData.length,
-      totalContent: aggregateMetrics.totalContent,
-      avgEngagement: aggregateMetrics.averageEngagement.toFixed(1)
-    });
+    // Cross-client analytics requested
 
     return NextResponse.json(response);
 
@@ -289,7 +277,7 @@ export async function GET(request: NextRequest) {
     */
 
   } catch (error) {
-    console.error('❌ Service provider analytics error:', error);
+    // Service provider analytics error
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

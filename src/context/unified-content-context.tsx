@@ -348,7 +348,7 @@ export function UnifiedContentProvider({
         }
         return workflowState;
       } catch (error) {
-        console.error('Failed to get workflow state:', error);
+        // Failed to get workflow state
         return null;
       }
     },

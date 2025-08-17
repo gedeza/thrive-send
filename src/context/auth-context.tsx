@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(mockUser);
       localStorage.setItem('thrivesend_user', JSON.stringify(mockUser));
     } catch (error) {
-      console.error('Login failed:', error);
+      // Login failed
       throw new Error('Invalid credentials');
     } finally {
       setIsLoading(false);

@@ -65,59 +65,63 @@ interface TeamInvitation {
 
 // Fetch team members from API
 async function fetchTeamMembers(organizationId: string): Promise<TeamMember[]> {
-  console.log('🔄 Fetching team members from API...');
+  // Fetching team members from API
   
   const response = await fetch(`/api/service-provider/team/members?organizationId=${organizationId}`);
   
   if (!response.ok) {
-    console.warn('⚠️ Failed to fetch team members from API, status:', response.status);
+    // Failed to fetch team members from API
     throw new Error(`Failed to fetch team members: ${response.status}`);
   }
   
   const data = await response.json();
-  console.log('✅ Team members loaded from API:', data.length);
-  return data;
+  // Team members loaded from API
+  // Handle both wrapped and unwrapped API responses
+  return Array.isArray(data) ? data : (data.data || []);
 }
 
 // Fetch team invitations from API
 async function fetchTeamInvitations(organizationId: string): Promise<TeamInvitation[]> {
-  console.log('🔄 Fetching team invitations from API...');
+  // Fetching team invitations from API
   
   const response = await fetch(`/api/service-provider/team/invitations?organizationId=${organizationId}`);
   
   if (!response.ok) {
-    console.warn('⚠️ Failed to fetch team invitations from API, status:', response.status);
+    // Failed to fetch team invitations from API
     throw new Error(`Failed to fetch team invitations: ${response.status}`);
   }
   
   const data = await response.json();
-  console.log('✅ Team invitations loaded from API:', data.length);
-  return data;
+  // Team invitations loaded from API
+  // Handle both wrapped and unwrapped API responses
+  return Array.isArray(data) ? data : (data.data || []);
 }
 
 // Calculate team statistics
 function calculateTeamStats(members: TeamMember[], invitations: TeamInvitation[]): TeamStats {
-  const pendingInvitations = invitations.filter(inv => inv.status === 'PENDING').length;
-  const activeMembers = members.filter(m => m.status === 'ACTIVE').length;
+  const safeMembers = Array.isArray(members) ? members : [];
+  const safeInvitations = Array.isArray(invitations) ? invitations : [];
+  const pendingInvitations = safeInvitations.filter(inv => inv.status === 'PENDING').length;
+  const activeMembers = safeMembers.filter(m => m.status === 'ACTIVE').length;
   
   // Calculate average performance
-  const totalRating = members.reduce((sum, member) => sum + member.performance.averageRating, 0);
-  const averagePerformance = members.length > 0 ? totalRating / members.length : 0;
+  const totalRating = safeMembers.reduce((sum, member) => sum + member.performance.averageRating, 0);
+  const averagePerformance = safeMembers.length > 0 ? totalRating / safeMembers.length : 0;
   
   // Count members by role
-  const membersByRole = members.reduce((acc, member) => {
+  const membersByRole = safeMembers.reduce((acc, member) => {
     acc[member.role] = (acc[member.role] || 0) + 1;
     return acc;
   }, {} as Record<ServiceProviderRole, number>);
   
   // Get top performers
-  const topPerformers = members
+  const topPerformers = safeMembers
     .filter(m => m.status === 'ACTIVE')
     .sort((a, b) => b.performance.averageRating - a.performance.averageRating)
     .slice(0, 3);
   
   return {
-    totalMembers: members.length,
+    totalMembers: safeMembers.length,
     activeMembers,
     pendingInvitations,
     averagePerformance: Math.round(averagePerformance * 10) / 10,
@@ -160,7 +164,7 @@ export function useTeamData(organizationId?: string) {
   // Calculate stats using useMemo to avoid infinite loops
   const stats = useMemo(() => {
     const calculatedStats = calculateTeamStats(members, invitations);
-    console.log('📊 Team stats calculated:', calculatedStats);
+    // Team stats calculated
     return calculatedStats;
   }, [members, invitations]);
 

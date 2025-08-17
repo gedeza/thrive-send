@@ -170,7 +170,7 @@ const CampaignList: React.FC = () => {
 
   // Sort campaigns
   const sortCampaigns = (type: 'name' | 'date' | 'status') => {
-    let sorted = [...filteredCampaigns];
+    const sorted = [...filteredCampaigns];
     if (type === 'name') {
       sorted.sort((a, b) => a.name.localeCompare(b.name));
     } else if (type === 'date') {

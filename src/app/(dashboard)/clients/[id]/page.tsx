@@ -34,36 +34,22 @@ function ClientDashboardContent({
   const { data: client, isLoading, error } = useQuery({
     queryKey: ['client-detail', clientId, organizationId],
     queryFn: async () => {
-      console.log('🔍 Fetching client data:', { clientId, organizationId });
-      
       if (!organizationId) {
         throw new Error('No organization ID');
       }
 
       const apiUrl = `/api/service-provider/clients/${clientId}?organizationId=${organizationId}`;
-      console.log('📡 API call:', apiUrl);
-      
       const response = await fetch(apiUrl);
       
-      console.log('📊 API response:', {
-        status: response.status,
-        statusText: response.statusText,
-        url: response.url
-      });
-      
       if (response.status === 404) {
-        const errorData = await response.text();
-        console.error('❌ Client not found:', errorData);
         throw new Error('Client not found');
       }
       if (!response.ok) {
         const errorData = await response.text();
-        console.error('❌ API error:', errorData);
         throw new Error(`Failed to fetch client: ${response.status} ${response.statusText}`);
       }
       
       const data = await response.json();
-      console.log('✅ Client data received:', data);
       return data;
     },
     enabled: !!organizationId && !!clientId,
@@ -105,7 +91,26 @@ function ClientDashboardContent({
     );
   }
 
-  if (error || !client) {
+  if (error) {
+    console.error('Client detail error:', error);
+    return (
+      <div className="container mx-auto py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Error Loading Client</h1>
+          <p className="text-gray-600 mb-4">Failed to load client details</p>
+          <details className="text-sm text-gray-500">
+            <summary>Error Details</summary>
+            <pre className="mt-2 p-4 bg-gray-100 rounded text-left overflow-auto">
+              {JSON.stringify(error, null, 2)}
+            </pre>
+          </details>
+        </div>
+      </div>
+    );
+  }
+
+  if (!client) {
+    console.warn('No client data found for ID:', clientId);
     notFound();
   }
 

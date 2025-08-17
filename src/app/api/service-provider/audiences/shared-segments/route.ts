@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { db as prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     }
 
     // First get the user's database ID from their clerkId
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { clerkId: userId }
     });
 
@@ -27,21 +27,21 @@ export async function GET(request: NextRequest) {
     }
 
     // Apply same organization lookup logic as other APIs
-    let orgExists = await prisma.organization.findUnique({
+    let orgExists = await db.organization.findUnique({
       where: { id: organizationId }
     });
 
     if (!orgExists && organizationId.startsWith('org_')) {
-      console.log('🔍 Shared-segments: Searching by clerkOrganizationId:', organizationId);
-      orgExists = await prisma.organization.findUnique({
+      // Searching by clerkOrganizationId
+      orgExists = await db.organization.findUnique({
         where: { clerkOrganizationId: organizationId }
       });
     }
 
     if (!orgExists) {
-      console.log('⚠️ Shared-segments: Organization not found, creating for development:', organizationId);
+      // Organization not found, creating for development
       try {
-        orgExists = await prisma.organization.create({
+        orgExists = await db.organization.create({
           data: {
             id: organizationId.startsWith('org_') ? `org-${Date.now()}` : organizationId,
             name: 'Auto-created Organization',
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
         });
         
         // Also create organization membership for the user if needed
-        await prisma.organizationMember.upsert({
+        await db.organizationMember.upsert({
           where: {
             userId_organizationId: {
               userId: user.id,
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
           update: {}
         });
       } catch (createError) {
-        console.error('Failed to create organization:', createError);
+        // Failed to create organization
         return NextResponse.json({ error: 'Organization access denied' }, { status: 403 });
       }
     }
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
     const dbOrganizationId = orgExists.id;
 
     // Check if user has access to the organization using the database organization ID
-    const userMembership = await prisma.organizationMember.findFirst({
+    const userMembership = await db.organizationMember.findFirst({
       where: {
         userId: user.id, // Use database user ID, not clerkId
         organizationId: dbOrganizationId,
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch shared segments - segments that are used across multiple audiences
-    const segments = await prisma.audienceSegment.findMany({
+    const segments = await db.audienceSegment.findMany({
       where: {
         organizationId: dbOrganizationId,
         status: 'ACTIVE',
@@ -175,7 +175,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(sharedSegments);
 
   } catch (error) {
-    console.error('Error fetching shared segments:', error);
+    // Error fetching shared segments
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -208,7 +208,7 @@ export async function POST(request: NextRequest) {
     }
 
     // First get the user's database ID from their clerkId
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { clerkId: userId }
     });
 
@@ -217,12 +217,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Apply same organization lookup logic as GET method
-    let orgExists = await prisma.organization.findUnique({
+    let orgExists = await db.organization.findUnique({
       where: { id: organizationId }
     });
 
     if (!orgExists && organizationId.startsWith('org_')) {
-      orgExists = await prisma.organization.findUnique({
+      orgExists = await db.organization.findUnique({
         where: { clerkOrganizationId: organizationId }
       });
     }
@@ -234,7 +234,7 @@ export async function POST(request: NextRequest) {
     const dbOrganizationId = orgExists.id;
 
     // Check if user has access to the organization using the database organization ID
-    const userMembership = await prisma.organizationMember.findFirst({
+    const userMembership = await db.organizationMember.findFirst({
       where: {
         userId: user.id, // Use database user ID, not clerkId
         organizationId: dbOrganizationId,
@@ -246,7 +246,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify all audience IDs belong to the organization
-    const audiences = await prisma.audience.findMany({
+    const audiences = await db.audience.findMany({
       where: {
         id: { in: audienceIds },
         organizationId: dbOrganizationId,
@@ -260,7 +260,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create shared segment across multiple audiences using transaction
-    const sharedSegments = await prisma.$transaction(async (tx) => {
+    const sharedSegments = await db.$transaction(async (tx) => {
       const createdSegments = [];
 
       for (const audienceId of audienceIds) {
@@ -332,7 +332,7 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
 
   } catch (error) {
-    console.error('Error creating shared segment:', error);
+    // Error creating shared segment
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

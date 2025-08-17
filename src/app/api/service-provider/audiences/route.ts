@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { db as prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,27 +17,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Organization ID is required' }, { status: 400 });
     }
 
-    console.log('🔍 Audience API Debug:', { userId, organizationId });
+    // Audience API Debug
 
     // First, try to find organization by ID, then by clerkOrganizationId
-    let orgExists = await prisma.organization.findUnique({
+    let orgExists = await db.organization.findUnique({
       where: { id: organizationId }
     });
 
     // If not found by ID, try by clerkOrganizationId
     if (!orgExists && organizationId.startsWith('org_')) {
-      orgExists = await prisma.organization.findUnique({
+      orgExists = await db.organization.findUnique({
         where: { clerkOrganizationId: organizationId }
       });
-      console.log('🔍 Searched by clerkOrganizationId:', { found: !!orgExists });
+      // Searched by clerkOrganizationId
     }
 
     if (!orgExists) {
-      console.log('⚠️ Organization not found, creating demo organization:', organizationId);
+      // Organization not found, creating demo organization
       
       // Create a demo organization for development
       try {
-        orgExists = await prisma.organization.create({
+        orgExists = await db.organization.create({
           data: {
             id: organizationId.startsWith('org_') ? organizationId.replace('org_', '') : organizationId,
             name: 'Demo Service Provider',
@@ -47,9 +47,9 @@ export async function GET(request: NextRequest) {
             subscriptionTier: 'basic',
           }
         });
-        console.log('✅ Created demo organization:', orgExists.id);
+        // Created demo organization
       } catch (createError) {
-        console.log('❌ Could not create demo organization:', createError);
+        // Could not create demo organization
         return NextResponse.json({ 
           error: 'Organization setup required',
           details: 'Please complete organization setup or contact support'
@@ -61,39 +61,32 @@ export async function GET(request: NextRequest) {
     const dbOrganizationId = orgExists.id;
 
     // First get the user's database ID from their clerkId
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { clerkId: userId }
     });
 
     if (!user) {
-      console.log('❌ User not found:', userId);
+      // User not found
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // Check if user has access to the organization using the database user ID
-    const userMembership = await prisma.organizationMember.findFirst({
+    const userMembership = await db.organizationMember.findFirst({
       where: {
         userId: user.id, // Use database user ID, not clerkId
         organizationId: dbOrganizationId,
       },
     });
 
-    console.log('👤 User membership check:', { 
-      clerkId: userId,
-      dbUserId: user.id,
-      organizationId, 
-      dbOrganizationId,
-      hasMembership: !!userMembership,
-      membershipId: userMembership?.id 
-    });
+    // User membership check
 
     if (!userMembership) {
       // For development/demo purposes, create a basic organization membership if none exists
       // In production, this should be handled through proper onboarding
-      console.log('⚠️ No organization membership found, creating demo membership');
+      // No organization membership found, creating demo membership
       
       try {
-        const newMembership = await prisma.organizationMember.create({
+        const newMembership = await db.organizationMember.create({
           data: {
             userId: user.id,
             organizationId: dbOrganizationId,
@@ -101,9 +94,9 @@ export async function GET(request: NextRequest) {
             serviceProviderRole: 'ADMIN',
           },
         });
-        console.log('✅ Demo membership created:', newMembership);
+        // Demo membership created
       } catch (createError) {
-        console.log('❌ Could not create demo membership:', createError);
+        // Could not create demo membership
         return NextResponse.json({ 
           error: 'Access denied - not a member of this organization. Please contact your administrator to be added to this organization.',
           details: 'No organization membership found and unable to create demo membership'
@@ -112,7 +105,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch actual audiences from database
-    const audiences = await prisma.audience.findMany({
+    const audiences = await db.audience.findMany({
       where: {
         organizationId: dbOrganizationId,
       },
@@ -191,7 +184,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(transformedAudiences);
 
   } catch (error) {
-    console.error('Error fetching service provider audiences:', error);
+    // Error fetching service provider audiences
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -219,7 +212,7 @@ export async function POST(request: NextRequest) {
     }
 
     // First get the user's database ID from their clerkId
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { clerkId: userId }
     });
 
@@ -228,12 +221,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Apply the same organization lookup logic as GET handler
-    let orgExists = await prisma.organization.findUnique({
+    let orgExists = await db.organization.findUnique({
       where: { id: organizationId }
     });
 
     if (!orgExists && organizationId.startsWith('org_')) {
-      orgExists = await prisma.organization.findUnique({
+      orgExists = await db.organization.findUnique({
         where: { clerkOrganizationId: organizationId }
       });
     }
@@ -247,7 +240,7 @@ export async function POST(request: NextRequest) {
     const dbOrganizationId = orgExists.id;
 
     // Check if user has access to the organization using the database user ID
-    const userMembership = await prisma.organizationMember.findFirst({
+    const userMembership = await db.organizationMember.findFirst({
       where: {
         userId: user.id, // Use database user ID, not clerkId
         organizationId: dbOrganizationId,
@@ -259,7 +252,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the audience with transaction to ensure consistency
-    const audience = await prisma.$transaction(async (tx) => {
+    const audience = await db.$transaction(async (tx) => {
       // Create the audience
       const newAudience = await tx.audience.create({
         data: {
@@ -334,7 +327,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Fetch the created audience with full details
-    const createdAudience = await prisma.audience.findUnique({
+    const createdAudience = await db.audience.findUnique({
       where: { id: audience.id },
       include: {
         segments: {
@@ -393,7 +386,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(transformedAudience, { status: 201 });
 
   } catch (error) {
-    console.error('Error creating audience:', error);
+    // Error creating audience
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

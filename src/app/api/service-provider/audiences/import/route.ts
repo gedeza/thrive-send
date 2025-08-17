@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { db as prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user from database
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { clerkId: userId }
     });
 
@@ -31,21 +31,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle organization ID mapping - check both database ID and Clerk organization ID
-    let orgExists = await prisma.organization.findUnique({
+    let orgExists = await db.organization.findUnique({
       where: { id: organizationId }
     });
 
     if (!orgExists && organizationId.startsWith('org_')) {
-      console.log('🔍 Import: Searching by clerkOrganizationId:', organizationId);
-      orgExists = await prisma.organization.findUnique({
+      // Searching by clerkOrganizationId
+      orgExists = await db.organization.findUnique({
         where: { clerkOrganizationId: organizationId }
       });
     }
 
     if (!orgExists) {
-      console.log('⚠️ Import: Organization not found, creating for development:', organizationId);
+      // Organization not found, creating for development
       try {
-        orgExists = await prisma.organization.create({
+        orgExists = await db.organization.create({
           data: {
             id: organizationId.startsWith('org_') ? `org-${Date.now()}` : organizationId,
             name: 'Auto-created Organization',
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
         });
         
         // Also create organization membership for the user if needed
-        await prisma.organizationMember.upsert({
+        await db.organizationMember.upsert({
           where: {
             userId_organizationId: {
               userId: user.id,
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
           update: {}
         });
       } catch (createError) {
-        console.error('Failed to create organization:', createError);
+        // Failed to create organization
         return NextResponse.json({ error: 'Organization access denied' }, { status: 403 });
       }
     }
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     const dbOrganizationId = orgExists.id;
 
     // Check if user has access to the organization using the database organization ID
-    const userMembership = await prisma.organizationMember.findFirst({
+    const userMembership = await db.organizationMember.findFirst({
       where: {
         userId: user.id,
         organizationId: dbOrganizationId,
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create audience and import contacts in a transaction
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await db.$transaction(async (tx) => {
       // Create the audience
       const audience = await tx.audience.create({
         data: {
@@ -176,12 +176,7 @@ export async function POST(request: NextRequest) {
       };
     });
 
-    console.log('✅ Successfully imported contacts:', {
-      audienceId: result.audience.id,
-      audienceName: result.audience.name,
-      contactCount: result.contactCount,
-      importMethod
-    });
+    // Successfully imported contacts
 
     return NextResponse.json({
       success: true,
@@ -195,7 +190,7 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
 
   } catch (error) {
-    console.error('❌ Error importing contacts:', error);
+    // Error importing contacts
     
     // Return more specific error messages
     if (error instanceof Error) {

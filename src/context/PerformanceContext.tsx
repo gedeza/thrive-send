@@ -136,7 +136,7 @@ export const PerformanceProvider: React.FC<PerformanceProviderProps> = ({
 
     const preloadFn = preloadMap[componentName];
     if (preloadFn) {
-      preloadFn().catch(console.error);
+      preloadFn().catch(() => {});
     }
   }, [isOptimizedMode]);
 
@@ -154,7 +154,7 @@ export const PerformanceProvider: React.FC<PerformanceProviderProps> = ({
     };
 
     // In a real app, you would send this to your analytics service
-    console.log('Performance Report:', report);
+    // Performance Report generated
     
     // Optional: Send to analytics service
     // analyticsService.track('performance_metrics', report);
@@ -201,26 +201,26 @@ export const PerformanceProvider: React.FC<PerformanceProviderProps> = ({
     // Warn about slow components
     Object.entries(componentRenderTimes).forEach(([name, time]) => {
       if (time > 100) {
-        console.warn(`Component "${name}" took ${time.toFixed(2)}ms to render`);
+        // Component took too long to render
       }
     });
 
     // Warn about memory usage
     if (memoryUsage && memoryUsage.percentage > 80) {
-      console.warn(`High memory usage: ${memoryUsage.percentage.toFixed(1)}%`);
+      // High memory usage detected
     }
 
     // Warn about Core Web Vitals
     if (lcp && lcp > 2500) {
-      console.warn(`Poor LCP: ${lcp.toFixed(2)}ms (should be < 2500ms)`);
+      // Poor LCP performance
     }
     
     if (fid && fid > 100) {
-      console.warn(`Poor FID: ${fid.toFixed(2)}ms (should be < 100ms)`);
+      // Poor FID performance
     }
     
     if (cls && cls > 0.1) {
-      console.warn(`Poor CLS: ${cls.toFixed(3)} (should be < 0.1)`);
+      // Poor CLS performance
     }
   }, [metrics, isOptimizedMode]);
 

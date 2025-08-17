@@ -183,8 +183,6 @@ export class AnalyticsService {
     this.events.push(fullEvent);
 
     // TODO: Implement actual analytics provider integration
-    // For now, we'll just log to console
-    console.log('Analytics Event:', fullEvent);
 
     // In a real implementation, you would:
     // 1. Send to analytics provider
@@ -236,7 +234,6 @@ export function useAnalytics() {
 
   const getAuthHeaders = async () => {
     const token = await getToken();
-    console.log('Auth token:', token ? 'Present' : 'Missing');
     return {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -295,7 +292,6 @@ export function useAnalytics() {
 
       return response.json();
     } catch (error) {
-      console.error('Error fetching campaign metrics:', error);
       return [];
     }
   };
@@ -320,7 +316,7 @@ export function useAnalytics() {
 
       return response.json();
     } catch (error) {
-      console.error('Error fetching audience segments:', error);
+      // Error fetching audience segments
       throw error;
     }
   };
@@ -339,7 +335,7 @@ export function useAnalytics() {
       const mockResults = generateMockABTestResults(testId);
       return mockResults;
     } catch (err) {
-      console.error('Error fetching A/B test results:', err);
+      // Error fetching A/B test results
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
       return null;
     } finally {
@@ -366,7 +362,7 @@ export function useAnalytics() {
 
       return response.json();
     } catch (error) {
-      console.error('Error fetching conversion metrics:', error);
+      // Error fetching conversion metrics
       throw error;
     }
   };
@@ -445,7 +441,7 @@ export function useAnalytics() {
         icon: metric.icon
       })) : [];
     } catch (error) {
-      console.error('Error fetching analytics metrics:', error);
+      // Error fetching analytics metrics
       return [];
     }
   };
@@ -470,7 +466,7 @@ export function useAnalytics() {
     const data = await response.json();
     return data.audienceGrowthData || audienceGrowthMockData;
   } catch (error) {
-    console.error('Error fetching audience growth data:', error);
+    // Error fetching audience growth data
     return audienceGrowthMockData;
   }
   };
@@ -495,7 +491,7 @@ export function useAnalytics() {
     const data = await response.json();
     return data.engagementPieData || engagementPieMockData;
   } catch (error) {
-    console.error('Error fetching engagement breakdown data:', error);
+    // Error fetching engagement breakdown data
     return engagementPieMockData;
   }
   };
@@ -520,7 +516,7 @@ export function useAnalytics() {
     const data = await response.json();
     return data.performanceLineData || performanceLineMockData;
   } catch (error) {
-    console.error('Error fetching performance trend data:', error);
+    // Error fetching performance trend data
     return performanceLineMockData;
   }
   };
@@ -540,7 +536,7 @@ export function useAnalytics() {
       const data = await response.json();
       return data;
     } catch (err) {
-      console.error('Error fetching campaign performance:', err);
+      // Error fetching campaign performance
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
       return null;
     } finally {
@@ -574,7 +570,7 @@ export function useAnalytics() {
       const data = await response.json();
       return data;
     } catch (err) {
-      console.error('Error fetching audience insights:', err);
+      // Error fetching audience insights
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
       return null;
     } finally {
@@ -602,7 +598,7 @@ export function useAnalytics() {
 
       return response.json();
     } catch (error) {
-      console.error('Error fetching campaign overview metrics:', error);
+      // Error fetching campaign overview metrics
       throw error;
     }
   };
@@ -627,7 +623,7 @@ export function useAnalytics() {
 
       return response.json();
     } catch (error) {
-      console.error('Error fetching device analytics:', error);
+      // Error fetching device analytics
       throw error;
     }
   };
@@ -652,7 +648,7 @@ export function useAnalytics() {
 
       return response.json();
     } catch (error) {
-      console.error('Error fetching link analytics:', error);
+      // Error fetching link analytics
       throw error;
     }
   };
@@ -887,7 +883,7 @@ export async function getServiceProviderClientAnalytics(params: {
   timeRange?: '7d' | '30d' | '90d' | '1y';
 }): Promise<ServiceProviderSingleClientAnalyticsResponse> {
   try {
-    console.log('📊 Fetching service provider client analytics:', params);
+    // Fetching service provider client analytics
     
     const queryParams = new URLSearchParams({
       organizationId: params.organizationId,
@@ -904,19 +900,16 @@ export async function getServiceProviderClientAnalytics(params: {
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('Service Provider Client Analytics API Error:', error);
+      // Service Provider Client Analytics API Error
       throw new Error(error.message || 'Failed to fetch client analytics');
     }
 
     const data = await response.json();
-    console.log('✅ Service provider client analytics fetched:', {
-      clientId: params.clientId,
-      contentCount: data.clientAnalytics.contentMetrics.totalContent
-    });
+    // Service provider client analytics fetched successfully
 
     return data;
   } catch (error) {
-    console.error('❌ Error fetching service provider client analytics:', error);
+    // Error fetching service provider client analytics
     throw error;
   }
 }
@@ -930,7 +923,7 @@ export async function getServiceProviderCrossClientAnalytics(params: {
   compareClients?: boolean;
 }): Promise<ServiceProviderCrossClientAnalytics> {
   try {
-    console.log('📊 Fetching service provider cross-client analytics:', params);
+    // Fetching service provider cross-client analytics
     
     const queryParams = new URLSearchParams({
       organizationId: params.organizationId,
@@ -948,19 +941,16 @@ export async function getServiceProviderCrossClientAnalytics(params: {
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('Service Provider Cross-Client Analytics API Error:', error);
+      // Service Provider Cross-Client Analytics API Error
       throw new Error(error.message || 'Failed to fetch cross-client analytics');
     }
 
     const data = await response.json();
-    console.log('✅ Service provider cross-client analytics fetched:', {
-      clientCount: data.aggregateMetrics.totalClients,
-      totalContent: data.aggregateMetrics.totalContent
-    });
+    // Service provider cross-client analytics fetched successfully
 
     return data;
   } catch (error) {
-    console.error('❌ Error fetching service provider cross-client analytics:', error);
+    // Error fetching service provider cross-client analytics
     throw error;
   }
 }
@@ -992,7 +982,7 @@ export async function getServiceProviderClientPerformanceComparison(params: {
   }>;
 }> {
   try {
-    console.log('📊 Fetching service provider client performance comparison:', params);
+    // Fetching service provider client performance comparison
 
     // Get individual client data for each client
     const clientAnalyticsPromises = params.clientIds.map(clientId =>
@@ -1029,14 +1019,11 @@ export async function getServiceProviderClientPerformanceComparison(params: {
       insights
     };
 
-    console.log('✅ Service provider client performance comparison generated:', {
-      clientCount: comparisonData.length,
-      insightCount: insights.length
-    });
+    // Service provider client performance comparison generated successfully
 
     return result;
   } catch (error) {
-    console.error('❌ Error generating service provider client performance comparison:', error);
+    // Error generating service provider client performance comparison
     throw error;
   }
 }

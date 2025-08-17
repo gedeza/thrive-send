@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { handleApiError } from "@/lib/api/error-handler";
 import { Analytics } from "@prisma/client";
 
@@ -22,7 +22,7 @@ export async function GET(
     }
 
     // Validate client exists and user has access
-    const client = await prisma.client.findUnique({
+    const client = await db.client.findUnique({
       where: { id: params.id },
       include: {
         organization: {
@@ -52,7 +52,7 @@ export async function GET(
 
     // Calculate date range based on period
     const now = new Date();
-    let startDate = new Date();
+    const startDate = new Date();
     switch (period) {
       case "7d":
         startDate.setDate(now.getDate() - 7);
@@ -71,7 +71,7 @@ export async function GET(
     }
 
     // Fetch client analytics
-    const analytics = await prisma.analytics.findMany({
+    const analytics = await db.analytics.findMany({
       where: {
         clientId: params.id,
         createdAt: {
@@ -85,7 +85,7 @@ export async function GET(
     });
 
     // Fetch client projects summary
-    const projectStats = await prisma.project.groupBy({
+    const projectStats = await db.project.groupBy({
       by: ["status"],
       where: {
         clientId: params.id,
@@ -104,7 +104,7 @@ export async function GET(
     };
 
     // Fetch content engagement metrics - using Content model with proper project relationship
-    const contentMetrics = await prisma.content.aggregate({
+    const contentMetrics = await db.content.aggregate({
       where: {
         project: {
           clientId: params.id,
@@ -144,7 +144,7 @@ async function calculateClientHealthScore(clientId: string): Promise<number> {
 
   try {
     // Get latest analytics
-    const latestAnalytics = await prisma.analytics.findFirst({
+    const latestAnalytics = await db.analytics.findFirst({
       where: { clientId },
       orderBy: { createdAt: "desc" },
     }) as Analytics | null;

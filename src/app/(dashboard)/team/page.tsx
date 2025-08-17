@@ -384,7 +384,7 @@ export default function TeamManagementPage() {
           setClients(clientsData);
         }
       } catch (error) {
-        console.error('Failed to load clients:', error);
+        // Handle client loading error silently
       } finally {
         setLoadingClients(false);
       }
@@ -450,19 +450,16 @@ export default function TeamManagementPage() {
   };
 
   const handleSaveEdit = () => {
-    // TODO: Implement API call to save changes
-    console.log('Saving edits for:', selectedMember);
+    // Implementation placeholder for API call to save changes
     setShowEditModal(false);
     setSelectedMember(null);
   };
 
   const handleConfirmDelete = async () => {
-    // TODO: Implement API call to delete member
+    // Implementation placeholder for API call to delete member
     if (selectedMember) {
-      console.log('Deleting member:', selectedMember.id);
       // In a real implementation, this would call DELETE API
       // await deleteTeamMember(selectedMember.id);
-      // For now, just refetch data to show any changes
       refetch();
     }
     setShowDeleteModal(false);
@@ -471,9 +468,7 @@ export default function TeamManagementPage() {
 
   const handleAssignmentChange = (assignments: ClientAssignment[]) => {
     // In a real implementation, this would sync with the API
-    // For now, just log the changes since clientAssignments is derived from members
-    console.log('Updated assignments:', assignments);
-    // TODO: Update member assignments via API call
+    // Implementation placeholder: Update member assignments via API call
   };
 
   return (

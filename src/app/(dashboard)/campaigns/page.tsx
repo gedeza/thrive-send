@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -125,8 +125,7 @@ export default function CampaignsPage() {
     if (status in statusMap) {
       return statusMap[status];
     } else {
-      // Defensive: log unknown status for developer debugging
-      console.warn(`Unknown campaign status received from database: "${status}". Defaulting to 'Draft'.`);
+      // Unknown status - defensive fallback
       return 'Draft'; // fallback to Draft
     }
   }
@@ -235,8 +234,8 @@ export default function CampaignsPage() {
     );
   }
 
-  // Fetch campaign statistics
-  const fetchStats = async () => {
+  // Fetch campaign statistics with memoization
+  const fetchStats = useCallback(async () => {
     try {
       const res = await fetch("/api/campaigns/stats", {
         cache: 'no-store',
@@ -250,40 +249,29 @@ export default function CampaignsPage() {
         setStats(data);
       }
     } catch (err) {
-      console.error('Failed to fetch campaign stats:', err);
+      // Failed to fetch campaign stats - silently handle
     } finally {
       setStatsLoading(false);
     }
-  };
+  }, []);
 
   const fetchCampaigns = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      console.log('Fetching campaigns from API...');
       const res = await fetch("/api/campaigns", {
-        // Add cache: 'no-store' to prevent caching issues during development
         cache: 'no-store',
         headers: {
           'Content-Type': 'application/json',
         },
       });
       
-      // Log the raw response for debugging
-      console.log('API Response status:', res.status);
-      console.log('API Response headers:', Object.fromEntries(res.headers.entries()));
-      
       if (!res.ok) {
         let errorMessage = `Server responded with status: ${res.status}`;
         
         try {
           const errorData = await res.json();
-          console.error("API Error Response:", {
-            status: res.status,
-            statusText: res.statusText,
-            errorData
-          });
           
           if (errorData && errorData.error) {
             errorMessage = errorData.error;
@@ -292,7 +280,7 @@ export default function CampaignsPage() {
             }
           }
         } catch (parseError) {
-          console.error("Failed to parse error response:", parseError);
+          // Failed to parse error response
         }
         
         throw new Error(errorMessage);
@@ -301,15 +289,12 @@ export default function CampaignsPage() {
       // Check if the response is valid JSON
       const contentType = res.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-        console.error('Unexpected content type:', contentType);
         throw new Error('API response is not valid JSON');
       }
       
       const data = await res.json();
-      console.log('Campaign data received:', data);
       
       if (!Array.isArray(data)) {
-        console.error('Expected array of campaigns, received:', typeof data);
         throw new Error('Invalid data format received from API');
       }
       
@@ -334,18 +319,17 @@ export default function CampaignsPage() {
       setCampaigns(transformedData);
       setLoading(false);
     } catch (err: any) {
-      console.error("Failed to load campaigns:", err);
       const errorMessage = err.message || "Unable to load campaign data. Please try again later.";
       setError(errorMessage);
       setLoading(false);
     }
   };
 
-  // Handle refresh
-  const handleRefresh = () => {
+  // Handle refresh with memoization
+  const handleRefresh = useCallback(() => {
     fetchCampaigns();
     fetchStats();
-  };
+  }, [fetchStats]);
 
   // Filtered campaigns
   const filteredCampaigns = useMemo(() => {
@@ -628,7 +612,7 @@ interface CampaignCardProps {
   viewMode: 'grid' | 'list';
 }
 
-function CampaignCard({ campaign, viewMode }: CampaignCardProps) {
+const CampaignCard = memo(function CampaignCard({ campaign, viewMode }: CampaignCardProps) {
   if (viewMode === 'list') {
     return (
       <Card className="hover:shadow-lg transition-all duration-200 border-l-4" style={{ 
@@ -797,6 +781,5 @@ function CampaignCard({ campaign, viewMode }: CampaignCardProps) {
       </CardContent>
     </Card>
   );
-}
+});
 
-// Legacy table view removed and replaced with card-based layout

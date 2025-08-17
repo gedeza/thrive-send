@@ -75,7 +75,7 @@ export function SEOAnalyzer({
 
   const performSEOAnalysis = () => {
     const issues: SEOIssue[] = [];
-    let scores = { readability: 0, keywords: 0, structure: 0, technical: 0 };
+    const scores = { readability: 0, keywords: 0, structure: 0, technical: 0 };
     
     // Title Analysis
     if (!title) {

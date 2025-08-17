@@ -98,16 +98,6 @@ export async function GET(req: NextRequest) {
         }
       );
       
-      // Add debugging for campaign data types
-      if (campaigns.length > 0) {
-        console.log('DEBUG: Campaigns data from cache/db:', {
-          count: campaigns.length,
-          sampleId: campaigns[0]?.id,
-          createdAtType: typeof campaigns[0]?.createdAt,
-          createdAtValue: campaigns[0]?.createdAt,
-          isDate: campaigns[0]?.createdAt instanceof Date
-        });
-      }
       
       // Format campaign data for frontend consumption
       const formattedCampaigns: CampaignResponse[] = campaigns.map(campaign => ({
@@ -174,16 +164,6 @@ export async function GET(req: NextRequest) {
         }
       );
       
-      // Add debugging for campaign data types
-      if (campaigns.length > 0) {
-        console.log('DEBUG: Campaigns data from cache/db:', {
-          count: campaigns.length,
-          sampleId: campaigns[0]?.id,
-          createdAtType: typeof campaigns[0]?.createdAt,
-          createdAtValue: campaigns[0]?.createdAt,
-          isDate: campaigns[0]?.createdAt instanceof Date
-        });
-      }
       
       // Format campaign data for frontend consumption
       const formattedCampaigns: CampaignResponse[] = campaigns.map(campaign => ({
@@ -233,12 +213,8 @@ export async function POST(req: NextRequest) {
         );
       }
       
-      console.log('Raw campaign data received:', data);
-      console.log('Organization ID from middleware:', authedRequest.auth.organizationId);
-      
       try {
         const validatedData = CampaignCreateSchema.parse(data);
-        console.log('Validated campaign data:', validatedData);
         
         // Create campaign in database
         const campaign = await db.campaign.create({
@@ -278,10 +254,8 @@ export async function POST(req: NextRequest) {
           // Invalidate campaign stats cache (future-proofing)
           await cacheService.invalidateAPIResponse('campaigns/stats');
           
-          console.log('Successfully invalidated campaign caches after creation');
         } catch (cacheError) {
-          // Don't fail the request if cache invalidation fails, just log it
-          console.warn('Failed to invalidate campaign cache after creation:', cacheError);
+          // Don't fail the request if cache invalidation fails, continue silently
         }
 
         // Format response for frontend
@@ -304,7 +278,6 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(formattedCampaign, { status: 201 });
       } catch (validationError) {
-        console.error('Validation error:', validationError);
         if (validationError instanceof z.ZodError) {
           return NextResponse.json(
             { 
@@ -320,7 +293,6 @@ export async function POST(req: NextRequest) {
         throw validationError;
       }
     } catch (error) {
-      console.error('Error creating campaign:', error);
       return handleApiError(error);
     }
   });

@@ -176,7 +176,7 @@ export default function InviteTeamMemberPage() {
 
   // Debug: Log when component mounts
   useEffect(() => {
-    console.log('🎯 InviteTeamMemberPage mounted', { organizationId });
+    // InviteTeamMemberPage mounted
   }, [organizationId]);
 
   const {
@@ -218,7 +218,7 @@ export default function InviteTeamMemberPage() {
           })));
         }
       } catch (error) {
-        console.error('Failed to load clients:', error);
+        // Handle client loading error
         toast({
           title: "Error",
           description: "Failed to load clients",
@@ -293,7 +293,7 @@ export default function InviteTeamMemberPage() {
         rolePermissions: selectedRoleConfig?.permissions || []
       };
 
-      console.log('Sending invitation data:', invitationData);
+      // Sending invitation data to API
 
       const response = await fetch('/api/service-provider/team/invitations', {
         method: 'POST',
@@ -311,12 +311,12 @@ export default function InviteTeamMemberPage() {
         } catch (parseError) {
           errorMessage = `API Error: ${response.status} ${response.statusText}`;
         }
-        console.error('API Response Error:', { status: response.status, statusText: response.statusText });
+        // API response error
         throw new Error(errorMessage);
       }
 
       const result = await response.json();
-      console.log('Invitation sent successfully:', result);
+      // Invitation sent successfully
 
       toast({
         title: "Success!",
@@ -328,7 +328,7 @@ export default function InviteTeamMemberPage() {
       router.push('/team');
 
     } catch (error) {
-      console.error('Failed to send invitation:', error);
+      // Handle invitation sending error
       toast({
         title: "Error",
         description: `Failed to send invitation: ${error instanceof Error ? error.message : 'Please try again.'}`,

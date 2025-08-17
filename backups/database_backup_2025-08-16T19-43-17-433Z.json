@@ -1,0 +1,207 @@
+{
+  "timestamp": "2025-08-16T19:43:17.433Z",
+  "version": "1.0.0",
+  "data": {
+    "users": [
+      {
+        "id": "cmdfvvuf3000b8jus7u6vfstj",
+        "clerkId": "user_2xCfWWtekyWSMVmLALqnr6z0Nfo",
+        "email": "nnyandu@gmail.com",
+        "firstName": "Nhlanhla",
+        "lastName": "Mnyandu",
+        "role": "CONTENT_CREATOR",
+        "hasCompletedOnboarding": true,
+        "createdAt": "2025-07-23T11:32:06.971Z",
+        "updatedAt": "2025-08-04T07:46:41.682Z"
+      }
+    ],
+    "organizations": [
+      {
+        "id": "cmdg7ls7m00008jv2hftia922",
+        "name": "Default Organization",
+        "slug": "default-org",
+        "logoUrl": null,
+        "website": null,
+        "primaryColor": "#000000",
+        "clerkOrganizationId": "org_2xhH7xfnNAWnpvKl5gNd4ZGRP5t",
+        "settings": {},
+        "type": "service_provider",
+        "subscriptionTier": "basic",
+        "maxClients": 10,
+        "marketplaceEnabled": true,
+        "createdAt": "2025-07-23T17:00:12.938Z",
+        "updatedAt": "2025-07-23T17:00:12.938Z"
+      },
+      {
+        "id": "org-1755355235100",
+        "name": "Development Organization",
+        "slug": "dev-org",
+        "logoUrl": null,
+        "website": null,
+        "primaryColor": "#000000",
+        "clerkOrganizationId": "org_2oWnpvKl5gNd4ZGRP5t",
+        "settings": {},
+        "type": "service_provider",
+        "subscriptionTier": "basic",
+        "maxClients": 10,
+        "marketplaceEnabled": true,
+        "createdAt": "2025-08-16T14:40:35.104Z",
+        "updatedAt": "2025-08-16T14:40:35.104Z"
+      }
+    ],
+    "clients": [
+      {
+        "id": "cmdg7rw1300008ja27yixn0sd",
+        "name": "ETHEKWINI METRO",
+        "createdAt": "2025-07-23T17:04:57.831Z",
+        "updatedAt": "2025-07-23T17:04:57.831Z",
+        "organizationId": "cmdg7ls7m00008jv2hftia922",
+        "address": "39 Bohmer Road, The Wolds, New Germany\nPinetown",
+        "email": "info@durban.gov.za",
+        "phone": "+27820600404",
+        "industry": "Local Governement",
+        "type": "MUNICIPALITY",
+        "website": "https://www.durban.gov.za",
+        "logoUrl": null,
+        "status": "ACTIVE",
+        "monthlyBudget": null,
+        "serviceProviderId": null,
+        "onboardedAt": null,
+        "contractStartDate": null,
+        "contractEndDate": null,
+        "socialAccounts": [],
+        "projects": [
+          {
+            "id": "cmdgghwwa00018j6tywrrbskp",
+            "name": "Increase Brand Awareness Through Content Marketing",
+            "description": "Develop and execute a content marketing strategy to enhance brand visibility, engagement, and authority in the industry. This includes:\nPublishing 8 high-quality blog posts per month.\n\nGrowing social media followers by 15% (LinkedIn, Twitter, Instagram).\n\nIncreasing website traffic from organic search by 20%.\n\nBoosting engagement rates (likes, shares, comments) by 10%.",
+            "status": "PLANNED",
+            "startDate": "2025-07-23T00:00:00.000Z",
+            "endDate": "2025-07-31T00:00:00.000Z"
+          }
+        ]
+      },
+      {
+        "id": "cme3vrpbs00018jcgzah6bs54",
+        "name": "THEKWINI MUNICIPALITY",
+        "createdAt": "2025-08-09T06:35:21.970Z",
+        "updatedAt": "2025-08-09T06:35:21.970Z",
+        "organizationId": "cmdg7ls7m00008jv2hftia922",
+        "address": "This is a testing client account",
+        "email": "info@durban.co.za",
+        "phone": "0820600404",
+        "industry": "Municipality Community Services",
+        "type": "MUNICIPALITY",
+        "website": "https://www.durban.gov.za",
+        "logoUrl": null,
+        "status": "ACTIVE",
+        "monthlyBudget": null,
+        "serviceProviderId": null,
+        "onboardedAt": null,
+        "contractStartDate": null,
+        "contractEndDate": null,
+        "socialAccounts": [],
+        "projects": []
+      }
+    ],
+    "projects": [
+      {
+        "id": "cmdgghwwa00018j6tywrrbskp",
+        "name": "Increase Brand Awareness Through Content Marketing",
+        "description": "Develop and execute a content marketing strategy to enhance brand visibility, engagement, and authority in the industry. This includes:\nPublishing 8 high-quality blog posts per month.\n\nGrowing social media followers by 15% (LinkedIn, Twitter, Instagram).\n\nIncreasing website traffic from organic search by 20%.\n\nBoosting engagement rates (likes, shares, comments) by 10%.",
+        "startDate": "2025-07-23T00:00:00.000Z",
+        "endDate": "2025-07-31T00:00:00.000Z",
+        "status": "PLANNED",
+        "createdAt": "2025-07-23T21:09:08.936Z",
+        "updatedAt": "2025-07-23T21:09:08.936Z",
+        "clientId": "cmdg7rw1300008ja27yixn0sd",
+        "organizationId": "cmdg7ls7m00008jv2hftia922",
+        "managerId": null
+      }
+    ],
+    "campaigns": [
+      {
+        "id": "cmdge7i4900018jg5gybo4f7y",
+        "name": "Increase Brand Awareness Through Content Marketing",
+        "description": "Develop and execute a content marketing strategy to enhance brand visibility, engagement, and authority in the industry. This includes:\n\nPublishing 8 high-quality blog posts per month.\n\nGrowing social media followers by 15% (LinkedIn, Twitter, Instagram).\n\nIncreasing website traffic from organic search by 20%.\n\nBoosting engagement rates (likes, shares, comments) by 10%.",
+        "status": "draft",
+        "startDate": "2025-07-23T22:00:00.000Z",
+        "endDate": "2025-07-30T22:00:00.000Z",
+        "budget": null,
+        "clientId": "cmdg7rw1300008ja27yixn0sd",
+        "organizationId": "cmdg7ls7m00008jv2hftia922",
+        "projectId": null,
+        "createdAt": "2025-07-23T20:05:03.989Z",
+        "updatedAt": "2025-07-23T21:05:43.641Z"
+      },
+      {
+        "id": "cmdyrzba600018jifnguur0iz",
+        "name": "ThriveSend Media Creations Marketing Campaign Aug 2025",
+        "description": "Objective: Drive awareness and adoption of ZenFlow, an AI-powered productivity app, by positioning it as the ultimate solution for remote workers and professionals struggling with time management.\nAudience: Remote workers, freelancers, and busy professionals aged 25–45 who value work-life balance.\nCore Message: \"Reclaim 10 hours a month—or your money back.\"\nDuration: 3 weeks (Launch Phase).\nChannels: Social media (Instagram, LinkedIn, Twitter/X), email marketing, blog content, paid ads, influencer partnerships.\n\n",
+        "status": "draft",
+        "startDate": "2025-08-12T00:00:00.000Z",
+        "endDate": "2025-09-11T00:00:00.000Z",
+        "budget": null,
+        "clientId": null,
+        "organizationId": "cmdg7ls7m00008jv2hftia922",
+        "projectId": null,
+        "createdAt": "2025-08-05T16:50:27.676Z",
+        "updatedAt": "2025-08-05T16:50:27.676Z"
+      },
+      {
+        "id": "cmdys0t7t00038jif0wxonpl0",
+        "name": "ThriveSend Media Creations Marketing Campaign Aug 2025",
+        "description": "Objective: Drive awareness and adoption of ZenFlow, an AI-powered productivity app, by positioning it as the ultimate solution for remote workers and professionals struggling with time management.\nAudience: Remote workers, freelancers, and busy professionals aged 25–45 who value work-life balance.\nCore Message: \"Reclaim 10 hours a month—or your money back.\"\nDuration: 3 weeks (Launch Phase).\nChannels: Social media (Instagram, LinkedIn, Twitter/X), email marketing, blog content, paid ads, influencer partnerships.\n\n",
+        "status": "draft",
+        "startDate": "2025-08-12T00:00:00.000Z",
+        "endDate": "2025-09-11T00:00:00.000Z",
+        "budget": null,
+        "clientId": null,
+        "organizationId": "cmdg7ls7m00008jv2hftia922",
+        "projectId": null,
+        "createdAt": "2025-08-05T16:51:37.577Z",
+        "updatedAt": "2025-08-05T16:51:37.577Z"
+      }
+    ],
+    "content": [
+      {
+        "id": "cmdga8r5u00018je4b592ma5z",
+        "title": "\"Flash Sale – 24 Hours Only!\"",
+        "content": "Hi Client,\n\nWe’re bringing back our biggest sale of the season—but it won’t last long! For the next 24 hours only, take 40% OFF your entire order. No code needed—just shop before midnight!\n\nWhy wait?\n✅ Free shipping on orders over $50\n✅ Limited stock on bestsellers\n✅ Discount applied automatically at checkout\n\nSHOP NOW (CTA Button)\n\nHurry—this deal disappears at 12:00noon. Treat yourself before it’s gone!\n\nCheers,\nThe ThriveSend Team",
+        "status": "DRAFT",
+        "type": "EMAIL",
+        "publishedAt": null,
+        "scheduledAt": "2025-07-24T18:13:00.000Z",
+        "authorId": "cmdfvvuf3000b8jus7u6vfstj",
+        "campaignId": null,
+        "organizationId": null,
+        "projectId": null,
+        "platforms": [],
+        "createdAt": "2025-07-23T18:14:03.897Z",
+        "updatedAt": "2025-07-23T18:14:03.897Z"
+      },
+      {
+        "id": "cmdghicg900018jcbvhg0fxjh",
+        "title": "\"Super Bowl Hype Mashup 🏈🔥\"",
+        "content": "Hook (0:00–0:03):\n\nText overlay: “Super Bowl moments that broke TikTok…”\n\nClip: Rihanna’s backup dancers rehearsing (14M+ views 10) with high-energy music.\n\nViral Highlights (0:04–0:15):\n\nDoritos x AJ & Big Justice (30.2M views 5): Show their viral sponsored dance.\n\nChiefs’ top TikTok moments:\n\nTravis Kelce’s touchdown celebration (5.8M views 12).\n\nPatrick Mahomes’ playoff carousel (12% engagement rate 12).\n\n49ers’ heartwarming content: Players with puppies or fan interactions 12.\n\nTrendy Twist (0:16–0:25):\n\nDuet Challenge: Cut to a fan reenacting Rihanna’s choreography or Kelce’s \"heartthrob\" kiss emoji moment 12.\n\nText overlay: “Tag your squad & predict this year’s MVP! 🏆”",
+        "status": "DRAFT",
+        "type": "SOCIAL",
+        "publishedAt": null,
+        "scheduledAt": "2025-07-25T21:37:00.000Z",
+        "authorId": "cmdfvvuf3000b8jus7u6vfstj",
+        "campaignId": null,
+        "organizationId": null,
+        "projectId": null,
+        "platforms": [],
+        "createdAt": "2025-07-23T21:37:28.711Z",
+        "updatedAt": "2025-07-23T21:37:28.711Z"
+      }
+    ],
+    "socialAccounts": [],
+    "analytics": []
+  },
+  "metadata": {
+    "totalRecords": 11,
+    "backupReason": "Pre-migration backup for display ID implementation"
+  }
+}

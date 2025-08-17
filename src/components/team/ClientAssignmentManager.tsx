@@ -29,7 +29,7 @@ import {
   Alert,
   AlertDescription,
   AlertTitle,
-} from '@/components/ui/alert';
+} from '@/components/ui/alert-new';
 import {
   Tooltip,
   TooltipContent,
@@ -138,7 +138,12 @@ export default function ClientAssignmentManager({
   assignments, 
   onAssignmentChange 
 }: ClientAssignmentManagerProps) {
-  const [localAssignments, setLocalAssignments] = useState<ClientAssignment[]>(assignments);
+  // Ensure teamMembers is always an array to prevent .map() errors
+  const safeTeamMembers = Array.isArray(teamMembers) ? teamMembers : [];
+  const safeClients = Array.isArray(clients) ? clients : [];
+  const safeAssignments = Array.isArray(assignments) ? assignments : [];
+  
+  const [localAssignments, setLocalAssignments] = useState<ClientAssignment[]>(safeAssignments);
   const [editingAssignment, setEditingAssignment] = useState<ClientAssignment | null>(null);
   const [isAddingAssignment, setIsAddingAssignment] = useState(false);
   const [newAssignment, setNewAssignment] = useState({
@@ -157,8 +162,8 @@ export default function ClientAssignmentManager({
   const handleAddAssignment = () => {
     if (!newAssignment.memberId || !newAssignment.clientId) return;
 
-    const member = teamMembers.find(m => m.id === newAssignment.memberId);
-    const client = clients.find(c => c.id === newAssignment.clientId);
+    const member = safeTeamMembers.find(m => m.id === newAssignment.memberId);
+    const client = safeClients.find(c => c.id === newAssignment.clientId);
     
     if (!member || !client) return;
 
@@ -228,7 +233,7 @@ export default function ClientAssignmentManager({
       .filter(a => a.clientId === clientId)
       .map(a => a.memberId);
     
-    return teamMembers.filter(member => !assignedMemberIds.includes(member.id));
+    return safeTeamMembers.filter(member => !assignedMemberIds.includes(member.id));
   };
 
   // Get assignments by client
@@ -276,7 +281,7 @@ export default function ClientAssignmentManager({
                       <SelectValue placeholder="Select team member" />
                     </SelectTrigger>
                     <SelectContent>
-                      {teamMembers.map(member => (
+                      {safeTeamMembers.map(member => (
                         <SelectItem key={member.id} value={member.id}>
                           <div className="flex items-center gap-2">
                             <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium">
@@ -302,7 +307,7 @@ export default function ClientAssignmentManager({
                       <SelectValue placeholder="Select client" />
                     </SelectTrigger>
                     <SelectContent>
-                      {clients.map(client => (
+                      {safeClients.map(client => (
                         <SelectItem key={client.id} value={client.id}>
                           <div className="flex items-center gap-2">
                             <span>{client.name}</span>
@@ -367,7 +372,7 @@ export default function ClientAssignmentManager({
           </Alert>
         ) : (
           <div className="space-y-4">
-            {clients.map(client => {
+            {safeClients.map(client => {
               const clientAssignments = getAssignmentsByClient(client.id);
               
               return (

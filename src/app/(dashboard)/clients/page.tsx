@@ -5,10 +5,23 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Users, Globe, Facebook, Twitter, Instagram, Linkedin, Mail, User, RefreshCcw, TrendingUp, Building2, Activity, CheckCircle2, Search, Grid, List, Filter, MoreHorizontal, Edit, Eye, MapPin } from "lucide-react";
+import { Plus, Users, Globe, Facebook, Twitter, Instagram, Linkedin, Mail, User, RefreshCcw, TrendingUp, Building2, Activity, CheckCircle2, Search, Grid, List, Filter, MoreHorizontal, Edit, Eye, MapPin, Trash2 } from "lucide-react";
+import { useToast } from '@/components/ui/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useServiceProvider, type ClientSummary } from '@/context/ServiceProviderContext';
 import { useRouter } from 'next/navigation';
 import { cn } from "@/lib/utils";
+import { getDisplayableId } from '@/lib/enhanced-models';
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -44,6 +57,7 @@ type Project = {
 };
 interface ClientAccount {
   id: string;
+  displayId?: string | null; // User-friendly display ID
   name: string;
   organizationId: string; // Service provider org ID
   email: string;
@@ -199,6 +213,7 @@ function ClientsPageContent() {
   const [performanceFilter, setPerformanceFilter] = useState<string>('all');
   const { state: { organizationId, currentUser }, switchClient } = useServiceProvider();
   const router = useRouter();
+  const { toast } = useToast();
 
   const fetchClients = useCallback(async () => {
     setLoading(true);
@@ -227,9 +242,7 @@ function ClientsPageContent() {
       } else if (data.clients && Array.isArray(data.clients)) {
         // Metadata format
         setClients(data.clients);
-        if (data.metadata?.demoMode) {
-          console.log('Running in demo mode - database unavailable');
-        }
+        // Demo mode handling without logging
       } else {
         console.error("Unexpected API response format:", data);
         setClients([]);
@@ -299,7 +312,9 @@ function ClientsPageContent() {
       filtered = filtered.filter(client =>
         client.name.toLowerCase().includes(term) ||
         client.email.toLowerCase().includes(term) ||
-        client.industry?.toLowerCase().includes(term)
+        client.industry?.toLowerCase().includes(term) ||
+        client.displayId?.toLowerCase().includes(term) ||
+        client.id.toLowerCase().includes(term)
       );
     }
 
@@ -343,6 +358,38 @@ function ClientsPageContent() {
     return industries;
   }, [clients]);
 
+  // Delete client handler
+  const handleDeleteClient = async (clientId: string, clientName: string) => {
+    try {
+      if (!organizationId) {
+        throw new Error('No organization ID');
+      }
+
+      const response = await fetch(`/api/service-provider/clients/${clientId}?organizationId=${organizationId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete client');
+      }
+      
+      toast({
+        title: "Success",
+        description: `Client "${clientName}" has been deleted successfully.`
+      });
+      
+      // Refresh the client list
+      await fetchClients();
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete client. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto py-8 space-y-8">
         {/* Header */}
@@ -360,6 +407,15 @@ function ClientsPageContent() {
 
         <div className="flex items-center justify-end gap-2 mb-8">
           <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              onClick={handleRefresh}
+              disabled={loading}
+              className="flex items-center gap-2"
+            >
+              <RefreshCcw className={cn("h-4 w-4", loading && "animate-spin")} />
+              {loading ? 'Refreshing...' : 'Refresh'}
+            </Button>
             <Button asChild>
               <Link href="/clients/new">
                 <Plus className="mr-2 h-4 w-4" />
@@ -451,7 +507,7 @@ function ClientsPageContent() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                placeholder="Search clients..."
+                placeholder="Search clients, IDs, emails..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-10 bg-background"
@@ -650,7 +706,12 @@ function ClientsPageContent() {
             : "space-y-2"
         )}>
           {filteredClients.map((client) => (
-            <ClientCard key={client.id} client={client} viewMode={viewMode} />
+            <ClientCard 
+              key={client.id} 
+              client={client} 
+              viewMode={viewMode} 
+              onDelete={handleDeleteClient}
+            />
           ))}
         </div>
       )}
@@ -672,9 +733,10 @@ export default function ClientsPage() {
 interface ClientCardProps {
   client: ClientAccount;
   viewMode: 'grid' | 'list';
+  onDelete: (clientId: string, clientName: string) => Promise<void>;
 }
 
-function ClientCard({ client, viewMode }: ClientCardProps) {
+function ClientCard({ client, viewMode, onDelete }: ClientCardProps) {
   if (viewMode === 'list') {
     return (
       <Card className="hover:shadow-lg transition-all duration-200 border-l-4" style={{ 
@@ -702,13 +764,20 @@ function ClientCard({ client, viewMode }: ClientCardProps) {
               
               <div className="flex-1 min-w-0">
                 <div className="mb-1">
-                  <Link 
-                    href={`/clients/${client.id}`} 
-                    className="font-semibold hover:text-primary transition-colors block truncate"
-                    title={client.name}
-                  >
-                    {client.name}
-                  </Link>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Link 
+                      href={`/clients/${client.id}`} 
+                      className="font-semibold hover:text-primary transition-colors block truncate"
+                      title={client.name}
+                    >
+                      {client.name}
+                    </Link>
+                    {client.displayId && (
+                      <Badge variant="outline" className="text-xs px-1.5 py-0.5 font-mono text-muted-foreground">
+                        {client.displayId}
+                      </Badge>
+                    )}
+                  </div>
                   <div className="flex items-center gap-1 mt-1 flex-wrap">
                     <Badge className={cn("text-xs px-1.5 py-0.5 whitespace-nowrap", typeBadge[client.type as keyof typeof typeBadge] || 'bg-gray-100 text-gray-800')}>
                       {client.type}
@@ -808,6 +877,35 @@ function ClientCard({ client, viewMode }: ClientCardProps) {
                       Edit Client
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onSelect={(e) => e.preventDefault()}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete Client
+                      </DropdownMenuItem>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Client</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete "{client.name}"? This action cannot be undone and will remove all associated data.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => onDelete(client.id, client.name)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -840,13 +938,20 @@ function ClientCard({ client, viewMode }: ClientCardProps) {
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <Link 
-                href={`/clients/${client.id}`} 
-                className="font-semibold hover:text-primary transition-colors block truncate"
-                title={client.name}
-              >
-                {client.name}
-              </Link>
+              <div className="flex items-center gap-2 mb-1">
+                <Link 
+                  href={`/clients/${client.id}`} 
+                  className="font-semibold hover:text-primary transition-colors block truncate"
+                  title={client.name}
+                >
+                  {client.name}
+                </Link>
+                {client.displayId && (
+                  <Badge variant="outline" className="text-xs px-1 py-0 font-mono text-muted-foreground">
+                    {client.displayId}
+                  </Badge>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground truncate" title={client.email}>{client.email}</p>
             </div>
           </div>
@@ -870,6 +975,35 @@ function ClientCard({ client, viewMode }: ClientCardProps) {
                   Edit Client
                 </Link>
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Client
+                  </DropdownMenuItem>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Client</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete "{client.name}"? This action cannot be undone and will remove all associated data.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => onDelete(client.id, client.name)}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
