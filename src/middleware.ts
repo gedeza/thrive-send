@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
-import { prisma } from "@/lib/prisma";
+import { db as prisma } from "@/lib/db";
 
 // Create a new ratelimiter that allows 10 requests per 10 seconds
 const ratelimit = new Ratelimit({

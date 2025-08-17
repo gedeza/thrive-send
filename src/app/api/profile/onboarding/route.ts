@@ -1,6 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db as prisma } from '@/lib/db';
+import { getOrCreateUser } from '@/lib/user-utils';
 
 // GET: Return onboarding status for current user
 export async function GET() {
@@ -11,13 +12,7 @@ export async function GET() {
       { status: 401 }
     );
   }
-  const user = await prisma.user.findUnique({ where: { clerkId: userId } });
-  if (!user) {
-    return new NextResponse(
-      JSON.stringify({ message: 'User not found' }),
-      { status: 404 }
-    );
-  }
+  const user = await getOrCreateUser(userId);
   return NextResponse.json({ hasCompletedOnboarding: user.hasCompletedOnboarding });
 }
 
