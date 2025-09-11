@@ -51,8 +51,8 @@ export default function ContentApprovalPage({ params }: PageProps) {
       } else {
         throw new Error('Failed to fetch approval workflow');
       }
-    } catch (error) {
-      console.error('Error fetching approval data:', error);
+    } catch (_error) {
+      console.error("", _error);
       setError(error instanceof Error ? error.message : 'An error occurred');
     } finally {
       setIsLoading(false);
@@ -67,8 +67,8 @@ export default function ContentApprovalPage({ params }: PageProps) {
         const reviewers = await response.json();
         setAvailableReviewers(reviewers);
       }
-    } catch (error) {
-      console.error('Error fetching reviewers:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   };
 
@@ -96,8 +96,8 @@ export default function ContentApprovalPage({ params }: PageProps) {
         title: 'Success',
         description: 'Approval workflow created successfully',
       });
-    } catch (error) {
-      console.error('Error creating approval workflow:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: 'Error',
         description: 'Failed to create approval workflow',
@@ -129,9 +129,9 @@ export default function ContentApprovalPage({ params }: PageProps) {
       
       // Refresh content data to get updated status
       await fetchApprovalData();
-    } catch (error) {
-      console.error('Error updating approval status:', error);
-      throw error;
+    } catch (_error) {
+      console.error("", _error);
+      throw _error;
     }
   };
 
@@ -160,8 +160,8 @@ export default function ContentApprovalPage({ params }: PageProps) {
         title: 'Success',
         description: 'Assignee updated successfully',
       });
-    } catch (error) {
-      console.error('Error updating assignee:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: 'Error',
         description: 'Failed to update assignee',
@@ -190,7 +190,7 @@ export default function ContentApprovalPage({ params }: PageProps) {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-6 py-8">
+      <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-center min-h-64">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
@@ -200,9 +200,9 @@ export default function ContentApprovalPage({ params }: PageProps) {
 
   if (error) {
     return (
-      <div className="container mx-auto px-6 py-8">
+      <div className="container mx-auto px-6 py-4">
         <Card>
-          <CardContent className="text-center py-8">
+          <CardContent className="text-center py-4">
             <p className="text-red-500 mb-4">{error}</p>
             <Button onClick={() => router.back()}>Go Back</Button>
           </CardContent>
@@ -213,9 +213,9 @@ export default function ContentApprovalPage({ params }: PageProps) {
 
   if (!content) {
     return (
-      <div className="container mx-auto px-6 py-8">
+      <div className="container mx-auto px-6 py-4">
         <Card>
-          <CardContent className="text-center py-8">
+          <CardContent className="text-center py-4">
             <p className="text-muted-foreground mb-4">Content not found</p>
             <Link href="/content">
               <Button>Back to Content</Button>
@@ -227,9 +227,9 @@ export default function ContentApprovalPage({ params }: PageProps) {
   }
 
   return (
-    <div className="container mx-auto px-6 py-8">
+    <div className="container mx-auto px-6 py-4">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
+      <div className="flex items-center gap-4 mb-4">
         <Button variant="ghost" size="sm" onClick={() => router.back()}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
@@ -242,7 +242,7 @@ export default function ContentApprovalPage({ params }: PageProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Content Preview */}
         <div className="lg:col-span-1">
           <Card>
@@ -307,7 +307,7 @@ export default function ContentApprovalPage({ params }: PageProps) {
               <CardHeader>
                 <CardTitle>No Approval Workflow</CardTitle>
               </CardHeader>
-              <CardContent className="text-center py-8">
+              <CardContent className="text-center py-4">
                 <p className="text-muted-foreground mb-4">
                   This content doesn't have an approval workflow yet.
                 </p>

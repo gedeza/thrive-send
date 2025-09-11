@@ -405,9 +405,9 @@ async function fetchAnalyticsData(params: UseAnalyticsDataParams, organizationId
       },
       source: 'demo'
     };
-  } catch (error) {
-    console.error('Error fetching analytics data:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 

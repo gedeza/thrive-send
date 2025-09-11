@@ -46,7 +46,7 @@ export function useCurrencyDetection() {
             console.log(`🌍 Welcome! We've detected you're from a ${detectedCurrency} region. Prices are now shown in ${detectedCurrency}.`);
           }
         }
-      } catch (error) {
+      } catch (_error) {
         console.warn('Currency auto-detection failed:', error);
         setDetectionSource('locale');
       } finally {

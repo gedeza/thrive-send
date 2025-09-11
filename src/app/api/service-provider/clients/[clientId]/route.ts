@@ -260,8 +260,8 @@ export async function GET(
 
     return NextResponse.json(clientResponse);
 
-  } catch (error) {
-    console.error('Error fetching client details:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -405,9 +405,9 @@ export async function PATCH(
     };
 
     return NextResponse.json(clientResponse);
-  } catch (error) {
-    console.error('Error updating client:', error);
-    if (error instanceof z.ZodError) {
+  } catch (_error) {
+    console.error("", _error);
+    if (_error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request data', details: error.errors },
         { status: 400 }
@@ -497,7 +497,7 @@ export async function DELETE(
             data: { clientId: null }
           });
           console.log(`📋 Updated ${updatedProjects.count} projects`);
-        } catch (error) {
+        } catch (_error) {
           console.warn('Could not update projects:', error);
         }
         
@@ -516,7 +516,7 @@ export async function DELETE(
               where: { clientId: existingClient.id },
             });
             console.log(`🗑️ Deleted ${result.count} records from ${table.name}`);
-          } catch (error) {
+          } catch (_error) {
             console.warn(`Could not delete from ${table.name}:`, error);
           }
         }
@@ -530,8 +530,8 @@ export async function DELETE(
     }
 
     return NextResponse.json({ message: 'Client deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting client:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to delete client' },
       { status: 500 }

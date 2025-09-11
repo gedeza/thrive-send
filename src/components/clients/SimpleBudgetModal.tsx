@@ -97,8 +97,8 @@ export function SimpleBudgetModal({ clientId, onSuccess }: SimpleBudgetModalProp
         onSuccess();
       }, 1500);
 
-    } catch (error) {
-      console.error('Error creating budget:', error);
+    } catch (_error) {
+      console.error("", _error);
       setErrors({ general: error instanceof Error ? error.message : 'Failed to create budget. Please try again.' });
     } finally {
       setLoading(false);

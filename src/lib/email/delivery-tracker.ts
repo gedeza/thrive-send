@@ -130,7 +130,7 @@ export class DeliveryTracker {
         provider: event.provider,
       });
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to track delivery event', error as Error, {
         emailId: event.emailId,
         eventType: event.eventType,
@@ -189,12 +189,12 @@ export class DeliveryTracker {
 
       return analytics;
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get delivery analytics', error as Error, {
         organizationId,
         campaignId,
       });
-      throw error;
+      throw _error;
     }
   }
 
@@ -235,12 +235,12 @@ export class DeliveryTracker {
 
       return stats;
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get real-time stats', error as Error, {
         organizationId,
         campaignId,
       });
-      throw error;
+      throw _error;
     }
   }
 
@@ -659,7 +659,7 @@ export class DeliveryTracker {
         errorRate,
       };
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Delivery tracker health check failed', error as Error);
       
       return {

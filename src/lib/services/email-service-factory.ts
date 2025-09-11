@@ -85,7 +85,7 @@ export class EmailServiceFactory {
           provider: providerType,
         });
 
-      } catch (error) {
+      } catch (_error) {
         logger.error(`Failed to initialize ${providerType} provider`, error as Error, {
           provider: providerType,
         });
@@ -110,7 +110,7 @@ export class EmailServiceFactory {
             provider: providerType,
             healthy: isHealthy,
           });
-        } catch (error) {
+        } catch (_error) {
           this.healthChecks.set(providerType, false);
           logger.error(`Health check failed for ${providerType}`, error as Error, {
             provider: providerType,
@@ -238,7 +238,7 @@ export class EmailServiceFactory {
 
           lastError = new Error(result.error || 'Unknown error');
           
-        } catch (error) {
+        } catch (_error) {
           lastError = error as Error;
           logger.warn(`Provider ${providerType} failed`, {
             provider: providerType,

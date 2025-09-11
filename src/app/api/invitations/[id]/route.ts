@@ -23,8 +23,8 @@ export async function PATCH(
     });
 
     return NextResponse.json(invitation);
-  } catch (error) {
-    console.error("[INVITATION_PATCH]", error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse("Internal Error", { status: 500 });
   }
 } 

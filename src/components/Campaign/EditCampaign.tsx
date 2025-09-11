@@ -21,7 +21,7 @@ interface Client {
 interface EditCampaignProps {
   campaignId: string;
   initialData?: any;
-  onSave?: (data: any) => void;
+  onSave?: (data: unknown) => void;
   onCancel?: () => void;
 }
 
@@ -57,8 +57,8 @@ export default function EditCampaign({
         } else {
           console.error('Failed to fetch clients');
         }
-      } catch (error) {
-        console.error('Error fetching clients:', error);
+      } catch (_error) {
+        console.error("", _error);
       } finally {
         setIsLoadingClients(false);
       }
@@ -107,8 +107,8 @@ export default function EditCampaign({
 
       // Call onSave callback with the updated data
       onSave?.(updatedCampaign);
-    } catch (error) {
-      console.error('Error updating campaign:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to update campaign. Please try again.",

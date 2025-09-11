@@ -118,8 +118,8 @@ export async function PUT(
       updatedAt: billingData.paymentMethod.updatedAt
     });
 
-  } catch (error) {
-    console.error("Error updating payment method:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "Failed to update payment method" },
       { status: 500 }

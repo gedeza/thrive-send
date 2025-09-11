@@ -82,7 +82,7 @@ export function useApprovalWorkflow(contentId: string) {
     },
     onError: (error) => {
       toast.error('Failed to submit for approval');
-      console.error('Submit error:', error);
+      console.error("", _error);
     },
   });
 
@@ -105,7 +105,7 @@ export function useApprovalWorkflow(contentId: string) {
     },
     onError: (error) => {
       toast.error('Failed to update approval status');
-      console.error('Status update error:', error);
+      console.error("", _error);
     },
   });
 
@@ -128,7 +128,7 @@ export function useApprovalWorkflow(contentId: string) {
     },
     onError: (error) => {
       toast.error('Failed to add comment');
-      console.error('Comment error:', error);
+      console.error("", _error);
     },
   });
 

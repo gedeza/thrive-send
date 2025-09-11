@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 export function handleApiError(error: unknown): NextResponse {
-  console.error("[API] Error:", error);
+  console.error("", _error);
   
   // Handle Prisma errors
   if (

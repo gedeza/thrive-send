@@ -138,8 +138,8 @@ export async function GET(request: NextRequest) {
     };
 
     return NextResponse.json(response);
-  } catch (error) {
-    console.error('Error fetching recommendations:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to fetch recommendations' },
       { status: 500 }
@@ -299,8 +299,8 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(recommendation, { status: 201 });
-  } catch (error) {
-    console.error('Error creating recommendation:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to create recommendation' },
       { status: 500 }
@@ -408,8 +408,8 @@ export async function PUT(request: NextRequest) {
     });
 
     return NextResponse.json(recommendation);
-  } catch (error) {
-    console.error('Error updating recommendation:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to update recommendation' },
       { status: 500 }
@@ -465,8 +465,8 @@ export async function DELETE(request: NextRequest) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error ending recommendation:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to end recommendation' },
       { status: 500 }

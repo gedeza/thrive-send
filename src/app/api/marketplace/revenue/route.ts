@@ -203,8 +203,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ revenueStats });
 
-  } catch (error) {
-    console.error('Error fetching revenue stats:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to fetch revenue statistics' },
       { status: 500 }

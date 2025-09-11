@@ -23,16 +23,16 @@ export function NotificationCenter() {
     try {
       await markAllAsRead();
       setIsOpen(false);
-    } catch (error) {
-      console.error('Error marking all notifications as read:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   };
 
   const handleMarkAsRead = async (notificationId: string) => {
     try {
       await markAsRead(notificationId);
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   };
 

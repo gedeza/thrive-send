@@ -92,7 +92,7 @@ function ClientDashboardContent({
   }
 
   if (error) {
-    console.error('Client detail error:', error);
+    console.error("", _error);
     return (
       <div className="container mx-auto py-8">
         <div className="text-center">

@@ -77,7 +77,7 @@ export function ActivityFeed({ activities: initialActivities }: ActivityFeedProp
         } else {
           console.warn('Failed to fetch activities:', response.statusText)
         }
-      } catch (error) {
+      } catch (_error) {
         handleError(error)
         console.error('Error fetching activities:', error)
       } finally {

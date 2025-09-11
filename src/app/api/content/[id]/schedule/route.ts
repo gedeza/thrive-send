@@ -33,8 +33,8 @@ export async function GET(
     }
 
     return NextResponse.json(schedule);
-  } catch (error) {
-    console.error('Error fetching schedule:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
@@ -105,15 +105,15 @@ export async function POST(
     await NotificationService.notifyContentScheduled(params.id, userId);
 
     return NextResponse.json(schedule);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
+  } catch (_error) {
+    if (_error instanceof z.ZodError) {
       return NextResponse.json(
         { message: 'Invalid request data', errors: error.errors },
         { status: 400 }
       );
     }
 
-    console.error('Error creating schedule:', error);
+    console.error("", _error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
@@ -161,8 +161,8 @@ export async function DELETE(
     });
 
     return NextResponse.json({ message: 'Schedule deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting schedule:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

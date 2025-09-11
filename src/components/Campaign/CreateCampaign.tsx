@@ -199,8 +199,8 @@ const CreateCampaign: React.FC = () => {
           variant: "destructive",
         });
       }
-    } catch (error) {
-      console.error('Error loading template:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error Loading Template",
         description: "Failed to load template data.",
@@ -224,8 +224,8 @@ const CreateCampaign: React.FC = () => {
       } else {
         console.error('Failed to fetch clients');
       }
-    } catch (error) {
-      console.error('Error fetching clients:', error);
+    } catch (_error) {
+      console.error("", _error);
     } finally {
       setIsLoadingClients(false);
     }
@@ -349,8 +349,8 @@ const CreateCampaign: React.FC = () => {
         router.push('/campaigns');
       }, 1500);
       
-    } catch (error) {
-      console.error('Campaign creation error:', error);
+    } catch (_error) {
+      console.error("", _error);
       setSubmitError(error instanceof Error ? error.message : 'Failed to create campaign');
     } finally {
       setIsSubmitting(false);

@@ -71,7 +71,7 @@ export class MockEmailProvider extends BaseEmailProvider {
         },
       };
 
-    } catch (error) {
+    } catch (_error) {
       const responseTime = Date.now() - startTime;
       this.updateStats(false, responseTime);
 
@@ -197,7 +197,7 @@ export class MockEmailProvider extends BaseEmailProvider {
         },
       };
 
-    } catch (error) {
+    } catch (_error) {
       const totalTime = Date.now() - startTime;
       
       logger.error('Mock bulk email send failed', error as Error, {

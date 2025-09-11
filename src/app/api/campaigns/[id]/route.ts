@@ -56,8 +56,8 @@ export async function GET(
     }
 
     return NextResponse.json(campaign);
-  } catch (error) {
-    console.error("Error fetching campaign:", error);
+  } catch (_error) {
+    console.error("", _error);
     return handleApiError(error);
   }
 }
@@ -98,7 +98,7 @@ export async function PATCH(
       let data;
       try {
         data = await reqClone.json();
-      } catch (error) {
+      } catch (_error) {
         return NextResponse.json(
           { error: "Invalid request data", details: "Could not parse request body" },
           { status: 400 }
@@ -144,8 +144,8 @@ export async function PATCH(
       });
       
       return NextResponse.json(updatedCampaign);
-    } catch (error) {
-      console.error("Error updating campaign:", error);
+    } catch (_error) {
+      console.error("", _error);
       return handleApiError(error);
     }
   });
@@ -185,8 +185,8 @@ export async function DELETE(
       });
       
       return NextResponse.json({ success: true, message: "Campaign deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting campaign:", error);
+    } catch (_error) {
+      console.error("", _error);
       return handleApiError(error);
     }
   });

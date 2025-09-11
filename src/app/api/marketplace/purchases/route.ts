@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build filters
-    const filters: any = {
+    const filters: Record<string, unknown> = {
       organizationId
     };
 
@@ -173,8 +173,8 @@ export async function GET(request: NextRequest) {
       }
     });
 
-  } catch (error) {
-    console.error('Error fetching purchases:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to fetch purchases' },
       { status: 500 }
@@ -310,8 +310,8 @@ export async function POST(request: NextRequest) {
       }
     });
 
-  } catch (error) {
-    console.error('Error creating purchase:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to create purchase' },
       { status: 500 }

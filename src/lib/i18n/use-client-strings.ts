@@ -34,7 +34,7 @@ export function useClientStrings() {
  */
 export function getClientString(path: string): string {
   const keys = path.split('.');
-  let current: any = clientStrings;
+  let current: Record<string, unknown> = clientStrings;
   
   for (const key of keys) {
     if (current && typeof current === 'object' && key in current) {

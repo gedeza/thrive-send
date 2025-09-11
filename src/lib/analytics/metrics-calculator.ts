@@ -202,7 +202,7 @@ export class AnalyticsMetricsCalculator {
   }
 
   private static calculateTotalCost(
-    data: any,
+    data: unknown,
     costData?: { totalCost: number; costModel: 'cpm' | 'cpc' | 'cpa' }
   ): number {
     if (costData) {

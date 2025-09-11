@@ -35,15 +35,15 @@ export async function GET(request: NextRequest) {
               if (isStreamActive) {
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
               }
-            } catch (error) {
-              console.error('Error fetching analytics data:', error);
+            } catch (_error) {
+              console.error("", _error);
               if (isStreamActive) {
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: 'Failed to fetch analytics data' })}\n\n`));
               }
             }
           }, 30000); // Update every 30 seconds
-        } catch (error) {
-          console.error('Error in analytics stream:', error);
+        } catch (_error) {
+          console.error("", _error);
           if (isStreamActive) {
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: 'Failed to initialize analytics stream' })}\n\n`));
             controller.close();
@@ -66,8 +66,8 @@ export async function GET(request: NextRequest) {
         'Connection': 'keep-alive',
       },
     });
-  } catch (error) {
-    console.error('Error in analytics API:', error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
@@ -175,8 +175,8 @@ async function fetchAnalyticsData() {
       ],
       timestamp: new Date().toISOString(),
     };
-  } catch (error) {
-    console.error('Error fetching analytics data:', error);
+  } catch (_error) {
+    console.error("", _error);
     return {
       metrics: [
         {

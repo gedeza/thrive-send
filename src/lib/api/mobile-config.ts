@@ -71,13 +71,13 @@ export async function mobileFetch(url: string, options: RequestInit = {}): Promi
     }
     
     return response;
-  } catch (error) {
+  } catch (_error) {
     console.error('Mobile fetch network error:', error, {
       url: fullUrl,
       baseUrl,
       originalUrl: url,
     });
-    throw error;
+    throw _error;
   }
 }
 

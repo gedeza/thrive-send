@@ -126,8 +126,8 @@ async function safeQuery<T>(queryFn: () => Promise<T>): Promise<{ data?: T; erro
   try {
     const data = await prisma.optimizeQuery(queryFn);
     return { data };
-  } catch (error) {
-    console.error('Query failed:', error);
+  } catch (_error) {
+    console.error("", _error);
     return { error: 'Failed to execute query' };
   }
 }

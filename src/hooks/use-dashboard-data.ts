@@ -107,8 +107,8 @@ async function fetchDashboardData(organizationId: string): Promise<DashboardData
       subscriberGrowth,
       recentActivity: serviceProviderData.recentActivity || [],
     };
-  } catch (error) {
-    console.error('Error fetching dashboard data:', error);
+  } catch (_error) {
+    console.error("", _error);
     
     // Fallback to basic data structure
     return {

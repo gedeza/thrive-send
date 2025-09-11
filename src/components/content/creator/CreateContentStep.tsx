@@ -322,8 +322,8 @@ export function CreateContentStep({ contentData, onUpdate, onNext, onPrevious }:
                       .replace(/\?$/, ' 🤔');
                     
                     handleContentChange(enhancedContent);
-                  } catch (error) {
-                    console.error('AI enhancement failed:', error);
+                  } catch (_error) {
+                    console.error("", _error);
                   }
                 }}
               >

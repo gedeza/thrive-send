@@ -155,7 +155,7 @@ export async function GET(request: NextRequest) {
     };
 
     return NextResponse.json(paginatedResponse);
-  } catch (error) {
+  } catch (_error) {
     return handleApiError(error);
   }
 }
@@ -172,8 +172,8 @@ export async function POST(request: Request) {
     try {
       body = await request.json();
       console.log("Received client creation request:", body);
-    } catch (error) {
-      console.error("Error parsing request body:", error);
+    } catch (_error) {
+      console.error("", _error);
       return NextResponse.json(
         { error: "Invalid request body. Please check your data format." },
         { status: 400 }
@@ -253,9 +253,9 @@ export async function POST(request: Request) {
 
       console.log("Successfully created client:", client);
       return NextResponse.json(client, { status: 201 });
-    } catch (error) {
-      console.error("Error with database operation:", error);
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    } catch (_error) {
+      console.error("", _error);
+      if (_error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
           return NextResponse.json(
             { error: "A client with this information already exists" },
@@ -287,8 +287,8 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
-  } catch (error) {
-    console.error("Unexpected error in client creation API:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "An unexpected error occurred. Please try again later." },
       { status: 500 }

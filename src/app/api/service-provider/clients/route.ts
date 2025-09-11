@@ -193,8 +193,8 @@ export async function GET(request: NextRequest) {
     // Return simple array format for compatibility with existing frontend
     return NextResponse.json(allClients);
 
-  } catch (error) {
-    console.error('Service provider clients error:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -392,8 +392,8 @@ export async function POST(request: NextRequest) {
       demoMode: clientResponse.id.startsWith('demo-client-user-')
     }, { status: 201 });
 
-  } catch (error) {
-    console.error('Error creating client:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to create client' },
       { status: 500 }

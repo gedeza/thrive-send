@@ -140,8 +140,8 @@ export class AnalyticsCacheInvalidationService {
       // For memory cache, cleanup is handled by the internal cleanup interval
       
       console.log('Cache maintenance completed');
-    } catch (error) {
-      console.error('Cache maintenance error:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   }
 
@@ -160,8 +160,8 @@ export class AnalyticsCacheInvalidationService {
         stats,
         lastMaintenanceRun: new Date(),
       };
-    } catch (error) {
-      console.error('Cache health check error:', error);
+    } catch (_error) {
+      console.error("", _error);
       return {
         isHealthy: false,
         stats: null,
@@ -204,8 +204,8 @@ export function withCacheInvalidation(
             await analyticsCacheInvalidation.invalidateOrganizationMembershipCache(params);
             break;
         }
-      } catch (error) {
-        console.error('Cache invalidation error:', error);
+      } catch (_error) {
+        console.error("", _error);
         // Don't fail the original operation if cache invalidation fails
       }
       
@@ -255,8 +255,8 @@ export class AnalyticsCacheWarmer {
       }
       
       console.log(`Cache warmed for user: ${userId}`);
-    } catch (error) {
-      console.error('Cache warming error:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   }
 
@@ -280,8 +280,8 @@ export class AnalyticsCacheWarmer {
       );
       
       console.log(`Cache warmed for organization: ${organizationId}`);
-    } catch (error) {
-      console.error('Organization cache warming error:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   }
 }

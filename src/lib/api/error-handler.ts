@@ -14,10 +14,10 @@ export class ApiError extends Error {
 }
 
 export const handleApiError = (error: unknown) => {
-  console.error("API Error:", error);
+  console.error("", _error);
 
   // Handle known error types
-  if (error instanceof ApiError) {
+  if (_error instanceof ApiError) {
     return NextResponse.json(
       {
         error: error.message,
@@ -27,7 +27,7 @@ export const handleApiError = (error: unknown) => {
     );
   }
 
-  if (error instanceof z.ZodError) {
+  if (_error instanceof z.ZodError) {
     return NextResponse.json(
       {
         error: "Validation error",
@@ -37,7 +37,7 @@ export const handleApiError = (error: unknown) => {
     );
   }
 
-  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+  if (_error instanceof Prisma.PrismaClientKnownRequestError) {
     // Handle specific Prisma errors
     switch (error.code) {
       case "P2002":
@@ -67,11 +67,11 @@ export const handleApiError = (error: unknown) => {
     }
   }
 
-  if (error instanceof Prisma.PrismaClientValidationError) {
+  if (_error instanceof Prisma.PrismaClientValidationError) {
     return NextResponse.json(
       {
         error: "Invalid data format",
-        details: error.message,
+        details: _error.message,
       },
       { status: 400 }
     );

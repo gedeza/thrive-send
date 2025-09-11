@@ -392,8 +392,8 @@ export default function SecuritySettings() {
       reset();
       
       setTimeout(() => setChangePasswordStatus('idle'), 3000);
-    } catch (error) {
-      console.error('Password change failed:', error);
+    } catch (_error) {
+      console.error("", _error);
       setChangePasswordStatus('error');
       setTimeout(() => setChangePasswordStatus('idle'), 5000);
     }
@@ -410,8 +410,8 @@ export default function SecuritySettings() {
         });
         setTwoFactorEnabled(enabled);
       }
-    } catch (error) {
-      console.error('Failed to update 2FA status:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   };
 

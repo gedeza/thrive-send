@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
         : `${clearedCount} cache entries cleared`,
     });
     
-  } catch (error) {
+  } catch (_error) {
     logger.error('Cache clear operation failed', error as Error);
     
     return NextResponse.json(

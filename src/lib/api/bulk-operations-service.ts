@@ -110,7 +110,7 @@ export async function getBulkOperationsData(params: {
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('Bulk Operations API Error:', error);
+      console.error("", _error);
       throw new Error(error.message || 'Failed to fetch bulk operations data');
     }
 
@@ -122,9 +122,9 @@ export async function getBulkOperationsData(params: {
     });
 
     return data;
-  } catch (error) {
-    console.error('❌ Error fetching bulk operations data:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -150,7 +150,7 @@ export async function executeBulkOperation(params: BulkOperationRequest): Promis
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('Bulk Operation Execution Error:', error);
+      console.error("", _error);
       throw new Error(error.message || 'Failed to execute bulk operation');
     }
 
@@ -176,14 +176,14 @@ export async function executeBulkOperation(params: BulkOperationRequest): Promis
     });
 
     return result;
-  } catch (error) {
-    console.error('❌ Error executing bulk operation:', error);
+  } catch (_error) {
+    console.error("", _error);
     toast({
       title: "Error",
       description: error instanceof Error ? error.message : 'Failed to execute bulk operation',
       variant: "destructive",
     });
-    throw error;
+    throw _error;
   }
 }
 
@@ -220,7 +220,7 @@ export async function controlBulkOperation(params: {
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('Bulk Operation Control Error:', error);
+      console.error("", _error);
       throw new Error(error.message || 'Failed to control bulk operation');
     }
 
@@ -245,14 +245,14 @@ export async function controlBulkOperation(params: {
     });
 
     return result;
-  } catch (error) {
-    console.error('❌ Error controlling bulk operation:', error);
+  } catch (_error) {
+    console.error("", _error);
     toast({
       title: "Error",
       description: error instanceof Error ? error.message : 'Failed to control bulk operation',
       variant: "destructive",
     });
-    throw error;
+    throw _error;
   }
 }
 
@@ -453,8 +453,8 @@ export async function getBulkOperationStatus(params: {
     };
 
     return mockStatus;
-  } catch (error) {
-    console.error('❌ Error getting bulk operation status:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }

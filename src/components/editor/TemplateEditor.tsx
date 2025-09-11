@@ -99,8 +99,8 @@ export function TemplateEditor({ value, onChange, placeholder, type, organizatio
         });
         // Handle suggestions display
       }
-    } catch (error) {
-      console.error('Error getting AI suggestions:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Unable to Get Suggestions",
         description: "We're having trouble connecting to our AI service. Please try again later.",

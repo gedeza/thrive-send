@@ -109,8 +109,8 @@ export default function CreateOrganizationPage() {
       } else {
         throw new Error('Failed to set active organization');
       }
-    } catch (error) {
-      console.error('Error creating organization:', error);
+    } catch (_error) {
+      console.error("", _error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to create organization';
       
       if (errorMessage.includes('not enabled')) {

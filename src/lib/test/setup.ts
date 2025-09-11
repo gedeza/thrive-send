@@ -64,21 +64,21 @@ export async function setupTestDatabase() {
       memberUser,
       organization,
     };
-  } catch (error) {
+  } catch (_error) {
     console.error('Error setting up test database:', {
       type: error?.constructor?.name,
       message: error instanceof Error ? error.message : 'Unknown error'
     });
-    throw error;
+    throw _error;
   }
 }
 
 export async function cleanupTestData() {
   try {
     await resetDatabase();
-  } catch (error) {
-    console.error('Error cleaning up test data:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -87,22 +87,22 @@ export async function withTransaction<T>(fn: () => Promise<T>): Promise<T> {
     return await prisma.$transaction(async () => {
       try {
         return await fn();
-      } catch (error) {
+      } catch (_error) {
         // Only log the error message and type, not the full stack trace
         console.error('Transaction failed:', {
           type: error?.constructor?.name,
           message: error instanceof Error ? error.message : 'Unknown error'
         });
-        throw error;
+        throw _error;
       }
     });
-  } catch (error) {
+  } catch (_error) {
     // Only log the error message and type, not the full stack trace
     console.error('Failed to start transaction:', {
       type: error?.constructor?.name,
       message: error instanceof Error ? error.message : 'Unknown error'
     });
-    throw error;
+    throw _error;
   }
 }
 

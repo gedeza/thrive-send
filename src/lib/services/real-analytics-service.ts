@@ -102,8 +102,8 @@ export class RealAnalyticsService {
         reachChange: this.calculatePercentageChange(totalReach, previousReach),
         totalConversions,
       };
-    } catch (error) {
-      console.error('Error fetching dashboard metrics:', error);
+    } catch (_error) {
+      console.error("", _error);
       throw new Error('Failed to fetch analytics metrics');
     }
   }
@@ -264,8 +264,8 @@ export class RealAnalyticsService {
           projectCount: client.projects.length,
         };
       });
-    } catch (error) {
-      console.error('Error fetching client metrics:', error);
+    } catch (_error) {
+      console.error("", _error);
       throw new Error('Failed to fetch client metrics');
     }
   }
@@ -291,8 +291,8 @@ export class RealAnalyticsService {
           createdAt: 'desc',
         },
       });
-    } catch (error) {
-      console.error('Error fetching cross-client analytics:', error);
+    } catch (_error) {
+      console.error("", _error);
       throw new Error('Failed to fetch cross-client analytics');
     }
   }
@@ -338,8 +338,8 @@ export class RealAnalyticsService {
       );
 
       return dailyMetrics;
-    } catch (error) {
-      console.error('Error fetching performance trend:', error);
+    } catch (_error) {
+      console.error("", _error);
       throw new Error('Failed to fetch performance trend data');
     }
   }

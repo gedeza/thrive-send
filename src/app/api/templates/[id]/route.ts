@@ -79,8 +79,8 @@ export async function GET(
       },
       User: undefined, // Remove the User field from the response
     });
-  } catch (error) {
-    console.error("Error fetching template:", error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
@@ -122,8 +122,8 @@ export async function PUT(
       }
       throw validationError;
     }
-  } catch (error) {
-    console.error("Error updating template:", error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
@@ -148,8 +148,8 @@ export async function DELETE(
     });
 
     return new NextResponse(null, { status: 204 });
-  } catch (error) {
-    console.error("Error deleting template:", error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }

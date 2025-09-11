@@ -27,8 +27,8 @@ export function MultiChannelAttribution({ campaignId, dateRange }: MultiChannelA
           end: dateRange.end.toISOString().split('T')[0]
         });
         setAttributionData(data);
-      } catch (error) {
-        console.error('Error fetching attribution data:', error);
+      } catch (_error) {
+        console.error("", _error);
       } finally {
         setLoading(false);
       }

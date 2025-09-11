@@ -25,7 +25,7 @@ interface OptimizedChartProps {
 /**
  * Memoized data transformer for chart data
  */
-const useChartData = (data: any, isDark: boolean, chartType: 'bar' | 'pie' | 'line') => {
+const useChartData = (data: unknown, isDark: boolean, chartType: 'bar' | 'pie' | 'line') => {
   return useMemo(() => {
     if (!data || !validateChartData(data)) {
       return null;
@@ -444,7 +444,7 @@ export const useChartPerformance = (componentName: string) => {
 /**
  * Chart data comparison utility for debugging re-renders
  */
-export const useChartDataComparison = (data: any, name: string) => {
+export const useChartDataComparison = (data: unknown, name: string) => {
   const prevData = React.useRef(data);
   
   React.useEffect(() => {

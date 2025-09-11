@@ -43,8 +43,8 @@ export async function GET(
     });
 
     return NextResponse.json(projects);
-  } catch (error) {
-    console.error("Client projects API error:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -94,8 +94,8 @@ export async function POST(
     });
 
     return NextResponse.json(project, { status: 201 });
-  } catch (error) {
-    console.error("Create project API error:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "Failed to create project" },
       { status: 500 }

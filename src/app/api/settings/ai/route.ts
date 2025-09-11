@@ -47,8 +47,8 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("[AI_SETTINGS_POST]", error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse("Internal Error", { status: 500 });
   }
 }
@@ -106,8 +106,8 @@ export async function GET(req: Request) {
         enabled: aiFeatures.enabled,
       },
     });
-  } catch (error) {
-    console.error("[AI_SETTINGS_GET]", error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse("Internal Error", { status: 500 });
   }
 } 

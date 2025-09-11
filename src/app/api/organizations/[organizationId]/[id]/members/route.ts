@@ -16,8 +16,8 @@ export async function GET(
 
     const members = await organizationService.getMembers(params.organizationId);
     return NextResponse.json(members);
-  } catch (error) {
-    console.error('[ORGANIZATION_MEMBERS_GET]', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }
@@ -40,8 +40,8 @@ export async function POST(
     );
 
     return NextResponse.json(invitation);
-  } catch (error) {
-    console.error('[ORGANIZATION_MEMBERS_POST]', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }
@@ -64,8 +64,8 @@ export async function PATCH(
     );
 
     return NextResponse.json(member);
-  } catch (error) {
-    console.error('[ORGANIZATION_MEMBERS_PATCH]', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }
@@ -89,8 +89,8 @@ export async function DELETE(
 
     await organizationService.removeMember(params.organizationId, memberId);
     return NextResponse.json({ success: true }, { status: 204 });
-  } catch (error) {
-    console.error('[ORGANIZATION_MEMBERS_DELETE]', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 } 

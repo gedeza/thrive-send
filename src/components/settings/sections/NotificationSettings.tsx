@@ -346,7 +346,7 @@ function QuickActions({ onUpdate, disabled }: {
 // Do not disturb settings
 function DoNotDisturbSettings({ settings, onUpdate, disabled }: {
   settings: any;
-  onUpdate: (path: string, value: any) => void;
+  onUpdate: (path: string, value: unknown) => void;
   disabled?: boolean;
 }) {
   return (
@@ -486,8 +486,8 @@ export default function NotificationSettings() {
         alert(`Test ${type} notification sent! Check your ${type === 'email' ? 'email' : 'device'}.`);
       }
       
-    } catch (error) {
-      console.error('Failed to send test notification:', error);
+    } catch (_error) {
+      console.error("", _error);
       alert('Failed to send test notification. Please try again.');
     } finally {
       setTestingNotification(null);

@@ -92,7 +92,7 @@ export function ProgressiveLoader<T extends { id?: string }>({
 
       onDataChange?.(append ? [...data, ...result.data] : result.data, result.total || result.data.length);
       retryCountRef.current = 0;
-    } catch (error) {
+    } catch (_error) {
       const err = error instanceof Error ? error : new Error('Unknown error');
       setState(prev => ({
         ...prev,

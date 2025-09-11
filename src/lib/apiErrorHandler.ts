@@ -1,10 +1,10 @@
 export function handleApiError(error: unknown, defaultMsg: string = "An unknown error occurred") {
   // Optional: improve this with custom error classes if you need more detail
   if (process.env.NODE_ENV === 'development') {
-    console.error("[API]", error);
+    console.error("", _error);
   }
 
-  if (error instanceof Error) {
+  if (_error instanceof Error) {
     return {
       error: true,
       message: error.message || defaultMsg,

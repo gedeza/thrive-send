@@ -78,9 +78,9 @@ export async function POST(
     });
 
     return NextResponse.json(socialAccount, { status: 201 });
-  } catch (error) {
-    console.error("Error creating social account:", error);
-    if (error instanceof z.ZodError) {
+  } catch (_error) {
+    console.error("", _error);
+    if (_error instanceof z.ZodError) {
       return NextResponse.json(
         { error: "Invalid request data", details: error.errors },
         { status: 400 }
@@ -109,8 +109,8 @@ export async function GET(
     });
 
     return NextResponse.json(socialAccounts);
-  } catch (error) {
-    console.error("Error fetching social accounts:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "Failed to fetch social accounts" },
       { status: 500 }

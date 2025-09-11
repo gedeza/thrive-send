@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
     
     return createSuccessResponse(allInvitations, 200, 'Invitations retrieved successfully');
 
-  } catch (error) {
+  } catch (_error) {
     return handleApiError(error);
   }
 }
@@ -347,7 +347,7 @@ export async function POST(request: NextRequest) {
       demoMode: invitationResponse.id.startsWith('inv-demo-')
     }, { status: 201 });
 
-  } catch (error) {
+  } catch (_error) {
     // Error creating invitation
     return NextResponse.json(
       { error: 'Failed to create invitation' },
@@ -433,7 +433,7 @@ export async function PATCH(request: NextRequest) {
       message: `Invitation ${action}ed successfully`
     });
 
-  } catch (error) {
+  } catch (_error) {
     // Error updating invitation
     return NextResponse.json(
       { error: 'Failed to update invitation' },

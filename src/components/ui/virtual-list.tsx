@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 export interface VirtualListItem {
   id: string;
   height?: number;
-  data: any;
+  data: unknown;
 }
 
 interface VirtualListProps {

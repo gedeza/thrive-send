@@ -74,7 +74,7 @@ try {
     fallback: emailServiceConfig.fallback,
     providers: Object.keys(emailServiceConfig.providers),
   });
-} catch (error) {
+} catch (_error) {
   logger.error('Failed to initialize enhanced email service, falling back to mock', error as Error);
   emailService = new MockEmailProvider() as any;
 }
@@ -126,13 +126,13 @@ class EmailJobProcessor {
       } else {
         throw new Error(`Email delivery failed: ${result.error}`);
       }
-    } catch (error) {
+    } catch (_error) {
       logger.emailFailed(to, error as Error, {
         organizationId,
         campaignId,
         jobId: job.id,
       });
-      throw error;
+      throw _error;
     }
   }
 
@@ -212,7 +212,7 @@ class EmailJobProcessor {
             });
           }
 
-        } catch (error) {
+        } catch (_error) {
           failureCount++;
           logger.emailFailed(recipient.email, error as Error, {
             organizationId,
@@ -245,14 +245,14 @@ class EmailJobProcessor {
         completedAt: new Date().toISOString(),
       };
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Bulk email processing failed', error as Error, {
         organizationId,
         campaignId,
         batchId,
         jobId: job.id,
       });
-      throw error;
+      throw _error;
     }
   }
 
@@ -324,7 +324,7 @@ class EmailJobProcessor {
               error: result.error,
             });
           }
-        } catch (error) {
+        } catch (_error) {
           failureCount++;
           logger.emailFailed(recipient.email, error as Error, {
             organizationId,
@@ -358,14 +358,14 @@ class EmailJobProcessor {
         completedAt: new Date().toISOString(),
       };
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Newsletter processing failed', error as Error, {
         organizationId,
         campaignId,
         segmentId,
         jobId: job.id,
       });
-      throw error;
+      throw _error;
     }
   }
 
@@ -421,7 +421,7 @@ class EmailJobProcessor {
               error: result.error,
             });
           }
-        } catch (error) {
+        } catch (_error) {
           failureCount++;
           results.push({
             recipient: recipient.email,
@@ -439,13 +439,13 @@ class EmailJobProcessor {
         completedAt: new Date().toISOString(),
       };
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Campaign email processing failed', error as Error, {
         organizationId,
         campaignId,
         jobId: job.id,
       });
-      throw error;
+      throw _error;
     }
   }
 }
@@ -483,7 +483,7 @@ async function processEmailJob(job: Job<EmailJobData>): Promise<any> {
 
     return result;
 
-  } catch (error) {
+  } catch (_error) {
     const duration = Date.now() - startTime;
     logger.error('Email job processing failed', error as Error, {
       jobType: job.data.type,
@@ -491,7 +491,7 @@ async function processEmailJob(job: Job<EmailJobData>): Promise<any> {
       organizationId: job.data.organizationId,
       duration,
     });
-    throw error;
+    throw _error;
   }
 }
 
@@ -555,9 +555,9 @@ export class EmailWorkerManager {
     try {
       logger.info('Starting email worker...');
       // Worker automatically starts when created
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to start email worker', error);
-      throw error;
+      throw _error;
     }
   }
 
@@ -566,9 +566,9 @@ export class EmailWorkerManager {
       logger.info('Stopping email worker...');
       await emailWorker.close();
       logger.info('Email worker stopped');
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to stop email worker', error);
-      throw error;
+      throw _error;
     }
   }
 
@@ -576,9 +576,9 @@ export class EmailWorkerManager {
     try {
       await emailWorker.pause();
       logger.info('Email worker paused');
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to pause email worker', error);
-      throw error;
+      throw _error;
     }
   }
 
@@ -586,9 +586,9 @@ export class EmailWorkerManager {
     try {
       await emailWorker.resume();
       logger.info('Email worker resumed');
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to resume email worker', error);
-      throw error;
+      throw _error;
     }
   }
 

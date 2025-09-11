@@ -25,7 +25,7 @@ export default function DashboardPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-6 p-6">
+      <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <div>
             <Skeleton className="h-8 w-48 mb-2" />
@@ -53,7 +53,7 @@ export default function DashboardPage() {
   // Error state
   if (error) {
     return (
-      <div className="flex flex-col gap-6 p-6">
+      <div className="flex flex-col gap-4">
         <div className="text-center py-20">
           <p className="text-lg font-semibold text-destructive">Error loading dashboard</p>
           <p className="text-muted-foreground">Please try refreshing the page</p>
@@ -69,7 +69,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
@@ -83,7 +83,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Summary Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Subscribers</CardTitle>
@@ -154,7 +154,7 @@ export default function DashboardPage() {
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="overview" className="mt-4 space-y-6">
+        <TabsContent value="overview" className="mt-3 space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             {/* Recent Campaign Performance */}
             <Card className="lg:col-span-4">
@@ -333,7 +333,7 @@ export default function DashboardPage() {
           </Card>
         </TabsContent>
         
-        <TabsContent value="analytics" className="mt-4">
+        <TabsContent value="analytics" className="mt-3">
           <Card>
             <CardHeader>
               <CardTitle>Campaign Analytics</CardTitle>
@@ -352,7 +352,7 @@ export default function DashboardPage() {
           </Card>
         </TabsContent>
         
-        <TabsContent value="campaigns" className="mt-4">
+        <TabsContent value="campaigns" className="mt-3">
           <Card>
             <CardHeader>
               <CardTitle>All Campaigns</CardTitle>
@@ -370,7 +370,7 @@ export default function DashboardPage() {
           </Card>
         </TabsContent>
         
-        <TabsContent value="subscribers" className="mt-4">
+        <TabsContent value="subscribers" className="mt-3">
           <Card>
             <CardHeader>
               <CardTitle>Subscriber Management</CardTitle>

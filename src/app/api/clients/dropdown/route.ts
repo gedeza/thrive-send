@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     });
     
     return createSuccessResponse(clients, 200, "Clients retrieved successfully");
-  } catch (error) {
+  } catch (_error) {
     return handleApiError(error);
   }
 }

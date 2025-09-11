@@ -131,8 +131,8 @@ export async function GET(request: NextRequest) {
       total: productsWithAnalytics.length
     });
 
-  } catch (error) {
-    console.error('Error fetching organization products:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to fetch products' },
       { status: 500 }
@@ -230,15 +230,15 @@ export async function POST(request: NextRequest) {
       }
     }, { status: 201 });
 
-  } catch (error) {
-    if (error instanceof z.ZodError) {
+  } catch (_error) {
+    if (_error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid input', details: error.errors },
         { status: 400 }
       );
     }
     
-    console.error('Error creating boost product:', error);
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to create product' },
       { status: 500 }
@@ -334,15 +334,15 @@ export async function PUT(request: NextRequest) {
       }
     });
 
-  } catch (error) {
-    if (error instanceof z.ZodError) {
+  } catch (_error) {
+    if (_error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid input', details: error.errors },
         { status: 400 }
       );
     }
     
-    console.error('Error updating boost product:', error);
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to update product' },
       { status: 500 }
@@ -414,8 +414,8 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
 
-  } catch (error) {
-    console.error('Error deleting boost product:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to delete product' },
       { status: 500 }

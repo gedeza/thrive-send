@@ -42,8 +42,8 @@ export async function GET(request: Request) {
       lists,
       total: lists.length,
     });
-  } catch (error) {
-    console.error('Error fetching content lists:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -70,9 +70,9 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json(contentList);
-  } catch (error) {
-    console.error('Error creating content list:', error);
-    if (error instanceof z.ZodError) {
+  } catch (_error) {
+    console.error("", _error);
+    if (_error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid data', details: error.errors }, { status: 400 });
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

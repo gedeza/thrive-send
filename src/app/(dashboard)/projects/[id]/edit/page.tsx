@@ -82,7 +82,7 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
           clientId: project.clientId,
           managerId: project.managerId,
         });
-      } catch (error) {
+      } catch (_error) {
         toast({
           title: "Error",
           description: "Failed to fetch project details. Please try again later.",
@@ -116,7 +116,7 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
         description: "Project updated successfully",
       });
       router.push("/projects");
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to update project. Please try again later.",

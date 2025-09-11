@@ -50,9 +50,9 @@ class OptimizedPrismaClient extends PrismaClient {
       // Test pool connection
       const client = await this.pool.connect();
       client.release();
-    } catch (error) {
-      console.error('Failed to connect to database:', error);
-      throw error;
+    } catch (_error) {
+      console.error("", _error);
+      throw _error;
     }
   }
 
@@ -61,9 +61,9 @@ class OptimizedPrismaClient extends PrismaClient {
     try {
       await super.$disconnect();
       await this.pool.end();
-    } catch (error) {
-      console.error('Failed to disconnect from database:', error);
-      throw error;
+    } catch (_error) {
+      console.error("", _error);
+      throw _error;
     }
   }
 
@@ -80,9 +80,9 @@ class OptimizedPrismaClient extends PrismaClient {
       }
       
       return result;
-    } catch (error) {
-      console.error('Query optimization error:', error);
-      throw error;
+    } catch (_error) {
+      console.error("", _error);
+      throw _error;
     }
   }
 }
@@ -128,8 +128,8 @@ export const connectionManager = {
     try {
       await prisma.$queryRaw`SELECT 1`;
       return true;
-    } catch (error) {
-      console.error('Database connection check failed:', error);
+    } catch (_error) {
+      console.error("", _error);
       return false;
     }
   },
@@ -139,8 +139,8 @@ export const connectionManager = {
       await prisma.$disconnect();
       await prisma.$connect();
       return true;
-    } catch (error) {
-      console.error('Database reconnection failed:', error);
+    } catch (_error) {
+      console.error("", _error);
       return false;
     }
   }

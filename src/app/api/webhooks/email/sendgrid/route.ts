@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString(),
     }, { status: 200 });
     
-  } catch (error) {
+  } catch (_error) {
     logger.error('SendGrid webhook failed', error as Error);
     
     return NextResponse.json({

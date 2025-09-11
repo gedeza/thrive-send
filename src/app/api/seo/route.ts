@@ -97,8 +97,8 @@ export async function GET(request: NextRequest) {
     ];
 
     return NextResponse.json(mockSEOContent);
-  } catch (error) {
-    console.error('Error fetching SEO content:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { 
         message: 'Internal server error', 
@@ -153,8 +153,8 @@ export async function PUT(request: NextRequest) {
     });
 
     return NextResponse.json(updatedContent);
-  } catch (error) {
-    console.error('Error updating SEO data:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { 
         message: 'Internal server error', 

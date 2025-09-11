@@ -251,14 +251,14 @@ export async function POST(
       },
     });
 
-  } catch (error) {
+  } catch (_error) {
     logger.error('Campaign send failed', error as Error, {
       campaignId: params.id,
       userId: auth().userId,
       orgId: auth().orgId,
     });
 
-    if (error instanceof z.ZodError) {
+    if (_error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request data', details: error.errors },
         { status: 400 }

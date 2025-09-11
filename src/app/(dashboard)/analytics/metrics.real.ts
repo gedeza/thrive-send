@@ -91,8 +91,8 @@ export async function fetchRealMetrics(
 
     const data = await response.json();
     return data;
-  } catch (error) {
-    console.error('Error fetching real metrics:', error);
+  } catch (_error) {
+    console.error("", _error);
     throw new Error('Failed to fetch analytics metrics from database');
   }
 }

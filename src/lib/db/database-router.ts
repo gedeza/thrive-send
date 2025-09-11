@@ -110,7 +110,7 @@ export class DatabaseRouter {
 
       return result;
 
-    } catch (error) {
+    } catch (_error) {
       const duration = Date.now() - startTime;
       
       // Record failed query metrics
@@ -126,7 +126,7 @@ export class DatabaseRouter {
         duration,
       });
 
-      throw error;
+      throw _error;
     }
   }
 
@@ -163,7 +163,7 @@ export class DatabaseRouter {
         circuitBreakers,
       };
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Database router health check failed', error as Error);
       return {
         healthy: false,

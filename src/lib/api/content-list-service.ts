@@ -32,16 +32,16 @@ export async function createContentList(data: ContentListFormData): Promise<Cont
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('API Error Response:', error);
+      console.error("", _error);
       throw new Error(error.message || 'Failed to create content list');
     }
 
     const contentList = await response.json();
     console.log('Content list created successfully:', contentList);
     return contentList;
-  } catch (error) {
-    console.error('Error creating content list:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -63,9 +63,9 @@ export async function getContentList(id: string): Promise<ContentListData> {
     const contentList = await response.json();
     console.log('Content list fetched:', contentList);
     return contentList;
-  } catch (error) {
-    console.error('Error fetching content list:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -89,9 +89,9 @@ export async function updateContentList(id: string, data: Partial<ContentListFor
     const updatedContentList = await response.json();
     console.log('Content list updated:', updatedContentList);
     return updatedContentList;
-  } catch (error) {
-    console.error('Error updating content list:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -112,9 +112,9 @@ export async function deleteContentList(id: string): Promise<void> {
     }
     
     console.log('Content list deleted successfully');
-  } catch (error) {
-    console.error('Error deleting content list:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -133,16 +133,16 @@ export async function listContentLists(): Promise<{
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('API Error Response:', error);
+      console.error("", _error);
       throw new Error(error.message || 'Failed to fetch content lists');
     }
 
     const data = await response.json();
     console.log('Content lists response:', data);
     return data;
-  } catch (error) {
-    console.error('Error fetching content lists:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -167,9 +167,9 @@ export async function getContentListContents(listId: string): Promise<{
     const data = await response.json();
     console.log('Content list contents fetched:', data);
     return data;
-  } catch (error) {
-    console.error('Error fetching content list contents:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -191,9 +191,9 @@ export async function addContentToList(listId: string, contentId: string): Promi
     }
     
     console.log('Content added to list successfully');
-  } catch (error) {
-    console.error('Error adding content to list:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -214,9 +214,9 @@ export async function removeContentFromList(listId: string, contentId: string): 
     }
     
     console.log('Content removed from list successfully');
-  } catch (error) {
-    console.error('Error removing content from list:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -241,8 +241,8 @@ export async function getListsForContent(contentId: string): Promise<{
     const data = await response.json();
     console.log('Content lists fetched:', data);
     return data;
-  } catch (error) {
-    console.error('Error fetching lists for content:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }

@@ -870,7 +870,7 @@ export function ABTestingDashboard({ className }: ABTestingDashboardProps) {
           {currentTest ? (
             <Card>
               <CardHeader>
-                <Tabs value={activeTab} onValueChange={(value: any) => setActiveTab(value)}>
+                <Tabs value={activeTab} onValueChange={(value: unknown) => setActiveTab(value)}>
                   <TabsList>
                     <TabsTrigger value="overview">Overview</TabsTrigger>
                     <TabsTrigger value="results">Results</TabsTrigger>

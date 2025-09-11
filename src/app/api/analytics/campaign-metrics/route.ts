@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-  } catch (error) {
+  } catch (_error) {
     logger.error('Failed to get campaign metrics', error as Error);
     
     return NextResponse.json({

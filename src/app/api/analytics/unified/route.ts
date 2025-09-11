@@ -43,9 +43,9 @@ async function getAuthenticatedUser() {
     }
     
     return user;
-  } catch (error) {
-    console.error('Authentication error:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -111,8 +111,8 @@ export const POST = withAnalyticsErrorHandler(async (request: Request) => {
     }
     
     requestBody = body;
-  } catch (error) {
-    console.error('JSON parsing error:', error);
+  } catch (_error) {
+    console.error("", _error);
     return AnalyticsErrorHandler.handleValidationError('Invalid JSON in request body');
   }
 

@@ -287,7 +287,7 @@ export class OrganizationService {
         logoUrl: updatedOrg.logoUrl
       });
       return updatedOrg;
-    } catch (error) {
+    } catch (_error) {
       console.error("[OrganizationService] Error updating settings:", {
         error,
         message: error instanceof Error ? error.message : "Unknown error",
@@ -299,7 +299,7 @@ export class OrganizationService {
         isZodError: error instanceof z.ZodError,
         zodErrors: error instanceof z.ZodError ? error.errors : undefined
       });
-      throw error;
+      throw _error;
     }
   }
 

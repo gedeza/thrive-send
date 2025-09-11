@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       },
     });
     
-  } catch (error) {
+  } catch (_error) {
     logger.error('Failed to retrieve replica status', error as Error);
     
     return NextResponse.json(
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
       },
     });
     
-  } catch (error) {
+  } catch (_error) {
     logger.error('Replica action failed', error as Error);
     
     return NextResponse.json(

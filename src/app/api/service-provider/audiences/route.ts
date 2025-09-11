@@ -183,7 +183,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(transformedAudiences);
 
-  } catch (error) {
+  } catch (_error) {
     // Error fetching service provider audiences
     return NextResponse.json(
       { error: 'Internal server error' },
@@ -385,7 +385,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(transformedAudience, { status: 201 });
 
-  } catch (error) {
+  } catch (_error) {
     // Error creating audience
     return NextResponse.json(
       { error: 'Internal server error' },

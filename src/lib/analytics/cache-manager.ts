@@ -33,7 +33,7 @@ const CACHE_CONFIG = {
 
 // In-memory cache fallback for when Redis is not available
 class MemoryCache {
-  private cache = new Map<string, { data: any; expiresAt: number }>();
+  private cache = new Map<string, { data: unknown; expiresAt: number }>();
   private cleanupInterval: NodeJS.Timeout;
 
   constructor() {
@@ -43,7 +43,7 @@ class MemoryCache {
     }, 5 * 60 * 1000);
   }
 
-  set(key: string, data: any, ttlSeconds: number): void {
+  set(key: string, data: unknown, ttlSeconds: number): void {
     const expiresAt = Date.now() + (ttlSeconds * 1000);
     this.cache.set(key, { data, expiresAt });
   }
@@ -113,7 +113,7 @@ export class AnalyticsCacheManager {
       } else {
         console.log('Redis URL not configured or Redis not available, using memory cache');
       }
-    } catch (error) {
+    } catch (_error) {
       console.warn('Redis initialization failed, falling back to memory cache:', error);
       this.isRedisAvailable = false;
     }
@@ -148,8 +148,8 @@ export class AnalyticsCacheManager {
       } else {
         return this.memoryCache.get(cacheKey);
       }
-    } catch (error) {
-      console.error('Cache get error:', error);
+    } catch (_error) {
+      console.error("", _error);
       return null;
     }
   }
@@ -172,8 +172,8 @@ export class AnalyticsCacheManager {
       } else {
         this.memoryCache.set(cacheKey, data, ttl);
       }
-    } catch (error) {
-      console.error('Cache set error:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   }
 
@@ -189,8 +189,8 @@ export class AnalyticsCacheManager {
       } else {
         this.memoryCache.delete(cacheKey);
       }
-    } catch (error) {
-      console.error('Cache delete error:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   }
 
@@ -207,8 +207,8 @@ export class AnalyticsCacheManager {
       } else {
         this.memoryCache.deletePattern(pattern);
       }
-    } catch (error) {
-      console.error('Cache invalidate pattern error:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   }
 
@@ -243,8 +243,8 @@ export class AnalyticsCacheManager {
       } else {
         this.memoryCache.clear();
       }
-    } catch (error) {
-      console.error('Cache clear all error:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   }
 
@@ -277,8 +277,8 @@ export class AnalyticsCacheManager {
           keyCount: this.memoryCache['cache'].size,
         };
       }
-    } catch (error) {
-      console.error('Cache stats error:', error);
+    } catch (_error) {
+      console.error("", _error);
       return {
         provider: this.isRedisAvailable ? 'redis' : 'memory',
         isAvailable: false,
@@ -295,8 +295,8 @@ export class AnalyticsCacheManager {
         await this.redis.quit();
       }
       this.memoryCache.destroy();
-    } catch (error) {
-      console.error('Cache cleanup error:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   }
 }

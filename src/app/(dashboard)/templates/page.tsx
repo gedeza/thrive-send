@@ -98,7 +98,7 @@ function TemplatesPageContent() {
       const error = err as Error;
       const errorInfo = handleTemplateError(error, "fetch templates");
       
-      console.error("Failed to fetch templates:", error);
+      console.error("", _error);
       setFetchError(error.message);
       
       toast({
@@ -165,7 +165,7 @@ function TemplatesPageContent() {
       const error = err as Error;
       const errorInfo = handleTemplateError(error, "duplicate template");
       
-      console.error("Failed to duplicate template:", error);
+      console.error("", _error);
       
       toast({
         title: errorInfo.title,
@@ -235,7 +235,7 @@ function TemplatesPageContent() {
         </div>
         
         <Card className="border-destructive/20 bg-destructive/5">
-          <CardContent className="p-8 text-center">
+          <CardContent className="p-6 text-center">
             <div className="flex justify-center mb-4">
               <div className="p-3 bg-destructive/10 rounded-full">
                 <FileText className="h-8 w-8 text-destructive" />
@@ -718,7 +718,7 @@ function TemplatesPageContent() {
       {/* Empty State */}
       {filteredTemplates.length === 0 && !isLoading && (
         <Card className="border-dashed">
-          <CardContent className="p-8 text-center">
+          <CardContent className="p-6 text-center">
             <div className="flex justify-center mb-4">
               <div className="p-4 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full">
                 <Sparkles className="h-12 w-12 text-blue-600" />
@@ -738,7 +738,7 @@ function TemplatesPageContent() {
                     Create Your First Template
                   </Link>
                 </Button>
-                <div className="flex items-center justify-center gap-8 text-sm text-gray-500 mt-4">
+                <div className="flex items-center justify-center gap-4 text-sm text-gray-500 mt-4">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-green-400 rounded-full"></div>
                     <span>Instant content creation</span>

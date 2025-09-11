@@ -122,18 +122,18 @@ export async function runContentTests() {
           console.log("✅ Test passed");
           console.log("Saved content:", result);
           passed++;
-        } catch (error) {
+        } catch (_error) {
           console.error("❌ Save operation failed");
-          console.error("Error:", error);
+          console.error("", _error);
           failed++;
         }
       } else {
         console.log("✅ Test passed (expected failure)");
         passed++;
       }
-    } catch (error) {
+    } catch (_error) {
       console.error("❌ Test failed with unexpected error");
-      console.error("Error:", error);
+      console.error("", _error);
       failed++;
     }
   }

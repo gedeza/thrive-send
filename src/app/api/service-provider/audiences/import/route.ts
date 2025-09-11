@@ -189,11 +189,11 @@ export async function POST(request: NextRequest) {
       message: `Successfully imported ${result.contactCount} contacts into "${audienceName}" audience`
     }, { status: 201 });
 
-  } catch (error) {
+  } catch (_error) {
     // Error importing contacts
     
     // Return more specific error messages
-    if (error instanceof Error) {
+    if (_error instanceof Error) {
       if (error.message.includes('Unique constraint')) {
         return NextResponse.json({ 
           error: 'An audience with this name already exists' 

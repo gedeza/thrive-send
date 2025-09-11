@@ -46,9 +46,9 @@ async function getBudgetData(clientId: string): Promise<Budget[]> {
 
     const data = await response.json();
     return data.budgets || [];
-  } catch (error) {
-    console.error('Error fetching budget data:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -74,9 +74,9 @@ async function createBudget(clientId: string, budgetData: {
     }
 
     return await response.json();
-  } catch (error) {
-    console.error('Error creating budget:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -190,8 +190,8 @@ function CreateBudgetModal({ clientId, onSuccess }: { clientId: string; onSucces
         status: 'ACTIVE'
       });
       onSuccess();
-    } catch (error) {
-      console.error('Error creating budget:', error);
+    } catch (_error) {
+      console.error("", _error);
     } finally {
       setLoading(false);
     }

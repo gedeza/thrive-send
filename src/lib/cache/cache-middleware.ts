@@ -90,7 +90,7 @@ export class CacheMiddleware {
 
         return this.addCacheHeaders(response, cacheContext);
 
-      } catch (error) {
+      } catch (_error) {
         logger.error('Cache middleware error', error as Error, { url: req.url });
         return handler(req, context);
       }
@@ -135,7 +135,7 @@ export class CacheMiddleware {
       logger.debug('Fresh data cached for component', { strategy, key });
       return freshData;
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Data cache error', error as Error, { strategy, key });
       
       // Return fallback if available
@@ -143,7 +143,7 @@ export class CacheMiddleware {
         return fallback;
       }
       
-      throw error;
+      throw _error;
     }
   }
 
@@ -160,7 +160,7 @@ export class CacheMiddleware {
       
       logger.info('Cache invalidated by tags', { tags });
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Cache invalidation by tags failed', error as Error, { tags });
     }
   }
@@ -173,7 +173,7 @@ export class CacheMiddleware {
       await cacheService.invalidateAPIResponse(pattern);
       logger.info('Cache invalidated by pattern', { pattern });
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Cache invalidation by pattern failed', error as Error, { pattern });
     }
   }
@@ -204,7 +204,7 @@ export class CacheMiddleware {
       
       logger.info('Cache preloading completed', { routeCount: routes.length });
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Cache preloading failed', error as Error);
     }
   }
@@ -224,7 +224,7 @@ export class CacheMiddleware {
   private buildCacheContext(
     req: NextRequest,
     context: any,
-    options: any
+    options: RequestInit
   ): CacheContext {
     const strategy = options.strategy || 'api';
     const key = options.keyGenerator 
@@ -267,7 +267,7 @@ export class CacheMiddleware {
         context.strategy,
         context.key
       );
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get cached response', error as Error, { context });
       return null;
     }
@@ -297,7 +297,7 @@ export class CacheMiddleware {
         default:
           return await cacheService.getAPIResponse<T>(strategy, key);
       }
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get cached data', error as Error, { strategy, key });
       return null;
     }
@@ -332,7 +332,7 @@ export class CacheMiddleware {
         default:
           return await cacheService.setAPIResponse(strategy, key, data, ttl);
       }
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to set cached data', error as Error, { strategy, key });
       return false;
     }
@@ -341,7 +341,7 @@ export class CacheMiddleware {
   private shouldCacheResponse(
     req: NextRequest,
     res: NextResponse,
-    options: any
+    options: RequestInit
   ): boolean {
     // Check if response is successful
     if (!res.ok) {
@@ -378,7 +378,7 @@ export class CacheMiddleware {
         context.ttl
       );
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to cache response', error as Error, { context });
     }
   }

@@ -164,7 +164,7 @@ export async function PATCH(
       }
     }).catch(error => {
       // Non-blocking - log error but don't fail the request
-      console.error("Failed to track approval action:", error);
+      console.error("", _error);
     });
 
     // TODO: Send notifications to requester
@@ -175,15 +175,15 @@ export async function PATCH(
       message: `Template ${validatedData.action}d successfully`
     });
 
-  } catch (error) {
-    if (error instanceof z.ZodError) {
+  } catch (_error) {
+    if (_error instanceof z.ZodError) {
       return NextResponse.json(
         { error: "Validation error", details: error.errors },
         { status: 400 }
       );
     }
 
-    console.error("Error processing approval action:", error);
+    console.error("", _error);
     return NextResponse.json(
       { error: "Failed to process approval action" },
       { status: 500 }
@@ -252,8 +252,8 @@ export async function GET(
 
     return NextResponse.json(workflow);
 
-  } catch (error) {
-    console.error("Error fetching workflow:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "Failed to fetch workflow" },
       { status: 500 }
@@ -330,8 +330,8 @@ export async function DELETE(
       message: "Approval workflow cancelled successfully" 
     });
 
-  } catch (error) {
-    console.error("Error cancelling workflow:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "Failed to cancel workflow" },
       { status: 500 }

@@ -228,8 +228,8 @@ export async function GET(request: NextRequest) {
       isDemoData: databaseReports.length === 0
     });
 
-  } catch (error) {
-    console.error('Service provider automated reports error:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -395,8 +395,8 @@ export async function POST(request: NextRequest) {
       demoMode: true
     }, { status: 201 });
 
-  } catch (error) {
-    console.error('Error creating automated report:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to create automated report' },
       { status: 500 }
@@ -515,8 +515,8 @@ export async function PATCH(request: NextRequest) {
                 }
               });
               console.log(`Report ${reportId} generation completed`);
-            } catch (error) {
-              console.error('Error updating execution:', error);
+            } catch (_error) {
+              console.error("", _error);
             }
           }, 2000);
           break;
@@ -569,8 +569,8 @@ export async function PATCH(request: NextRequest) {
       message: `Report ${action} completed successfully`
     });
 
-  } catch (error) {
-    console.error('Error performing report action:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to perform report action' },
       { status: 500 }
@@ -648,8 +648,8 @@ export async function DELETE(request: NextRequest) {
       message: 'Automated report deleted successfully'
     });
 
-  } catch (error) {
-    console.error('Error deleting automated report:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to delete automated report' },
       { status: 500 }

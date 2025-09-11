@@ -215,7 +215,7 @@ export async function GET(request: NextRequest) {
     };
 
     return NextResponse.json(metrics);
-  } catch (error) {
+  } catch (_error) {
     // Final fallback - return mock data on any error
     const mockMetrics = {
       totalClients: 6,

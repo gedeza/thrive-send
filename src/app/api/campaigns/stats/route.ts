@@ -17,7 +17,7 @@ async function calculateEstimatedReach(orgFilter: any): Promise<number> {
     
     // If no real data, use a conservative estimate based on industry averages
     return totalContacts > 0 ? totalContacts : audienceCount * 850;
-  } catch (error) {
+  } catch (_error) {
     // Fallback to conservative estimate
     return 5000;
   }
@@ -186,7 +186,7 @@ export async function GET(request: NextRequest) {
     };
 
     return NextResponse.json(stats);
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { error: "Failed to fetch campaign statistics" },
       { status: 500 }

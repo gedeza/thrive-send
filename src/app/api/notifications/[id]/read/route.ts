@@ -50,8 +50,8 @@ export async function POST(
 
     const updatedNotification = await NotificationService.markAsRead(params.id);
     return NextResponse.json(updatedNotification);
-  } catch (error) {
-    console.error('Error marking notification as read:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

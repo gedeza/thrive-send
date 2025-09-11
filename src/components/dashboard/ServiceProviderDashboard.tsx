@@ -46,8 +46,8 @@ export function ServiceProviderDashboard({ className = '' }: ServiceProviderDash
           const data = await res.json();
           setClients(Array.isArray(data) ? data : data.data || []);
         }
-      } catch (error) {
-        console.error('Failed to fetch clients for dashboard:', error);
+      } catch (_error) {
+        console.error("", _error);
       } finally {
         setClientsLoading(false);
       }
@@ -276,8 +276,8 @@ function ServiceProviderOverview({
                   // Switch client context (this will automatically change the dashboard view)
                   await switchClient(clientSummary);
                 }
-              } catch (error) {
-                console.error('Failed to switch client context:', error);
+              } catch (_error) {
+                console.error("", _error);
               }
             }}
             isLoading={clientsLoading}

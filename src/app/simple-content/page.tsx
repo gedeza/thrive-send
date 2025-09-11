@@ -53,8 +53,8 @@ export default function SimpleContentPage() {
         scheduledAt: ''
       });
 
-    } catch (error) {
-      console.error('❌ Error:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to create content',
@@ -97,7 +97,7 @@ export default function SimpleContentPage() {
 
             <div>
               <label className="text-sm font-medium">Type</label>
-              <Select value={formData.type} onValueChange={(value: any) => setFormData(prev => ({ ...prev, type: value }))}>
+              <Select value={formData.type} onValueChange={(value: unknown) => setFormData(prev => ({ ...prev, type: value }))}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

@@ -27,8 +27,8 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(report);
-  } catch (error) {
-    console.error('Error creating report:', error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
@@ -58,8 +58,8 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(reports);
-  } catch (error) {
-    console.error('Error fetching reports:', error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
@@ -86,8 +86,8 @@ export async function DELETE(req: NextRequest) {
     });
 
     return new NextResponse(null, { status: 204 });
-  } catch (error) {
-    console.error('Error deleting report:', error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 } 

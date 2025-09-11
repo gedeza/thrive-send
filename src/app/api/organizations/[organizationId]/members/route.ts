@@ -45,7 +45,7 @@ export async function GET(
     console.log("[MEMBERS_GET] Found members:", members);
 
     return NextResponse.json(members);
-  } catch (error) {
+  } catch (_error) {
     console.error("[MEMBERS_GET] Error:", {
       error,
       message: error instanceof Error ? error.message : "Unknown error",

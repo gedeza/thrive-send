@@ -45,8 +45,8 @@ export default function CampaignEditPage({ params }: { params: { id: string } })
         
         const data = await response.json();
         setCampaign(data);
-      } catch (error) {
-        console.error("Error fetching campaign:", error);
+      } catch (_error) {
+        console.error("", _error);
         toast({
           title: "Error",
           description: "Failed to load campaign data. Please try again later.",

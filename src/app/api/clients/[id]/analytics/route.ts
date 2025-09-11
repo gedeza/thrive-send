@@ -128,7 +128,7 @@ export async function GET(
       contentMetrics,
       healthScore,
     });
-  } catch (error) {
+  } catch (_error) {
     return handleApiError(error);
   }
 }
@@ -177,8 +177,8 @@ async function calculateClientHealthScore(clientId: string): Promise<number> {
       (contentScore * weights.contentDelivery);
 
     return Math.min(Math.max(healthScore, 0), 100);
-  } catch (error) {
-    console.error("Error calculating health score:", error);
+  } catch (_error) {
+    console.error("", _error);
     return 0;
   }
 } 

@@ -106,7 +106,7 @@ export async function PATCH(
         { status: 400, headers: corsHeaders() }
       );
     }
-  } catch (error) {
+  } catch (_error) {
     console.error("[SETTINGS_PATCH] Error:", {
       error,
       message: error instanceof Error ? error.message : "Unknown error",
@@ -242,7 +242,7 @@ export async function PUT(
         { status: 400, headers: corsHeaders() }
       );
     }
-  } catch (error) {
+  } catch (_error) {
     console.error("[SETTINGS_PUT] Error:", {
       error,
       message: error instanceof Error ? error.message : "Unknown error",
@@ -313,8 +313,8 @@ export async function GET(
       headers: corsHeaders()
     });
 
-  } catch (error) {
-    console.error("[SETTINGS_GET] Error:", error);
+  } catch (_error) {
+    console.error("", _error);
     const errorMessage = error instanceof Error ? error.message : "Internal Error";
     return NextResponse.json(
       { error: errorMessage },

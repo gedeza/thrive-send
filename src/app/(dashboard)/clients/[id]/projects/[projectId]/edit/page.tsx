@@ -60,8 +60,8 @@ export default function EditProjectPage() {
         };
         
         reset(formattedData);
-      } catch (error) {
-        console.error("Error fetching project:", error);
+      } catch (_error) {
+        console.error("", _error);
         toast.error("Failed to load project data");
       } finally {
         setIsLoading(false);
@@ -91,8 +91,8 @@ export default function EditProjectPage() {
       toast.success("Project updated successfully!");
       router.push(`/clients/${params.id}`);
       router.refresh();
-    } catch (error) {
-      console.error("Error updating project:", error);
+    } catch (_error) {
+      console.error("", _error);
       toast.error(error instanceof Error ? error.message : "Failed to update project");
     } finally {
       setIsSubmitting(false);

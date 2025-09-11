@@ -67,8 +67,8 @@ export async function GET(
       console.error('Failed to get or create user:', userError);
       return NextResponse.json({ error: 'Failed to initialize user' }, { status: 500 });
     }
-  } catch (error) {
-    console.error('Service provider user error:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

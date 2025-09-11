@@ -42,8 +42,8 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("[INVITATION_ACCEPT]", error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse("Internal Error", { status: 500 });
   }
 } 

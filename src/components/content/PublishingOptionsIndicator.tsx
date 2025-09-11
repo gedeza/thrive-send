@@ -26,7 +26,7 @@ interface PublishingOptionsIndicatorProps {
 }
 
 // Helper function to parse publishing options safely
-function parsePublishingOptions(options: any): PublishingOptions | null {
+function parsePublishingOptions(options: RequestInit): PublishingOptions | null {
   if (!options) return null;
   
   try {
@@ -50,7 +50,7 @@ function parsePublishingOptions(options: any): PublishingOptions | null {
     }
     
     return null;
-  } catch (error) {
+  } catch (_error) {
     console.warn('Failed to parse publishing options:', error);
     return null;
   }

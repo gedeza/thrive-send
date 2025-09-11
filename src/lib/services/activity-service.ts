@@ -41,7 +41,7 @@ export class ActivityService {
         try {
           const activity = activitySchema.parse(JSON.parse(event.data));
           this.subscribers.forEach(callback => callback(activity));
-        } catch (error) {
+        } catch (_error) {
           errorLogger.log('Failed to parse activity event', {
             variant: 'error',
             context: { eventData: event.data },
@@ -60,7 +60,7 @@ export class ActivityService {
         // Attempt to reconnect after a delay
         setTimeout(() => this.connectEventSource(), 5000);
       };
-    } catch (error) {
+    } catch (_error) {
       errorLogger.log('Failed to connect to activity stream', {
         variant: 'error',
         context: { error: error instanceof Error ? error.message : String(error) },
@@ -129,13 +129,13 @@ export class ActivityService {
           ...metadata,
         } as Activity;
       });
-    } catch (error) {
+    } catch (_error) {
       errorLogger.log('Failed to fetch activities', {
         variant: 'error',
         context: { error: error instanceof Error ? error.message : String(error) },
         component: 'ActivityService',
       });
-      throw error;
+      throw _error;
     }
   }
 
@@ -198,13 +198,13 @@ export class ActivityService {
         user: createdUser,
         ...createdMetadata,
       } as Activity;
-    } catch (error) {
+    } catch (_error) {
       errorLogger.log('Failed to record activity', {
         variant: 'error',
         context: { error: error instanceof Error ? error.message : String(error) },
         component: 'ActivityService',
       });
-      throw error;
+      throw _error;
     }
   }
 }

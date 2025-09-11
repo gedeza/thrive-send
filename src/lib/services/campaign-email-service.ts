@@ -185,7 +185,7 @@ export class CampaignEmailService {
         jobCount: Array.isArray(queuedJobs) ? queuedJobs.length : 1,
       });
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to auto-send email after content approval', error as Error, {
         contentId,
         approvalData,
@@ -245,13 +245,13 @@ export class CampaignEmailService {
         testRecipients: testRecipients.length,
       };
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to send test email', error as Error, {
         contentId,
         testRecipients: testRecipients.length,
         userId,
       });
-      throw error;
+      throw _error;
     }
   }
 
@@ -276,12 +276,12 @@ export class CampaignEmailService {
         current: queueStats,
       };
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get campaign email analytics', error as Error, {
         campaignId,
         organizationId,
       });
-      throw error;
+      throw _error;
     }
   }
 
@@ -315,12 +315,12 @@ export class CampaignEmailService {
 
       return { success: true, message: 'Campaign email sending paused' };
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to pause campaign sending', error as Error, {
         campaignId,
         organizationId,
       });
-      throw error;
+      throw _error;
     }
   }
 
@@ -336,12 +336,12 @@ export class CampaignEmailService {
 
       return { success: true, message: 'Campaign email sending resumed' };
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to resume campaign sending', error as Error, {
         campaignId,
         organizationId,
       });
-      throw error;
+      throw _error;
     }
   }
 }

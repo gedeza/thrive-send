@@ -208,8 +208,8 @@ export const validatePerformanceConfig = (config: PerformanceConfig): boolean =>
     }
 
     return true;
-  } catch (error) {
-    console.error('Error validating performance config:', error);
+  } catch (_error) {
+    console.error("", _error);
     return false;
   }
 };

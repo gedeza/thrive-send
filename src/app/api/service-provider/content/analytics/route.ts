@@ -281,8 +281,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ data: analytics });
     */
 
-  } catch (error) {
-    console.error('Error fetching service provider content analytics:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

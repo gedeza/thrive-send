@@ -92,8 +92,8 @@ export async function PUT(
       updatedAt: billingData.billingAddress.updatedAt
     });
 
-  } catch (error) {
-    console.error("Error updating billing address:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "Failed to update billing address" },
       { status: 500 }

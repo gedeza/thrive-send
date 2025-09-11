@@ -68,8 +68,8 @@ export async function rateLimitMiddleware(request: NextRequest) {
     });
 
     return response;
-  } catch (error) {
-    console.error("Rate limiting error:", error);
+  } catch (_error) {
+    console.error("", _error);
     // Allow request to proceed if rate limiting fails
     return NextResponse.next();
   }

@@ -313,7 +313,7 @@ function ContentLibraryPage() {
         description: 'Selected items have been deleted',
       });
       setSelectedItems([]);
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to delete items',
@@ -331,7 +331,7 @@ function ContentLibraryPage() {
         title: 'Success',
         description: 'Content has been deleted',
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to delete content',
@@ -371,7 +371,7 @@ function ContentLibraryPage() {
         title: 'Success',
         description: 'Content list refreshed successfully',
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to refresh content list',
@@ -406,7 +406,7 @@ function ContentLibraryPage() {
   return (
     <div className="space-y-4 p-4">
       {/* Header */}
-      <div className="text-center mb-8">
+      <div className="text-center mb-4">
         <div className="flex items-center justify-center gap-3 mb-4">
           <FileText className="h-8 w-8 text-primary" />
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
@@ -483,7 +483,7 @@ function ContentLibraryPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-end gap-2 mb-8">
+      <div className="flex items-center justify-end gap-2 mb-4">
         <div className="flex items-center gap-2">
           {/* Real-time Analytics Indicator */}
           <RealTimeAnalyticsIndicator

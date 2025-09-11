@@ -13,8 +13,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       res.setHeader('Allow', ['GET']);
       return res.status(405).end(`Method ${req.method} Not Allowed`);
     }
-  } catch (error) {
-    console.error('[projects API] Error:', error);
+  } catch (_error) {
+    console.error("", _error);
     return res.status(500).json({ error: 'Unable to fetch projects' });
   } finally {
     await prisma.$disconnect();

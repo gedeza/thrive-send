@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs';
+import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
@@ -82,10 +82,10 @@ export async function POST(
       message: 'Review has been reported for moderation'
     });
 
-  } catch (error) {
-    console.error('Error reporting review:', error);
+  } catch (_error) {
+    console.error("", _error);
     
-    if (error instanceof z.ZodError) {
+    if (_error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation failed', details: error.errors },
         { status: 400 }

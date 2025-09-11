@@ -34,7 +34,7 @@ export function SignInForm() {
 
       router.push('/content/calendar');
       router.refresh();
-    } catch (error) {
+    } catch (_error) {
       setError('An error occurred. Please try again.');
     } finally {
       setIsLoading(false);

@@ -122,8 +122,8 @@ export async function GET(request: NextRequest) {
     };
 
     return NextResponse.json(response);
-  } catch (error) {
-    console.error('Error fetching newsletters:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to fetch newsletters' },
       { status: 500 }
@@ -203,8 +203,8 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(newsletter, { status: 201 });
-  } catch (error) {
-    console.error('Error creating newsletter:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to create newsletter' },
       { status: 500 }
@@ -297,8 +297,8 @@ export async function PUT(request: NextRequest) {
     });
 
     return NextResponse.json(newsletter);
-  } catch (error) {
-    console.error('Error updating newsletter:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to update newsletter' },
       { status: 500 }
@@ -347,8 +347,8 @@ export async function DELETE(request: NextRequest) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting newsletter:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to delete newsletter' },
       { status: 500 }

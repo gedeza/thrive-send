@@ -151,7 +151,7 @@ export function ClientPerformanceRankings({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base">Client Performance Rankings</CardTitle>
-          <Select value={rankingMetric} onValueChange={(value: any) => setRankingMetric(value)}>
+          <Select value={rankingMetric} onValueChange={(value: unknown) => setRankingMetric(value)}>
             <SelectTrigger className="w-40">
               <SelectValue />
             </SelectTrigger>

@@ -48,8 +48,8 @@ export default function EditSocialAccountPage() {
         }
         const data = await response.json();
         reset(data);
-      } catch (error) {
-        console.error("Error fetching social account:", error);
+      } catch (_error) {
+        console.error("", _error);
         toast.error("Failed to load social account data");
       } finally {
         setIsLoading(false);
@@ -79,8 +79,8 @@ export default function EditSocialAccountPage() {
       toast.success("Social account updated successfully!");
       router.push(`/clients/${params.id}`);
       router.refresh();
-    } catch (error) {
-      console.error("Error updating social account:", error);
+    } catch (_error) {
+      console.error("", _error);
       toast.error(error instanceof Error ? error.message : "Failed to update social account");
     } finally {
       setIsSubmitting(false);

@@ -152,8 +152,8 @@ export const POST = async (request: Request) => {
       fallback: true
     });
 
-  } catch (error) {
-    console.error('❌ POST Analytics comprehensive error:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 };

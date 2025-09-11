@@ -114,8 +114,8 @@ Perfect for marketers, agencies, and businesses looking to improve their email m
       };
 
       setListing(mockListing);
-    } catch (error) {
-      console.error('Error fetching listing:', error);
+    } catch (_error) {
+      console.error("", _error);
     } finally {
       setIsLoading(false);
     }
@@ -134,8 +134,8 @@ Perfect for marketers, agencies, and businesses looking to improve their email m
           setUserReview(userReviewData.review);
         }
       }
-    } catch (error) {
-      console.error('Error checking user review:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   };
 

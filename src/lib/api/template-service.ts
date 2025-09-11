@@ -134,7 +134,7 @@ export async function getServiceProviderTemplates(params: {
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('Service Provider Template API Error:', error);
+      console.error("", _error);
       throw new Error(error.message || 'Failed to fetch templates');
     }
 
@@ -142,9 +142,9 @@ export async function getServiceProviderTemplates(params: {
     console.log('✅ Service provider templates fetched:', data.templates?.length, 'templates');
 
     return data;
-  } catch (error) {
-    console.error('❌ Error fetching service provider templates:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -180,7 +180,7 @@ export async function createServiceProviderTemplate(data: {
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('Template Creation Error:', error);
+      console.error("", _error);
       throw new Error(error.message || 'Failed to create template');
     }
 
@@ -194,14 +194,14 @@ export async function createServiceProviderTemplate(data: {
     });
 
     return createdTemplate;
-  } catch (error) {
-    console.error('❌ Error creating template:', error);
+  } catch (_error) {
+    console.error("", _error);
     toast({
       title: "Error",
       description: error instanceof Error ? error.message : 'Failed to create template',
       variant: "destructive",
     });
-    throw error;
+    throw _error;
   }
 }
 
@@ -233,7 +233,7 @@ export async function shareTemplateWithClients(params: {
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('Template Sharing Error:', error);
+      console.error("", _error);
       throw new Error(error.message || 'Failed to share template');
     }
 
@@ -247,14 +247,14 @@ export async function shareTemplateWithClients(params: {
     });
 
     return shareResult;
-  } catch (error) {
-    console.error('❌ Error sharing template:', error);
+  } catch (_error) {
+    console.error("", _error);
     toast({
       title: "Error",
       description: error instanceof Error ? error.message : 'Failed to share template',
       variant: "destructive",
     });
-    throw error;
+    throw _error;
   }
 }
 
@@ -286,7 +286,7 @@ export async function unshareTemplateFromClients(params: {
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('Template Unsharing Error:', error);
+      console.error("", _error);
       throw new Error(error.message || 'Failed to unshare template');
     }
 
@@ -300,14 +300,14 @@ export async function unshareTemplateFromClients(params: {
     });
 
     return unshareResult;
-  } catch (error) {
-    console.error('❌ Error unsharing template:', error);
+  } catch (_error) {
+    console.error("", _error);
     toast({
       title: "Error",
       description: error instanceof Error ? error.message : 'Failed to unshare template',
       variant: "destructive",
     });
-    throw error;
+    throw _error;
   }
 }
 
@@ -370,7 +370,7 @@ export async function getTemplateSharingStatus(params: {
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('Template Sharing Status Error:', error);
+      console.error("", _error);
       throw new Error(error.message || 'Failed to fetch sharing status');
     }
 
@@ -381,9 +381,9 @@ export async function getTemplateSharingStatus(params: {
     });
 
     return statusData;
-  } catch (error) {
-    console.error('❌ Error fetching template sharing status:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -463,14 +463,14 @@ export async function applyTemplateToClient(params: {
       clientName: getClientName(params.clientId)
     };
 
-  } catch (error) {
-    console.error('❌ Error applying template:', error);
+  } catch (_error) {
+    console.error("", _error);
     toast({
       title: "Error",
       description: error instanceof Error ? error.message : 'Failed to apply template',
       variant: "destructive",
     });
-    throw error;
+    throw _error;
   }
 }
 
@@ -482,7 +482,7 @@ async function getClientName(clientId: string): Promise<string> {
       select: { name: true }
     });
     return client?.name || `Client ${clientId}`;
-  } catch (error) {
+  } catch (_error) {
     console.warn(`Failed to fetch client name for ${clientId}:`, error);
     return `Client ${clientId}`;
   }

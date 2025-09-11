@@ -170,7 +170,7 @@ export function PerformanceDashboard({ className, showTips = true }: Performance
             paintObserver.disconnect();
             lcpObserver.disconnect();
           };
-        } catch (error) {
+        } catch (_error) {
           console.warn('Performance observation not supported:', error);
         }
       }

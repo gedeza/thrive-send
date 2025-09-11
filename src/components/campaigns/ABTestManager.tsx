@@ -96,7 +96,7 @@ export function ABTestManager({ campaignId, campaignName, onTestCreated }: ABTes
         const data = await response.json();
         setTests(data.tests || []);
       }
-    } catch (error) {
+    } catch (_error) {
       // Error fetching A/B tests - handle silently
     } finally {
       setIsLoading(false);
@@ -146,7 +146,7 @@ export function ABTestManager({ campaignId, campaignName, onTestCreated }: ABTes
       } else {
         throw new Error('Failed to start test');
       }
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to start A/B test',
@@ -170,7 +170,7 @@ export function ABTestManager({ campaignId, campaignName, onTestCreated }: ABTes
       } else {
         throw new Error('Failed to pause test');
       }
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to pause A/B test',

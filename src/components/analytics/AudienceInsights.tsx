@@ -24,8 +24,8 @@ export function AudienceInsights({ campaignId, dateRange }: AudienceInsightsProp
       try {
         const data = await getAudienceSegments(campaignId, dateRange);
         setInsightsData(data);
-      } catch (error) {
-        console.error('Error fetching audience insights:', error);
+      } catch (_error) {
+        console.error("", _error);
       } finally {
         setLoading(false);
       }

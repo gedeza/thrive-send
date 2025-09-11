@@ -383,7 +383,7 @@ export default function TeamManagementPage() {
           const clientsData = await response.json();
           setClients(clientsData);
         }
-      } catch (error) {
+      } catch (_error) {
         // Handle client loading error silently
       } finally {
         setLoadingClients(false);
@@ -473,7 +473,7 @@ export default function TeamManagementPage() {
 
   return (
     <TooltipProvider>
-      <div className="container mx-auto py-8 space-y-8">
+      <div className="container mx-auto py-4 space-y-4">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
@@ -635,7 +635,7 @@ export default function TeamManagementPage() {
             {/* Empty state */}
             {!loading && !error && filteredMembers.length === 0 && (
               <Card className="border-dashed">
-                <CardContent className="p-8 text-center">
+                <CardContent className="p-6 text-center">
                   <div className="flex justify-center mb-4">
                     <div className="p-3 bg-muted rounded-full">
                       <Users className="h-8 w-8 text-muted-foreground" />

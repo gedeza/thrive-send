@@ -191,7 +191,7 @@ function DataCategoryCard({
 }: {
   category: DataCategory;
   settings: any;
-  onUpdate: (path: string, value: any) => void;
+  onUpdate: (path: string, value: unknown) => void;
   disabled?: boolean;
 }) {
   const Icon = category.icon;
@@ -327,7 +327,7 @@ function ConsentManagement({
   disabled 
 }: {
   settings: any;
-  onUpdate: (path: string, value: any) => void;
+  onUpdate: (path: string, value: unknown) => void;
   disabled?: boolean;
 }) {
   return (

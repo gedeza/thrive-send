@@ -57,8 +57,8 @@ export default function MembersSettingsPage() {
             role: membership.role as MemberRole,
           }));
           setMembers(membersList);
-        } catch (error) {
-          console.error("Error loading members:", error);
+        } catch (_error) {
+          console.error("", _error);
           toast({
             title: "Error",
             description: "Failed to load organization members",
@@ -88,8 +88,8 @@ export default function MembersSettingsPage() {
       // Reset form
       setInviteEmail("");
       setInviteRole("member");
-    } catch (error) {
-      console.error("Error inviting member:", error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error",
         description: "Failed to send invitation",
@@ -114,8 +114,8 @@ export default function MembersSettingsPage() {
         title: "Success",
         description: "Member removed successfully",
       });
-    } catch (error) {
-      console.error("Error removing member:", error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error",
         description: "Failed to remove member",
@@ -149,8 +149,8 @@ export default function MembersSettingsPage() {
           description: "Member role updated successfully",
         });
       }
-    } catch (error) {
-      console.error("Error updating member role:", error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error",
         description: "Failed to update member role",

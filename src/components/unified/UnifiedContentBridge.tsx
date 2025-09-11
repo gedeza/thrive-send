@@ -378,8 +378,8 @@ export function UnifiedContentBridge() {
       // Close dialog if open
       setSelectedAction(null);
       
-    } catch (error) {
-      console.error('Bridge action failed:', error);
+    } catch (_error) {
+      console.error("", _error);
       // Error handling would be managed by the context
     } finally {
       setIsProcessing(false);

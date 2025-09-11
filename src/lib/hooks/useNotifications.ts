@@ -22,8 +22,8 @@ export function useNotifications() {
         const data = await response.json();
         setNotifications(data.notifications);
         setUnreadCount(data.unreadCount);
-      } catch (error) {
-        console.error('Error fetching notifications:', error);
+      } catch (_error) {
+        console.error("", _error);
         toast.error('Failed to fetch notifications');
       } finally {
         setIsLoading(false);
@@ -64,8 +64,8 @@ export function useNotifications() {
         )
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast.error('Failed to mark notification as read');
     }
   };
@@ -79,8 +79,8 @@ export function useNotifications() {
         prev.map((n) => ({ ...n, read: true }))
       );
       setUnreadCount(0);
-    } catch (error) {
-      console.error('Error marking all notifications as read:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast.error('Failed to mark all notifications as read');
     }
   };

@@ -101,11 +101,11 @@ export default function BulkOperations({
         setProcessingOperation('');
       }, 500);
 
-    } catch (error) {
+    } catch (_error) {
       setIsProcessing(false);
       setProcessingProgress(0);
       setProcessingOperation('');
-      throw error;
+      throw _error;
     }
   }, []);
 
@@ -125,7 +125,7 @@ export default function BulkOperations({
       
       onSelectNone();
       setShowDeleteDialog(false);
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to delete audiences. Please try again.",
@@ -147,7 +147,7 @@ export default function BulkOperations({
         title: "Success",
         description: `Exported ${selectedIds.size} audience(s) to ${format.toUpperCase()}`,
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to export audiences. Please try again.",
@@ -184,7 +184,7 @@ export default function BulkOperations({
       
       setShowEditDialog(false);
       setEditFormData({});
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error", 
         description: "Failed to update audiences. Please try again.",
@@ -208,7 +208,7 @@ export default function BulkOperations({
       });
       
       onSelectNone();
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to archive audiences. Please try again.",
@@ -232,7 +232,7 @@ export default function BulkOperations({
       });
       
       onSelectNone();
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to duplicate audiences. Please try again.",

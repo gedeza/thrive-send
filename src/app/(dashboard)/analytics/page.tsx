@@ -708,8 +708,8 @@ function AnalyticsPageContent() {
         title: `${format.toUpperCase()} Export Successful`,
         description: `Your analytics report has been ${format === 'pdf' ? 'opened for printing' : 'downloaded'}.`,
       });
-    } catch (error) {
-      console.error('Export error:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Export Failed",
         description: "There was an error generating your report. Please try again.",
@@ -728,11 +728,11 @@ function AnalyticsPageContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto">
         {/* Enhanced Header with better visual hierarchy */}
-        <div className="text-center mb-12">
-          <div className="space-y-6">
-            <div className="flex items-center justify-center gap-4 mb-6">
+        <div className="text-center mb-6">
+          <div className="space-y-4">
+            <div className="flex items-center justify-center gap-4 mb-4">
               <div className="p-3 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl">
                 <BarChart3 className="h-10 w-10 text-primary" />
               </div>
@@ -749,7 +749,7 @@ function AnalyticsPageContent() {
               <p className="text-xl text-muted-foreground leading-relaxed">
                 Comprehensive performance insights and engagement analytics across all your content platforms.
               </p>
-              <div className="flex items-center justify-center gap-6 mt-4 text-sm text-muted-foreground">
+              <div className="flex items-center justify-center gap-4 mt-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                   <span>Real-time data</span>
@@ -767,7 +767,7 @@ function AnalyticsPageContent() {
           </div>
         </div>
         
-        <div className="flex items-center justify-end gap-2 mb-8">
+        <div className="flex items-center justify-end gap-2 mb-4">
           <div className="flex items-center gap-2">
             {hasSeenTour && (
               <Button
@@ -1071,7 +1071,7 @@ function AnalyticsPageContent() {
           </TabsList>
 
           {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-8">
+          <TabsContent value="overview" className="space-y-4">
             {/* Essential Metrics - Load First */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -1105,7 +1105,7 @@ function AnalyticsPageContent() {
                 </div>
               </div>
               
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4" data-tour="metrics">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4" data-tour="metrics">
                 <MetricCard
                   title="Total Views"
                   value={metrics?.totalViews || 0}
@@ -1158,7 +1158,7 @@ function AnalyticsPageContent() {
                 )}
               </div>
               
-              <div className="grid gap-6 md:grid-cols-2" data-tour="charts">
+              <div className="grid gap-4 md:grid-cols-2" data-tour="charts">
                 <Card className="hover:shadow-xl transition-all duration-300 border-l-4 border-blue-500 bg-gradient-to-r from-blue-50/30 to-transparent">
                   <CardHeader className="pb-4">
                     <CardTitle className="flex items-center gap-3">
@@ -1361,8 +1361,8 @@ function AnalyticsPageContent() {
           </TabsContent>
 
           {/* Audience Tab */}
-          <TabsContent value="audience" className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2">
+          <TabsContent value="audience" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
               <Card className="hover:shadow-lg transition-all duration-200 border-l-4" style={{ borderLeftColor: '#8b5cf6' }}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -1418,8 +1418,8 @@ function AnalyticsPageContent() {
           </TabsContent>
 
           {/* Engagement Tab */}
-          <TabsContent value="engagement" className="space-y-6">
-            <div className="grid gap-6">
+          <TabsContent value="engagement" className="space-y-4">
+            <div className="grid gap-4">
               <Card className="hover:shadow-lg transition-all duration-200 border-l-4" style={{ borderLeftColor: '#ec4899' }}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -1439,7 +1439,7 @@ function AnalyticsPageContent() {
           </TabsContent>
 
           {/* Revenue Tab */}
-          <TabsContent value="revenue" className="space-y-6">
+          <TabsContent value="revenue" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-3">
               <MetricCard
                 title="Total Revenue"
@@ -1485,7 +1485,7 @@ function AnalyticsPageContent() {
           </TabsContent>
 
           {/* Funnels Tab */}
-          <TabsContent value="funnels" className="space-y-6">
+          <TabsContent value="funnels" className="space-y-4">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-lg font-semibold">Conversion Funnels</h3>
@@ -1507,29 +1507,29 @@ function AnalyticsPageContent() {
           </TabsContent>
 
           {/* Service Provider Analytics Tab */}
-          <TabsContent value="abtesting" className="space-y-6">
+          <TabsContent value="abtesting" className="space-y-4">
             <ABTestingDashboard />
           </TabsContent>
 
-          <TabsContent value="predictive" className="space-y-6">
+          <TabsContent value="predictive" className="space-y-4">
             <PredictiveAnalytics />
           </TabsContent>
 
-          <TabsContent value="collaboration" className="space-y-6">
+          <TabsContent value="collaboration" className="space-y-4">
             <RealTimeCollaboration
               dashboardId={`analytics-${state.organizationId || 'demo'}`}
               currentUserId="user-current" // TODO: Get from auth context
             />
           </TabsContent>
 
-          <TabsContent value="visualization" className="space-y-6">
+          <TabsContent value="visualization" className="space-y-4">
             <AdvancedDataVisualization
               data={chartData}
               isInteractive={true}
             />
           </TabsContent>
 
-          <TabsContent value="service-provider" className="space-y-6">
+          <TabsContent value="service-provider" className="space-y-4">
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-2">Service Provider Analytics</h3>
               <p className="text-sm text-muted-foreground">

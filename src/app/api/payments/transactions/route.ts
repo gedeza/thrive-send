@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs';
+import { auth } from '@clerk/nextjs/server';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_...', {
@@ -113,14 +113,14 @@ export async function GET(request: NextRequest) {
       hasMore: paymentIntents.has_more
     });
 
-  } catch (error) {
-    console.error('Transaction history fetch error:', error);
+  } catch (_error) {
+    console.error("", _error);
     
-    if (error instanceof Stripe.errors.StripeError) {
+    if (_error instanceof Stripe.errors.StripeError) {
       return NextResponse.json(
         { 
           error: 'Failed to fetch transaction history',
-          details: error.message 
+          details: _error.message 
         },
         { status: 400 }
       );

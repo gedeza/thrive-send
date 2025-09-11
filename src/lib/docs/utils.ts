@@ -9,7 +9,7 @@ export interface DocPage {
 }
 
 // Simple frontmatter parser without gray-matter dependency
-function parseFrontmatter(content: string): { data: any; content: string } {
+function parseFrontmatter(content: string): { data: unknown; content: string } {
   const lines = content.split('\n');
   let frontmatterEnd = -1;
   const data = {};
@@ -58,8 +58,8 @@ export function getDocPage(slug: string): DocPage | null {
       content,
       slug,
     };
-  } catch (error) {
-    console.error("Error reading doc page:", error);
+  } catch (_error) {
+    console.error("", _error);
     return null;
   }
 }
@@ -76,8 +76,8 @@ export function getAllDocSlugs(): string[] {
     return files
       .filter((file) => file.endsWith(".md"))
       .map((file) => file.replace(/\.md$/, ""));
-  } catch (error) {
-    console.error("Error reading docs directory:", error);
+  } catch (_error) {
+    console.error("", _error);
     return [];
   }
 }

@@ -173,8 +173,8 @@ export function OptimizeScheduleStep({ contentData, onUpdate, onPrevious, mode =
       const successMessage = mode === 'edit' ? 'updated' : 
                              scheduleType === 'now' ? 'published' : 'scheduled';
       router.push(`/content?success=${successMessage}`);
-    } catch (error) {
-      console.error('Error publishing content:', error);
+    } catch (_error) {
+      console.error("", _error);
       setIsPublishing(false);
       // You could add a toast notification here for better UX
       alert(error instanceof Error ? error.message : 'Failed to publish content');
@@ -506,11 +506,11 @@ export function OptimizeScheduleStep({ contentData, onUpdate, onPrevious, mode =
                   router.push('/content?success=saved');
                 } else {
                   const error = await response.json();
-                  console.error('Draft save failed:', error);
+                  console.error("", _error);
                   alert(error.details || error.error || 'Failed to save draft');
                 }
-              } catch (error) {
-                console.error('Error saving draft:', error);
+              } catch (_error) {
+                console.error("", _error);
                 alert('Failed to save draft');
               }
             }}

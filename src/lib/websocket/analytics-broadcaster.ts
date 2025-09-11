@@ -114,8 +114,8 @@ export class AnalyticsBroadcaster {
       this.broadcastUpdates(updates);
 
       console.log(`Broadcasted ${updates.length} analytics updates`);
-    } catch (error) {
-      console.error('Error generating simulated analytics updates:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   }
 
@@ -128,8 +128,8 @@ export class AnalyticsBroadcaster {
       });
 
       return (analytics?.[field] as number) || 0;
-    } catch (error) {
-      console.error('Error fetching current analytics:', error);
+    } catch (_error) {
+      console.error("", _error);
       return Math.floor(Math.random() * 100); // Fallback to random value
     }
   }
@@ -158,8 +158,8 @@ export class AnalyticsBroadcaster {
           updatedAt: new Date()
         }
       });
-    } catch (error) {
-      console.error('Error updating analytics in database:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   }
 
@@ -168,8 +168,8 @@ export class AnalyticsBroadcaster {
     try {
       const wsServer = getAnalyticsWebSocketServer();
       wsServer.broadcastBulkUpdates(updates);
-    } catch (error) {
-      console.error('Error broadcasting analytics updates:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   }
 
@@ -178,8 +178,8 @@ export class AnalyticsBroadcaster {
     try {
       const wsServer = getAnalyticsWebSocketServer();
       wsServer.broadcastAnalyticsUpdate(update);
-    } catch (error) {
-      console.error('Error broadcasting single analytics update:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   }
 
@@ -211,8 +211,8 @@ export class AnalyticsBroadcaster {
       this.broadcastSingleUpdate(update);
 
       console.log(`Real analytics update: ${field} +${increment} for content ${contentId}`);
-    } catch (error) {
-      console.error('Error triggering real analytics update:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   }
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs';
+import { auth } from '@clerk/nextjs/server';
 import Stripe from 'stripe';
 
 // Initialize Stripe (in production, use environment variables)
@@ -77,14 +77,14 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(response);
 
-  } catch (error) {
-    console.error('Payment intent creation error:', error);
+  } catch (_error) {
+    console.error("", _error);
     
-    if (error instanceof Stripe.errors.StripeError) {
+    if (_error instanceof Stripe.errors.StripeError) {
       return NextResponse.json(
         { 
           error: 'Payment processing error',
-          details: error.message 
+          details: _error.message 
         },
         { status: 400 }
       );

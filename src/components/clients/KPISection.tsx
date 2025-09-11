@@ -45,9 +45,9 @@ async function getKPIData(clientId: string): Promise<KPIData> {
 
     const data = await response.json();
     return data;
-  } catch (error) {
-    console.error('Error fetching KPI data:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 

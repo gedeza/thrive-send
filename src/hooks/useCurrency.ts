@@ -37,7 +37,7 @@ export function useCurrency(defaultCurrency: string = 'USD') {
         minimumFractionDigits: 0,
         maximumFractionDigits: 2,
       }).format(amount);
-    } catch (error) {
+    } catch (_error) {
       // Fallback formatting
       return `${currInfo.symbol}${amount.toLocaleString()}`;
     }
@@ -78,7 +78,7 @@ export function useAnalyticsCurrency() {
         minimumFractionDigits: 0,
         maximumFractionDigits: 2,
       }).format(amount);
-    } catch (error) {
+    } catch (_error) {
       return `${analyticsCurrInfo.symbol}${amount.toLocaleString()}`;
     }
   }, []);

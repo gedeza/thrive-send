@@ -362,8 +362,8 @@ export async function GET(request: NextRequest) {
       isDemoData: !databaseRevenue
     });
 
-  } catch (error) {
-    console.error('Service provider revenue data error:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -451,8 +451,8 @@ export async function POST(request: NextRequest) {
       message: `Revenue ${action} completed successfully`
     });
 
-  } catch (error) {
-    console.error('Error performing revenue action:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to perform revenue action' },
       { status: 500 }

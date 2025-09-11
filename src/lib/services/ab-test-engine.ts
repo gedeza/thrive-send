@@ -280,8 +280,8 @@ export class ABTestEngine {
       this.activeTests.delete(testId);
       
       console.log(`A/B Test ${testId} completed: ${summary}`);
-    } catch (error) {
-      console.error(`Error completing test ${testId}:`, error);
+    } catch (_error) {
+      console.error("", _error);
     }
   }
 
@@ -322,8 +322,8 @@ export class ABTestEngine {
           variants: JSON.stringify(updatedVariants)
         }
       });
-    } catch (error) {
-      console.error(`Error saving metrics for test ${testId}:`, error);
+    } catch (_error) {
+      console.error("", _error);
     }
   }
 
@@ -365,8 +365,8 @@ export class ABTestEngine {
       }
 
       console.log(`Loaded ${activeTests.length} active A/B tests`);
-    } catch (error) {
-      console.error('Error loading active tests:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   }
 }

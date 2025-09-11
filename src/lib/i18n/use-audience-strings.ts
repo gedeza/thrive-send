@@ -36,7 +36,7 @@ export function useAudienceStrings() {
  */
 export function getAudienceString(path: string): string {
   const keys = path.split('.');
-  let current: any = audienceStrings;
+  let current: Record<string, unknown> = audienceStrings;
   
   for (const key of keys) {
     if (current && typeof current === 'object' && key in current) {

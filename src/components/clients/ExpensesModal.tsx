@@ -59,8 +59,8 @@ export function ExpensesModal({ budgetId, clientId }: ExpensesModalProps) {
       ];
       
       setExpenses(mockExpenses);
-    } catch (error) {
-      console.error('Error fetching expenses:', error);
+    } catch (_error) {
+      console.error("", _error);
     } finally {
       setLoading(false);
     }
@@ -91,8 +91,8 @@ export function ExpensesModal({ budgetId, clientId }: ExpensesModalProps) {
       
       // Show success message
       console.log('Expense added:', newExpense);
-    } catch (error) {
-      console.error('Error adding expense:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   };
 
@@ -103,8 +103,8 @@ export function ExpensesModal({ budgetId, clientId }: ExpensesModalProps) {
       // Temporarily remove from local state until API is working
       setExpenses(prev => prev.filter(expense => expense.id !== expenseId));
       console.log('Expense deleted:', expenseId);
-    } catch (error) {
-      console.error('Error deleting expense:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   };
 

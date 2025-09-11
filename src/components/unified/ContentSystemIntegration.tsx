@@ -412,8 +412,8 @@ export function ContentSystemIntegration() {
         // Load existing content from all systems
         await actions.loadContent();
         setIsInitialized(true);
-      } catch (error) {
-        console.error('Failed to initialize content system integration:', error);
+      } catch (_error) {
+        console.error("", _error);
       }
     };
 

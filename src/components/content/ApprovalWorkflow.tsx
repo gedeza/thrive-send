@@ -196,7 +196,7 @@ export function ApprovalWorkflow({
         title: 'Status Updated',
         description: `Content status updated to ${getStatusConfig(newStatus).label}`,
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to update status. Please try again.',

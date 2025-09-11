@@ -197,8 +197,8 @@ export default function ContentApprovalsPage() {
       };
       setStats(newStats);
       
-    } catch (error) {
-      console.error('Error fetching approvals:', error);
+    } catch (_error) {
+      console.error("", _error);
     } finally {
       setIsLoading(false);
     }

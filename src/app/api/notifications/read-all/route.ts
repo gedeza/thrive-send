@@ -28,8 +28,8 @@ export async function POST(req: NextRequest) {
 
     await NotificationService.markAllAsRead(userId);
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error marking all notifications as read:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

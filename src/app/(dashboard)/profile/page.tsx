@@ -86,8 +86,8 @@ export default function ProfilePage() {
         limit: 10
       });
       setActivities(data);
-    } catch (error) {
-      console.error('Failed to load activities:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast.error('Unable to load recent activities');
     }
   };
@@ -163,8 +163,8 @@ export default function ProfilePage() {
       await loadActivities();
       setIsDirty(false);
       toast.success('Profile updated successfully');
-    } catch (error) {
-      console.error('Failed to update profile:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast.error(error instanceof Error ? error.message : 'Failed to update profile');
     } finally {
       setIsUpdating(false);

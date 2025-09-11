@@ -33,8 +33,8 @@ export async function GET(req: NextRequest) {
     const mockData = generateMockPerformanceData(campaign.id, new Date(startDate), new Date(endDate));
     
     return NextResponse.json(mockData);
-  } catch (error) {
-    console.error('Error in campaign performance API:', error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }

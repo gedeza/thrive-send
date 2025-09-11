@@ -183,8 +183,8 @@ export default function CreateBoostPage() {
           formData.targetAudience
         );
         setRecommendedPricing(pricing);
-      } catch (error) {
-        console.error('Error getting pricing recommendations:', error);
+      } catch (_error) {
+        console.error("", _error);
       }
     }
   };
@@ -250,8 +250,8 @@ export default function CreateBoostPage() {
       });
 
       router.push('/marketplace');
-    } catch (error) {
-      console.error('Error creating boost product:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: 'Error',
         description: 'Failed to create boost product. Please try again.',

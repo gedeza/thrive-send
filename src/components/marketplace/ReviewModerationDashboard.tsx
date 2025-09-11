@@ -182,8 +182,8 @@ export function ReviewModerationDashboard() {
       ];
 
       setReports(mockReports);
-    } catch (error) {
-      console.error('Error fetching reports:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: 'Error',
         description: 'Failed to load review reports',
@@ -204,8 +204,8 @@ export function ReviewModerationDashboard() {
       };
 
       setStats(mockStats);
-    } catch (error) {
-      console.error('Error fetching stats:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   };
 
@@ -232,7 +232,7 @@ export function ReviewModerationDashboard() {
       });
 
       setSelectedReport(null);
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: `Failed to ${action} report`,

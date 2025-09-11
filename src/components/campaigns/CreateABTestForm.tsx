@@ -186,8 +186,8 @@ export function CreateABTestForm({ campaignId, onSuccess, onCancel }: CreateABTe
       });
 
       onSuccess?.();
-    } catch (error) {
-      console.error('Error creating A/B test:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: 'Error',
         description: 'Failed to create A/B test',
@@ -457,7 +457,7 @@ export function CreateABTestForm({ campaignId, onSuccess, onCancel }: CreateABTe
                     </Label>
                     <Select
                       value={watch('configuration.primaryMetric')}
-                      onValueChange={(value: any) => 
+                      onValueChange={(value: unknown) => 
                         setValue('configuration.primaryMetric', value)
                       }
                     >

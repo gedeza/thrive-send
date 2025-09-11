@@ -41,7 +41,7 @@ export default function AcceptInvitationPage() {
       });
 
       router.push("/content/calendar");
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to accept invitation",

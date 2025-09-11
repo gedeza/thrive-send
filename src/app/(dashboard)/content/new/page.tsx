@@ -694,8 +694,8 @@ export default function NewContentPage() {
       // Navigate back to content dashboard
       router.push('/content');
 
-    } catch (error) {
-      console.error('❌ Error:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to create content',

@@ -220,8 +220,8 @@ const formatScheduledDate = (dateInput: string | Date, timeInput: string): strin
     }
     
     return isoString;
-  } catch (error) {
-    console.error('Date formatting error:', error);
+  } catch (_error) {
+    console.error("", _error);
     throw new Error(`Failed to format date: ${error instanceof Error ? error.message : 'unknown error'}`);
   }
 };
@@ -592,8 +592,8 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
         try {
           // Format the date using our improved function
           scheduledDateTime = formatScheduledDate(event.date, event.time);
-        } catch (error) {
-          console.error('Date formatting failed:', error);
+        } catch (_error) {
+          console.error("", _error);
           toast({
             title: 'Invalid Date Format',
             description: error instanceof Error 
@@ -658,8 +658,8 @@ export function ContentWizard({ onComplete, initialData }: ContentWizardProps) {
           createdBy: calendarData.createdBy || ''
         });
       }
-    } catch (error) {
-      console.error("Error creating content:", error);
+    } catch (_error) {
+      console.error("", _error);
       handleError({
         step: currentStep,
         type: 'content-type',

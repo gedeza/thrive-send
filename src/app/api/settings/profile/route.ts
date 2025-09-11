@@ -34,7 +34,7 @@ export async function GET() {
     }
 
     return NextResponse.json(user)
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching profile settings:', error)
     return new NextResponse('Internal Server Error', { status: 500 })
   }
@@ -71,7 +71,7 @@ export async function PATCH(req: Request) {
       })
 
       return NextResponse.json({ success: true, user: updatedUser })
-    } catch (clerkError: any) {
+    } catch (clerkError: unknown) {
       console.error('Clerk update error:', clerkError)
       // Rollback database changes if Clerk update fails
       await db.user.update({
@@ -86,9 +86,9 @@ export async function PATCH(req: Request) {
         { status: 500 }
       )
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating profile settings:', error)
-    if (error instanceof z.ZodError) {
+    if (_error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation failed', details: error.errors },
         { status: 400 }

@@ -71,7 +71,7 @@ export default function NewTemplatePage() {
         description: "Template created successfully",
       });
       router.push(`/templates/${data.id}`);
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to create template",

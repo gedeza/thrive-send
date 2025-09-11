@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs';
+import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 
 // GET /api/marketplace/analytics - Get marketplace analytics
@@ -228,8 +228,8 @@ export async function GET(request: NextRequest) {
         { category: 'Tools', count: Math.floor(totalListings * 0.1), revenue: currentRevenue * 0.05 }
       ]
     });
-  } catch (error) {
-    console.error('Error fetching marketplace analytics:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to fetch analytics' },
       { status: 500 }

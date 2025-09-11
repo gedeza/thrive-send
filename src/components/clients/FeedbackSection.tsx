@@ -41,9 +41,9 @@ async function getFeedbackData(clientId: string, limit?: number): Promise<Feedba
     const data = await response.json();
     // Handle both old direct data format and new standardized format
     return data.data ? data.data : data;
-  } catch (error) {
-    console.error('Error fetching feedback data:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 

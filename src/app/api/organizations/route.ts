@@ -54,8 +54,8 @@ export async function GET(req: NextRequest) {
     
     // Ensure we return an array
     return NextResponse.json(Array.isArray(organizations) ? organizations : []);
-  } catch (error) {
-    console.error("Error fetching organizations:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "Failed to fetch organizations" },
       { status: 500 }
@@ -155,18 +155,18 @@ export async function POST(req: NextRequest) {
 
       console.log('Created organization:', organization);
       return NextResponse.json(organization, { status: 201 });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
+    } catch (_error) {
+      if (_error instanceof z.ZodError) {
         console.error("Validation error:", error.errors);
         return NextResponse.json(
           { error: "Invalid input", details: error.errors },
           { status: 400 }
         );
       }
-      throw error;
+      throw _error;
     }
-  } catch (error) {
-    console.error("Error creating organization:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "Failed to create organization", details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
@@ -218,8 +218,8 @@ export async function PUT(req: NextRequest) {
     });
 
     return NextResponse.json(organization);
-  } catch (error) {
-    console.error("Error updating organization:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "Failed to update organization" },
       { status: 500 }
@@ -264,8 +264,8 @@ export async function DELETE(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Error deleting organization:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "Failed to delete organization" },
       { status: 500 }

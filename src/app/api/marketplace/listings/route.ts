@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs';
+import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
@@ -117,8 +117,8 @@ export async function GET(request: NextRequest) {
         totalPages: Math.ceil(total / limit)
       }
     });
-  } catch (error) {
-    console.error('Error fetching marketplace listings:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to fetch listings' },
       { status: 500 }
@@ -179,10 +179,10 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(listing, { status: 201 });
-  } catch (error) {
-    console.error('Error creating marketplace listing:', error);
+  } catch (_error) {
+    console.error("", _error);
     
-    if (error instanceof z.ZodError) {
+    if (_error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid input', details: error.errors },
         { status: 400 }

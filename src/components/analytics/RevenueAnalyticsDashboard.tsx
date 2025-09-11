@@ -154,8 +154,8 @@ export function RevenueAnalyticsDashboard({
       }
 
       console.log(`✅ Revenue analytics exported as ${format.toUpperCase()}`);
-    } catch (error) {
-      console.error('❌ Export failed:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   }, [revenueData, organizationId, currentTimeRange]);
 
@@ -225,7 +225,7 @@ export function RevenueAnalyticsDashboard({
         </div>
         
         <div className="flex flex-wrap gap-2">
-          <Select value={currentTimeRange} onValueChange={(value: any) => setCurrentTimeRange(value)}>
+          <Select value={currentTimeRange} onValueChange={(value: unknown) => setCurrentTimeRange(value)}>
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
@@ -333,7 +333,7 @@ export function RevenueAnalyticsDashboard({
       </div>
 
       {/* Main Content Tabs */}
-      <Tabs value={currentView} onValueChange={(value: any) => setCurrentView(value)}>
+      <Tabs value={currentView} onValueChange={(value: unknown) => setCurrentView(value)}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="breakdown">Revenue Breakdown</TabsTrigger>

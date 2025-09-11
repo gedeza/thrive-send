@@ -57,7 +57,7 @@ export default function AISettingsPage() {
       const data = await response.json();
       setConfig(data.config);
       setUsage(data.usage);
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Unable to load AI settings',
         description: 'Don\'t worry! You can still configure your settings.',
@@ -87,7 +87,7 @@ export default function AISettingsPage() {
         description: 'Your AI configuration has been updated successfully.',
         variant: 'success',
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Unable to save settings',
         description: 'Please try again later.',

@@ -38,7 +38,7 @@ export async function GET(
       },
     });
     
-  } catch (error) {
+  } catch (_error) {
     logger.error('Failed to retrieve organization rate limit status', error as Error, {
       organizationId: params.organizationId,
     });

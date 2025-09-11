@@ -36,7 +36,7 @@ export function useCampaignStrings() {
  */
 export function getCampaignString(path: string): string {
   const keys = path.split('.');
-  let current: any = campaignStrings;
+  let current: Record<string, unknown> = campaignStrings;
   
   for (const key of keys) {
     if (current && typeof current === 'object' && key in current) {

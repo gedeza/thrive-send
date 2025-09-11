@@ -61,7 +61,7 @@ export function AnalyticsChart({ data, title, value, description }: AnalyticsCha
     try {
       setBrushStartIndex(newDomain.startIndex)
       setBrushEndIndex(newDomain.endIndex)
-    } catch (error) {
+    } catch (_error) {
       handleError(error)
     }
   }
@@ -84,7 +84,7 @@ export function AnalyticsChart({ data, title, value, description }: AnalyticsCha
         default:
           return true
       }
-    } catch (error) {
+    } catch (_error) {
       handleError(error)
       return false
     }

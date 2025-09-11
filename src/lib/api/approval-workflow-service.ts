@@ -126,7 +126,7 @@ export async function getApprovalWorkflowItems(params: {
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('Approval Workflow API Error:', error);
+      console.error("", _error);
       throw new Error(error.message || 'Failed to fetch approval workflow items');
     }
 
@@ -137,9 +137,9 @@ export async function getApprovalWorkflowItems(params: {
     });
 
     return data;
-  } catch (error) {
-    console.error('❌ Error fetching approval workflow items:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -172,7 +172,7 @@ export async function processApprovalAction(params: {
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('Approval Action API Error:', error);
+      console.error("", _error);
       throw new Error(error.message || 'Failed to process approval action');
     }
 
@@ -197,14 +197,14 @@ export async function processApprovalAction(params: {
     });
 
     return result;
-  } catch (error) {
-    console.error('❌ Error processing approval action:', error);
+  } catch (_error) {
+    console.error("", _error);
     toast({
       title: "Error",
       description: error instanceof Error ? error.message : 'Failed to process approval action',
       variant: "destructive",
     });
-    throw error;
+    throw _error;
   }
 }
 
@@ -290,9 +290,9 @@ export async function getApprovalWorkflowStats(params: {
     };
 
     return stats;
-  } catch (error) {
-    console.error('❌ Error fetching approval workflow statistics:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -359,14 +359,14 @@ export async function bulkApprovalAction(params: {
       results: processedResults,
       summary
     };
-  } catch (error) {
-    console.error('❌ Error processing bulk approval action:', error);
+  } catch (_error) {
+    console.error("", _error);
     toast({
       title: "Error",
       description: 'Failed to process bulk approval action',
       variant: "destructive",
     });
-    throw error;
+    throw _error;
   }
 }
 
@@ -410,14 +410,14 @@ export async function saveWorkflowTemplate(params: {
     });
 
     return savedTemplate;
-  } catch (error) {
-    console.error('❌ Error saving workflow template:', error);
+  } catch (_error) {
+    console.error("", _error);
     toast({
       title: "Error",
       description: 'Failed to save workflow template',
       variant: "destructive",
     });
-    throw error;
+    throw _error;
   }
 }
 

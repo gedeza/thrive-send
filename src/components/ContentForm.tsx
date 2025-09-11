@@ -265,8 +265,8 @@ const ContentForm: React.FC = () => {
       // Reset form after successful submission
       setFormData(initialFormState);
       if (editor) editor.commands.setContent(''); // Clear editor
-    } catch (error) {
-      console.error('Error saving content:', error);
+    } catch (_error) {
+      console.error("", _error);
       setSubmitError('Failed to save content. Please try again.');
     } finally {
       setIsSubmitting(false);

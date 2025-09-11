@@ -6,7 +6,7 @@ try {
   const redis = require('redis');
   createClient = redis.createClient;
   RedisClientType = redis.RedisClientType;
-} catch (error) {
+} catch (_error) {
   // Redis not available - will use memory-only caching
   console.warn('Redis not available, using memory-only caching');
 }
@@ -99,7 +99,7 @@ export class AdvancedCacheManager {
       });
 
       await this.redisClient.connect();
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to initialize Redis', error);
       this.stats.redisConnected = false;
     }
@@ -130,7 +130,7 @@ export class AdvancedCacheManager {
 
       this.stats.misses++;
       return null;
-    } catch (error) {
+    } catch (_error) {
       logger.error('Cache get error', { key, error });
       this.stats.misses++;
       return null;
@@ -162,7 +162,7 @@ export class AdvancedCacheManager {
       this.stats.sets++;
       this.updateMemoryUsage();
       return true;
-    } catch (error) {
+    } catch (_error) {
       logger.error('Cache set error', { key, error });
       return false;
     }
@@ -181,7 +181,7 @@ export class AdvancedCacheManager {
       this.stats.deletes++;
       this.updateMemoryUsage();
       return true;
-    } catch (error) {
+    } catch (_error) {
       logger.error('Cache delete error', { key, error });
       return false;
     }
@@ -199,7 +199,7 @@ export class AdvancedCacheManager {
 
       this.updateMemoryUsage();
       return true;
-    } catch (error) {
+    } catch (_error) {
       logger.error('Cache clear error', error);
       return false;
     }
@@ -233,7 +233,7 @@ export class AdvancedCacheManager {
 
       this.updateMemoryUsage();
       return deletedCount;
-    } catch (error) {
+    } catch (_error) {
       logger.error('Cache invalidate pattern error', { pattern, error });
       return 0;
     }
@@ -300,7 +300,7 @@ export class AdvancedCacheManager {
     return new RegExp(`^${regexPattern}$`).test(key);
   }
 
-  private estimateSize(data: any): number {
+  private estimateSize(data: unknown): number {
     try {
       return JSON.stringify(data).length;
     } catch {

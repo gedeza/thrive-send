@@ -180,7 +180,7 @@ function InteractiveHeatmap({ data, className }: { data: HeatmapDataPoint[], cla
           </CardTitle>
           <div className="flex items-center gap-2">
             <Label htmlFor="color-scale" className="text-sm">Color:</Label>
-            <Select value={colorScale} onValueChange={(value: any) => setColorScale(value)}>
+            <Select value={colorScale} onValueChange={(value: unknown) => setColorScale(value)}>
               <SelectTrigger className="w-24 h-8">
                 <SelectValue />
               </SelectTrigger>
@@ -333,7 +333,7 @@ function NetworkVisualization({ className }: { className?: string }) {
             Content Network Analysis
           </CardTitle>
           <div className="flex items-center gap-2">
-            <Select value={layoutType} onValueChange={(value: any) => setLayoutType(value)}>
+            <Select value={layoutType} onValueChange={(value: unknown) => setLayoutType(value)}>
               <SelectTrigger className="w-32 h-8">
                 <SelectValue />
               </SelectTrigger>
@@ -660,7 +660,7 @@ export function AdvancedDataVisualization({
       </div>
 
       {/* Visualization Tabs */}
-      <Tabs value={activeTab} onValueChange={(value: any) => setActiveTab(value)}>
+      <Tabs value={activeTab} onValueChange={(value: unknown) => setActiveTab(value)}>
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="heatmap" className="flex items-center gap-2">
             <Grid3X3 className="h-4 w-4" />

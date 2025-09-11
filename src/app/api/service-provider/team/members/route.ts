@@ -224,7 +224,7 @@ export async function GET(request: NextRequest) {
     
     return createSuccessResponse(allMembers, 200, 'Team members retrieved successfully');
 
-  } catch (error) {
+  } catch (_error) {
     return handleApiError(error);
   }
 }
@@ -286,7 +286,7 @@ export async function POST(request: NextRequest) {
     
     return createSuccessResponse(memberResponse, 201, 'Team member added successfully');
 
-  } catch (error) {
+  } catch (_error) {
     return handleApiError(error);
   }
 }

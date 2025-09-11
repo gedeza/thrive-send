@@ -381,7 +381,7 @@ export function PredictiveAnalytics({ className }: PredictiveAnalyticsProps) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={selectedTimeframe} onValueChange={(value: any) => setSelectedTimeframe(value)}>
+          <Select value={selectedTimeframe} onValueChange={(value: unknown) => setSelectedTimeframe(value)}>
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>

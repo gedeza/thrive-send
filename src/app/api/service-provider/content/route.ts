@@ -215,8 +215,8 @@ export async function GET(request: NextRequest) {
     });
     */
 
-  } catch (error) {
-    console.error('Service provider content error:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -310,8 +310,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(newContent, { status: 201 });
     */
 
-  } catch (error) {
-    console.error('Error creating service provider content:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

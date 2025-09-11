@@ -165,8 +165,8 @@ export async function POST(request: NextRequest) {
     }
     */
 
-  } catch (error) {
-    console.error('❌ Error in template sharing operation:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -313,8 +313,8 @@ export async function GET(request: NextRequest) {
     });
     */
 
-  } catch (error) {
-    console.error('❌ Error fetching template sharing status:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

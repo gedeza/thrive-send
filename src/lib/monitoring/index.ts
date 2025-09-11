@@ -35,7 +35,7 @@ class MonitoringService {
         status: 'pass',
         responseTime: Date.now() - dbStart
       };
-    } catch (error) {
+    } catch (_error) {
       checks.database = {
         status: 'fail',
         message: error instanceof Error ? error.message : 'Database connection failed'

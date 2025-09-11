@@ -106,8 +106,8 @@ export async function GET(
       averageFeedback: Math.round(averageFeedback * 10) / 10,
       feedbackCount
     });
-  } catch (error) {
-    console.error("KPI API error:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

@@ -293,8 +293,8 @@ export async function GET(request: NextRequest) {
     });
     */
 
-  } catch (error) {
-    console.error('❌ Service provider templates error:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -396,8 +396,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(newTemplate, { status: 201 });
     */
 
-  } catch (error) {
-    console.error('❌ Error creating service provider template:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

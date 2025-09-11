@@ -23,8 +23,8 @@ export async function GET(
       subscription,
       billingHistory,
     });
-  } catch (error) {
-    console.error('[ORGANIZATION_BILLING_GET]', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }
@@ -46,8 +46,8 @@ export async function PATCH(
     );
 
     return NextResponse.json(subscription);
-  } catch (error) {
-    console.error('[ORGANIZATION_BILLING_PATCH]', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 } 

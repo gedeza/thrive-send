@@ -64,9 +64,9 @@ async function getGoalsData(clientId: string, limit?: number): Promise<GoalsResp
     const data = await response.json();
     // Handle both old direct data format and new standardized format
     return data.data ? data.data : data;
-  } catch (error) {
-    console.error('Error fetching goals data:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 

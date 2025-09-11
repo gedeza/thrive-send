@@ -242,7 +242,7 @@ export abstract class BaseEmailProvider {
       });
 
       return testResult.success;
-    } catch (error) {
+    } catch (_error) {
       logger.error(`Health check failed for ${this.name}`, error as Error);
       return false;
     }

@@ -36,8 +36,8 @@ export async function GET(
     };
 
     return NextResponse.json(billingData);
-  } catch (error) {
-    console.error("Error fetching subscription:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "Failed to fetch subscription" },
       { status: 500 }
@@ -75,8 +75,8 @@ export async function PATCH(
     );
 
     return NextResponse.json(subscription);
-  } catch (error) {
-    console.error("Error updating subscription:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "Failed to update subscription" },
       { status: 500 }

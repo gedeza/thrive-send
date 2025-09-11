@@ -85,8 +85,8 @@ export function OrganizationMembers() {
         title: "Invitation Sent",
         description: `Invitation sent to ${data.email}`,
       });
-    } catch (error) {
-      console.error("Error sending invitation:", error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error",
         description: "Failed to send invitation",
@@ -108,8 +108,8 @@ export function OrganizationMembers() {
         title: "Role Updated",
         description: "Member role has been updated successfully",
       });
-    } catch (error) {
-      console.error("Error updating role:", error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error",
         description: "Failed to update member role",
@@ -129,8 +129,8 @@ export function OrganizationMembers() {
         title: "Member Removed",
         description: "Member has been removed from the organization",
       });
-    } catch (error) {
-      console.error("Error removing member:", error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error",
         description: "Failed to remove member",

@@ -98,7 +98,7 @@ export class WebhookHandler {
         try {
           await this.processSendGridEvent(event);
           processed++;
-        } catch (error) {
+        } catch (_error) {
           logger.error('Failed to process SendGrid event', error as Error, { event });
           errors++;
         }
@@ -107,9 +107,9 @@ export class WebhookHandler {
       logger.info('SendGrid webhook processed', { processed, errors, total: events.length });
       return { processed, errors };
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('SendGrid webhook processing failed', error as Error);
-      throw error;
+      throw _error;
     }
   }
 
@@ -143,7 +143,7 @@ export class WebhookHandler {
           const event: AWSEvent = JSON.parse(notification.Message);
           await this.processAWSEvent(event);
           processed++;
-        } catch (error) {
+        } catch (_error) {
           logger.error('Failed to process AWS event', error as Error, { notification });
           errors++;
         }
@@ -152,9 +152,9 @@ export class WebhookHandler {
       logger.info('AWS webhook processed', { processed, errors });
       return { processed, errors };
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('AWS webhook processing failed', error as Error);
-      throw error;
+      throw _error;
     }
   }
 
@@ -176,14 +176,14 @@ export class WebhookHandler {
         await this.processResendEvent(event);
         logger.info('Resend webhook processed', { type: event.type, emailId: event.data.email_id });
         return { processed: 1, errors: 0 };
-      } catch (error) {
+      } catch (_error) {
         logger.error('Failed to process Resend event', error as Error, { event });
         return { processed: 0, errors: 1 };
       }
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Resend webhook processing failed', error as Error);
-      throw error;
+      throw _error;
     }
   }
 
@@ -393,7 +393,7 @@ export class WebhookHandler {
       
       return null;
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to find email record', error as Error, {
         messageId,
         recipientEmail,
@@ -427,7 +427,7 @@ export class WebhookHandler {
         .verify(publicKey, signature, 'base64');
 
       return expectedSignature;
-    } catch (error) {
+    } catch (_error) {
       logger.error('SendGrid signature verification failed', error as Error);
       return false;
     }
@@ -468,7 +468,7 @@ export class WebhookHandler {
         .digest('hex');
 
       return signature === expectedSignature;
-    } catch (error) {
+    } catch (_error) {
       logger.error('Resend signature verification failed', error as Error);
       return false;
     }
@@ -493,9 +493,9 @@ export class WebhookHandler {
       // Store for manual processing
       return { processed: 0, errors: 0 };
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Generic webhook processing failed', error as Error, { provider });
-      throw error;
+      throw _error;
     }
   }
 }

@@ -112,9 +112,9 @@ export async function POST(request: Request) {
     ];
 
     return NextResponse.json(metrics);
-  } catch (error) {
-    console.error('Error in analytics metrics API:', error);
-    if (error instanceof z.ZodError) {
+  } catch (_error) {
+    console.error("", _error);
+    if (_error instanceof z.ZodError) {
       return new NextResponse('Invalid request data', { status: 400 });
     }
     return new NextResponse('Internal Server Error', { status: 500 });

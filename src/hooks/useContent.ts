@@ -58,7 +58,7 @@ export function useContent(options: UseContentOptions = {}) {
       const error = err instanceof Error ? err : new Error('An error occurred');
       setError(error);
       options.onError?.(error);
-      throw error;
+      throw _error;
     } finally {
       setLoading(false);
     }
@@ -87,7 +87,7 @@ export function useContent(options: UseContentOptions = {}) {
       const error = err instanceof Error ? err : new Error('An error occurred');
       setError(error);
       options.onError?.(error);
-      throw error;
+      throw _error;
     } finally {
       setLoading(false);
     }
@@ -110,7 +110,7 @@ export function useContent(options: UseContentOptions = {}) {
       const error = err instanceof Error ? err : new Error('An error occurred');
       setError(error);
       options.onError?.(error);
-      throw error;
+      throw _error;
     } finally {
       setLoading(false);
     }
@@ -132,7 +132,7 @@ export function useContent(options: UseContentOptions = {}) {
       const error = err instanceof Error ? err : new Error('An error occurred');
       setError(error);
       options.onError?.(error);
-      throw error;
+      throw _error;
     } finally {
       setLoading(false);
     }
@@ -168,7 +168,7 @@ export function useContent(options: UseContentOptions = {}) {
       const error = err instanceof Error ? err : new Error('An error occurred');
       setError(error);
       options.onError?.(error);
-      throw error;
+      throw _error;
     } finally {
       setLoading(false);
     }
@@ -190,7 +190,7 @@ export function useContent(options: UseContentOptions = {}) {
       const error = err instanceof Error ? err : new Error('An error occurred');
       setError(error);
       options.onError?.(error);
-      throw error;
+      throw _error;
     } finally {
       setLoading(false);
     }

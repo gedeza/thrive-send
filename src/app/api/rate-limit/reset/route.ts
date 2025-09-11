@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       },
     });
     
-  } catch (error) {
+  } catch (_error) {
     logger.error('Rate limit reset operation failed', error as Error);
     
     return NextResponse.json(

@@ -50,7 +50,7 @@ export class AnalyticsErrorHandler {
     };
 
     // Log error for monitoring
-    console.error('Analytics API Error:', error);
+    console.error("", _error);
 
     return NextResponse.json(
       {
@@ -390,7 +390,7 @@ export function withAnalyticsErrorHandler(
   return async (request: Request, ...args: any[]): Promise<NextResponse> => {
     try {
       return await handler(request, ...args);
-    } catch (error) {
+    } catch (_error) {
       return AnalyticsErrorHandler.handleError(error, handler.name);
     }
   };
@@ -406,7 +406,7 @@ export function withErrorHandling(context?: string) {
     descriptor.value = async function (...args: any[]) {
       try {
         return await originalMethod.apply(this, args);
-      } catch (error) {
+      } catch (_error) {
         throw new Error(`Error in ${context || propertyKey}: ${error.message}`);
       }
     };
@@ -442,7 +442,7 @@ export class AnalyticsCircuitBreaker {
       const result = await operation();
       this.failureCount = 0;
       return result;
-    } catch (error) {
+    } catch (_error) {
       this.failureCount++;
       this.lastFailureTime = Date.now();
       
@@ -450,7 +450,7 @@ export class AnalyticsCircuitBreaker {
         this.isOpen = true;
       }
       
-      throw error;
+      throw _error;
     }
   }
 

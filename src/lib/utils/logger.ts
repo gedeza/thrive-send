@@ -43,7 +43,7 @@ export class Logger {
     console.error(formattedMessage);
     
     if (error) {
-      console.error('Error details:', error);
+      console.error("", _error);
     }
 
     // Log to error tracking system

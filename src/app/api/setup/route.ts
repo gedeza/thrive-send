@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
     console.log("[SETUP] Created organization membership");
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch (_error) {
     console.error("[SETUP_POST] Error details:", {
       error,
       message: error instanceof Error ? error.message : "Unknown error",

@@ -73,8 +73,8 @@ export async function GET(
 
     return NextResponse.json(formattedMembers);
 
-  } catch (error) {
-    console.error("Error fetching organization members:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "Failed to fetch organization members" },
       { status: 500 }

@@ -40,8 +40,8 @@ export async function GET(
     });
 
     return NextResponse.json(expenses);
-  } catch (error) {
-    console.error('Error fetching expenses:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -112,8 +112,8 @@ export async function POST(
     });
 
     return NextResponse.json(expense, { status: 201 });
-  } catch (error) {
-    console.error('Error creating expense:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

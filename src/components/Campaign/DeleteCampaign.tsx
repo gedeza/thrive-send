@@ -64,8 +64,8 @@ const DeleteCampaign: React.FC<DeleteCampaignProps> = ({
       if (onDeleteSuccess) {
         onDeleteSuccess();
       }
-    } catch (error) {
-      console.error('Error deleting campaign:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to delete campaign',

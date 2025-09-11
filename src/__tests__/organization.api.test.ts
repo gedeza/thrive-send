@@ -19,9 +19,9 @@ describe('Organization Service', () => {
       adminUserId = adminUser.id;
       memberUserId = memberUser.id;
       testOrgId = organization.id;
-    } catch (error) {
-      console.error('Error in beforeAll:', error);
-      throw error;
+    } catch (_error) {
+      console.error("", _error);
+      throw _error;
     }
   });
 
@@ -29,9 +29,9 @@ describe('Organization Service', () => {
     try {
       await cleanupTestData();
       await prisma.$disconnect();
-    } catch (error) {
-      console.error('Error in afterAll:', error);
-      throw error;
+    } catch (_error) {
+      console.error("", _error);
+      throw _error;
     }
   });
 

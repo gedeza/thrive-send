@@ -158,8 +158,8 @@ class RateLimitService {
         resetTime: data.resetTime,
         retryAfter: success ? undefined : Math.ceil((data.resetTime - Date.now()) / 1000),
       };
-    } catch (error) {
-      console.error('Rate limiting error:', error);
+    } catch (_error) {
+      console.error("", _error);
       // On error, allow the request through
       return {
         success: true,
@@ -209,8 +209,8 @@ class RateLimitService {
       this.store.reset(testKey);
       
       return result !== null;
-    } catch (error) {
-      console.error('Rate limiter health check failed:', error);
+    } catch (_error) {
+      console.error("", _error);
       return false;
     }
   }

@@ -65,8 +65,8 @@ export async function GET(
     }));
 
     return NextResponse.json({ budgets: formattedBudgets });
-  } catch (error) {
-    console.error("Budget API error:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -119,8 +119,8 @@ export async function POST(
     });
 
     return NextResponse.json(budget, { status: 201 });
-  } catch (error) {
-    console.error("Create budget API error:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "Failed to create budget" },
       { status: 500 }

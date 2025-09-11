@@ -74,8 +74,8 @@ export async function GET(
       averageRating: Math.round(averageRating * 10) / 10, // Round to 1 decimal
       totalCount: feedback.length,
     });
-  } catch (error) {
-    console.error('Error fetching feedback data:', error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Internal Server Error' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }

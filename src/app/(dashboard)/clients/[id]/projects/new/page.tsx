@@ -78,8 +78,8 @@ export default function NewProjectPage() {
       toast.success("Project created successfully!");
       router.push(`/clients/${params.id}`);
       router.refresh();
-    } catch (error) {
-      console.error("Error creating project:", error);
+    } catch (_error) {
+      console.error("", _error);
       toast.error(error instanceof Error ? error.message : "Failed to create project");
     } finally {
       setIsSubmitting(false);

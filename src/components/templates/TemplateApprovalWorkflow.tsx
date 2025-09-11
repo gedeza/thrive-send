@@ -148,8 +148,8 @@ export function TemplateApprovalWorkflow({
         const data = await response.json();
         setWorkflows(data);
       }
-    } catch (error) {
-      console.error('Failed to load workflows:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error",
         description: "Failed to load approval workflows",
@@ -169,8 +169,8 @@ export function TemplateApprovalWorkflow({
           ['ADMIN', 'APPROVER', 'REVIEWER'].includes(member.role)
         ));
       }
-    } catch (error) {
-      console.error('Failed to load team members:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   };
 
@@ -181,8 +181,8 @@ export function TemplateApprovalWorkflow({
         const data = await response.json();
         setPendingTemplates(data.templates || []);
       }
-    } catch (error) {
-      console.error('Failed to load pending templates:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   };
 
@@ -227,7 +227,7 @@ export function TemplateApprovalWorkflow({
       } else {
         throw new Error('Failed to request approval');
       }
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to request approval",
@@ -271,7 +271,7 @@ export function TemplateApprovalWorkflow({
       } else {
         throw new Error(`Failed to ${action} template`);
       }
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error",
         description: `Failed to ${action} template`,

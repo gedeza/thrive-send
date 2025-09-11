@@ -119,8 +119,8 @@ export async function trackTemplateUsage(
       },
       body: JSON.stringify(usageData),
     });
-  } catch (error) {
-    console.error('Failed to track template usage:', error);
+  } catch (_error) {
+    console.error("", _error);
     // Non-critical error - don't throw
   }
 }
@@ -146,8 +146,8 @@ export async function updateTemplatePerformance(
         updatedAt: new Date().toISOString()
       }),
     });
-  } catch (error) {
-    console.error('Failed to update template performance:', error);
+  } catch (_error) {
+    console.error("", _error);
     // Non-critical error - don't throw
   }
 }
@@ -175,8 +175,8 @@ export async function getTemplateMetrics(
     }
 
     return await response.json();
-  } catch (error) {
-    console.error('Failed to get template metrics:', error);
+  } catch (_error) {
+    console.error("", _error);
     return null;
   }
 }
@@ -216,8 +216,8 @@ export async function getTemplateRecommendations(
     }
 
     return await response.json();
-  } catch (error) {
-    console.error('Failed to get template recommendations:', error);
+  } catch (_error) {
+    console.error("", _error);
     return [];
   }
 }

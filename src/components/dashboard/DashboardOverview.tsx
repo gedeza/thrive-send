@@ -292,7 +292,7 @@ export function RecentCampaigns({ campaigns }: { campaigns: { name: string, stat
         </div>
       </div>
     );
-  } catch (error) {
+  } catch (_error) {
     handleError(error);
     return (
       <div className="bg-card rounded-xl shadow p-6">
@@ -430,7 +430,7 @@ export function RecentContent({ content }: { content: { title: string, status: s
         </div>
       </div>
     );
-  } catch (error) {
+  } catch (_error) {
     handleError(error);
     return (
       <div className="bg-card rounded-xl shadow p-6">
@@ -522,7 +522,7 @@ export function RecentSubscribers({ subscribers }: { subscribers: { email: strin
         </div>
       </div>
     );
-  } catch (error) {
+  } catch (_error) {
     handleError(error);
     return (
       <div className="bg-card rounded-xl shadow p-6">
@@ -596,7 +596,7 @@ export function TinyBarChart({ data }: { data: number[] }) {
         ))}
       </svg>
     );
-  } catch (error) {
+  } catch (_error) {
     handleError(error);
     return (
       <div className="h-[30px] w-[100px] flex items-center justify-center bg-card rounded">

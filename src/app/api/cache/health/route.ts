@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       },
     });
     
-  } catch (error) {
+  } catch (_error) {
     logger.error('Cache health check failed', error as Error);
     
     return NextResponse.json(

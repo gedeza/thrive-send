@@ -38,8 +38,8 @@ async function setupOrganization() {
     });
 
     console.log("Organization setup completed successfully");
-  } catch (error) {
-    console.error("Error setting up organization:", error);
+  } catch (_error) {
+    console.error("", _error);
   }
 }
 

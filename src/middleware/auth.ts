@@ -43,7 +43,7 @@ export async function withAuth(
     };
 
     return handler(authedRequest);
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { error: "Authentication failed" },
       { status: 401 }
@@ -87,8 +87,8 @@ export async function withOrganization(
 
       authedRequest.auth.organizationId = membership.organization.id;
       return handler(authedRequest);
-    } catch (error) {
-      console.error('Organization middleware error:', error);
+    } catch (_error) {
+      console.error("", _error);
       return NextResponse.json(
         { error: "Organization access check failed" },
         { status: 500 }

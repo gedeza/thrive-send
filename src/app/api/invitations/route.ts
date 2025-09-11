@@ -58,8 +58,8 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(invitation);
-  } catch (error) {
-    console.error("[INVITATION_POST]", error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse("Internal Error", { status: 500 });
   }
 }
@@ -96,8 +96,8 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(invitations);
-  } catch (error) {
-    console.error("[INVITATION_GET]", error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse("Internal Error", { status: 500 });
   }
 } 

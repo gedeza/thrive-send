@@ -185,7 +185,7 @@ export async function GET(req: NextRequest) {
       
       return NextResponse.json(formattedCampaigns);
     }
-  } catch (error) {
+  } catch (_error) {
     return handleApiError(error);
   }
 }
@@ -204,9 +204,9 @@ export async function POST(req: NextRequest) {
       try {
         // Try to use the original request first
         data = await reqClone.json();
-      } catch (error) {
+      } catch (_error) {
         // If the original request body was already consumed, use the data from authedRequest
-        console.error('Error parsing request body, using middleware data:', error);
+        console.error("", _error);
         return NextResponse.json(
           { error: "Request body could not be read", details: "Try again or contact support" },
           { status: 400 }
@@ -292,7 +292,7 @@ export async function POST(req: NextRequest) {
         }
         throw validationError;
       }
-    } catch (error) {
+    } catch (_error) {
       return handleApiError(error);
     }
   });

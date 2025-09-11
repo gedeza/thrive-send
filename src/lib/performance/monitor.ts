@@ -58,7 +58,7 @@ class PerformanceMonitor {
           console.warn(`Performance observer type ${entryType} not supported:`, e);
         }
       }
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to initialize Performance Observer:', error);
     }
   }
@@ -139,7 +139,7 @@ class PerformanceMonitor {
       });
       
       return result;
-    } catch (error) {
+    } catch (_error) {
       const endTime = performance.now();
       
       this.addMetric({
@@ -153,7 +153,7 @@ class PerformanceMonitor {
         }
       });
       
-      throw error;
+      throw _error;
     }
   }
 
@@ -188,7 +188,7 @@ class PerformanceMonitor {
       
       this.addMetric(metric);
       return result;
-    } catch (error) {
+    } catch (_error) {
       const endTime = performance.now();
       status = 500; // Assume server error if not specified
       
@@ -208,7 +208,7 @@ class PerformanceMonitor {
       };
       
       this.addMetric(metric);
-      throw error;
+      throw _error;
     }
   }
 

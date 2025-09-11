@@ -14,7 +14,7 @@ interface Column {
 
 interface DataTableProps {
   columns: Column[];
-  data: any[];
+  data: unknown[];
 }
 
 export function DataTable({ columns, data }: DataTableProps) {

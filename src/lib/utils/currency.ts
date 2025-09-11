@@ -226,7 +226,7 @@ async function detectUserCountry(): Promise<string | null> {
         return data.country_code;
       }
     }
-  } catch (error) {
+  } catch (_error) {
     if (error.name !== 'AbortError') {
       console.warn('🌍 Geolocation API failed:', error);
     }
@@ -265,7 +265,7 @@ async function detectUserCountry(): Promise<string | null> {
       console.log('🌍 Currency detected via timezone:', timezone, '→', country);
       return country;
     }
-  } catch (error) {
+  } catch (_error) {
     console.warn('🌍 Timezone detection failed:', error);
   }
 
@@ -310,7 +310,7 @@ export async function getUserCurrencyAsync(): Promise<string> {
       }
       return geoCurrency;
     }
-  } catch (error) {
+  } catch (_error) {
     console.warn('🌍 Geolocation currency detection failed:', error);
   }
 

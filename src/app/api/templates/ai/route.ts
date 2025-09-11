@@ -22,10 +22,10 @@ export async function POST(req: NextRequest) {
     const suggestions = await aiService.generateTemplateSuggestions(orgId, content, type);
 
     return NextResponse.json({ suggestions });
-  } catch (error) {
-    console.error('Error in AI template assistance:', error);
+  } catch (_error) {
+    console.error("", _error);
     
-    if (error instanceof z.ZodError) {
+    if (_error instanceof z.ZodError) {
       return NextResponse.json(
         { 
           error: 'Please provide valid content and template type',
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (error instanceof Error && error.message.includes('subscription plan')) {
+    if (_error instanceof Error && error.message.includes('subscription plan')) {
       return NextResponse.json(
         { 
           error: 'Upgrade your plan to access AI features',

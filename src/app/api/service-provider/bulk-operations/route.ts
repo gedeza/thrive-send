@@ -156,8 +156,8 @@ export async function GET(request: NextRequest) {
     });
     */
 
-  } catch (error) {
-    console.error('❌ Service provider bulk operations error:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -261,8 +261,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(bulkOperation, { status: 201 });
     */
 
-  } catch (error) {
-    console.error('❌ Error processing bulk operation:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -325,8 +325,8 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json(operation, { status: 200 });
     */
 
-  } catch (error) {
-    console.error('❌ Error controlling bulk operation:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

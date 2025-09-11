@@ -8,7 +8,7 @@ let Card;
 try {
   // Try to import the actual Card component
   Card = require('../components/ui/card').Card;
-} catch (error) {
+} catch (_error) {
   // If import fails, define a simple Card component for testing
   Card = ({ children, className = '', title }) => (
     <div className={`card ${className}`}>

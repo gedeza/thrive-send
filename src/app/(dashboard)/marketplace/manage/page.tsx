@@ -112,8 +112,8 @@ export default function MarketplaceManagePage() {
       
       const data = await response.json();
       setProducts(data.products || []);
-    } catch (error) {
-      console.error('Error fetching products:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: MARKETPLACE_CONSTANTS.ERRORS.GENERIC,
         description: 'Failed to load your products.',
@@ -198,8 +198,8 @@ export default function MarketplaceManagePage() {
 
       setShowCreateModal(false);
       fetchProducts();
-    } catch (error) {
-      console.error('Error saving product:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: MARKETPLACE_CONSTANTS.ERRORS.GENERIC,
         description: error instanceof Error ? error.message : 'Failed to save product.',
@@ -232,8 +232,8 @@ export default function MarketplaceManagePage() {
       });
 
       fetchProducts();
-    } catch (error) {
-      console.error('Error deleting product:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: MARKETPLACE_CONSTANTS.ERRORS.GENERIC,
         description: error instanceof Error ? error.message : 'Failed to delete product.',

@@ -36,7 +36,7 @@ export function useTeamStrings() {
  */
 export function getTeamString(path: string): string {
   const keys = path.split('.');
-  let current: any = teamStrings;
+  let current: Record<string, unknown> = teamStrings;
   
   for (const key of keys) {
     if (current && typeof current === 'object' && key in current) {

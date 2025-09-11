@@ -65,8 +65,8 @@ export function ApprovalDashboard() {
         title: 'Success',
         description: 'Content approved successfully',
       });
-    } catch (error) {
-      console.error('Error approving content:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: 'Error',
         description: 'Failed to approve content',
@@ -90,8 +90,8 @@ export function ApprovalDashboard() {
         title: 'Success',
         description: 'Content rejected successfully',
       });
-    } catch (error) {
-      console.error('Error rejecting content:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: 'Error',
         description: 'Failed to reject content',

@@ -642,7 +642,7 @@ export function ExportReporting({ className }: ExportReportingProps) {
                     <Label>Frequency</Label>
                     <Select
                       value={newReport.frequency}
-                      onValueChange={(value: any) => setNewReport(prev => ({ ...prev, frequency: value }))}
+                      onValueChange={(value: unknown) => setNewReport(prev => ({ ...prev, frequency: value }))}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -660,7 +660,7 @@ export function ExportReporting({ className }: ExportReportingProps) {
                     <Label>Format</Label>
                     <Select
                       value={newReport.format}
-                      onValueChange={(value: any) => setNewReport(prev => ({ ...prev, format: value }))}
+                      onValueChange={(value: unknown) => setNewReport(prev => ({ ...prev, format: value }))}
                     >
                       <SelectTrigger>
                         <SelectValue />

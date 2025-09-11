@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs';
+import { auth } from '@clerk/nextjs/server';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_...', {
@@ -58,14 +58,14 @@ export async function GET(request: NextRequest) {
       throw stripeError;
     }
 
-  } catch (error) {
-    console.error('Payment methods fetch error:', error);
+  } catch (_error) {
+    console.error("", _error);
     
-    if (error instanceof Stripe.errors.StripeError) {
+    if (_error instanceof Stripe.errors.StripeError) {
       return NextResponse.json(
         { 
           error: 'Failed to fetch payment methods',
-          details: error.message 
+          details: _error.message 
         },
         { status: 400 }
       );
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
         });
         customerId = customer.id;
       } else {
-        throw error;
+        throw _error;
       }
     }
 
@@ -156,14 +156,14 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(response, { status: 201 });
 
-  } catch (error) {
-    console.error('Payment method creation error:', error);
+  } catch (_error) {
+    console.error("", _error);
     
-    if (error instanceof Stripe.errors.StripeError) {
+    if (_error instanceof Stripe.errors.StripeError) {
       return NextResponse.json(
         { 
           error: 'Failed to add payment method',
-          details: error.message 
+          details: _error.message 
         },
         { status: 400 }
       );
@@ -202,14 +202,14 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
 
-  } catch (error) {
-    console.error('Payment method deletion error:', error);
+  } catch (_error) {
+    console.error("", _error);
     
-    if (error instanceof Stripe.errors.StripeError) {
+    if (_error instanceof Stripe.errors.StripeError) {
       return NextResponse.json(
         { 
           error: 'Failed to remove payment method',
-          details: error.message 
+          details: _error.message 
         },
         { status: 400 }
       );

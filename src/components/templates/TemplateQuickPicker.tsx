@@ -125,8 +125,8 @@ export function TemplateQuickPicker({
       
       const data = await response.json();
       setTemplates(data.slice(0, maxTemplates));
-    } catch (error) {
-      console.error('Error fetching templates:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: 'Loading Error',
         description: 'Failed to load templates. Please try again.',
@@ -201,8 +201,8 @@ export function TemplateQuickPicker({
         title: 'Template Selected! 🎉',
         description: `"${template.name}" is ready to use`,
       });
-    } catch (error) {
-      console.error('Error tracking template usage:', error);
+    } catch (_error) {
+      console.error("", _error);
       // Still proceed with template selection
       onSelect(template);
       setIsOpen(false);

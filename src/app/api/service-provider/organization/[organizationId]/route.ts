@@ -88,8 +88,8 @@ export async function GET(
         updatedAt: new Date().toISOString(),
       });
     }
-  } catch (error) {
-    console.error('❌ Service provider organization error:', error);
+  } catch (_error) {
+    console.error("", _error);
     // Even on error, return demo data for development
     return NextResponse.json({
       id: params.organizationId,

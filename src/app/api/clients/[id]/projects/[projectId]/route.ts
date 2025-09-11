@@ -65,8 +65,8 @@ export async function GET(
     }
 
     return NextResponse.json(project);
-  } catch (error) {
-    console.error("Error fetching project:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "Failed to fetch project" },
       { status: 500 }
@@ -136,9 +136,9 @@ export async function PATCH(
     });
 
     return NextResponse.json(updatedProject);
-  } catch (error) {
-    console.error("Error updating project:", error);
-    if (error instanceof z.ZodError) {
+  } catch (_error) {
+    console.error("", _error);
+    if (_error instanceof z.ZodError) {
       return NextResponse.json(
         { error: "Invalid request data", details: error.errors },
         { status: 400 }
@@ -208,8 +208,8 @@ export async function DELETE(
     });
 
     return NextResponse.json({ message: "Project deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting project:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "Failed to delete project" },
       { status: 500 }

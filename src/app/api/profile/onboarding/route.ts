@@ -63,8 +63,8 @@ export async function POST(request: Request) {
       message: 'Onboarding status updated successfully',
       hasCompletedOnboarding: updatedUser.hasCompletedOnboarding 
     });
-  } catch (error) {
-    console.error('Error updating onboarding status:', error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse(
       JSON.stringify({ message: 'Error updating onboarding status' }),
       { status: 500 }

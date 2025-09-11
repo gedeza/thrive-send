@@ -64,8 +64,8 @@ export async function GET(
     }
 
     return NextResponse.json(socialAccount);
-  } catch (error) {
-    console.error("Error fetching social account:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "Failed to fetch social account" },
       { status: 500 }
@@ -155,9 +155,9 @@ export async function PATCH(
     });
 
     return NextResponse.json(updatedAccount);
-  } catch (error) {
-    console.error("Error updating social account:", error);
-    if (error instanceof z.ZodError) {
+  } catch (_error) {
+    console.error("", _error);
+    if (_error instanceof z.ZodError) {
       return NextResponse.json(
         { error: "Invalid request data", details: error.errors },
         { status: 400 }
@@ -230,8 +230,8 @@ export async function DELETE(
     });
 
     return NextResponse.json({ message: "Social account deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting social account:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "Failed to delete social account" },
       { status: 500 }

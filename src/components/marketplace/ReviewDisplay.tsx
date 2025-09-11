@@ -83,8 +83,8 @@ export function ReviewDisplay({ listingId, currentUserId, onEditReview }: Review
       const data = await response.json();
       setReviews(data.reviews || []);
       setStats(data.stats || null);
-    } catch (error) {
-      console.error('Error fetching reviews:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: 'Error',
         description: 'Failed to load reviews',
@@ -112,7 +112,7 @@ export function ReviewDisplay({ listingId, currentUserId, onEditReview }: Review
         title: 'Thank you!',
         description: 'Your feedback helps other users',
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to record your vote',
@@ -135,7 +135,7 @@ export function ReviewDisplay({ listingId, currentUserId, onEditReview }: Review
         title: 'Review Reported',
         description: 'Thank you for helping us maintain quality reviews',
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to report review',

@@ -121,8 +121,8 @@ export function TemplateLibrary({ onTemplateSelect, onTemplateApply }: TemplateL
         title: "Template Shared",
         description: `${template.name} shared with ${clientIds.length} clients`,
       });
-    } catch (error) {
-      console.error('Error sharing template:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   };
 
@@ -146,8 +146,8 @@ export function TemplateLibrary({ onTemplateSelect, onTemplateApply }: TemplateL
         title: "Template Applied",
         description: `Content created from ${template.name} for ${result.clientName}`,
       });
-    } catch (error) {
-      console.error('Error applying template:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   };
 
@@ -930,7 +930,7 @@ const TemplateCreateDialog: React.FC<{
       } else {
         throw new Error('Failed to create template');
       }
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to create template. Please try again.",

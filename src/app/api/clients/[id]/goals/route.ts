@@ -113,8 +113,8 @@ export async function GET(
         averageProgress: Math.round(averageProgress)
       }
     });
-  } catch (error) {
-    console.error('Error fetching client goals:', error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse(
       error instanceof Error ? error.message : 'Internal Server Error',
       { status: 500 }
@@ -171,8 +171,8 @@ export async function POST(
     `;
 
     return NextResponse.json(goals[0]);
-  } catch (error) {
-    console.error('Error creating client goal:', error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse(
       error instanceof Error ? error.message : 'Internal Server Error',
       { status: 500 }

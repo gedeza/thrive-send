@@ -52,8 +52,8 @@ async function startAnalyticsWebSocketServer() {
       console.log(`📊 Status: ${status.connectedClients} clients connected, simulation: ${status.isRunning ? 'running' : 'stopped'}`);
     }, 30000); // Log status every 30 seconds
 
-  } catch (error) {
-    console.error('❌ Failed to start Analytics WebSocket Server:', error);
+  } catch (_error) {
+    console.error("", _error);
     process.exit(1);
   }
 }

@@ -62,6 +62,32 @@ const fallbackLinksData = [
   { label: 'About Us', url: 'https://example.com/about', clicks: 140, percentage: 3.9 },
 ];
 
+// Analytics data interfaces
+interface MetricsData {
+  sent: number;
+  delivered: number;
+  opened: number;
+  clicked: number;
+  bounced: number;
+  unsubscribed: number;
+  conversionRate: number;
+}
+
+interface DeviceData {
+  device: string;
+  count: number;
+  percentage: number;
+  icon?: string;
+  color?: string;
+}
+
+interface LinkData {
+  label: string;
+  url: string;
+  clicks: number;
+  percentage: number;
+}
+
 // Metric Card Component matching the pattern from other pages
 interface MetricCardProps {
   title: string;
@@ -126,9 +152,9 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
   const analytics = useAnalytics();
   
   // State for dynamic data
-  const [metricsData, setMetricsData] = useState<any>(null);
-  const [deviceData, setDeviceData] = useState<any>(null);
-  const [linkData, setLinkData] = useState<any>(null);
+  const [metricsData, setMetricsData] = useState<MetricsData | null>(null);
+  const [deviceData, setDeviceData] = useState<DeviceData[] | null>(null);
+  const [linkData, setLinkData] = useState<LinkData[] | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Generate insights from current data (memoized to prevent re-computation)
@@ -137,7 +163,7 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
     
     // Device insights from deviceData
     if (deviceData?.length > 0) {
-      const topDevice = deviceData.reduce((prev: any, current: any) => 
+      const topDevice = deviceData.reduce((prev: DeviceData, current: DeviceData) => 
         (prev.percentage > current.percentage) ? prev : current
       );
       insights.push({
@@ -242,8 +268,8 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
       setMetricsData(metrics);
       setDeviceData(devices);
       setLinkData(links);
-    } catch (error) {
-      console.error('Error fetching analytics data:', error);
+    } catch (_error) {
+      console.error("", _error);
       // Keep existing mock data as fallback
     } finally {
       setLoading(false);

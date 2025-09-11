@@ -91,8 +91,8 @@ export type SettingsAction =
   | { type: 'SET_ACTIVE_SECTION'; payload: string }
   | { type: 'SET_USER_SETTINGS'; payload: UserSettings }
   | { type: 'SET_ORGANIZATION_SETTINGS'; payload: OrganizationSettings }
-  | { type: 'UPDATE_USER_SETTING'; payload: { path: string; value: any } }
-  | { type: 'UPDATE_ORGANIZATION_SETTING'; payload: { path: string; value: any } }
+  | { type: 'UPDATE_USER_SETTING'; payload: { path: string; value: unknown } }
+  | { type: 'UPDATE_ORGANIZATION_SETTING'; payload: { path: string; value: unknown } }
   | { type: 'SET_UNSAVED_CHANGES'; payload: boolean }
   | { type: 'RESET_ERROR' }
   | { type: 'ROLLBACK_CHANGES' };
@@ -208,7 +208,7 @@ function settingsReducer(state: SettingsState, action: SettingsAction): Settings
       
       const updatedSettings = { ...state.userSettings };
       const pathParts = action.payload.path.split('.');
-      let current: any = updatedSettings;
+      let current: Record<string, unknown> = updatedSettings;
       
       // Navigate to the parent of the target property
       for (let i = 0; i < pathParts.length - 1; i++) {
@@ -231,7 +231,7 @@ function settingsReducer(state: SettingsState, action: SettingsAction): Settings
       
       const updatedSettings = { ...state.organizationSettings };
       const pathParts = action.payload.path.split('.');
-      let current: any = updatedSettings;
+      let current: Record<string, unknown> = updatedSettings;
       
       // Navigate to the parent of the target property
       for (let i = 0; i < pathParts.length - 1; i++) {
@@ -272,8 +272,8 @@ interface SettingsContextType {
   
   // Actions
   setActiveSection: (section: string) => void;
-  updateUserSetting: (path: string, value: any) => void;
-  updateOrganizationSetting: (path: string, value: any) => void;
+  updateUserSetting: (path: string, value: unknown) => void;
+  updateOrganizationSetting: (path: string, value: unknown) => void;
   saveUserSettings: () => Promise<void>;
   saveOrganizationSettings: () => Promise<void>;
   refreshSettings: () => Promise<void>;
@@ -336,8 +336,8 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
         // Use default settings if API fails
         dispatch({ type: 'SET_USER_SETTINGS', payload: defaultUserSettings });
       }
-    } catch (error) {
-      console.error('Failed to fetch user settings:', error);
+    } catch (_error) {
+      console.error("", _error);
       dispatch({ type: 'SET_ERROR', payload: 'Failed to load user settings' });
       // Use default settings as fallback
       dispatch({ type: 'SET_USER_SETTINGS', payload: defaultUserSettings });
@@ -359,8 +359,8 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
         // Use default settings if API fails
         dispatch({ type: 'SET_ORGANIZATION_SETTINGS', payload: defaultOrganizationSettings });
       }
-    } catch (error) {
-      console.error('Failed to fetch organization settings:', error);
+    } catch (_error) {
+      console.error("", _error);
       dispatch({ type: 'SET_ERROR', payload: 'Failed to load organization settings' });
       // Use default settings as fallback
       dispatch({ type: 'SET_ORGANIZATION_SETTINGS', payload: defaultOrganizationSettings });
@@ -388,8 +388,8 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
       } else {
         throw new Error('Failed to save settings');
       }
-    } catch (error) {
-      console.error('Failed to save user settings:', error);
+    } catch (_error) {
+      console.error("", _error);
       dispatch({ type: 'SET_ERROR', payload: 'Failed to save settings. Please try again.' });
     }
   }, [state.userSettings, user?.id]);
@@ -423,8 +423,8 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
       } else {
         throw new Error('Failed to save settings');
       }
-    } catch (error) {
-      console.error('Failed to save organization settings:', error);
+    } catch (_error) {
+      console.error("", _error);
       dispatch({ type: 'SET_ERROR', payload: 'Failed to save organization settings. Please try again.' });
     }
   }, [state.organizationSettings, organization?.id, hasPermission]);
@@ -442,11 +442,11 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
     dispatch({ type: 'SET_ACTIVE_SECTION', payload: section });
   }, []);
 
-  const updateUserSetting = useCallback((path: string, value: any) => {
+  const updateUserSetting = useCallback((path: string, value: unknown) => {
     dispatch({ type: 'UPDATE_USER_SETTING', payload: { path, value } });
   }, []);
 
-  const updateOrganizationSetting = useCallback((path: string, value: any) => {
+  const updateOrganizationSetting = useCallback((path: string, value: unknown) => {
     if (!hasPermission('manage_organization')) {
       dispatch({ type: 'SET_ERROR', payload: 'You do not have permission to modify organization settings' });
       return;
@@ -483,7 +483,7 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
           
           console.log(`🌍 ThriveSend: Auto-detected currency ${detectedCurrency} for your region`);
         }
-      } catch (error) {
+      } catch (_error) {
         console.warn('Currency auto-detection failed:', error);
       }
     }

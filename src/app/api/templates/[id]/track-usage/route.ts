@@ -104,10 +104,10 @@ export async function POST(
       message: 'Usage tracked successfully'
     });
 
-  } catch (error) {
-    console.error('Usage tracking error:', error);
+  } catch (_error) {
+    console.error("", _error);
     
-    if (error instanceof z.ZodError) {
+    if (_error instanceof z.ZodError) {
       return NextResponse.json(
         { 
           error: 'Invalid tracking data',

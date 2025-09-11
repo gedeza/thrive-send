@@ -54,8 +54,8 @@ export default function SecuritySettingsPage() {
 
       // Reset form
       form.reset();
-    } catch (error) {
-      console.error("Error updating password:", error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error",
         description: "Failed to update password. Please check your current password.",
@@ -88,8 +88,8 @@ export default function SecuritySettingsPage() {
           description: "Two-factor authentication enabled",
         });
       }
-    } catch (error) {
-      console.error("Error toggling 2FA:", error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error",
         description: "Failed to update two-factor authentication",

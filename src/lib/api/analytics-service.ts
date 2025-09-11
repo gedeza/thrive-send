@@ -291,7 +291,7 @@ export function useAnalytics() {
       }
 
       return response.json();
-    } catch (error) {
+    } catch (_error) {
       return [];
     }
   };
@@ -315,9 +315,9 @@ export function useAnalytics() {
       }
 
       return response.json();
-    } catch (error) {
+    } catch (_error) {
       // Error fetching audience segments
-      throw error;
+      throw _error;
     }
   };
 
@@ -361,9 +361,9 @@ export function useAnalytics() {
       }
 
       return response.json();
-    } catch (error) {
+    } catch (_error) {
       // Error fetching conversion metrics
-      throw error;
+      throw _error;
     }
   };
 
@@ -440,7 +440,7 @@ export function useAnalytics() {
         description: metric.description,
         icon: metric.icon
       })) : [];
-    } catch (error) {
+    } catch (_error) {
       // Error fetching analytics metrics
       return [];
     }
@@ -465,7 +465,7 @@ export function useAnalytics() {
     }
     const data = await response.json();
     return data.audienceGrowthData || audienceGrowthMockData;
-  } catch (error) {
+  } catch (_error) {
     // Error fetching audience growth data
     return audienceGrowthMockData;
   }
@@ -490,7 +490,7 @@ export function useAnalytics() {
     }
     const data = await response.json();
     return data.engagementPieData || engagementPieMockData;
-  } catch (error) {
+  } catch (_error) {
     // Error fetching engagement breakdown data
     return engagementPieMockData;
   }
@@ -515,7 +515,7 @@ export function useAnalytics() {
     }
     const data = await response.json();
     return data.performanceLineData || performanceLineMockData;
-  } catch (error) {
+  } catch (_error) {
     // Error fetching performance trend data
     return performanceLineMockData;
   }
@@ -597,9 +597,9 @@ export function useAnalytics() {
       }
 
       return response.json();
-    } catch (error) {
+    } catch (_error) {
       // Error fetching campaign overview metrics
-      throw error;
+      throw _error;
     }
   };
 
@@ -622,9 +622,9 @@ export function useAnalytics() {
       }
 
       return response.json();
-    } catch (error) {
+    } catch (_error) {
       // Error fetching device analytics
-      throw error;
+      throw _error;
     }
   };
 
@@ -647,9 +647,9 @@ export function useAnalytics() {
       }
 
       return response.json();
-    } catch (error) {
+    } catch (_error) {
       // Error fetching link analytics
-      throw error;
+      throw _error;
     }
   };
 
@@ -908,9 +908,9 @@ export async function getServiceProviderClientAnalytics(params: {
     // Service provider client analytics fetched successfully
 
     return data;
-  } catch (error) {
+  } catch (_error) {
     // Error fetching service provider client analytics
-    throw error;
+    throw _error;
   }
 }
 
@@ -949,9 +949,9 @@ export async function getServiceProviderCrossClientAnalytics(params: {
     // Service provider cross-client analytics fetched successfully
 
     return data;
-  } catch (error) {
+  } catch (_error) {
     // Error fetching service provider cross-client analytics
-    throw error;
+    throw _error;
   }
 }
 
@@ -1022,9 +1022,9 @@ export async function getServiceProviderClientPerformanceComparison(params: {
     // Service provider client performance comparison generated successfully
 
     return result;
-  } catch (error) {
+  } catch (_error) {
     // Error generating service provider client performance comparison
-    throw error;
+    throw _error;
   }
 }
 

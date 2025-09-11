@@ -72,8 +72,8 @@ export default function OrganizationSettingsPage() {
           website: data.website || '',
           logoUrl: data.logoUrl || '',
         });
-      } catch (error) {
-        console.error('Error fetching organization data:', error);
+      } catch (_error) {
+        console.error("", _error);
         toast({
           title: "Error",
           description: "Failed to load organization settings",
@@ -119,8 +119,8 @@ export default function OrganizationSettingsPage() {
         description: "Organization settings updated successfully",
       });
       console.log("Organization updated:", result);
-    } catch (error) {
-      console.error("Error updating organization settings:", error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to update organization settings",

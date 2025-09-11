@@ -113,7 +113,7 @@ export default function AdvancedFilters({
     setActiveFiltersCount(count);
   }, [filters, filterOptions]);
 
-  const updateFilter = useCallback((key: keyof AdvancedFilterState, value: any) => {
+  const updateFilter = useCallback((key: keyof AdvancedFilterState, value: unknown) => {
     onFiltersChange({
       ...filters,
       [key]: value

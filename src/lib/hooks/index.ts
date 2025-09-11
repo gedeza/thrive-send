@@ -65,9 +65,9 @@ export class OptimizationHookManager {
       this.isInitialized = true;
       console.log('✅ Optimization Hook System initialized successfully');
       
-    } catch (error) {
-      console.error('❌ Failed to initialize Optimization Hook System:', error);
-      throw error;
+    } catch (_error) {
+      console.error("", _error);
+      throw _error;
     }
   }
 
@@ -116,7 +116,7 @@ export class OptimizationHookManager {
     });
   }
 
-  private handleConfigUpdate(data: any): void {
+  private handleConfigUpdate(data: unknown): void {
     console.log('🔄 Configuration updated, reloading components...');
     
     // Update hook system

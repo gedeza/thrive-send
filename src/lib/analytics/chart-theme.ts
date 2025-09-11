@@ -167,7 +167,7 @@ export function getHeatmapColor(value: number, maxValue: number, isDark: boolean
 /**
  * Validate chart data structure
  */
-export function validateChartData(data: any): boolean {
+export function validateChartData(data: unknown): boolean {
   if (!data || typeof data !== 'object') return false;
   if (!Array.isArray(data.labels)) return false;
   if (!Array.isArray(data.datasets)) return false;

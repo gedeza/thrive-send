@@ -90,7 +90,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
         if (!data.hasCompletedOnboarding) {
           setShowWelcomeFlow(true);
         }
-      } catch (error) {
+      } catch (_error) {
         // Error checking onboarding status
         toast({
           title: "Error",
@@ -137,14 +137,14 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
           description: "Onboarding completed successfully!",
         });
       }
-    } catch (error) {
+    } catch (_error) {
       // Error completing step
       toast({
         title: "Error",
         description: "Failed to complete step. Please try again.",
         variant: "destructive",
       });
-      throw error;
+      throw _error;
     }
   };
 
@@ -178,14 +178,14 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
 
         setIsOnboardingComplete(true);
       }
-    } catch (error) {
+    } catch (_error) {
       // Error skipping step
       toast({
         title: "Error",
         description: "Failed to skip step. Please try again.",
         variant: "destructive",
       });
-      throw error;
+      throw _error;
     }
   };
 

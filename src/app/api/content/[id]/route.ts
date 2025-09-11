@@ -66,8 +66,8 @@ export async function GET(
     }
 
     return NextResponse.json(content);
-  } catch (error) {
-    console.error('Error in GET /api/content/[id]:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
@@ -156,9 +156,9 @@ export async function PATCH(
     });
 
     return NextResponse.json(updatedContent);
-  } catch (error) {
-    console.error('Error in PATCH /api/content/[id]:', error);
-    if (error instanceof z.ZodError) {
+  } catch (_error) {
+    console.error("", _error);
+    if (_error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid content data', details: error.errors }, { status: 400 });
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -240,9 +240,9 @@ export async function PUT(
     });
 
     return NextResponse.json(updatedContent);
-  } catch (error) {
-    console.error('Error in PUT /api/content/[id]:', error);
-    if (error instanceof z.ZodError) {
+  } catch (_error) {
+    console.error("", _error);
+    if (_error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid content data', details: error.errors }, { status: 400 });
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -326,8 +326,8 @@ export async function DELETE(
     });
 
     return NextResponse.json({ message: 'Content deleted successfully' });
-  } catch (error) {
-    console.error('Error in DELETE /api/content/[id]:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

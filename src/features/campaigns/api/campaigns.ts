@@ -73,8 +73,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       res.setHeader('Allow', ['GET', 'POST']);
       return res.status(405).end(`Method ${req.method} Not Allowed`);
     }
-  } catch (error) {
-    console.error('Error handling campaign request:', error);
+  } catch (_error) {
+    console.error("", _error);
     
     // Check for specific Prisma errors
     if ((error as any)?.code) {
@@ -82,7 +82,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     
     // Log more details about the error
-    if (error instanceof Error) {
+    if (_error instanceof Error) {
       console.error('Error details:', error.message);
       console.error('Error stack:', error.stack);
     }

@@ -84,9 +84,9 @@ export async function getOrCreateUser(clerkUserId: string) {
       
       return user;
     }
-  } catch (error) {
-    console.error('Critical error in getOrCreateUser:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 

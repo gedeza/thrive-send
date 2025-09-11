@@ -119,8 +119,8 @@ export async function GET(
     };
 
     return NextResponse.json(dashboardData);
-  } catch (error) {
-    console.error('Error fetching client dashboard:', error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 } 

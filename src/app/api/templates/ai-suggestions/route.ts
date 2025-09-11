@@ -167,10 +167,10 @@ export async function POST(req: NextRequest) {
       }
     });
 
-  } catch (error) {
-    console.error('AI Suggestions Error:', error);
+  } catch (_error) {
+    console.error("", _error);
     
-    if (error instanceof z.ZodError) {
+    if (_error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request parameters', details: error.errors },
         { status: 400 }

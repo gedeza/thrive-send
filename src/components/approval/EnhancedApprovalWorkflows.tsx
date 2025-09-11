@@ -275,7 +275,7 @@ export function EnhancedApprovalWorkflows({
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="bulk-action">Action</Label>
-                    <Select value={selectedBulkAction} onValueChange={(value: any) => setSelectedBulkAction(value)}>
+                    <Select value={selectedBulkAction} onValueChange={(value: unknown) => setSelectedBulkAction(value)}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -375,7 +375,7 @@ export function EnhancedApprovalWorkflows({
       )}
 
       {/* Main Content Tabs */}
-      <Tabs value={currentView} onValueChange={(value: any) => setCurrentView(value)}>
+      <Tabs value={currentView} onValueChange={(value: unknown) => setCurrentView(value)}>
         <TabsList>
           <TabsTrigger value="queue">Approval Queue</TabsTrigger>
           <TabsTrigger value="statistics">Statistics</TabsTrigger>

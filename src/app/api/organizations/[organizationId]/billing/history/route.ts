@@ -106,8 +106,8 @@ export async function GET(
     }));
 
     return NextResponse.json(transformedHistory);
-  } catch (error) {
-    console.error("Error fetching billing history:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "Failed to fetch billing history" },
       { status: 500 }

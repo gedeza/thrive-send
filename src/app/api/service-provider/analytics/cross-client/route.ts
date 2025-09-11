@@ -354,8 +354,8 @@ export async function GET(request: NextRequest) {
     };
 
     return NextResponse.json(crossClientAnalytics);
-  } catch (error) {
-    console.error('Cross-client analytics error:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

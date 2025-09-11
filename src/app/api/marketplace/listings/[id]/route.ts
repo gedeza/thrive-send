@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs';
+import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
@@ -72,8 +72,8 @@ export async function GET(
     };
 
     return NextResponse.json(enrichedListing);
-  } catch (error) {
-    console.error('Error fetching marketplace listing:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to fetch listing' },
       { status: 500 }
@@ -151,10 +151,10 @@ export async function PUT(
     });
 
     return NextResponse.json(updatedListing);
-  } catch (error) {
-    console.error('Error updating marketplace listing:', error);
+  } catch (_error) {
+    console.error("", _error);
     
-    if (error instanceof z.ZodError) {
+    if (_error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid input', details: error.errors },
         { status: 400 }
@@ -224,8 +224,8 @@ export async function DELETE(
     return NextResponse.json({
       message: 'Listing deleted successfully'
     });
-  } catch (error) {
-    console.error('Error deleting marketplace listing:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to delete listing' },
       { status: 500 }

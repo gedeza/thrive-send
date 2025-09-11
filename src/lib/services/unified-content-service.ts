@@ -169,8 +169,8 @@ export class UnifiedContentService {
 
       return unifiedContent;
 
-    } catch (error) {
-      console.error('Failed to create unified content:', error);
+    } catch (_error) {
+      console.error("", _error);
       throw new Error(`Failed to create unified content: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -246,8 +246,8 @@ export class UnifiedContentService {
 
       return updatedUnifiedContent;
 
-    } catch (error) {
-      console.error('Failed to update unified content:', error);
+    } catch (_error) {
+      console.error("", _error);
       throw new Error(`Failed to update unified content: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -272,8 +272,8 @@ export class UnifiedContentService {
 
       return this.mergeToUnifiedContent(content, event);
 
-    } catch (error) {
-      console.error('Failed to get unified content:', error);
+    } catch (_error) {
+      console.error("", _error);
       return null;
     }
   }
@@ -308,8 +308,8 @@ export class UnifiedContentService {
         hasMore: false // TODO: Implement pagination
       };
 
-    } catch (error) {
-      console.error('Failed to list unified content:', error);
+    } catch (_error) {
+      console.error("", _error);
       return { items: [], total: 0, hasMore: false };
     }
   }
@@ -338,9 +338,9 @@ export class UnifiedContentService {
       // Emit scheduling event
       this.emitContentEvent('content-scheduled', { ...content, scheduledAt: scheduleTime });
 
-    } catch (error) {
-      console.error('Failed to schedule content:', error);
-      throw error;
+    } catch (_error) {
+      console.error("", _error);
+      throw _error;
     }
   }
 
@@ -373,9 +373,9 @@ export class UnifiedContentService {
       // Emit publication event
       this.emitContentEvent('content-published', content);
 
-    } catch (error) {
-      console.error('Failed to publish content:', error);
-      throw error;
+    } catch (_error) {
+      console.error("", _error);
+      throw _error;
     }
   }
 
@@ -391,8 +391,8 @@ export class UnifiedContentService {
 
       return this.calculateWorkflowState(content);
 
-    } catch (error) {
-      console.error('Failed to get workflow state:', error);
+    } catch (_error) {
+      console.error("", _error);
       return null;
     }
   }
@@ -415,9 +415,9 @@ export class UnifiedContentService {
 
       return syncedContent;
 
-    } catch (error) {
-      console.error('Failed to sync content:', error);
-      throw error;
+    } catch (_error) {
+      console.error("", _error);
+      throw _error;
     }
   }
 
@@ -711,7 +711,7 @@ export class UnifiedContentService {
     };
   }
 
-  private emitContentEvent(eventType: string, data: any): void {
+  private emitContentEvent(eventType: string, data: unknown): void {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent(eventType, { detail: data }));
     }

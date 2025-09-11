@@ -41,7 +41,7 @@ export function withPerformanceMonitoring(
         // For now, just log that auth is present
         userId = 'authenticated_user';
       }
-    } catch (error) {
+    } catch (_error) {
       // Ignore auth extraction errors
     }
 
@@ -272,7 +272,7 @@ export function checkPerformanceAlerts(): Array<{
   type: 'slow_endpoint' | 'high_error_rate' | 'memory_leak' | 'response_time_spike';
   message: string;
   severity: 'low' | 'medium' | 'high' | 'critical';
-  data: any;
+  data: unknown;
 }> {
   const alerts = [];
   const now = Date.now();

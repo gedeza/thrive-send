@@ -52,7 +52,7 @@ export default function TemplateEditorPage() {
         }
         const data = await response.json();
         setTemplate(data);
-      } catch (error) {
+      } catch (_error) {
         toast({
           title: "Error",
           description: "Failed to load template",
@@ -88,7 +88,7 @@ export default function TemplateEditorPage() {
         title: "Success",
         description: "Template saved successfully",
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to save template",

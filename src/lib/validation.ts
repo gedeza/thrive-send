@@ -212,10 +212,10 @@ export async function validateRequestAsync<T>(
   try {
     const validatedData = schema.parse(data);
     return { success: true, data: validatedData };
-  } catch (error) {
-    if (error instanceof z.ZodError) {
+  } catch (_error) {
+    if (_error instanceof z.ZodError) {
       return { success: false, errors: error };
     }
-    throw error;
+    throw _error;
   }
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs';
+import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
@@ -133,8 +133,8 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json(rankedClients);
-  } catch (error) {
-    console.error('Client rankings error:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

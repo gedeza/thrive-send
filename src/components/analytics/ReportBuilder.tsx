@@ -179,8 +179,8 @@ export function ReportBuilder({ campaignId, dateRange }: ReportBuilderProps) {
 
       const data = await response.json();
       console.log('Report saved:', data);
-    } catch (error) {
-      console.error('Error saving report:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   };
 
@@ -188,8 +188,8 @@ export function ReportBuilder({ campaignId, dateRange }: ReportBuilderProps) {
     try {
       // TODO: Implement export functionality
       console.log('Exporting report as:', format);
-    } catch (error) {
-      console.error('Error exporting report:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   };
 

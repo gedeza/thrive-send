@@ -23,7 +23,7 @@ export default function EditContentPage({ params }: EditContentPageProps) {
         }
         const data = await response.json();
         setContentData(data);
-      } catch (error) {
+      } catch (_error) {
         toast({
           title: "Error",
           description: "Failed to load content. Please try again.",

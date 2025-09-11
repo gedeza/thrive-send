@@ -53,8 +53,8 @@ export async function POST(request: NextRequest) {
       }
     });
 
-  } catch (error) {
-    console.error('Error triggering analytics update:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to trigger analytics update' },
       { status: 500 }
@@ -76,8 +76,8 @@ export async function GET() {
       }
     });
 
-  } catch (error) {
-    console.error('Error getting broadcaster status:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to get broadcaster status' },
       { status: 500 }

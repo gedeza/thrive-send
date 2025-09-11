@@ -388,7 +388,7 @@ export function AdvancedContentScheduler({
         </div>
       </div>
 
-      <Tabs value={currentView} onValueChange={(value: any) => setCurrentView(value)} className="space-y-4 lg:space-y-6">
+      <Tabs value={currentView} onValueChange={(value: unknown) => setCurrentView(value)} className="space-y-4 lg:space-y-6">
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
           <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
           <TabsTrigger value="schedules" className="text-xs sm:text-sm">All Schedules</TabsTrigger>
@@ -664,7 +664,7 @@ export function AdvancedContentScheduler({
 
 interface CreateScheduleFormProps {
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: unknown) => void;
   clients: Array<{ id: string; name: string; scheduleCount: number }>;
   organizationId: string;
 }

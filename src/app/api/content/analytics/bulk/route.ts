@@ -101,10 +101,10 @@ export async function POST(request: NextRequest) {
         warning: 'Using mock data - analytics database may not be initialized'
       });
     }
-  } catch (error) {
-    console.error('Error fetching bulk analytics:', error);
+  } catch (_error) {
+    console.error("", _error);
     
-    if (error instanceof z.ZodError) {
+    if (_error instanceof z.ZodError) {
       return NextResponse.json({ 
         error: 'Invalid request data', 
         details: error.errors 

@@ -11,8 +11,8 @@ export class ValidationError extends Error {
 export function validateData<T>(schema: z.ZodSchema<T>, data: unknown): T {
   try {
     return schema.parse(data);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
+  } catch (_error) {
+    if (_error instanceof z.ZodError) {
       const validationError = new ValidationError('Data validation failed', error);
       
       // Log validation error
@@ -26,7 +26,7 @@ export function validateData<T>(schema: z.ZodSchema<T>, data: unknown): T {
 
       throw validationError;
     }
-    throw error;
+    throw _error;
   }
 }
 

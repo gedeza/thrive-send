@@ -41,7 +41,7 @@ export async function getContentAnalytics(contentId: string): Promise<ContentAna
       throw new Error(`Analytics API error: ${response.status}`);
     }
     return await response.json();
-  } catch (error) {
+  } catch (_error) {
     console.warn(`Failed to fetch analytics for content ${contentId}:`, error);
     return null;
   }
@@ -64,7 +64,7 @@ export async function getBulkContentAnalytics(contentIds: string[]): Promise<Rec
     
     const data = await response.json();
     return data.analytics || {};
-  } catch (error) {
+  } catch (_error) {
     console.warn('Failed to fetch bulk analytics:', error);
     return {};
   }

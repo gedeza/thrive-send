@@ -30,8 +30,8 @@ export async function GET() {
     }
 
     return NextResponse.json(organization);
-  } catch (error) {
-    console.error("[ORGANIZATIONS_CURRENT_GET]", error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse("Internal Error", { status: 500 });
   }
 } 

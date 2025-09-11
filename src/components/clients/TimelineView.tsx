@@ -30,9 +30,9 @@ async function getTimelineData(clientId: string, limit?: number): Promise<Timeli
     // Handle both old direct data format and new standardized format
     const timelineData = data.data ? data.data.items : data.items;
     return timelineData || [];
-  } catch (error) {
-    console.error('Error fetching timeline data:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 

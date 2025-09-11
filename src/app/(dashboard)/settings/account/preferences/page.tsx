@@ -105,8 +105,8 @@ export default function PreferencesSettingsPage() {
         title: "Success",
         description: "Preferences updated successfully",
       });
-    } catch (error) {
-      console.error("Error updating preferences:", error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error",
         description: "Failed to update preferences",

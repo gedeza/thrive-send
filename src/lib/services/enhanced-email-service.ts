@@ -27,7 +27,7 @@ export class EnhancedEmailService {
         return await provider.send(request);
       });
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Enhanced email sending failed', error as Error, {
         to: request.to,
         subject: request.subject,
@@ -64,7 +64,7 @@ export class EnhancedEmailService {
         }
       });
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Enhanced bulk email sending failed', error as Error, {
         emailCount: request.emails.length,
       });
@@ -172,7 +172,7 @@ export class EnhancedEmailService {
     try {
       const provider = this.factory.getProvider(providerType);
       return await provider.send(request);
-    } catch (error) {
+    } catch (_error) {
       logger.error(`Email sending failed with ${providerType}`, error as Error, {
         to: request.to,
         subject: request.subject,
@@ -226,7 +226,7 @@ export class EnhancedEmailService {
         try {
           const result = await this.sendWithProvider(testRequest, providerType as EmailProviderType);
           results[providerType] = result;
-        } catch (error) {
+        } catch (_error) {
           results[providerType] = {
             success: false,
             provider: providerType,
@@ -257,7 +257,7 @@ export class EnhancedEmailService {
       if (provider.validateTemplate) {
         try {
           results[providerType] = await provider.validateTemplate(templateId);
-        } catch (error) {
+        } catch (_error) {
           logger.error(`Template validation failed for ${providerType}`, error as Error, {
             templateId,
             provider: providerType,
@@ -293,7 +293,7 @@ export class EnhancedEmailService {
         note: 'Delivery status not supported by this provider',
       };
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get delivery status', error as Error, {
         messageId,
         provider: providerType,

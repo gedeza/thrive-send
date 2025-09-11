@@ -670,8 +670,8 @@ export function ClientsManager({
       
       await switchClient(clientSummary);
       router.push('/dashboard');
-    } catch (error) {
-      console.error('Failed to switch client context:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   }, [onClientSelect, switchClient, router]);
 

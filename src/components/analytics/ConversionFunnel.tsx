@@ -158,8 +158,8 @@ export function ConversionFunnel({ campaignId, timeframe = '30d', showControls =
       });
 
       setFunnel(funnelData);
-    } catch (error) {
-      console.error('❌ Error fetching funnel data:', error);
+    } catch (_error) {
+      console.error("", _error);
       
       // Fallback to basic demo data on error
       const fallbackFunnel: ConversionFunnelData = {

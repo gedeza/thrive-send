@@ -96,7 +96,7 @@ export class TemplateErrorBoundary extends React.Component<
 // Hook version for functional components
 export function useTemplateErrorHandler() {
   const handleTemplateError = (error: Error, operation: string) => {
-    console.error(`Template operation "${operation}" failed:`, error);
+    console.error("", _error);
     
     // You could extend this to send to error reporting service
     // Example: Sentry, LogRocket, etc.

@@ -640,8 +640,8 @@ export default function AdvancedReportsPage() {
         setTemplates([]);
         setScheduledReports([]);
         
-      } catch (error) {
-        console.error('Error fetching reports data:', error);
+      } catch (_error) {
+        console.error("", _error);
         setReports([]);
         setTemplates([]);
         setScheduledReports([]);

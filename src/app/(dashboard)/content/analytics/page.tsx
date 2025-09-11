@@ -107,7 +107,7 @@ export default function ContentAnalyticsPage() {
         title: "Analytics Refreshed",
         description: "Latest analytics data has been loaded successfully.",
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Refresh Failed",
         description: "Failed to refresh analytics data. Please try again.",
@@ -126,7 +126,7 @@ export default function ContentAnalyticsPage() {
         title: "Timeframe Updated",
         description: `Now showing analytics data for the last ${newTimeframe === '7d' ? '7 days' : newTimeframe === '30d' ? '30 days' : newTimeframe === '90d' ? '90 days' : 'year'}.`,
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Filter Update Failed",
         description: "Failed to update timeframe filter. Please try again.",
@@ -244,7 +244,7 @@ export default function ContentAnalyticsPage() {
       {/* Empty State */}
       {!isLoading && content.length === 0 && (
         <Card>
-          <CardContent className="p-12 text-center">
+          <CardContent className="p-6 text-center">
             <BarChart3 className="h-16 w-16 mx-auto mb-6 text-muted-foreground opacity-50" />
             <h3 className="text-xl font-semibold mb-2">No Content to Analyze</h3>
             <p className="text-muted-foreground mb-6 max-w-md mx-auto">
@@ -270,7 +270,7 @@ export default function ContentAnalyticsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8">
+            <div className="text-center py-4">
               <div className="mx-auto max-w-md">
                 <BarChart3 className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                 <h3 className="text-lg font-semibold mb-2">No Analytics Data Yet</h3>

@@ -56,7 +56,7 @@ export default function ContentViewPage({ params }: { params: { id: string } }) 
         
         const data = await response.json();
         setContent(data);
-      } catch (error) {
+      } catch (_error) {
         const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
         setError(errorMessage);
         toast({
@@ -84,7 +84,7 @@ export default function ContentViewPage({ params }: { params: { id: string } }) 
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-8 space-y-8">
+      <div className="container mx-auto py-4 space-y-4">
         <div className="flex items-center gap-4">
           <Skeleton className="h-10 w-10" />
           <Skeleton className="h-6 w-48" />
@@ -115,7 +115,7 @@ export default function ContentViewPage({ params }: { params: { id: string } }) 
 
   if (error || !content) {
     return (
-      <div className="container mx-auto py-8">
+      <div className="container mx-auto py-4">
         <div className="text-center py-12">
           <div className="mx-auto max-w-md">
             <h3 className="text-lg font-semibold mb-2">Content Not Found</h3>
@@ -138,7 +138,7 @@ export default function ContentViewPage({ params }: { params: { id: string } }) 
   const statusConfig = STATUS_CONFIG[content.status.toLowerCase() as keyof typeof STATUS_CONFIG];
 
   return (
-    <div className="container mx-auto py-8 space-y-8">
+    <div className="container mx-auto py-4 space-y-4">
       {/* Navigation */}
       <div className="flex items-center justify-between">
         <nav className="flex items-center text-sm text-muted-foreground">
@@ -217,7 +217,7 @@ export default function ContentViewPage({ params }: { params: { id: string } }) 
       </div>
 
       {/* Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Main Content */}
         <div className="lg:col-span-2">
           <Card>

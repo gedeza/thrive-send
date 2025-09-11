@@ -37,8 +37,8 @@ export function CampaignPerformance({ campaignId, dateRange }: CampaignPerforman
           end: dateRange.end.toISOString(),
         });
         setPerformanceData(metrics[0]); // Assuming we're getting the first campaign's data
-      } catch (error) {
-        console.error('Error fetching campaign performance:', error);
+      } catch (_error) {
+        console.error("", _error);
       } finally {
         setLoading(false);
       }

@@ -38,11 +38,11 @@ export async function GET(
       `;
 
       return NextResponse.json({ documents });
-    } catch (error) {
-      console.error('Database error in documents API:', error);
+    } catch (_error) {
+      console.error("", _error);
       
       // If the error is related to missing tables, return empty documents instead of error
-      if (error instanceof Error && error.message && (
+      if (_error instanceof Error && error.message && (
         error.message.includes('relation "ClientDocument" does not exist') ||
         error.message.includes('column d.') ||
         (error instanceof PrismaClientKnownRequestError && error.code === 'P2010')
@@ -50,10 +50,10 @@ export async function GET(
         return NextResponse.json({ documents: [], message: 'Document table not initialized yet' });
       }
       
-      throw error;
+      throw _error;
     }
-  } catch (error) {
-    console.error('Error fetching documents:', error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
@@ -135,11 +135,11 @@ export async function POST(
       ` as any[])[0];
 
       return NextResponse.json(document);
-    } catch (error) {
-      console.error('Database error in documents API:', error);
+    } catch (_error) {
+      console.error("", _error);
       
       // If the error is related to missing tables, return a more specific error
-      if (error instanceof Error && error.message && (
+      if (_error instanceof Error && error.message && (
         error.message.includes('relation "ClientDocument" does not exist') ||
         error.message.includes('column d.') ||
         (error instanceof PrismaClientKnownRequestError && error.code === 'P2010')
@@ -147,10 +147,10 @@ export async function POST(
         return new NextResponse('Document feature not initialized. Please run database migrations.', { status: 500 });
       }
       
-      throw error;
+      throw _error;
     }
-  } catch (error) {
-    console.error('Error uploading document:', error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
@@ -197,11 +197,11 @@ export async function PUT(
       }
 
       return NextResponse.json(document);
-    } catch (error) {
-      console.error('Database error in documents API:', error);
+    } catch (_error) {
+      console.error("", _error);
       
       // If the error is related to missing tables, return a more specific error
-      if (error instanceof Error && error.message && (
+      if (_error instanceof Error && error.message && (
         error.message.includes('relation "ClientDocument" does not exist') ||
         error.message.includes('column d.') ||
         (error instanceof PrismaClientKnownRequestError && error.code === 'P2010')
@@ -209,10 +209,10 @@ export async function PUT(
         return new NextResponse('Document feature not initialized. Please run database migrations.', { status: 500 });
       }
       
-      throw error;
+      throw _error;
     }
-  } catch (error) {
-    console.error('Error updating document:', error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
@@ -244,11 +244,11 @@ export async function DELETE(
       `;
 
       return new NextResponse(null, { status: 204 });
-    } catch (error) {
-      console.error('Database error in documents API:', error);
+    } catch (_error) {
+      console.error("", _error);
       
       // If the error is related to missing tables, return a more specific error
-      if (error instanceof Error && error.message && (
+      if (_error instanceof Error && error.message && (
         error.message.includes('relation "ClientDocument" does not exist') ||
         error.message.includes('column d.') ||
         (error instanceof PrismaClientKnownRequestError && error.code === 'P2010')
@@ -256,10 +256,10 @@ export async function DELETE(
         return new NextResponse('Document feature not initialized. Please run database migrations.', { status: 500 });
       }
       
-      throw error;
+      throw _error;
     }
-  } catch (error) {
-    console.error('Error deleting document:', error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 } 

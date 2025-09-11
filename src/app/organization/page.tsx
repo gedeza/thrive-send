@@ -26,8 +26,8 @@ export default function OrganizationPage() {
           const data = await response.json();
           setDbOrganizations(data);
         }
-      } catch (error) {
-        console.error('Error fetching organizations:', error);
+      } catch (_error) {
+        console.error("", _error);
       } finally {
         setIsLoadingDb(false);
       }
@@ -85,8 +85,8 @@ export default function OrganizationPage() {
     try {
       await signOut();
       router.push('/sign-in');
-    } catch (error) {
-      console.error('Error signing out:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   };
 
@@ -99,8 +99,8 @@ export default function OrganizationPage() {
         await setActive({ organization: orgId });
         router.push('/content/calendar');
       }
-    } catch (error) {
-      console.error('Failed to set active organization:', error);
+    } catch (_error) {
+      console.error("", _error);
       setIsSelecting(false);
       setSelectedOrgId(null);
     }

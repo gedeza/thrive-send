@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
     };
 
     return NextResponse.json(linkAnalytics);
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { error: "Failed to fetch link analytics" },
       { status: 500 }

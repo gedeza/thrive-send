@@ -39,8 +39,8 @@ export async function GET(req: NextRequest) {
               encoder.encode(`data: ${JSON.stringify(notification)}\n\n`)
             );
           }
-        } catch (error) {
-          console.error('Error in notification stream:', error);
+        } catch (_error) {
+          console.error("", _error);
         }
       }, 5000);
 

@@ -34,7 +34,7 @@ export async function GET() {
     }
 
     return NextResponse.json(contentLibrarySettings)
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching content library settings:', error)
     return new NextResponse('Internal Server Error', { status: 500 })
   }
@@ -70,9 +70,9 @@ export async function PATCH(req: Request) {
     })
 
     return NextResponse.json({ success: true })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating content library settings:', error)
-    if (error instanceof z.ZodError) {
+    if (_error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation failed', details: error.errors },
         { status: 400 }

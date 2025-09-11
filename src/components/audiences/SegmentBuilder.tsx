@@ -205,7 +205,7 @@ export function SegmentBuilder({ audienceId, onSave, onCancel, initialData }: Se
       });
       
       setEstimatedSize(Math.max(Math.floor(baseSize), 10));
-    } catch (error) {
+    } catch (_error) {
       // Error calculating segment size
       setEstimatedSize(null);
     } finally {
@@ -232,7 +232,7 @@ export function SegmentBuilder({ audienceId, onSave, onCancel, initialData }: Se
         title: 'Success',
         description: 'Audience segment created successfully',
       });
-    } catch (error) {
+    } catch (_error) {
       // Error saving segment
       toast({
         title: 'Error',
@@ -296,7 +296,7 @@ export function SegmentBuilder({ audienceId, onSave, onCancel, initialData }: Se
                 <Label htmlFor="type">Segment Type</Label>
                 <Select
                   value={watch('type')}
-                  onValueChange={(value: any) => setValue('type', value)}
+                  onValueChange={(value: unknown) => setValue('type', value)}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -370,7 +370,7 @@ export function SegmentBuilder({ audienceId, onSave, onCancel, initialData }: Se
                     <div className="flex items-center gap-2">
                       <Select
                         value={condition?.logic || 'AND'}
-                        onValueChange={(value: any) => setValue(`conditions.${index}.logic`, value)}
+                        onValueChange={(value: unknown) => setValue(`conditions.${index}.logic`, value)}
                       >
                         <SelectTrigger className="w-20">
                           <SelectValue />

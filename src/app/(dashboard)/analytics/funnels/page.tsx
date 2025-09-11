@@ -153,8 +153,8 @@ export default function FunnelsPage() {
         avgConversionRate
       });
       
-    } catch (error) {
-      console.error('Error fetching funnels:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: 'Error',
         description: 'Failed to fetch funnels',
@@ -188,9 +188,9 @@ export default function FunnelsPage() {
 
   const getStatusConfig = (status: string) => {
     const configs = {
-      ACTIVE: { color: 'bg-green-500', variant: 'default', label: 'Active', icon: PlayCircle },
-      PAUSED: { color: 'bg-yellow-500', variant: 'secondary', label: 'Paused', icon: PauseCircle },
-      DRAFT: { color: 'bg-gray-500', variant: 'outline', label: 'Draft', icon: Edit }
+      ACTIVE: { color: 'bg-green-500', variant: 'default' as const, label: 'Active', icon: PlayCircle },
+      PAUSED: { color: 'bg-yellow-500', variant: 'secondary' as const, label: 'Paused', icon: PauseCircle },
+      DRAFT: { color: 'bg-gray-500', variant: 'outline' as const, label: 'Draft', icon: Edit }
     };
     return configs[status as keyof typeof configs] || configs.DRAFT;
   };
@@ -210,7 +210,7 @@ export default function FunnelsPage() {
     }).format(amount);
   };
 
-  const handleStatusChange = async (funnelId: string, newStatus: string) => {
+  const handleStatusChange = async (funnelId: string, newStatus: 'ACTIVE' | 'PAUSED' | 'DRAFT') => {
     try {
       // Update funnel status via API
       console.log(`Updating funnel ${funnelId} status to ${newStatus}`);
@@ -218,7 +218,7 @@ export default function FunnelsPage() {
       // Update local state
       setFunnels(prev => prev.map(funnel => 
         funnel.id === funnelId 
-          ? { ...funnel, status: newStatus as any, lastUpdated: new Date().toISOString() }
+          ? { ...funnel, status: newStatus, lastUpdated: new Date().toISOString() }
           : funnel
       ));
 
@@ -226,8 +226,8 @@ export default function FunnelsPage() {
         title: 'Status Updated',
         description: `Funnel status changed to ${newStatus.toLowerCase()}`,
       });
-    } catch (error) {
-      console.error('Error updating status:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: 'Error',
         description: 'Failed to update funnel status',
@@ -248,8 +248,8 @@ export default function FunnelsPage() {
         title: 'Funnel Deleted',
         description: 'Funnel has been permanently deleted',
       });
-    } catch (error) {
-      console.error('Error deleting funnel:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: 'Error',
         description: 'Failed to delete funnel',
@@ -461,7 +461,7 @@ function FunnelCard({
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <h3 className="font-semibold text-lg">{funnel.name}</h3>
-              <Badge variant={statusConfig.variant as any} className="flex items-center gap-1">
+              <Badge variant={statusConfig.variant} className="flex items-center gap-1">
                 <StatusIcon className="h-3 w-3" />
                 {statusConfig.label}
               </Badge>

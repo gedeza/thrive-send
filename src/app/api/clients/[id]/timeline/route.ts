@@ -139,8 +139,8 @@ export async function GET(
     const limitedItems = items.slice(0, limit);
 
     return NextResponse.json({ items: limitedItems });
-  } catch (error) {
-    console.error('Error fetching timeline data:', error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Internal Server Error' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }

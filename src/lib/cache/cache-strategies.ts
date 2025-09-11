@@ -175,7 +175,7 @@ export class CacheStrategies {
       logger.debug('Cache miss, no fallback provided', { strategy, key, cacheKey });
       return null;
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Cache get operation failed', error as Error, { strategy, key });
       return fallback ? await fallback() : null;
     }
@@ -205,7 +205,7 @@ export class CacheStrategies {
       logger.debug('Cache set operation', { strategy, key, cacheKey, success: result });
       return result;
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Cache set operation failed', error as Error, { strategy, key });
       return false;
     }
@@ -228,7 +228,7 @@ export class CacheStrategies {
       logger.debug('Cache delete operation', { strategy, key, cacheKey, success: result });
       return result;
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Cache delete operation failed', error as Error, { strategy, key });
       return false;
     }
@@ -268,7 +268,7 @@ export class CacheStrategies {
 
       return totalInvalidated;
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Cache strategy invalidation failed', error as Error, { strategy });
       return 0;
     }
@@ -309,7 +309,7 @@ export class CacheStrategies {
         itemsWarmed: entries.length 
       });
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Cache warming failed for strategy', error as Error, { strategy });
     }
   }
@@ -346,7 +346,7 @@ export class CacheStrategies {
 
       return finalResults;
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Cache batch get operation failed', error as Error, { strategy, keys });
       return {};
     }
@@ -387,7 +387,7 @@ export class CacheStrategies {
 
       return result;
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Cache batch set operation failed', error as Error, { strategy });
       return false;
     }
@@ -455,7 +455,7 @@ export class CacheStrategies {
         if (strategy && strategy.warmingEnabled) {
           try {
             await this.performScheduledWarming(strategyName);
-          } catch (error) {
+          } catch (_error) {
             logger.error('Scheduled cache warming failed', error as Error, { 
               strategy: strategyName 
             });

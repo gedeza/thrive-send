@@ -31,6 +31,17 @@ const customJestConfig = {
         '<rootDir>/src/hooks/**/*.test.{js,jsx,ts,tsx}',
       ],
       setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+      moduleNameMapper: {
+        '^@/(.*)$': '<rootDir>/src/$1',
+      },
+      transform: {
+        '^.+\\.(ts|tsx)$': ['ts-jest', {
+          tsconfig: {
+            jsx: 'react-jsx',
+          },
+        }],
+        '^.+\\.(js|jsx)$': 'babel-jest',
+      },
     },
     {
       displayName: 'api',
@@ -41,6 +52,13 @@ const customJestConfig = {
         '<rootDir>/src/middleware/**/*.test.{js,ts}',
       ],
       setupFilesAfterEnv: ['<rootDir>/jest.setup.api.js'],
+      moduleNameMapper: {
+        '^@/(.*)$': '<rootDir>/src/$1',
+      },
+      transform: {
+        '^.+\\.(ts|tsx)$': 'ts-jest',
+        '^.+\\.(js|jsx)$': 'babel-jest',
+      },
     },
   ],
   collectCoverageFrom: [

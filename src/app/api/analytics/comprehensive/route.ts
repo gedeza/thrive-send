@@ -60,8 +60,8 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString()
     });
 
-  } catch (error) {
-    console.error('❌ Comprehensive analytics error:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -125,8 +125,8 @@ export async function GET(request: NextRequest) {
       demo: true
     });
 
-  } catch (error) {
-    console.error('❌ GET Comprehensive analytics error:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

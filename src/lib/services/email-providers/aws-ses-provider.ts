@@ -40,9 +40,9 @@ export class AWSSESProvider extends BaseEmailProvider {
 
       // Get send quota on initialization
       this.updateSendQuota();
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to initialize AWS SES provider', error as Error);
-      throw error;
+      throw _error;
     }
   }
 
@@ -61,7 +61,7 @@ export class AWSSESProvider extends BaseEmailProvider {
         provider: this.name,
         quota: this.sendQuota,
       });
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to update AWS SES quota', error as Error);
     }
   }
@@ -292,7 +292,7 @@ export class AWSSESProvider extends BaseEmailProvider {
                     indexInBatch: index,
                   },
                 };
-              } catch (error) {
+              } catch (_error) {
                 return {
                   success: false,
                   provider: this.name,
@@ -431,7 +431,7 @@ export class AWSSESProvider extends BaseEmailProvider {
       });
 
       return isHealthy;
-    } catch (error) {
+    } catch (_error) {
       logger.error('AWS SES health check failed', error as Error, {
         provider: this.name,
       });
@@ -464,7 +464,7 @@ export class AWSSESProvider extends BaseEmailProvider {
       // AWS SES template validation would require GetTemplate command
       // For now, return true as templates are typically validated on creation
       return true;
-    } catch (error) {
+    } catch (_error) {
       logger.error('Template validation failed', error as Error, {
         provider: this.name,
         templateId,

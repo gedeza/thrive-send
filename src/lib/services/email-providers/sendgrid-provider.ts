@@ -23,9 +23,9 @@ export class SendGridProvider extends BaseEmailProvider {
         provider: this.name,
         hasDefaultFrom: !!this.config.defaultFrom,
       });
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to initialize SendGrid provider', error as Error);
-      throw error;
+      throw _error;
     }
   }
 
@@ -337,7 +337,7 @@ export class SendGridProvider extends BaseEmailProvider {
       });
 
       return response.ok;
-    } catch (error) {
+    } catch (_error) {
       logger.error('Template validation failed', error as Error, {
         provider: this.name,
         templateId,
@@ -357,7 +357,7 @@ export class SendGridProvider extends BaseEmailProvider {
         provider: this.name,
         note: 'Delivery status available via SendGrid webhooks',
       };
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get delivery status', error as Error, {
         provider: this.name,
         messageId,
@@ -384,7 +384,7 @@ export class SendGridProvider extends BaseEmailProvider {
       });
 
       return isHealthy;
-    } catch (error) {
+    } catch (_error) {
       logger.error('SendGrid health check failed', error as Error, {
         provider: this.name,
       });

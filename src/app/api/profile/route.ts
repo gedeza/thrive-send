@@ -59,16 +59,16 @@ export async function PATCH(req: Request) {
       })
 
       return NextResponse.json({ success: true })
-    } catch (clerkError: any) {
+    } catch (clerkError: unknown) {
       console.error('Clerk update error:', clerkError)
       return new NextResponse(
         JSON.stringify({ message: 'Unable to update profile. Please try again.' }),
         { status: 400 }
       )
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('Profile update error:', error)
-    if (error instanceof Error) {
+    if (_error instanceof Error) {
       const errorMessage = error.message
         .replace(/^ZodError: /, '')
         .replace(/^Error: /, '')

@@ -119,7 +119,7 @@ export default function CreateMultiClientCampaign() {
       });
       
       router.push('/campaigns/multi-client');
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to create multi-client campaign. Please try again.",

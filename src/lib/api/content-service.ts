@@ -127,7 +127,7 @@ export async function saveContent(data: ContentFormData): Promise<ContentData> {
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('API Error Response:', error);
+      console.error("", _error);
       throw new Error(error.message || 'Failed to save content');
     }
 
@@ -148,9 +148,9 @@ export async function saveContent(data: ContentFormData): Promise<ContentData> {
     console.log('📅 Calendar event creation handled by API for consistency');
 
     return savedContent;
-  } catch (error) {
-    console.error('❌ Error saving content:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -175,9 +175,9 @@ export async function associateContentWithList(contentId: string, contentListId:
     }
 
     console.log('Content associated with list successfully');
-  } catch (error) {
-    console.error('Error associating content with list:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -197,9 +197,9 @@ export async function getContent(id: string): Promise<ContentData> {
     const content = await response.json();
     console.log('Content fetched:', content);
     return content;
-  } catch (error) {
-    console.error('Error fetching content:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -223,9 +223,9 @@ export async function updateContent(id: string, data: Partial<ContentFormValues>
     const updatedContent = await response.json();
     console.log('Content updated:', updatedContent);
     return updatedContent;
-  } catch (error) {
-    console.error('Error updating content:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -245,9 +245,9 @@ export async function deleteContent(id: string): Promise<void> {
       throw new Error(error.message || 'Failed to delete content');
     }
     console.log('Content deleted successfully');
-  } catch (error) {
-    console.error('Error deleting content:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -315,7 +315,7 @@ export async function listContent(params: {
 
       if (!response.ok) {
         const error = await response.json();
-        console.error('Service Provider API Error:', error);
+        console.error("", _error);
         throw new Error(error.message || 'Failed to fetch service provider content');
       }
 
@@ -342,7 +342,7 @@ export async function listContent(params: {
 
       if (!response.ok) {
         const error = await response.json();
-        console.error('Simple API Error:', error);
+        console.error("", _error);
         throw new Error(error.message || 'Failed to fetch content');
       }
 
@@ -398,9 +398,9 @@ export async function listContent(params: {
         }
       };
     }
-  } catch (error) {
-    console.error('❌ Error fetching content list:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -435,7 +435,7 @@ export async function createContent(data: ContentFormValues): Promise<ContentDat
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('API Error Response:', error);
+      console.error("", _error);
       throw new Error(error.message || 'Failed to create content');
     }
 
@@ -448,9 +448,9 @@ export async function createContent(data: ContentFormValues): Promise<ContentDat
     }
 
     return createdContent;
-  } catch (error) {
-    console.error('❌ Error creating content:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -510,22 +510,22 @@ export async function syncContentToCalendar(retryCount = 0): Promise<{ synced: n
                 console.log(`Calendar event already exists for content: ${content.title} (ID: ${content.id})`);
               }
             }
-          } catch (error) {
-            console.error(`Failed to sync content ${content.id} to calendar:`, error);
+          } catch (_error) {
+            console.error("", _error);
             errors++;
           }
         }
-      } catch (error) {
-        console.error(`Failed to fetch content with status ${status}:`, error);
+      } catch (_error) {
+        console.error("", _error);
         errors++;
       }
     }
 
     console.log(`Sync completed: ${synced} synced, ${errors} errors`);
     return { synced, errors };
-  } catch (error) {
-    console.error('Error during content to calendar sync:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -560,7 +560,7 @@ export async function getServiceProviderContentAnalytics(params: {
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('Service Provider Analytics API Error:', error);
+      console.error("", _error);
       throw new Error(error.message || 'Failed to fetch content analytics');
     }
 
@@ -568,9 +568,9 @@ export async function getServiceProviderContentAnalytics(params: {
     console.log('✅ Service Provider analytics response:', analytics);
 
     return analytics;
-  } catch (error) {
-    console.error('❌ Error fetching service provider content analytics:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -602,9 +602,9 @@ export async function getClientContentLibrary(params: {
       status: params.status,
       contentType: params.contentType,
     });
-  } catch (error) {
-    console.error('❌ Error fetching client content library:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -626,8 +626,8 @@ export async function getCrossClientContentPerformance(organizationId: string): 
       crossClient: analytics.data?.crossClient,
       contentTypeBreakdown: analytics.data?.contentTypeBreakdown,
     };
-  } catch (error) {
-    console.error('❌ Error fetching cross-client performance:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }

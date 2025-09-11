@@ -54,8 +54,8 @@ export function CreateGoalForm({ clientId }: CreateGoalFormProps) {
 
       router.push(`/clients/${clientId}`);
       router.refresh();
-    } catch (error) {
-      console.error('Error creating goal:', error);
+    } catch (_error) {
+      console.error("", _error);
       alert('Failed to create goal. Please try again.');
     } finally {
       setIsSubmitting(false);

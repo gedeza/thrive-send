@@ -217,7 +217,7 @@ export default function InviteTeamMemberPage() {
             status: client.status
           })));
         }
-      } catch (error) {
+      } catch (_error) {
         // Handle client loading error
         toast({
           title: "Error",
@@ -327,7 +327,7 @@ export default function InviteTeamMemberPage() {
 
       router.push('/team');
 
-    } catch (error) {
+    } catch (_error) {
       // Handle invitation sending error
       toast({
         title: "Error",
@@ -559,7 +559,7 @@ export default function InviteTeamMemberPage() {
                               <Label className="text-sm">Client Role</Label>
                               <Select 
                                 value={assignment.role} 
-                                onValueChange={(value: any) => updateClientAssignmentRole(assignment.clientId, value)}
+                                onValueChange={(value: unknown) => updateClientAssignmentRole(assignment.clientId, value)}
                               >
                                 <SelectTrigger className="mt-1">
                                   <SelectValue />

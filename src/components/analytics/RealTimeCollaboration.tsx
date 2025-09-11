@@ -629,7 +629,7 @@ export function RealTimeCollaboration({
 
         {isPanelExpanded && (
           <div className="p-3">
-            <Tabs value={collaborationPanel} onValueChange={(value: any) => setCollaborationPanel(value)}>
+            <Tabs value={collaborationPanel} onValueChange={(value: unknown) => setCollaborationPanel(value)}>
               <TabsList className="grid w-full grid-cols-4 text-xs">
                 <TabsTrigger value="users" className="p-1">
                   <Users className="h-3 w-3" />
@@ -798,7 +798,7 @@ export function RealTimeCollaboration({
             <CardContent className="space-y-4">
               <div>
                 <Label>Type</Label>
-                <Select value={newAnnotation.type} onValueChange={(value: any) => setNewAnnotation(prev => ({ ...prev, type: value }))}>
+                <Select value={newAnnotation.type} onValueChange={(value: unknown) => setNewAnnotation(prev => ({ ...prev, type: value }))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -832,7 +832,7 @@ export function RealTimeCollaboration({
 
               <div>
                 <Label>Priority</Label>
-                <Select value={newAnnotation.priority} onValueChange={(value: any) => setNewAnnotation(prev => ({ ...prev, priority: value }))}>
+                <Select value={newAnnotation.priority} onValueChange={(value: unknown) => setNewAnnotation(prev => ({ ...prev, priority: value }))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>

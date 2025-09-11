@@ -31,7 +31,7 @@ const queueEvents = new QueueEvents('email-processing', {
   connection: queueRedisConnection,
 });
 
-queueEvents.on('completed', ({ jobId, returnvalue }: { jobId: string; returnvalue: any }) => {
+queueEvents.on('completed', ({ jobId, returnvalue }: { jobId: string; returnvalue: unknown }) => {
   logger.queueEvent('job_completed', jobId, {
     status: 'completed',
     returnValue: returnvalue
@@ -91,12 +91,12 @@ export class EmailQueueManager {
       });
 
       return job;
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to add single email job', error, {
         organizationId: emailData.organizationId,
         to: emailData.to,
       });
-      throw error;
+      throw _error;
     }
   }
 
@@ -148,13 +148,13 @@ export class EmailQueueManager {
       });
 
       return jobs;
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to add bulk email jobs', error, {
         organizationId: emailData.organizationId,
         campaignId: emailData.campaignId,
         recipientCount: emailData.recipients.length,
       });
-      throw error;
+      throw _error;
     }
   }
 
@@ -196,12 +196,12 @@ export class EmailQueueManager {
       });
 
       return job;
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to add newsletter job', error, {
         organizationId: emailData.organizationId,
         campaignId: emailData.campaignId,
       });
-      throw error;
+      throw _error;
     }
   }
 
@@ -251,13 +251,13 @@ export class EmailQueueManager {
       });
 
       return jobs;
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to add campaign email jobs', error, {
         organizationId: emailData.organizationId,
         campaignId: emailData.campaignId,
         recipientCount: emailData.recipients.length,
       });
-      throw error;
+      throw _error;
     }
   }
 
@@ -282,7 +282,7 @@ export class EmailQueueManager {
       };
 
       return stats;
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get queue stats', error);
       return null;
     }
@@ -307,7 +307,7 @@ export class EmailQueueManager {
         default:
           return [];
       }
-    } catch (error) {
+    } catch (_error) {
       logger.error(`Failed to get ${status} jobs`, error);
       return [];
     }
@@ -320,9 +320,9 @@ export class EmailQueueManager {
     try {
       await emailQueue.pause();
       logger.info('Email queue paused');
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to pause queue', error);
-      throw error;
+      throw _error;
     }
   }
 
@@ -333,9 +333,9 @@ export class EmailQueueManager {
     try {
       await emailQueue.resume();
       logger.info('Email queue resumed');
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to resume queue', error);
-      throw error;
+      throw _error;
     }
   }
 
@@ -369,9 +369,9 @@ export class EmailQueueManager {
       }
       
       logger.info(`Email queue cleared: ${status}`);
-    } catch (error) {
+    } catch (_error) {
       logger.error(`Failed to clear queue (${status})`, error);
-      throw error;
+      throw _error;
     }
   }
 
@@ -381,7 +381,7 @@ export class EmailQueueManager {
   static async getJob(jobId: string): Promise<Job<EmailJobData> | undefined> {
     try {
       return await emailQueue.getJob(jobId);
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get job', error, { jobId });
       return undefined;
     }
@@ -397,9 +397,9 @@ export class EmailQueueManager {
         await job.retry();
         logger.info('Job retried', { jobId });
       }
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to retry job', error, { jobId });
-      throw error;
+      throw _error;
     }
   }
 }

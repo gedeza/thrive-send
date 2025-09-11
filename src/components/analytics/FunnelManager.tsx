@@ -145,8 +145,8 @@ export function FunnelManager({
         title: 'Success',
         description: `Funnel ${funnelId ? 'updated' : 'created'} successfully`,
       });
-    } catch (error) {
-      console.error('Error saving funnel:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: 'Error',
         description: 'Failed to save funnel',
@@ -226,7 +226,7 @@ export function FunnelManager({
                   <Label htmlFor="status">Status</Label>
                   <Select
                     value={watch('status')}
-                    onValueChange={(value: any) => setValue('status', value)}
+                    onValueChange={(value: unknown) => setValue('status', value)}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -275,7 +275,7 @@ export function FunnelManager({
                   <Label htmlFor="timeframe">Analysis Timeframe</Label>
                   <Select
                     value={watch('timeframe')}
-                    onValueChange={(value: any) => setValue('timeframe', value)}
+                    onValueChange={(value: unknown) => setValue('timeframe', value)}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -383,7 +383,7 @@ export function FunnelManager({
                           <Label>Event Type</Label>
                           <Select
                             value={stage?.eventType || 'CUSTOM'}
-                            onValueChange={(value: any) => setValue(`stages.${index}.eventType`, value)}
+                            onValueChange={(value: unknown) => setValue(`stages.${index}.eventType`, value)}
                           >
                             <SelectTrigger>
                               <SelectValue />

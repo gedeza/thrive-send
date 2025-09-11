@@ -41,7 +41,7 @@ export const useClientOperations = (): UseClientOperationsResult => {
     const errorMessage = error instanceof Error ? error.message : `Failed to ${operation}`;
     setError(errorMessage);
     
-    console.error(`Client operation error (${operation}):`, error);
+    console.error("", _error);
     
     toast({
       title: "Error",
@@ -127,7 +127,7 @@ export const useClientOperations = (): UseClientOperationsResult => {
 
         return validatedResponse.data;
 
-      } catch (error) {
+      } catch (_error) {
         return handleError(error, 'create client');
       } finally {
         setIsLoading(false);
@@ -210,7 +210,7 @@ export const useClientOperations = (): UseClientOperationsResult => {
 
         return validatedResponse.data;
 
-      } catch (error) {
+      } catch (_error) {
         return handleError(error, 'update client');
       } finally {
         setIsLoading(false);
@@ -265,7 +265,7 @@ export const useClientOperations = (): UseClientOperationsResult => {
 
         return true;
 
-      } catch (error) {
+      } catch (_error) {
         handleError(error, 'delete client');
         return false;
       } finally {
@@ -322,7 +322,7 @@ export const useClientOperations = (): UseClientOperationsResult => {
 
         return validatedResponse.data;
 
-      } catch (error) {
+      } catch (_error) {
         return handleError(error, 'fetch client');
       } finally {
         setIsLoading(false);

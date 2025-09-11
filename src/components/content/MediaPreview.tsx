@@ -45,7 +45,7 @@ function parseMediaData(media: any): MediaFile[] {
     }
     
     return [];
-  } catch (error) {
+  } catch (_error) {
     console.warn('Failed to parse media data:', error);
     return [];
   }

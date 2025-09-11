@@ -110,7 +110,7 @@ export function MediaUploader({
         title: 'Success',
         description: 'Files uploaded successfully',
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to upload files',

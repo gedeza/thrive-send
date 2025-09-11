@@ -130,14 +130,14 @@ export function useRealTimeAnalytics({
               break;
               
             case 'error':
-              console.error('WebSocket error message:', message.error);
+              console.error("", _error);
               break;
               
             default:
               console.log('Unknown WebSocket message type:', message.type);
           }
-        } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
+        } catch (_error) {
+          console.error("", _error);
         }
       };
 
@@ -156,7 +156,7 @@ export function useRealTimeAnalytics({
       };
 
       ws.onerror = (error) => {
-        console.error('Analytics WebSocket error:', error);
+        console.error("", _error);
         setIsConnected(false);
       };
 
@@ -174,8 +174,8 @@ export function useRealTimeAnalytics({
         clearInterval(pingInterval);
       });
 
-    } catch (error) {
-      console.error('Failed to initialize Analytics WebSocket:', error);
+    } catch (_error) {
+      console.error("", _error);
       setIsConnected(false);
       
       // Fallback to simulation mode if WebSocket fails

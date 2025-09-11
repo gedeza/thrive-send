@@ -92,8 +92,8 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json(workflows);
-  } catch (error) {
-    console.error("Error fetching approval workflows:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "Failed to fetch approval workflows" },
       { status: 500 }
@@ -231,15 +231,15 @@ export async function POST(request: NextRequest) {
     // This would integrate with your notification system
 
     return NextResponse.json(workflow, { status: 201 });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
+  } catch (_error) {
+    if (_error instanceof z.ZodError) {
       return NextResponse.json(
         { error: "Validation error", details: error.errors },
         { status: 400 }
       );
     }
 
-    console.error("Error creating approval request:", error);
+    console.error("", _error);
     return NextResponse.json(
       { error: "Failed to create approval request" },
       { status: 500 }

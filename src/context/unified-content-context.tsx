@@ -238,9 +238,9 @@ export function UnifiedContentProvider({
         }
         
         return item;
-      } catch (error) {
+      } catch (_error) {
         dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Failed to create content' });
-        throw error;
+        throw _error;
       }
     },
 
@@ -254,9 +254,9 @@ export function UnifiedContentProvider({
         if (workflowState) {
           dispatch({ type: 'SET_WORKFLOW_STATE', payload: { id, state: workflowState } });
         }
-      } catch (error) {
+      } catch (_error) {
         dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Failed to update content' });
-        throw error;
+        throw _error;
       }
     },
 
@@ -264,9 +264,9 @@ export function UnifiedContentProvider({
       try {
         // Note: unifiedContentService would need a delete method
         dispatch({ type: 'REMOVE_ITEM', payload: id });
-      } catch (error) {
+      } catch (_error) {
         dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Failed to delete content' });
-        throw error;
+        throw _error;
       }
     },
 
@@ -294,7 +294,7 @@ export function UnifiedContentProvider({
           }
         });
         
-      } catch (error) {
+      } catch (_error) {
         dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Failed to load content' });
       }
     },
@@ -321,9 +321,9 @@ export function UnifiedContentProvider({
       try {
         await unifiedContentService.scheduleContent(id, scheduledAt);
         await actions.updateContent(id, { status: 'scheduled', scheduledAt });
-      } catch (error) {
+      } catch (_error) {
         dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Failed to schedule content' });
-        throw error;
+        throw _error;
       }
     },
 
@@ -334,9 +334,9 @@ export function UnifiedContentProvider({
           status: 'published', 
           publishedAt: new Date().toISOString() 
         });
-      } catch (error) {
+      } catch (_error) {
         dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Failed to publish content' });
-        throw error;
+        throw _error;
       }
     },
 
@@ -347,7 +347,7 @@ export function UnifiedContentProvider({
           dispatch({ type: 'SET_WORKFLOW_STATE', payload: { id, state: workflowState } });
         }
         return workflowState;
-      } catch (error) {
+      } catch (_error) {
         // Failed to get workflow state
         return null;
       }
@@ -362,7 +362,7 @@ export function UnifiedContentProvider({
           type: 'SYNC_COMPLETE', 
           payload: { items: state.items, timestamp: new Date().toISOString() } 
         });
-      } catch (error) {
+      } catch (_error) {
         dispatch({ type: 'SET_SYNC_STATUS', payload: 'error' });
         dispatch({ type: 'SET_ERROR', payload: 'Failed to sync content' });
       }
@@ -372,9 +372,9 @@ export function UnifiedContentProvider({
       try {
         const syncedItem = await unifiedContentService.syncContent(id);
         dispatch({ type: 'UPDATE_ITEM', payload: { id, updates: syncedItem } });
-      } catch (error) {
+      } catch (_error) {
         dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Failed to sync content item' });
-        throw error;
+        throw _error;
       }
     },
 
@@ -399,9 +399,9 @@ export function UnifiedContentProvider({
         
         actions.trackTemplateUsage(templateId);
         return item;
-      } catch (error) {
+      } catch (_error) {
         dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Failed to apply template' });
-        throw error;
+        throw _error;
       }
     },
 

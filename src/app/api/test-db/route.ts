@@ -19,8 +19,8 @@ export async function GET(request: NextRequest) {
       },
       timestamp: new Date().toISOString(),
     });
-  } catch (error) {
-    console.error('Database test error:', error);
+  } catch (_error) {
+    console.error("", _error);
     
     return NextResponse.json({
       status: 'error',

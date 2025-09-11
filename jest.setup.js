@@ -1,4 +1,4 @@
-import '@testing-library/jest-dom';
+require('@testing-library/jest-dom');
 
 // Set test timeout
 jest.setTimeout(10000);
@@ -89,19 +89,8 @@ global.console = {
   error: jest.fn(),
 };
 
-// Mock email service
-jest.mock('../src/lib/email', () => ({
-  sendInvitationEmail: jest.fn().mockImplementation(() => Promise.resolve()),
-}));
-
-// Mock storage service
-jest.mock('@/lib/api', () => ({
-  uploadMedia: jest.fn().mockImplementation(() => Promise.resolve({
-    url: 'https://test.com/file.png',
-    filename: 'test-file.png',
-  })),
-  deleteContent: jest.fn().mockImplementation(() => Promise.resolve(true)),
-}));
+// External service mocks will be handled by individual test files
+// This avoids module resolution issues during global setup
 
 // Mock date-fns-tz
 jest.mock('date-fns-tz', () => ({
@@ -199,11 +188,6 @@ jest.mock('date-fns-tz', () => ({
     return localDate;
   }
 }));
-
-// Reset all mocks automatically between tests
-beforeEach(() => {
-  jest.clearAllMocks();
-});
 
 // Add support for act(...)
 const { act } = require('@testing-library/react');

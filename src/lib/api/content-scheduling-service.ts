@@ -188,7 +188,7 @@ export async function getContentSchedulingData(params: {
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('Content Scheduling API Error:', error);
+      console.error("", _error);
       throw new Error(error.message || 'Failed to fetch content scheduling data');
     }
 
@@ -200,9 +200,9 @@ export async function getContentSchedulingData(params: {
     });
 
     return data;
-  } catch (error) {
-    console.error('❌ Error fetching content scheduling data:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -229,7 +229,7 @@ export async function createContentSchedule(params: ScheduleRequest): Promise<Sc
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('Content Schedule Creation Error:', error);
+      console.error("", _error);
       throw new Error(error.message || 'Failed to create content schedule');
     }
 
@@ -254,14 +254,14 @@ export async function createContentSchedule(params: ScheduleRequest): Promise<Sc
     });
 
     return result;
-  } catch (error) {
-    console.error('❌ Error creating content schedule:', error);
+  } catch (_error) {
+    console.error("", _error);
     toast({
       title: "Scheduling Error",
       description: error instanceof Error ? error.message : 'Failed to create content schedule',
       variant: "destructive",
     });
-    throw error;
+    throw _error;
   }
 }
 
@@ -302,7 +302,7 @@ export async function controlContentSchedule(params: {
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('Schedule Control Error:', error);
+      console.error("", _error);
       throw new Error(error.message || 'Failed to control schedule');
     }
 
@@ -327,14 +327,14 @@ export async function controlContentSchedule(params: {
     });
 
     return result;
-  } catch (error) {
-    console.error('❌ Error controlling schedule:', error);
+  } catch (_error) {
+    console.error("", _error);
     toast({
       title: "Error",
       description: error instanceof Error ? error.message : 'Failed to control schedule',
       variant: "destructive",
     });
-    throw error;
+    throw _error;
   }
 }
 
@@ -419,14 +419,14 @@ export async function applySchedulingTemplate(params: {
     });
 
     return result;
-  } catch (error) {
-    console.error('❌ Error applying scheduling template:', error);
+  } catch (_error) {
+    console.error("", _error);
     toast({
       title: "Error",
       description: 'Failed to apply scheduling template',
       variant: "destructive",
     });
-    throw error;
+    throw _error;
   }
 }
 
@@ -468,7 +468,7 @@ export async function getOptimalPostingTimes(params: {
             select: { id: true, name: true }
           });
           return client || { id: clientId, name: `Client ${clientId}` };
-        } catch (error) {
+        } catch (_error) {
           console.warn(`Failed to fetch client ${clientId}:`, error);
           return { id: clientId, name: `Client ${clientId}` };
         }
@@ -501,9 +501,9 @@ export async function getOptimalPostingTimes(params: {
     ];
 
     return { recommendations, insights };
-  } catch (error) {
-    console.error('❌ Error getting optimal posting times:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -584,7 +584,7 @@ export async function generateSchedulingReport(params: {
               avgEngagement: clientMetrics._avg.engagementRate || 0,
               bestPerformingPlatform: 'Facebook' // Calculate from platform analytics
             };
-          } catch (error) {
+          } catch (_error) {
             console.warn(`Failed to fetch performance for client ${clientId}:`, error);
             const client = clientData.find(c => c.id === clientId);
             return {
@@ -623,14 +623,14 @@ export async function generateSchedulingReport(params: {
     });
 
     return report;
-  } catch (error) {
-    console.error('❌ Error generating scheduling report:', error);
+  } catch (_error) {
+    console.error("", _error);
     toast({
       title: "Error",
       description: 'Failed to generate scheduling report',
       variant: "destructive",
     });
-    throw error;
+    throw _error;
   }
 }
 

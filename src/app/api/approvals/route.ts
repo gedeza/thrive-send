@@ -44,8 +44,8 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json(approvals);
-  } catch (error) {
-    console.error('Error fetching approvals:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

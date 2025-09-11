@@ -200,8 +200,8 @@ export function CrossClientAnalytics({
       }
 
       console.log(`✅ Cross-client analytics exported as ${format.toUpperCase()}`);
-    } catch (error) {
-      console.error('❌ Export failed:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   }, [crossClientData, organizationId, currentTimeRange]);
 
@@ -271,7 +271,7 @@ export function CrossClientAnalytics({
         </div>
         
         <div className="flex flex-wrap gap-2">
-          <Select value={currentTimeRange} onValueChange={(value: any) => setCurrentTimeRange(value)}>
+          <Select value={currentTimeRange} onValueChange={(value: unknown) => setCurrentTimeRange(value)}>
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
@@ -376,7 +376,7 @@ export function CrossClientAnalytics({
       </div>
 
       {/* Main Content Tabs */}
-      <Tabs value={currentTab} onValueChange={(value: any) => setCurrentTab(value)}>
+      <Tabs value={currentTab} onValueChange={(value: unknown) => setCurrentTab(value)}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
@@ -399,7 +399,7 @@ export function CrossClientAnalytics({
               </div>
             </div>
             
-            <Select value={filterType} onValueChange={(value: any) => setFilterType(value)}>
+            <Select value={filterType} onValueChange={(value: unknown) => setFilterType(value)}>
               <SelectTrigger className="w-48">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue />
@@ -413,7 +413,7 @@ export function CrossClientAnalytics({
               </SelectContent>
             </Select>
             
-            <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+            <Select value={sortBy} onValueChange={(value: unknown) => setSortBy(value)}>
               <SelectTrigger className="w-48">
                 <SelectValue />
               </SelectTrigger>

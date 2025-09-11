@@ -168,8 +168,8 @@ export function ClientPerformanceRankings({
       }
 
       console.log(`✅ Client rankings exported as ${format.toUpperCase()}`);
-    } catch (error) {
-      console.error('❌ Export failed:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   }, [rankingsData, organizationId, currentTimeRange]);
 
@@ -238,7 +238,7 @@ export function ClientPerformanceRankings({
         </div>
         
         <div className="flex flex-wrap gap-2">
-          <Select value={currentTimeRange} onValueChange={(value: any) => setCurrentTimeRange(value)}>
+          <Select value={currentTimeRange} onValueChange={(value: unknown) => setCurrentTimeRange(value)}>
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
@@ -272,7 +272,7 @@ export function ClientPerformanceRankings({
       </div>
 
       {/* Content */}
-      <Tabs value={currentTab} onValueChange={(value: any) => setCurrentTab(value)}>
+      <Tabs value={currentTab} onValueChange={(value: unknown) => setCurrentTab(value)}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="rankings">Rankings</TabsTrigger>
           <TabsTrigger value="insights">Performance Insights</TabsTrigger>
@@ -294,7 +294,7 @@ export function ClientPerformanceRankings({
               </div>
             </div>
             
-            <Select value={currentRankingType} onValueChange={(value: any) => setCurrentRankingType(value)}>
+            <Select value={currentRankingType} onValueChange={(value: unknown) => setCurrentRankingType(value)}>
               <SelectTrigger className="w-48">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue />

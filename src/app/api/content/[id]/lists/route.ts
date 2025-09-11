@@ -78,7 +78,7 @@ export async function GET(
       lists: contentLists,
       totalCount: contentLists.length,
     });
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching content lists for content:', {
       contentId: params.id,
       userId,

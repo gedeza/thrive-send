@@ -83,9 +83,9 @@ export async function POST(
       message: 'Content added to list successfully',
       association
     });
-  } catch (error) {
-    console.error('Error associating content with list:', error);
-    if (error instanceof z.ZodError) {
+  } catch (_error) {
+    console.error("", _error);
+    if (_error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid data', details: error.errors }, { status: 400 });
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -166,8 +166,8 @@ export async function GET(
       contents: contents.map(item => item.content),
       totalCount: contents.length,
     });
-  } catch (error) {
-    console.error('Error fetching content list contents:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -224,8 +224,8 @@ export async function DELETE(
     return NextResponse.json({ 
       message: 'Content removed from list successfully' 
     });
-  } catch (error) {
-    console.error('Error removing content from list:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 } 

@@ -42,8 +42,8 @@ export async function sendInvitationEmail({
         </div>
       `,
     });
-  } catch (error) {
-    console.error("Failed to send invitation email:", error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 } 

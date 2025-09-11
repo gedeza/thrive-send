@@ -39,8 +39,8 @@ export function RecentActivity() {
         const data = await response.json();
         setActivities(data);
       }
-    } catch (error) {
-      console.error('Failed to fetch recent activity:', error);
+    } catch (_error) {
+      console.error("", _error);
       // Fallback to mock data for demo
       setActivities(getMockActivity());
     } finally {

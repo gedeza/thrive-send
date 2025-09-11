@@ -129,8 +129,8 @@ export async function GET(request: NextRequest) {
       total: transformedClients.length
     });
 
-  } catch (error) {
-    console.error('Error fetching clients:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to fetch clients' },
       { status: 500 }

@@ -323,7 +323,7 @@ export default function ClientAssignmentManager({
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Role</label>
-                  <Select value={newAssignment.role} onValueChange={(value: any) => 
+                  <Select value={newAssignment.role} onValueChange={(value: unknown) => 
                     setNewAssignment({ 
                       ...newAssignment, 
                       role: value,
@@ -449,7 +449,7 @@ export default function ClientAssignmentManager({
                                       <label className="text-sm font-medium">Role</label>
                                       <Select 
                                         value={assignment.role} 
-                                        onValueChange={(value: any) => handleUpdateRole(assignment.id, value)}
+                                        onValueChange={(value: unknown) => handleUpdateRole(assignment.id, value)}
                                       >
                                         <SelectTrigger>
                                           <SelectValue />

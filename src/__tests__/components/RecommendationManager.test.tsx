@@ -365,7 +365,7 @@ describe('RecommendationManager Component', () => {
     });
 
     it('should update recommendation status (pause/resume)', async () => {
-      mockFetch.mockImplementation((url: string, options: any) => {
+      mockFetch.mockImplementation((url: string, options: RequestInit) => {
         if (options?.method === 'PUT') {
           return Promise.resolve({
             ok: true,

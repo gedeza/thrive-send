@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-  } catch (error) {
+  } catch (_error) {
     logger.error('Failed to get conversion metrics', error as Error);
     
     return NextResponse.json({

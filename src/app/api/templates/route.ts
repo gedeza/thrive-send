@@ -95,8 +95,8 @@ export async function GET(req: NextRequest) {
 
       return NextResponse.json(templates);
     }
-  } catch (error) {
-    console.error("Error fetching templates:", error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
@@ -151,8 +151,8 @@ export async function POST(req: NextRequest) {
       }
       throw validationError;
     }
-  } catch (error) {
-    console.error("Error creating template:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "Failed to create template", details: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }
@@ -180,11 +180,11 @@ export async function PUT(req: NextRequest) {
     });
 
     return NextResponse.json(template);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
+  } catch (_error) {
+    if (_error instanceof z.ZodError) {
       return NextResponse.json({ error: error.errors }, { status: 400 });
     }
-    console.error("Error updating template:", error);
+    console.error("", _error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
@@ -212,8 +212,8 @@ export async function DELETE(req: NextRequest) {
     });
 
     return new NextResponse(null, { status: 204 });
-  } catch (error) {
-    console.error("Error deleting template:", error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }

@@ -80,8 +80,8 @@ export async function GET(request: NextRequest) {
       },
     });
 
-  } catch (error) {
-    console.error('Error fetching real analytics metrics:', error);
+  } catch (_error) {
+    console.error("", _error);
     
     // Return structured error response
     return NextResponse.json(
@@ -124,8 +124,8 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
 
-  } catch (error) {
-    console.error('Error updating analytics metrics:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to update analytics metrics' },
       { status: 500 }

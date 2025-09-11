@@ -64,9 +64,9 @@ export function createSuccessResponse<T>(
 
 // Handle common error types
 export function handleApiError(error: unknown): NextResponse<ApiError> {
-  console.error("API Error:", error);
+  console.error("", _error);
 
-  if (error instanceof ZodError) {
+  if (_error instanceof ZodError) {
     return createErrorResponse(
       "Validation failed",
       HttpStatus.BAD_REQUEST,
@@ -75,7 +75,7 @@ export function handleApiError(error: unknown): NextResponse<ApiError> {
     );
   }
 
-  if (error instanceof Error) {
+  if (_error instanceof Error) {
     // Check for specific database errors
     if (error.message.includes("P2002")) {
       return createErrorResponse(

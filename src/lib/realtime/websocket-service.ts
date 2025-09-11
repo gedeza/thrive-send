@@ -7,7 +7,7 @@ export interface AnalyticsEvent {
   timestamp: string;
   organizationId: string;
   userId?: string;
-  data: any;
+  data: unknown;
   priority: 'low' | 'normal' | 'high' | 'critical';
 }
 
@@ -71,8 +71,8 @@ export class RealtimeAnalyticsService {
       this.ws.onclose = this.handleClose.bind(this);
       this.ws.onerror = this.handleError.bind(this);
       
-    } catch (error) {
-      console.error('❌ Failed to connect to WebSocket:', error);
+    } catch (_error) {
+      console.error("", _error);
       this.scheduleReconnect();
     }
   }
@@ -254,8 +254,8 @@ export class RealtimeAnalyticsService {
           this.emit('message', data);
       }
       
-    } catch (error) {
-      console.error('❌ Failed to parse WebSocket message:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   }
 
@@ -279,7 +279,7 @@ export class RealtimeAnalyticsService {
   }
 
   private handleError(error: Event): void {
-    console.error('❌ WebSocket error:', error);
+    console.error("", _error);
     this.emit('error', { error, timestamp: new Date().toISOString() });
   }
 
@@ -291,14 +291,14 @@ export class RealtimeAnalyticsService {
     }
   }
 
-  private emit(eventType: string, data: any): void {
+  private emit(eventType: string, data: unknown): void {
     const handlers = this.eventHandlers.get(eventType);
     if (handlers) {
       handlers.forEach(handler => {
         try {
           handler(data);
-        } catch (error) {
-          console.error(`❌ Error in event handler for ${eventType}:`, error);
+        } catch (_error) {
+          console.error("", _error);
         }
       });
     }
@@ -349,12 +349,12 @@ export function useRealtimeAnalytics(organizationId: string, userId?: string) {
   const service = useRef(realtimeAnalytics);
 
   useEffect(() => {
-    const handleConnection = (data: any) => {
+    const handleConnection = (data: unknown) => {
       setIsConnected(data.connected);
       setConnectionState(service.current.getConnectionState());
     };
 
-    const handleMetricUpdate = (data: any) => {
+    const handleMetricUpdate = (data: unknown) => {
       setLastUpdate(new Date());
       setHasRecentUpdates(true);
       

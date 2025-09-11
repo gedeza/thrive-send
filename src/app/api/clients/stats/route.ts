@@ -96,8 +96,8 @@ export async function GET(request: NextRequest) {
     };
 
     return createSuccessResponse(stats, 200, "Client statistics retrieved successfully");
-  } catch (error) {
-    console.error("Stats API Error:", error);
+  } catch (_error) {
+    console.error("", _error);
     return handleApiError(error);
   }
 }

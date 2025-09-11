@@ -136,8 +136,8 @@ export default function CreateListingPage() {
       });
       
       router.push('/marketplace');
-    } catch (error) {
-      console.error('Error creating listing:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: 'Error',
         description: 'Failed to create listing. Please try again.',

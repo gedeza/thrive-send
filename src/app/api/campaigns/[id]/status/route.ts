@@ -171,7 +171,7 @@ export async function GET(
       lastChecked: new Date().toISOString(),
     });
 
-  } catch (error) {
+  } catch (_error) {
     logger.error('Campaign status check failed', error as Error, {
       campaignId: params.id,
       userId: auth().userId,

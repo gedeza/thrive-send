@@ -165,8 +165,8 @@ async function seedMarketplace() {
     const totalProducts = await prisma.boostProduct.count();
     console.log(`📊 Total boost products in database: ${totalProducts}`);
 
-  } catch (error) {
-    console.error('❌ Error seeding marketplace:', error);
+  } catch (_error) {
+    console.error("", _error);
   } finally {
     await prisma.$disconnect();
   }

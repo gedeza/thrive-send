@@ -407,7 +407,7 @@ export class DatabaseService {
         replicas: routingHealth.replicas,
       };
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Database service health check failed', error as Error);
       return {
         healthy: false,
@@ -442,7 +442,7 @@ export class DatabaseService {
  * Analytics-optimized database operations
  */
 export const analyticsDb = {
-  async getMetrics(organizationId: string, filters: any = {}) {
+  async getMetrics(organizationId: string, filters: Record<string, unknown> = {}) {
     const dbService = new DatabaseService();
     return dbService.getAnalyticsData(organizationId, filters);
   },
@@ -465,7 +465,7 @@ export const analyticsDb = {
  * Campaign-optimized database operations
  */
 export const campaignDb = {
-  async getDashboard(organizationId: string, filters: any = {}) {
+  async getDashboard(organizationId: string, filters: Record<string, unknown> = {}) {
     const dbService = new DatabaseService();
     return dbService.getCampaignDashboard(organizationId, filters);
   },
@@ -505,12 +505,12 @@ export const campaignDb = {
  * Contact-optimized database operations
  */
 export const contactDb = {
-  async search(organizationId: string, searchTerm: string, filters: any = {}) {
+  async search(organizationId: string, searchTerm: string, filters: Record<string, unknown> = {}) {
     const dbService = new DatabaseService();
     return dbService.searchContacts(organizationId, searchTerm, filters);
   },
 
-  async bulkImport(organizationId: string, contacts: any[], options: any = {}) {
+  async bulkImport(organizationId: string, contacts: any[], options: RequestInit = {}) {
     const dbService = new DatabaseService();
     return dbService.bulkCreateContacts(organizationId, contacts, options);
   },
@@ -545,3 +545,6 @@ export { enhancedPrisma };
 
 // Export the standard proxy as default database interface
 export const db = getDatabaseProxy();
+
+// For backward compatibility with API routes expecting 'prisma' import
+export const prisma = getDatabaseProxy();

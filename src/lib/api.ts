@@ -5,7 +5,7 @@
 /**
  * Fetches analytics data based on provided filters
  */
-export async function fetchAnalyticsData(filters: any = {}) {
+export async function fetchAnalyticsData(filters: Record<string, unknown> = {}) {
   // Implementation would go here in a real app
   return {
     emailsSent: 0,
@@ -20,7 +20,7 @@ export async function fetchAnalyticsData(filters: any = {}) {
 /**
  * Updates a user profile
  */
-export async function updateUserProfile(userId: string, data: any) {
+export async function updateUserProfile(userId: string, data: unknown) {
   // Implementation would go here in a real app
   return { success: true };
 }
@@ -36,7 +36,7 @@ export async function uploadUserAvatar(userId: string, file: File) {
 /**
  * Fetches scheduled content with optional filters
  */
-export async function fetchScheduledContent(filters: any = {}) {
+export async function fetchScheduledContent(filters: Record<string, unknown> = {}) {
   // Implementation would go here in a real app
   return [];
 }
@@ -44,7 +44,7 @@ export async function fetchScheduledContent(filters: any = {}) {
 /**
  * Updates content schedule
  */
-export async function updateContentSchedule(contentId: string, data: any) {
+export async function updateContentSchedule(contentId: string, data: unknown) {
   // Implementation would go here in a real app
   return { success: true };
 }
@@ -52,7 +52,7 @@ export async function updateContentSchedule(contentId: string, data: any) {
 /**
  * Saves content (creates or updates)
  */
-export async function saveContent(data: any) {
+export async function saveContent(data: unknown) {
   // POST to /api/content
   const res = await fetch('/api/content', {
     method: 'POST',
@@ -132,8 +132,8 @@ export async function createCampaign(data: CampaignData): Promise<Response> {
     }
 
     return response;
-  } catch (error) {
-    console.error('API error in createCampaign:', error);
+  } catch (_error) {
+    console.error("", _error);
     throw handleApiError(error);
   }
 }

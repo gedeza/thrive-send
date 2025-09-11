@@ -148,7 +148,7 @@ export default function ProjectsPage() {
         title: "Success",
         description: "Project deleted successfully",
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to delete project. Please try again later.",
@@ -399,7 +399,7 @@ export default function ProjectsPage() {
         {loading ? (
           <ProjectsContentSkeleton viewMode={viewMode} />
         ) : error ? (
-          <Card className="p-8 text-center">
+          <Card className="p-6 text-center">
             <CardContent>
               <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">Failed to Load Projects</h3>
@@ -436,7 +436,7 @@ export default function ProjectsPage() {
             ))}
           </div>
         ) : (
-          <Card className="p-12 text-center">
+          <Card className="p-6 text-center">
             <CardContent>
               <div className="max-w-md mx-auto">
                 <div className="mb-6">
@@ -509,7 +509,7 @@ export default function ProjectsPage() {
 // Loading skeleton components
 function ProjectsPageSkeleton() {
   return (
-    <div className="container mx-auto py-8 space-y-8">
+    <div className="container mx-auto py-4 space-y-4">
       <div className="text-center mb-8">
         <Skeleton className="h-12 w-96 mx-auto mb-4" />
         <Skeleton className="h-6 w-[600px] mx-auto" />

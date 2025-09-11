@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
         dashboardData = await dashboardResponse.json();
         // Integrated dashboard data into analytics
       }
-    } catch (error) {
+    } catch (_error) {
       // Dashboard integration failed, using fallback data
     }
 
@@ -276,7 +276,7 @@ export async function GET(request: NextRequest) {
     });
     */
 
-  } catch (error) {
+  } catch (_error) {
     // Service provider analytics error
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

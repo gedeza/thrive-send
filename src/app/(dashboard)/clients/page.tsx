@@ -380,8 +380,8 @@ function ClientsPageContent() {
       
       // Refresh the client list
       await fetchClients();
-    } catch (error) {
-      console.error('Error deleting client:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error",
         description: "Failed to delete client. Please try again.",
@@ -391,7 +391,7 @@ function ClientsPageContent() {
   };
 
   return (
-    <div className="container mx-auto py-8 space-y-8">
+    <div className="container mx-auto py-4 space-y-4">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
@@ -490,8 +490,8 @@ function ClientsPageContent() {
                   await switchClient(clientSummary);
                   router.push('/dashboard');
                 }
-              } catch (error) {
-                console.error('Failed to switch client context:', error);
+              } catch (_error) {
+                console.error("", _error);
               }
             }}
             isLoading={loading}
@@ -655,7 +655,7 @@ function ClientsPageContent() {
       {/* Empty State */}
       {!loading && !error && filteredClients.length === 0 && (
         <Card className="border-dashed">
-          <CardContent className="p-8 text-center">
+          <CardContent className="p-6 text-center">
             <div className="flex justify-center mb-4">
               <div className="p-3 bg-muted rounded-full">
                 <Users className="h-8 w-8 text-muted-foreground" />

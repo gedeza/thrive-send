@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Organization ID is required' }, { status: 400 });
     }
 
-    const options: any = { granularity };
+    const options: RequestInit = { granularity };
     if (campaignId) options.campaignId = campaignId;
     if (startDate) options.startDate = new Date(startDate);
     if (endDate) options.endDate = new Date(endDate);
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-  } catch (error) {
+  } catch (_error) {
     logger.error('Failed to get delivery analytics', error as Error);
     
     return NextResponse.json({

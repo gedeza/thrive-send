@@ -36,8 +36,8 @@ export default function SimpleContentListPage() {
       
       setContent(data.content || []);
 
-    } catch (error) {
-      console.error('❌ Error fetching content:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: 'Error',
         description: 'Failed to fetch content',

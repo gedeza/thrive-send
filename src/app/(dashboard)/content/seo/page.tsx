@@ -124,7 +124,7 @@ export default function SEOContentPage() {
         title: "SEO Data Refreshed",
         description: "Latest SEO content data has been loaded successfully.",
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Refresh Failed",
         description: "Failed to refresh SEO data. Please try again.",
@@ -230,8 +230,8 @@ export default function SEOContentPage() {
                 title: 'SEO Updated',
                 description: `${field} has been updated successfully`,
               });
-            } catch (error) {
-              console.error('Error updating SEO data:', error);
+            } catch (_error) {
+              console.error("", _error);
               toast({
                 title: 'Update Failed',
                 description: 'Failed to update SEO data. Please try again.',

@@ -76,8 +76,8 @@ export async function POST(
     }
 
     return NextResponse.json(approval);
-  } catch (error) {
-    console.error('Error approving content:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { message: 'Internal server error', error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

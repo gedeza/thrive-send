@@ -549,7 +549,7 @@ export default function CampaignsPage() {
       {/* Empty State */}
       {!loading && !error && filteredCampaigns.length === 0 && (
         <Card className="border-dashed">
-          <CardContent className="p-8 text-center">
+          <CardContent className="p-6 text-center">
             <div className="flex justify-center mb-4">
               <div className="p-3 bg-muted rounded-full">
                 <Target className="h-8 w-8 text-muted-foreground" />

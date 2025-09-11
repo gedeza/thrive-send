@@ -37,9 +37,9 @@ export async function resetDatabase() {
       await tx.$executeRaw`DELETE FROM "Organization"`;
       await tx.$executeRaw`DELETE FROM "User"`;
     });
-  } catch (error) {
-    console.error('Error resetting database:', error);
-    throw error;
+  } catch (_error) {
+    console.error("", _error);
+    throw _error;
   }
 }
 
@@ -53,8 +53,8 @@ export async function seedTestData() {
 process.on('beforeExit', async () => {
   try {
     await prisma.$disconnect();
-  } catch (error) {
-    console.error('Error disconnecting from database:', error);
+  } catch (_error) {
+    console.error("", _error);
   }
 });
 
@@ -63,8 +63,8 @@ process.on('SIGINT', async () => {
   try {
     await prisma.$disconnect();
     process.exit(0);
-  } catch (error) {
-    console.error('Error during cleanup:', error);
+  } catch (_error) {
+    console.error("", _error);
     process.exit(1);
   }
 }); 

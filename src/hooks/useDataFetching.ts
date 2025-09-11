@@ -112,10 +112,10 @@ export function useDataFetching<T>(
           }));
 
           return;
-        } catch (error) {
+        } catch (_error) {
           lastError = error instanceof Error ? error : new Error(String(error));
           
-          if (error instanceof Error && error.name === 'AbortError') {
+          if (_error instanceof Error && error.name === 'AbortError') {
             return;
           }
 
@@ -127,7 +127,7 @@ export function useDataFetching<T>(
       }
 
       throw lastError;
-    } catch (error) {
+    } catch (_error) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred';
       
       // Log error

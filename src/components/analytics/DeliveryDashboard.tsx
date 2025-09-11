@@ -97,8 +97,8 @@ export function DeliveryDashboard({ organizationId, campaignId }: DeliveryDashbo
         loadHealthScore(),
         loadAnalytics(),
       ]);
-    } catch (error) {
-      console.error('Failed to load delivery dashboard data:', error);
+    } catch (_error) {
+      console.error("", _error);
     } finally {
       setLoading(false);
     }
@@ -116,8 +116,8 @@ export function DeliveryDashboard({ organizationId, campaignId }: DeliveryDashbo
         const { data } = await response.json();
         setRealTimeStats(data);
       }
-    } catch (error) {
-      console.error('Failed to load real-time stats:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   };
 
@@ -133,8 +133,8 @@ export function DeliveryDashboard({ organizationId, campaignId }: DeliveryDashbo
         const { data } = await response.json();
         setHealthScore(data.healthScore);
       }
-    } catch (error) {
-      console.error('Failed to load health score:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   };
 
@@ -153,8 +153,8 @@ export function DeliveryDashboard({ organizationId, campaignId }: DeliveryDashbo
         const { data } = await response.json();
         setAnalytics(data);
       }
-    } catch (error) {
-      console.error('Failed to load analytics:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   };
 
@@ -181,8 +181,8 @@ export function DeliveryDashboard({ organizationId, campaignId }: DeliveryDashbo
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
       }
-    } catch (error) {
-      console.error('Failed to export data:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   };
 

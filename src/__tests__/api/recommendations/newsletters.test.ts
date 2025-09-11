@@ -1,6 +1,6 @@
-const { describe, it, expect, beforeEach, afterEach, jest } = require('@jest/globals');
-const { createMocks } = require('node-mocks-http');
-const { NextRequest } = require('next/server');
+import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { createMocks } from 'node-mocks-http';
+import { NextRequest } from 'next/server';
 
 // Mock the route handlers before importing
 jest.mock('@/app/api/recommendations/newsletters/route', () => ({

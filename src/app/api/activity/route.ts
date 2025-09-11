@@ -49,8 +49,8 @@ export async function GET() {
     }));
 
     return NextResponse.json({ activities: activityFeed });
-  } catch (error) {
-    console.error('Activity fetch error:', error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }

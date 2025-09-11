@@ -171,7 +171,7 @@ export default function CreateAudiencePage() {
 
       router.push('/audiences');
 
-    } catch (error) {
+    } catch (_error) {
       // Failed to create audience
       toast({
         title: "Error",
@@ -200,7 +200,7 @@ export default function CreateAudiencePage() {
   // Show error if no organization context
   if (!organizationId) {
     return (
-      <div className="container mx-auto py-8 max-w-4xl">
+      <div className="container mx-auto py-4 max-w-4xl">
         <Alert variant="destructive">
           <Info className="h-4 w-4" />
           <AlertDescription>
@@ -215,9 +215,9 @@ export default function CreateAudiencePage() {
 
   return (
     <TooltipProvider>
-      <div className="container mx-auto py-8 max-w-4xl">
+      <div className="container mx-auto py-4 max-w-4xl">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
+        <div className="flex items-center gap-4 mb-4">
           <Link href="/audiences">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -233,7 +233,7 @@ export default function CreateAudiencePage() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="basic">Basic Information</TabsTrigger>
@@ -361,7 +361,7 @@ export default function CreateAudiencePage() {
                   </div>
 
                   {conditions.length === 0 ? (
-                    <div className="text-center py-8 border-2 border-dashed rounded-lg">
+                    <div className="text-center py-4 border-2 border-dashed rounded-lg">
                       <Target className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                       <p className="text-muted-foreground">No targeting conditions set</p>
                       <p className="text-sm text-muted-foreground">Add conditions to define your audience</p>

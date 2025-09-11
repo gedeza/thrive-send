@@ -2,6 +2,14 @@ import { describe, it, expect, beforeEach } from '@jest/globals';
 import { RecommendationMatchingService } from '@/lib/services/recommendation-matching';
 import { Newsletter, MatchingAlgorithmInput } from '@/types/recommendation';
 
+// Interface to access private methods for testing
+interface RecommendationMatchingServicePrivate extends RecommendationMatchingService {
+  calculateCategoryAlignment(source: Newsletter, candidate: Newsletter): number;
+  calculateAudienceOverlap(source: Newsletter, candidate: Newsletter): number;
+  calculateEngagementScore(candidate: Newsletter): number;
+  calculateRelevanceScore(source: Newsletter, candidate: Newsletter): number;
+}
+
 describe('RecommendationMatchingService', () => {
   let matchingService: RecommendationMatchingService;
   let sourceNewsletter: Newsletter;
@@ -362,14 +370,14 @@ describe('RecommendationMatchingService', () => {
       const emptyCandidate: Newsletter = { ...candidateNewsletters[0], categories: [] };
 
       // We need to access the private method for testing
-      const service = matchingService as any;
+      const service = matchingService as RecommendationMatchingServicePrivate;
       const score = service.calculateCategoryAlignment(emptySource, emptyCandidate);
 
       expect(score).toBe(0);
     });
 
     it('should calculate Jaccard similarity for category overlap', () => {
-      const service = matchingService as any;
+      const service = matchingService as RecommendationMatchingServicePrivate;
       const score = service.calculateCategoryAlignment(sourceNewsletter, candidateNewsletters[0]);
 
       // Source: ['Technology', 'Programming', 'AI']
@@ -390,14 +398,14 @@ describe('RecommendationMatchingService', () => {
         categories: ['Technology', 'Programming'], // 2 exact matches
       };
 
-      const service = matchingService as any;
+      const service = matchingService as RecommendationMatchingServicePrivate;
       const score = service.calculateCategoryAlignment(sourceNewsletter, exactMatchCandidate);
 
       expect(score).toBeGreaterThan(50); // Should get bonus for exact matches
     });
 
     it('should return score between 0-100', () => {
-      const service = matchingService as any;
+      const service = matchingService as RecommendationMatchingServicePrivate;
       
       candidateNewsletters.forEach(candidate => {
         const score = service.calculateCategoryAlignment(sourceNewsletter, candidate);
@@ -409,7 +417,7 @@ describe('RecommendationMatchingService', () => {
     it('should handle empty category arrays gracefully', () => {
       const emptySource: Newsletter = { ...sourceNewsletter, categories: [] };
       
-      const service = matchingService as any;
+      const service = matchingService as RecommendationMatchingServicePrivate;
       const score = service.calculateCategoryAlignment(emptySource, candidateNewsletters[0]);
 
       expect(score).toBe(0);
@@ -419,7 +427,7 @@ describe('RecommendationMatchingService', () => {
 
   describe('calculateAudienceCompatibility()', () => {
     it('should prefer newsletters of similar subscriber size', () => {
-      const service = matchingService as any;
+      const service = matchingService as RecommendationMatchingServicePrivate;
       
       // Similar size (8000 vs 10000)
       const similarScore = service.calculateAudienceCompatibility(sourceNewsletter, candidateNewsletters[0]);
@@ -431,7 +439,7 @@ describe('RecommendationMatchingService', () => {
     });
 
     it('should consider engagement rate similarity', () => {
-      const service = matchingService as any;
+      const service = matchingService as RecommendationMatchingServicePrivate;
       
       const score1 = service.calculateAudienceCompatibility(sourceNewsletter, candidateNewsletters[0]); // 22% vs 25.5%
       const score2 = service.calculateAudienceCompatibility(sourceNewsletter, candidateNewsletters[1]); // 30% vs 25.5%
@@ -442,7 +450,7 @@ describe('RecommendationMatchingService', () => {
     });
 
     it('should analyze target audience overlap if available', () => {
-      const service = matchingService as any;
+      const service = matchingService as RecommendationMatchingServicePrivate;
       
       const scoreWithAudience = service.calculateAudienceCompatibility(sourceNewsletter, candidateNewsletters[0]);
       
@@ -457,7 +465,7 @@ describe('RecommendationMatchingService', () => {
     });
 
     it('should return score between 0-100', () => {
-      const service = matchingService as any;
+      const service = matchingService as RecommendationMatchingServicePrivate;
       
       candidateNewsletters.forEach(candidate => {
         const score = service.calculateAudienceCompatibility(sourceNewsletter, candidate);
@@ -470,7 +478,7 @@ describe('RecommendationMatchingService', () => {
       const noAudienceSource = { ...sourceNewsletter, targetAudience: undefined };
       const noAudienceCandidate = { ...candidateNewsletters[0], targetAudience: undefined };
       
-      const service = matchingService as any;
+      const service = matchingService as RecommendationMatchingServicePrivate;
       const score = service.calculateAudienceCompatibility(noAudienceSource, noAudienceCandidate);
 
       expect(typeof score).toBe('number');

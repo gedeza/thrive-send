@@ -42,7 +42,7 @@ function SimpleContentLibraryPage() {
         title: "Success",
         description: "Content list refreshed successfully",
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to refresh content list",

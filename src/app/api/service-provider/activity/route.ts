@@ -152,8 +152,8 @@ export async function GET(request: NextRequest) {
       .slice(0, limit);
 
     return NextResponse.json(sortedActivities);
-  } catch (error) {
-    console.error('Service provider activity error:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -108,11 +108,11 @@ export async function POST(req: NextRequest) {
       generatedAt: new Date().toISOString()
     });
 
-  } catch (error) {
-    console.error('Template Recommendations Error:', error);
+  } catch (_error) {
+    console.error("", _error);
     
     // Handle validation errors
-    if (error instanceof z.ZodError) {
+    if (_error instanceof z.ZodError) {
       return NextResponse.json(
         { 
           error: 'Invalid recommendation request',
@@ -289,8 +289,8 @@ async function calculateRecommendations(
         }
       });
 
-    } catch (error) {
-      console.error(`Error calculating recommendation for template ${template.id}:`, error);
+    } catch (_error) {
+      console.error("", _error);
       // Continue with other templates
     }
   }

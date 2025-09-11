@@ -55,8 +55,8 @@ export async function GET(
     }
 
     return NextResponse.json(approval.comments);
-  } catch (error) {
-    console.error('Error fetching comments:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
@@ -120,15 +120,15 @@ export async function POST(
     });
 
     return NextResponse.json(comment);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
+  } catch (_error) {
+    if (_error instanceof z.ZodError) {
       return NextResponse.json(
         { message: 'Invalid request data', errors: error.errors },
         { status: 400 }
       );
     }
 
-    console.error('Error creating comment:', error);
+    console.error("", _error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
@@ -182,15 +182,15 @@ export async function PATCH(
     });
 
     return NextResponse.json(updatedComment);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
+  } catch (_error) {
+    if (_error instanceof z.ZodError) {
       return NextResponse.json(
         { message: 'Invalid request data', errors: error.errors },
         { status: 400 }
       );
     }
 
-    console.error('Error updating comment:', error);
+    console.error("", _error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
@@ -230,8 +230,8 @@ export async function DELETE(
     });
 
     return NextResponse.json({ message: 'Comment deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting comment:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

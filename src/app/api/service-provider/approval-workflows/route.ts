@@ -318,8 +318,8 @@ export async function GET(request: NextRequest) {
     });
     */
 
-  } catch (error) {
-    console.error('❌ Service provider approval workflows error:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -401,8 +401,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(approval, { status: 200 });
     */
 
-  } catch (error) {
-    console.error('❌ Error processing approval action:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -80,8 +80,8 @@ export default function ProfileSettingsPage() {
         title: "Success",
         description: "Profile updated successfully",
       });
-    } catch (error) {
-      console.error("Error updating profile:", error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error",
         description: "Failed to update profile",

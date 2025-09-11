@@ -217,8 +217,8 @@ export default function SettingsPage() {
         title: "Currency Updated",
         description: `Billing currency changed to ${supportedCurrencies[newCurrency as keyof typeof supportedCurrencies]?.name}`,
       });
-    } catch (error) {
-      console.error('Error saving currency preference:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   };
   
@@ -388,8 +388,8 @@ export default function SettingsPage() {
             setSelectedCurrency('CAD');
           }
         }
-      } catch (error) {
-        console.error('Error fetching currency data:', error);
+      } catch (_error) {
+        console.error("", _error);
       }
     };
     
@@ -425,8 +425,8 @@ export default function SettingsPage() {
           const history = await historyRes.json();
           setBillingHistory(history);
         }
-      } catch (error) {
-        console.error('Error fetching billing data:', error);
+      } catch (_error) {
+        console.error("", _error);
       } finally {
         setIsLoadingBilling(false);
       }
@@ -456,8 +456,8 @@ export default function SettingsPage() {
             brandColor: settings.brandColor || "#3b82f6"
           });
         }
-      } catch (error) {
-        console.error('Error loading organization settings:', error);
+      } catch (_error) {
+        console.error("", _error);
       }
     };
 
@@ -473,8 +473,8 @@ export default function SettingsPage() {
         title: "Success",
         description: "Profile settings updated successfully",
       });
-    } catch (error) {
-      console.error("Error updating settings:", error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error",
         description: "Failed to update profile settings",
@@ -502,8 +502,8 @@ export default function SettingsPage() {
         title: "Success",
         description: "Email preferences updated successfully",
       });
-    } catch (error) {
-      console.error("Error updating email settings:", error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error",
         description: "Failed to update email preferences",
@@ -533,8 +533,8 @@ export default function SettingsPage() {
         title: "Success",
         description: "Campaign defaults updated successfully",
       });
-    } catch (error) {
-      console.error("Error updating campaign defaults:", error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error",
         description: "Failed to update campaign defaults",
@@ -564,8 +564,8 @@ export default function SettingsPage() {
         title: "Success",
         description: "Content library settings updated successfully",
       });
-    } catch (error) {
-      console.error("Error updating content library settings:", error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error",
         description: "Failed to update content library settings",
@@ -595,8 +595,8 @@ export default function SettingsPage() {
         title: "Success",
         description: "Organization settings updated successfully",
       });
-    } catch (error) {
-      console.error("Error updating organization settings:", error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error",
         description: "Failed to update organization settings",
@@ -650,8 +650,8 @@ export default function SettingsPage() {
         title: "Plan Updated",
         description: `Successfully updated to ${plans.find(p => p.id === selectedPlan)?.name} plan`,
       });
-    } catch (error) {
-      console.error("Error updating plan:", error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error",
         description: "Failed to update subscription plan",
@@ -694,8 +694,8 @@ export default function SettingsPage() {
           });
         }
       }
-    } catch (error) {
-      console.error('Error loading billing data:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   };
 
@@ -744,8 +744,8 @@ export default function SettingsPage() {
         title: "Payment Method Updated",
         description: "Your payment method has been successfully updated.",
       });
-    } catch (error) {
-      console.error('Error updating payment method:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error",
         description: "Failed to update payment method. Please check your card details.",
@@ -780,8 +780,8 @@ export default function SettingsPage() {
         title: "Billing Address Updated",
         description: "Your billing address has been successfully updated.",
       });
-    } catch (error) {
-      console.error('Error updating billing address:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error",
         description: "Failed to update billing address. Please try again.",
@@ -802,7 +802,7 @@ export default function SettingsPage() {
           description: "Your subscription has been cancelled. You will have access until the end of your billing period.",
         });
       }
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to cancel subscription.",
@@ -850,8 +850,8 @@ export default function SettingsPage() {
       } else {
         throw new Error('Failed to download invoices');
       }
-    } catch (error) {
-      console.error('Error downloading invoices:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Download Failed",
         description: "Could not download invoices. Please try again later.",
@@ -878,7 +878,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="flex-1 space-y-4 p-8 pt-6">
+    <div className="flex-1 space-y-4">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
           <div className="p-3 bg-gradient-to-r from-slate-500 to-gray-600 rounded-xl">

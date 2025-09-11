@@ -146,7 +146,7 @@ export default function AddClientPage() {
       
       try {
         responseData = textData ? JSON.parse(textData) : {};
-      } catch (error) {
+      } catch (_error) {
         throw new Error("Server returned an invalid response");
       }
 
@@ -173,8 +173,8 @@ export default function AddClientPage() {
       // Force a refresh of the client list
       router.refresh();
       
-    } catch (error) {
-      console.error("Error creating client:", error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to create client",

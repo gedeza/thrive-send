@@ -8,7 +8,7 @@ let Button;
 try {
   // Try to import the actual Button component
   Button = require('../components/ui/button').Button;
-} catch (error) {
+} catch (_error) {
   // If import fails, define a simple Button component for testing
   Button = ({ children, variant = 'default', disabled, onClick, className = '' }) => (
     <button 

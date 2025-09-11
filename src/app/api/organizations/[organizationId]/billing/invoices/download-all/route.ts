@@ -84,8 +84,8 @@ Thank you for your business!
       },
     });
 
-  } catch (error) {
-    console.error("Error creating invoice ZIP:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "Failed to create invoice download" },
       { status: 500 }

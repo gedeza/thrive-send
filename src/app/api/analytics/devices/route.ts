@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     };
 
     return NextResponse.json(deviceAnalytics);
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { error: "Failed to fetch device analytics" },
       { status: 500 }

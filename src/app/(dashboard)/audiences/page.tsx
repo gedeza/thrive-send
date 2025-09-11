@@ -147,7 +147,7 @@ export default function AudiencesPage() {
       setManualContacts('');
       refetch(); // Refresh the audiences list
 
-    } catch (error) {
+    } catch (_error) {
       // Import error occurred
       toast({
         title: "Import failed",
@@ -199,9 +199,9 @@ export default function AudiencesPage() {
   };
 
   return (
-    <div className="container mx-auto px-6 py-8">
+    <div className="container mx-auto px-6 py-4">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
         <div>
           <h1 className="text-3xl font-bold mb-2">Audience Management</h1>
           <p className="text-muted-foreground">
@@ -341,7 +341,7 @@ export default function AudiencesPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Audiences</CardTitle>
@@ -504,7 +504,7 @@ export default function AudiencesPage() {
             ))
           ) : (
             <Card>
-              <CardContent className="text-center py-8">
+              <CardContent className="text-center py-4">
                 <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                 <h3 className="text-lg font-medium mb-2">No audiences found</h3>
                 <p className="text-muted-foreground mb-4">

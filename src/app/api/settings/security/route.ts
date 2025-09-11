@@ -28,7 +28,7 @@ export async function GET() {
       hasPassword: user.passwordEnabled || false,
       lastPasswordUpdate: user.updatedAt,
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching security settings:', error)
     return new NextResponse('Internal Server Error', { status: 500 })
   }
@@ -50,12 +50,12 @@ export async function PATCH(req: Request) {
       await clerkClient.users.updateUser(userId, {
         password: validatedData.newPassword,
       })
-    } catch (clerkError: any) {
+    } catch (clerkError: unknown) {
       console.error('Clerk password update error:', clerkError)
       return NextResponse.json(
         { 
           error: 'Failed to update password', 
-          details: clerkError.message || 'Invalid password or user not found'
+          details: clerkError instanceof Error ? clerkError.message : 'Invalid password or user not found'
         },
         { status: 400 }
       )
@@ -65,9 +65,9 @@ export async function PATCH(req: Request) {
       success: true,
       message: 'Security settings updated successfully'
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating security settings:', error)
-    if (error instanceof z.ZodError) {
+    if (_error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation failed', details: error.errors },
         { status: 400 }

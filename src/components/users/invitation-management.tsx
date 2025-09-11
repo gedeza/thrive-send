@@ -83,7 +83,7 @@ export function InvitationManagement() {
       if (!response.ok) throw new Error("Failed to fetch invitations");
       const data = await response.json();
       setInvitations(data);
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to fetch invitations",
@@ -114,7 +114,7 @@ export function InvitationManagement() {
 
       form.reset();
       fetchInvitations();
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to send invitation",
@@ -141,7 +141,7 @@ export function InvitationManagement() {
       });
 
       fetchInvitations();
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to revoke invitation",

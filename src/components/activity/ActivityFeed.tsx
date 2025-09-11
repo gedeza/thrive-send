@@ -137,7 +137,7 @@ export function ActivityFeed({
             }
             
             return [newActivity, ...prev].slice(0, 10);
-          } catch (error) {
+          } catch (_error) {
             handleError(error);
             return prev;
           }

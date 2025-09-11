@@ -227,8 +227,8 @@ export async function GET(request: NextRequest) {
     };
 
     return NextResponse.json(schedulingData);
-  } catch (error) {
-    console.error('Scheduling API error:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -304,8 +304,8 @@ export async function POST(request: NextRequest) {
       schedule: newSchedule,
       message: 'Schedule created successfully'
     });
-  } catch (error) {
-    console.error('Schedule creation error:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -346,8 +346,8 @@ export async function PATCH(request: NextRequest) {
         ...updateData
       }
     });
-  } catch (error) {
-    console.error('Schedule update error:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

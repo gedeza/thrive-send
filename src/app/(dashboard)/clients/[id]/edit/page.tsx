@@ -94,8 +94,8 @@ export default function EditClientPage() {
         }
         const data = await response.json();
         reset(data); // This will populate the form with client data
-      } catch (error) {
-        console.error("Error fetching client:", error);
+      } catch (_error) {
+        console.error("", _error);
         toast({
           title: "Error",
           description: "Failed to load client data",
@@ -147,8 +147,8 @@ export default function EditClientPage() {
       });
       router.push(`/clients/${params.id}`);
       router.refresh();
-    } catch (error) {
-      console.error("Error updating client:", error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error",
         description: "Failed to update client",

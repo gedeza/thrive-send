@@ -89,8 +89,8 @@ export function ContentForm({ initialData, mode = 'create', contentListId }: Con
         try {
           const { lists } = await getListsForContent(initialData.id as string);
           setContentLists(lists);
-        } catch (error) {
-          console.error('Error fetching content lists:', error);
+        } catch (_error) {
+          console.error("", _error);
         }
       };
       
@@ -250,8 +250,8 @@ export function ContentForm({ initialData, mode = 'create', contentListId }: Con
         router.push('/content');
       }
       
-    } catch (error) {
-      console.error('Error saving content:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : 'Failed to save content',

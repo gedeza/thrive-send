@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Build filters - for now, show all active products
-    const filters: any = {
+    const filters: Record<string, unknown> = {
       isActive: true
     };
 
@@ -195,8 +195,8 @@ export async function GET(request: NextRequest) {
       }
     });
 
-  } catch (error) {
-    console.error('Error fetching boost products:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to fetch boost products' },
       { status: 500 }
@@ -331,8 +331,8 @@ export async function POST(request: NextRequest) {
       }
     });
 
-  } catch (error) {
-    console.error('Error creating boost product:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to create boost product' },
       { status: 500 }

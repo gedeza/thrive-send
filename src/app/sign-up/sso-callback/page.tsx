@@ -26,8 +26,8 @@ export default function SSOCallbackPage() {
           // If somehow not signed in, redirect to sign-up
           router.push('/sign-up');
         }
-      } catch (error) {
-        console.error('SSO callback error:', error);
+      } catch (_error) {
+        console.error("", _error);
         // On error, redirect to sign-up with error parameter
         router.push('/sign-up?error=sso_callback_failed');
       }

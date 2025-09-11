@@ -341,8 +341,8 @@ export const ServiceProviderAnalyticsDashboard = React.memo(function ServiceProv
       }
 
       console.log(`✅ Analytics exported as ${format.toUpperCase()}`);
-    } catch (error) {
-      console.error('❌ Export failed:', error);
+    } catch (_error) {
+      console.error("", _error);
     } finally {
       setIsExporting(false);
     }

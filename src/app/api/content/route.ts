@@ -212,9 +212,9 @@ export async function GET(request: Request) {
         limit,
       },
     });
-  } catch (error) {
-    console.error('Error fetching content:', error);
-    if (error instanceof z.ZodError) {
+  } catch (_error) {
+    console.error("", _error);
+    if (_error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid query parameters', details: error.errors }, { status: 400 });
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -450,9 +450,9 @@ export async function POST(request: Request) {
       }
       throw validationError;
     }
-  } catch (error) {
-    console.error('Error creating content:', error);
-    if (error instanceof z.ZodError) {
+  } catch (_error) {
+    console.error("", _error);
+    if (_error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid content data', details: error.errors }, { status: 400 });
     }
     return NextResponse.json({ 
@@ -495,9 +495,9 @@ export async function PUT(request: Request) {
     });
 
     return NextResponse.json(content);
-  } catch (error) {
-    console.error('Error updating content:', error);
-    if (error instanceof z.ZodError) {
+  } catch (_error) {
+    console.error("", _error);
+    if (_error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid content data', details: error.errors }, { status: 400 });
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

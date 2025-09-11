@@ -86,11 +86,11 @@ export async function POST(req: NextRequest) {
       timestamp: usageRecord.timestamp.toISOString()
     });
 
-  } catch (error) {
-    console.error('Template Usage Tracking Error:', error);
+  } catch (_error) {
+    console.error("", _error);
     
     // Handle validation errors
-    if (error instanceof z.ZodError) {
+    if (_error instanceof z.ZodError) {
       return NextResponse.json(
         { 
           error: 'Invalid request data',
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Handle database errors
-    if (error instanceof Error && error.message.includes('Unique constraint')) {
+    if (_error instanceof Error && error.message.includes('Unique constraint')) {
       return NextResponse.json(
         { 
           error: 'Usage already tracked',

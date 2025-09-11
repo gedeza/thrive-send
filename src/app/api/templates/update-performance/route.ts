@@ -138,11 +138,11 @@ export async function POST(req: NextRequest) {
       }
     });
 
-  } catch (error) {
-    console.error('Template Performance Update Error:', error);
+  } catch (_error) {
+    console.error("", _error);
     
     // Handle validation errors
-    if (error instanceof z.ZodError) {
+    if (_error instanceof z.ZodError) {
       return NextResponse.json(
         { 
           error: 'Invalid performance data',
@@ -226,8 +226,8 @@ async function updateTemplateMetrics(templateId: string, organizationId: string)
       },
     });
 
-  } catch (error) {
-    console.error('Error updating template metrics:', error);
+  } catch (_error) {
+    console.error("", _error);
     // Don't throw - this is a background calculation
   }
 }

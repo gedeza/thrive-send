@@ -48,7 +48,7 @@ export const performanceMonitor = {
       });
 
       this.observer.observe({ entryTypes: ['largest-contentful-paint', 'first-input', 'layout-shift'] });
-    } catch (error) {
+    } catch (_error) {
       console.warn('Performance Observer not supported:', error);
     }
   }
@@ -79,7 +79,7 @@ export const memoryManagement = {
       if (performance.clearResourceTimings) {
         performance.clearResourceTimings();
       }
-    } catch (error) {
+    } catch (_error) {
       console.warn('Cache clearing failed:', error);
     }
   }

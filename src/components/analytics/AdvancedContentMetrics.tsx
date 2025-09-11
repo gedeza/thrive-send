@@ -224,7 +224,7 @@ export function AdvancedContentMetrics({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base">Advanced Content Performance Metrics</CardTitle>
-          <Select value={contentTypeFilter} onValueChange={(value: any) => setContentTypeFilter(value)}>
+          <Select value={contentTypeFilter} onValueChange={(value: unknown) => setContentTypeFilter(value)}>
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
@@ -242,7 +242,7 @@ export function AdvancedContentMetrics({
       </CardHeader>
       
       <CardContent className="pt-0">
-        <Tabs value={metricsView} onValueChange={(value: any) => setMetricsView(value)}>
+        <Tabs value={metricsView} onValueChange={(value: unknown) => setMetricsView(value)}>
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="engagement">Engagement</TabsTrigger>

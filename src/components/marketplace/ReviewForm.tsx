@@ -98,8 +98,8 @@ export function ReviewForm({
       reset();
       onCancel?.();
 
-    } catch (error) {
-      console.error('Error submitting review:', error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: 'Error',
         description: 'Failed to submit review. Please try again.',

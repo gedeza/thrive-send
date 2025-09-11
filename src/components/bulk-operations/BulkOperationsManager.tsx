@@ -536,7 +536,7 @@ export function BulkOperationsManager({
       )}
 
       {/* Main Content Tabs */}
-      <Tabs value={currentView} onValueChange={(value: any) => setCurrentView(value)}>
+      <Tabs value={currentView} onValueChange={(value: unknown) => setCurrentView(value)}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="operations" className="text-xs sm:text-sm">Available Operations</TabsTrigger>
           <TabsTrigger value="history" className="text-xs sm:text-sm">Operation History</TabsTrigger>

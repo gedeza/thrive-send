@@ -285,7 +285,7 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
       // Fetch clients from database only - no more demo/mock data
       try {
         await fetchClients(organizationId);
-      } catch (error) {
+      } catch (_error) {
         // No fallback demo clients - just show empty list if API fails
         console.warn('Failed to fetch clients from API:', error);
         dispatch({ type: 'SET_CLIENTS', payload: [] });
@@ -294,7 +294,7 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
       // Fetch metrics - use zero values if API fails (no demo data in production)
       try {
         await fetchMetrics(organizationId);
-      } catch (error) {
+      } catch (_error) {
         console.warn('Failed to fetch metrics from API:', error);
         // Use zero values instead of demo data in production
         dispatch({
@@ -313,8 +313,8 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
       }
       
       dispatch({ type: 'SET_LOADING', payload: false });
-    } catch (error) {
-      console.error('🚨 Service Provider initialization error:', error);
+    } catch (_error) {
+      console.error("", _error);
       
       try {
         // Even on error, try to get real user data via API
@@ -408,7 +408,7 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
       if (!response.ok) throw new Error('Failed to fetch clients');
       const clients = await response.json();
       dispatch({ type: 'SET_CLIENTS', payload: clients });
-    } catch (error) {
+    } catch (_error) {
       dispatch({
         type: 'SET_ERROR',
         payload: 'Failed to refresh client data',
@@ -426,7 +426,7 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
       if (!response.ok) throw new Error('Failed to fetch metrics');
       const metrics = await response.json();
       dispatch({ type: 'SET_METRICS', payload: metrics });
-    } catch (error) {
+    } catch (_error) {
       // Don't set error for metrics failure, just log it
       console.warn('Failed to refresh metrics:', error);
     }
@@ -490,8 +490,8 @@ export function ServiceProviderProvider({ children }: { children: ReactNode }) {
       }
       
       dispatch({ type: 'SELECT_CLIENT', payload: client });
-    } catch (error) {
-      console.error('Error switching client:', error);
+    } catch (_error) {
+      console.error("", _error);
       dispatch({
         type: 'SET_ERROR',
         payload: error instanceof Error ? error.message : 'Failed to switch client',

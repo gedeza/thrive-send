@@ -65,8 +65,8 @@ export async function POST(
         email: templateWithAuthor.User.email,
       } : null,
     });
-  } catch (error) {
-    console.error("Error duplicating template:", error);
+  } catch (_error) {
+    console.error("", _error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 } 

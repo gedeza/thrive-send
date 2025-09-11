@@ -357,8 +357,8 @@ export default function MemberManagementSettings() {
       reset();
       setShowInviteForm(false);
       
-    } catch (error) {
-      console.error('Failed to send invite:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   };
   

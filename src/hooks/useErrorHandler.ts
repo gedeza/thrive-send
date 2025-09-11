@@ -33,7 +33,7 @@ export function useErrorHandler(options: ErrorHandlerOptions = {}) {
     }
 
     // Log error to error reporting service
-    console.error('Error caught by handler:', error);
+    console.error("", _error);
   }, [options]);
 
   const resetError = useCallback(() => {
@@ -55,14 +55,14 @@ export function useErrorHandler(options: ErrorHandlerOptions = {}) {
 const { error, handleError, resetError } = useErrorHandler({
   onError: (error) => {
     // Custom error handling logic
-    console.error('Custom error handling:', error);
+    console.error("", _error);
   },
   fallbackMessage: 'Failed to load data',
 });
 
 try {
   // Data fetching logic
-} catch (error) {
+} catch (_error) {
   handleError(error);
 }
 */ 

@@ -174,7 +174,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(sharedSegments);
 
-  } catch (error) {
+  } catch (_error) {
     // Error fetching shared segments
     return NextResponse.json(
       { error: 'Internal server error' },
@@ -331,7 +331,7 @@ export async function POST(request: NextRequest) {
       createdAt: new Date().toISOString(),
     }, { status: 201 });
 
-  } catch (error) {
+  } catch (_error) {
     // Error creating shared segment
     return NextResponse.json(
       { error: 'Internal server error' },

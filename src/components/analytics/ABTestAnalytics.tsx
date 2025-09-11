@@ -22,8 +22,8 @@ export function ABTestAnalytics({ testId, dateRange }: ABTestAnalyticsProps) {
       try {
         const results = await getABTestResults(testId);
         setTestResults(results);
-      } catch (error) {
-        console.error('Error fetching A/B test results:', error);
+      } catch (_error) {
+        console.error("", _error);
       } finally {
         setLoading(false);
       }
@@ -69,8 +69,8 @@ export function ABTestAnalytics({ testId, dateRange }: ABTestAnalyticsProps) {
       if (difference > 1) return 90;
       if (difference > 0.5) return 85;
       return 70;
-    } catch (error) {
-      console.error('Error calculating confidence:', error);
+    } catch (_error) {
+      console.error("", _error);
       return 0;
     }
   };

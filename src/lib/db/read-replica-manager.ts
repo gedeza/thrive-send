@@ -46,7 +46,7 @@ export class ReadReplicaManager {
       try {
         // Simulate health check
         replica.isHealthy = true;
-      } catch (error) {
+      } catch (_error) {
         replica.isHealthy = false;
       }
     }

@@ -67,8 +67,8 @@ export async function POST(
       },
     });
 
-  } catch (error) {
-    console.error("Error creating invoice CSV:", error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: "Failed to create invoice download" },
       { status: 500 }

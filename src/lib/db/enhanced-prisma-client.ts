@@ -19,7 +19,7 @@ if (!process.env.DATABASE_URL) {
         process.env[key] = value.replace(/"/g, '');
       }
     });
-  } catch (error) {
+  } catch (_error) {
     console.warn('Could not load .env.local file:', error);
   }
 }
@@ -70,8 +70,8 @@ export class EnhancedPrismaClient extends PrismaClient {
     try {
       await this.$queryRaw`SELECT 1`;
       return true;
-    } catch (error) {
-      console.error('Database health check failed:', error);
+    } catch (_error) {
+      console.error("", _error);
       return false;
     }
   }

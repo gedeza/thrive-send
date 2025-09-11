@@ -334,8 +334,8 @@ export async function GET(request: Request) {
 
     return NextResponse.json(dashboardData);
 
-  } catch (error) {
-    console.error('Dashboard API error:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

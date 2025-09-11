@@ -200,8 +200,8 @@ export async function GET(request: NextRequest) {
     });
     */ // End of commented database code
 
-  } catch (error) {
-    console.error('Error fetching service provider client metrics:', error);
+  } catch (_error) {
+    console.error("", _error);
     return NextResponse.json(
       { error: 'Failed to fetch client metrics' },
       { status: 500 }

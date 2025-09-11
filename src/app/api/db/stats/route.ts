@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     // Get comprehensive database statistics
     const dbStats = databaseService.getStats();
     
-    let response: any;
+    let response: unknown;
     
     if (component) {
       // Return specific component stats
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
       },
     });
     
-  } catch (error) {
+  } catch (_error) {
     logger.error('Failed to retrieve database statistics', error as Error);
     
     return NextResponse.json(

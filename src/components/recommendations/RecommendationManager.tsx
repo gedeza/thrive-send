@@ -551,8 +551,8 @@ export function RecommendationManager({
         );
         onRecommendationUpdate?.(updatedRecommendation);
       }
-    } catch (error) {
-      console.error('Failed to update recommendation status:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   }, [onRecommendationUpdate]);
 

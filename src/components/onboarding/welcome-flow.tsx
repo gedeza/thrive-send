@@ -36,8 +36,8 @@ export function WelcomeFlow({ isOpen, onClose }: WelcomeFlowProps) {
       } else {
         onClose();
       }
-    } catch (error) {
-      console.error('Error completing step:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   };
 
@@ -50,8 +50,8 @@ export function WelcomeFlow({ isOpen, onClose }: WelcomeFlowProps) {
     } else {
       onClose();
       }
-    } catch (error) {
-      console.error('Error skipping step:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   };
 
@@ -63,8 +63,8 @@ export function WelcomeFlow({ isOpen, onClose }: WelcomeFlowProps) {
         if (!confirmed) return;
       }
     onClose();
-    } catch (error) {
-      console.error('Error closing onboarding:', error);
+    } catch (_error) {
+      console.error("", _error);
     }
   };
 

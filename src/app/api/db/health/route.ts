@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       },
     });
     
-  } catch (error) {
+  } catch (_error) {
     logger.error('Database health check failed', error as Error);
     
     return NextResponse.json(

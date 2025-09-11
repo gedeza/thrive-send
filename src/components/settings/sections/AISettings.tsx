@@ -291,7 +291,7 @@ function AIFeatureCategory({
   features: AIFeature[];
   settings: any;
   onToggle: (featureId: string, enabled: boolean) => void;
-  onUpdateSetting: (path: string, value: any) => void;
+  onUpdateSetting: (path: string, value: unknown) => void;
   disabled?: boolean;
 }) {
   const getCategoryIcon = (category: string) => {
@@ -427,7 +427,7 @@ function AIFeatureCategory({
 // Global AI settings
 function GlobalAISettings({ settings, onUpdate, disabled }: {
   settings: any;
-  onUpdate: (path: string, value: any) => void;
+  onUpdate: (path: string, value: unknown) => void;
   disabled?: boolean;
 }) {
   return (
@@ -540,7 +540,7 @@ export default function AISettings() {
     updateSetting(`ai.${featureId}.enabled`, enabled);
   };
   
-  const handleUpdateSetting = (path: string, value: any) => {
+  const handleUpdateSetting = (path: string, value: unknown) => {
     updateSetting(path, value);
   };
   

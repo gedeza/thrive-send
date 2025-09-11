@@ -69,8 +69,8 @@ export default function GeneralOrganizationSettingsPage() {
         title: "Success",
         description: "Organization settings updated successfully",
       });
-    } catch (error) {
-      console.error("Error updating organization:", error);
+    } catch (_error) {
+      console.error("", _error);
       toast({
         title: "Error",
         description: "Failed to update organization settings",
