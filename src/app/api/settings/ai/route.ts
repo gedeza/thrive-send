@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
 import { AIConfigService } from '@/lib/services/ai-config';
 import { z } from 'zod';
-import { auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { OrganizationService } from "@/lib/api/organization-service";
 
