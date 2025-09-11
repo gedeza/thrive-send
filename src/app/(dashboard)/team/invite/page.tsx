@@ -32,7 +32,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Alert,
   AlertDescription,
-} from '@/components/ui/Alert';
+} from '@/components/ui/alert';
 import {
   Tooltip,
   TooltipContent,
