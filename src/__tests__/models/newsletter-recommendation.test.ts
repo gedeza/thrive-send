@@ -16,7 +16,7 @@ describe('NewsletterRecommendation Model', () => {
         slug: 'test-org-rec',
       },
     });
-    testOrganizationId = testOrg?.id!;
+    testOrganizationId = testOrg!.id;
 
     const testClient = await prisma.client?.create({
       data: {
@@ -26,7 +26,7 @@ describe('NewsletterRecommendation Model', () => {
         status: 'ACTIVE',
       },
     });
-    testClientId = testClient?.id!;
+    testClientId = testClient!.id;
 
     // Create test newsletters
     const sourceNewsletter = await prisma.newsletter?.create({
@@ -37,7 +37,7 @@ describe('NewsletterRecommendation Model', () => {
         categories: ['Tech', 'Business'],
       },
     });
-    sourceNewsletterId = sourceNewsletter?.id!;
+    sourceNewsletterId = sourceNewsletter!.id;
 
     const targetNewsletter = await prisma.newsletter?.create({
       data: {
@@ -47,7 +47,7 @@ describe('NewsletterRecommendation Model', () => {
         categories: ['Tech', 'Startups'],
       },
     });
-    targetNewsletterId = targetNewsletter?.id!;
+    targetNewsletterId = targetNewsletter!.id;
   });
 
   afterEach(async () => {
@@ -342,7 +342,7 @@ describe('NewsletterRecommendation Model', () => {
     // Create performance record
     const performance = await prisma.recommendationPerformance?.create({
       data: {
-        recommendationId: recommendation?.id!,
+        recommendationId: recommendation!.id,
         period: 'DAILY',
         periodStart: new Date('2025-01-01'),
         periodEnd: new Date('2025-01-01'),

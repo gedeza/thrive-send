@@ -2,12 +2,12 @@
  * Integration test to validate TDD implementation against requirements
  * This test verifies that all components work together correctly
  */
+import * as fs from 'fs';
+import * as path from 'path';
 
 describe('Recommendation Network Integration', () => {
   it('should have all required TDD files in place', () => {
     // Verify TDD specification exists
-    const fs = require('fs');
-    const path = require('path');
     
     const tddSpecPath = path.join(process.cwd(), 'DOCS/AssessFlow-components-TDD/recommendations/RecommendationNetwork-TDD.md');
     expect(fs.existsSync(tddSpecPath)).toBe(true);
@@ -27,8 +27,6 @@ describe('Recommendation Network Integration', () => {
   });
 
   it('should have comprehensive test files in place', () => {
-    const fs = require('fs');
-    const path = require('path');
     
     // Verify test files exist
     const modelTests = path.join(process.cwd(), 'src/__tests__/models/newsletter.test.ts');
@@ -45,8 +43,6 @@ describe('Recommendation Network Integration', () => {
   });
 
   it('should validate TDD specification completeness', () => {
-    const fs = require('fs');
-    const path = require('path');
     
     const tddSpecPath = path.join(process.cwd(), 'DOCS/AssessFlow-components-TDD/recommendations/RecommendationNetwork-TDD.md');
     const content = fs.readFileSync(tddSpecPath, 'utf8');
@@ -62,9 +58,9 @@ describe('Recommendation Network Integration', () => {
     expect(content).toContain('Success Criteria');
   });
 
-  it('should validate implementation follows TDD patterns', () => {
+  it('should validate implementation follows TDD patterns', async () => {
     // This test verifies that our implementation matches TDD requirements
-    const RecommendationMatchingService = require('@/lib/services/recommendation-matching').RecommendationMatchingService;
+    const { RecommendationMatchingService } = await import('@/lib/services/recommendation-matching');
     
     // Verify service instance pattern
     const service = RecommendationMatchingService.getInstance();
@@ -93,8 +89,6 @@ describe('Recommendation Network Integration', () => {
   });
 
   it('should validate types and interfaces are properly defined', () => {
-    const fs = require('fs');
-    const path = require('path');
     
     const typesPath = path.join(process.cwd(), 'src/types/recommendation.ts');
     const content = fs.readFileSync(typesPath, 'utf8');

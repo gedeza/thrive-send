@@ -2,24 +2,25 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-// Import your Button component - adjust the path as needed
-// If this import fails, we'll define a simple Button component inline
-let Button;
-try {
-  // Try to import the actual Button component
-  Button = require('../components/ui/button').Button;
-} catch (_error) {
-  // If import fails, define a simple Button component for testing
-  Button = ({ children, variant = 'default', disabled, onClick, className = '' }) => (
-    <button 
-      onClick={onClick} 
-      disabled={disabled}
-      className={`btn ${variant} ${className}`}
-    >
-      {children}
-    </button>
-  );
-}
+// Simple Button component for testing
+const Button = React.forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    variant?: string;
+  }
+>(({ children, variant = 'default', disabled, onClick, className = '', ...props }, ref) => (
+  <button 
+    ref={ref}
+    onClick={onClick} 
+    disabled={disabled}
+    className={`btn ${variant} ${className}`}
+    {...props}
+  >
+    {children}
+  </button>
+));
+
+Button.displayName = 'Button';
 
 describe('Button Component', () => {
   it('renders with children', () => {

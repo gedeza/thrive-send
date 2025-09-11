@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { createMocks } from 'node-mocks-http';
 import { NextRequest } from 'next/server';
 
@@ -31,8 +31,11 @@ jest.mock('@/lib/prisma', () => ({
   },
 }));
 
-const mockAuth = require('@clerk/nextjs/server').auth;
-const mockPrisma = require('@/lib/prisma').prisma;
+import { auth } from '@clerk/nextjs/server';
+import { prisma } from '@/lib/prisma';
+
+const mockAuth = auth as jest.MockedFunction<typeof auth>;
+const mockPrisma = prisma as any;
 
 describe('Newsletter API', () => {
   const mockUserId = 'user-123';

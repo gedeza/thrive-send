@@ -2,21 +2,20 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-// Import your Card component - adjust the path as needed
-// If this import fails, we'll define a simple Card component inline
-let Card;
-try {
-  // Try to import the actual Card component
-  Card = require('../components/ui/card').Card;
-} catch (_error) {
-  // If import fails, define a simple Card component for testing
-  Card = ({ children, className = '', title }) => (
-    <div className={`card ${className}`}>
-      {title && <div className="card-title">{title}</div>}
-      <div className="card-content">{children}</div>
-    </div>
-  );
-}
+// Simple Card component for testing
+const Card = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & {
+    title?: string;
+  }
+>(({ children, className = '', title, ...props }, ref) => (
+  <div ref={ref} className={`card ${className}`} {...props}>
+    {title && <div className="card-title">{title}</div>}
+    <div className="card-content">{children}</div>
+  </div>
+));
+
+Card.displayName = 'Card';
 
 describe('Card Component', () => {
   it('renders children correctly', () => {

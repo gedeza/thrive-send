@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { prisma } from '@/lib/prisma';
-import { Newsletter } from '@/types/recommendation';
 
 describe('Newsletter Model', () => {
   let testOrganizationId: string;
@@ -14,7 +13,7 @@ describe('Newsletter Model', () => {
         slug: 'test-org-newsletter',
       },
     });
-    testOrganizationId = testOrg?.id!;
+    testOrganizationId = testOrg!.id;
 
     const testClient = await prisma.client?.create({
       data: {
@@ -24,7 +23,7 @@ describe('Newsletter Model', () => {
         status: 'ACTIVE',
       },
     });
-    testClientId = testClient?.id!;
+    testClientId = testClient!.id;
   });
 
   afterEach(async () => {
@@ -205,8 +204,8 @@ describe('Newsletter Model', () => {
     // Create recommendation between them
     await prisma.newsletterRecommendation?.create({
       data: {
-        fromNewsletterId: newsletter1?.id!,
-        toNewsletterId: newsletter2?.id!,
+        fromNewsletterId: newsletter1!.id,
+        toNewsletterId: newsletter2!.id,
         type: 'ONE_WAY',
         status: 'ACTIVE',
         priority: 5,
