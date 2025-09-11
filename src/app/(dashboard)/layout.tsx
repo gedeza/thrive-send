@@ -20,7 +20,7 @@ export default function DashboardLayout({
       />
       {/* Main content area */}
       <div className="flex flex-col flex-1 overflow-hidden">
-        <main className="flex-1 overflow-y-auto bg-background p-4">
+        <main className="flex-1 overflow-y-auto bg-background p-3 lg:compact-mode">
           {children}
         </main>
       </div>

@@ -324,9 +324,9 @@ function MetricCard({ title, value, description, icon, change, isLoading }: Metr
 
   if (isLoading) {
     return (
-      <Card className={`hover:shadow-lg transition-all duration-300 ${styles.cardBorder}`}>
-        <CardContent className="p-6">
-          <div className="space-y-4">
+      <Card className={`hover:shadow-lg transition-all duration-300 ${styles.cardBorder} metric-card-compact`}>
+        <CardContent className="p-4">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="space-y-2 flex-1">
                 <Skeleton className="h-3 w-20 rounded" />
@@ -345,9 +345,9 @@ function MetricCard({ title, value, description, icon, change, isLoading }: Metr
   }
 
   return (
-    <Card className={`hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 ${styles.cardBorder}`}>
-      <CardContent className="p-6">
-        <div className="space-y-4">
+    <Card className={`hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 ${styles.cardBorder} metric-card-compact`}>
+      <CardContent className="p-4">
+        <div className="space-y-2">
           {/* Header with category and icon */}
           <div className="flex items-center justify-between">
             <div className="space-y-1 flex-1">
@@ -1071,12 +1071,12 @@ function AnalyticsPageContent() {
           </TabsList>
 
           {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-4">
+          <TabsContent value="overview" className="space-y-3 dashboard-compact">
             {/* Essential Metrics - Load First */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-bold tracking-tight">Key Performance Metrics</h2>
+                  <h2 className="text-xl font-bold tracking-tight">Key Performance Metrics</h2>
                   <p className="text-muted-foreground">
                     Real-time overview of your most important analytics
                   </p>
@@ -1105,7 +1105,7 @@ function AnalyticsPageContent() {
                 </div>
               </div>
               
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4" data-tour="metrics">
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6" data-tour="metrics">
                 <MetricCard
                   title="Total Views"
                   value={metrics?.totalViews || 0}
