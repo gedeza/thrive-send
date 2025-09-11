@@ -253,6 +253,55 @@ html, body {
   }
 }
 
+/* Typography Hierarchy System */
+@layer utilities {
+  /* Consistent Typography Scale */
+  .text-page-title { 
+    @apply text-2xl font-bold tracking-tight; 
+  }
+  
+  .text-section-heading { 
+    @apply text-xl font-bold tracking-tight; 
+  }
+  
+  .text-card-title { 
+    @apply text-sm font-medium; 
+  }
+  
+  .text-metric-value { 
+    @apply text-2xl font-bold; 
+  }
+  
+  .text-metric-label { 
+    @apply text-xs text-muted-foreground; 
+  }
+  
+  .text-body-large { 
+    @apply text-base leading-relaxed; 
+  }
+  
+  .text-body-small { 
+    @apply text-sm text-muted-foreground; 
+  }
+  
+  .text-caption { 
+    @apply text-xs text-muted-foreground; 
+  }
+  
+  /* Font Weight Standardization - Only 3 weights maximum */
+  .font-regular { font-weight: 400; }
+  .font-medium { font-weight: 500; }
+  .font-bold { font-weight: 600; }
+  
+  /* Remove excessive font weights */
+  .font-light,
+  .font-semibold,
+  .font-extrabold,
+  .font-black {
+    @apply font-medium; /* Fallback to medium weight */
+  }
+}
+
 /* Compact Layout Utilities */
 @layer utilities {
   /* Compact spacing scale - reduces default Tailwind spacing by ~40% */

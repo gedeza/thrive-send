@@ -124,7 +124,7 @@ function EmptyState({
       <div className="w-16 h-16 mb-4 rounded-full bg-muted/50 flex items-center justify-center">
         <Icon className="h-8 w-8 text-muted-foreground" />
       </div>
-      <h3 className="text-lg font-semibold mb-2">{title}</h3>
+      <h3 className="text-card-title mb-2">{title}</h3>
       <p className="text-muted-foreground mb-6 max-w-md">{description}</p>
       {action && (
         <Button onClick={action.onClick} className="flex items-center gap-2">
@@ -285,7 +285,7 @@ function MetricCard({ title, value, description, icon, change, isLoading }: Metr
       return {
         iconBg: 'p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-sm',
         iconColor: 'h-7 w-7 text-blue-600',
-        numberColor: 'text-4xl font-extrabold text-blue-700 tracking-tight',
+        numberColor: 'text-2xl font-bold text-blue-700 tracking-tight',
         cardBorder: 'border-l-4 border-blue-500 bg-gradient-to-r from-blue-50/50 to-transparent',
         changeColor: 'bg-blue-50 text-blue-700',
         category: 'Reach & Visibility'
@@ -294,7 +294,7 @@ function MetricCard({ title, value, description, icon, change, isLoading }: Metr
       return {
         iconBg: 'p-4 bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl shadow-sm',
         iconColor: 'h-7 w-7 text-pink-600',
-        numberColor: 'text-4xl font-extrabold text-pink-700 tracking-tight',
+        numberColor: 'text-2xl font-bold text-pink-700 tracking-tight',
         cardBorder: 'border-l-4 border-pink-500 bg-gradient-to-r from-pink-50/50 to-transparent',
         changeColor: 'bg-pink-50 text-pink-700',
         category: 'User Interaction'
@@ -303,7 +303,7 @@ function MetricCard({ title, value, description, icon, change, isLoading }: Metr
       return {
         iconBg: 'p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-sm',
         iconColor: 'h-7 w-7 text-green-600',
-        numberColor: 'text-4xl font-extrabold text-green-700 tracking-tight',
+        numberColor: 'text-2xl font-bold text-green-700 tracking-tight',
         cardBorder: 'border-l-4 border-green-500 bg-gradient-to-r from-green-50/50 to-transparent',
         changeColor: 'bg-green-50 text-green-700',
         category: 'Business Impact'
@@ -312,7 +312,7 @@ function MetricCard({ title, value, description, icon, change, isLoading }: Metr
       return {
         iconBg: 'p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl shadow-sm',
         iconColor: 'h-7 w-7 text-gray-600',
-        numberColor: 'text-4xl font-extrabold text-gray-700 tracking-tight',
+        numberColor: 'text-2xl font-bold text-gray-700 tracking-tight',
         cardBorder: 'border-l-4 border-gray-500 bg-gradient-to-r from-gray-50/50 to-transparent',
         changeColor: 'bg-gray-50 text-gray-700',
         category: 'General Metrics'
@@ -356,7 +356,7 @@ function MetricCard({ title, value, description, icon, change, isLoading }: Metr
                   {styles.category}
                 </span>
               </div>
-              <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+              <h3 className="text-card-title text-foreground">{title}</h3>
             </div>
             <div className={styles.iconBg}>
               <div className={styles.iconColor}>
@@ -737,16 +737,16 @@ function AnalyticsPageContent() {
                 <BarChart3 className="h-10 w-10 text-primary" />
               </div>
               <div className="text-left">
-                <h1 className="text-5xl font-black bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent leading-tight">
+                <h1 className="text-2xl font-bold tracking-tight">
                   Analytics
                 </h1>
-                <p className="text-xl font-semibold text-muted-foreground tracking-wide">
+                <p className="text-muted-foreground">
                   Dashboard
                 </p>
               </div>
             </div>
             <div className="max-w-3xl mx-auto">
-              <p className="text-xl text-muted-foreground leading-relaxed">
+              <p className="text-muted-foreground leading-relaxed">
                 Comprehensive performance insights and engagement analytics across all your content platforms.
               </p>
               <div className="flex items-center justify-center gap-4 mt-4 text-sm text-muted-foreground">
@@ -1145,7 +1145,7 @@ function AnalyticsPageContent() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-bold tracking-tight">Performance Analysis</h2>
+                  <h2 className="text-xl font-bold tracking-tight">Performance Analysis</h2>
                   <p className="text-muted-foreground">
                     Detailed trends and platform-specific insights
                   </p>
@@ -1207,7 +1207,7 @@ function AnalyticsPageContent() {
             {generateInsights.length > 0 && (
               <div className="space-y-4">
                 <div>
-                  <h2 className="text-2xl font-bold tracking-tight">Actionable Insights</h2>
+                  <h2 className="text-xl font-bold tracking-tight">Actionable Insights</h2>
                   <p className="text-muted-foreground">
                     AI-powered recommendations based on your current performance
                   </p>
