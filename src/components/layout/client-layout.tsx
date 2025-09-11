@@ -35,9 +35,9 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
           {/* Global Header */}
           <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 h-16 flex items-center">
             <div className="container flex items-center justify-between h-16">
-              <a className="flex items-center space-x-2" href="/">
-                <span className="font-bold text-xl">ThriveSend</span>
-              </a>
+              <div className="flex items-center space-x-2">
+                {/* Brand name handled by sidebar in dashboard pages */}
+              </div>
               <div className="flex items-center space-x-4">
                 <NotificationCenter />
                 <CustomUserButton />

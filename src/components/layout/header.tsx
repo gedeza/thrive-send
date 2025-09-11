@@ -36,7 +36,7 @@ export function Header({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div data-testid="header-logo" className="flex items-center">
-            {logo || <h1 className="text-xl font-semibold">ThriveSend</h1>}
+            {logo}
           </div>
           
           {onSearch && (
