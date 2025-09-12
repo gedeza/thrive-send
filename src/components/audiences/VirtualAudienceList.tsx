@@ -32,18 +32,18 @@ const ITEM_HEIGHT = 280; // Height of each audience card
 
 const getStatusConfig = (status: string) => {
   const configs = {
-    ACTIVE: { color: 'bg-green-500', variant: 'default', label: 'Active' },
-    INACTIVE: { color: 'bg-gray-500', variant: 'secondary', label: 'Inactive' },
-    PROCESSING: { color: 'bg-yellow-500', variant: 'warning', label: 'Processing' }
+    ACTIVE: { color: 'bg-success', variant: 'default', label: 'Active' },
+    INACTIVE: { color: 'bg-muted', variant: 'secondary', label: 'Inactive' },
+    PROCESSING: { color: 'bg-warning', variant: 'warning', label: 'Processing' }
   };
   return configs[status as keyof typeof configs] || configs.ACTIVE;
 };
 
 const getTypeConfig = (type: string) => {
   const configs = {
-    CUSTOM: { label: 'Custom', color: 'text-blue-600' },
-    IMPORTED: { label: 'Imported', color: 'text-purple-600' },
-    DYNAMIC: { label: 'Dynamic', color: 'text-green-600' }
+    CUSTOM: { label: 'Custom', color: 'text-primary' },
+    IMPORTED: { label: 'Imported', color: 'text-accent' },
+    DYNAMIC: { label: 'Dynamic', color: 'text-success' }
   };
   return configs[type as keyof typeof configs] || configs.CUSTOM;
 };
@@ -208,25 +208,25 @@ const AudienceRow: React.FC<AudienceRowProps> = ({ index, style, data }) => {
           {audience.analytics && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
               <div className="text-center">
-                <div className="text-lg font-bold text-blue-600">
+                <div className="text-lg font-bold text-primary">
                   {audience.analytics.avgEngagementRate.toFixed(1)}%
                 </div>
                 <p className="text-xs text-muted-foreground">Avg. Engagement</p>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-green-600">
+                <div className="text-lg font-bold text-success">
                   +{audience.analytics.growth.monthly.toFixed(1)}%
                 </div>
                 <p className="text-xs text-muted-foreground">Monthly Growth</p>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-purple-600">
+                <div className="text-lg font-bold text-accent">
                   {audience.segments.length}
                 </div>
                 <p className="text-xs text-muted-foreground">Segments</p>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-orange-600">
+                <div className="text-lg font-bold text-warning">
                   {audience.analytics.totalEngagement.toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground">Total Engagement</p>
@@ -261,7 +261,7 @@ const AudienceRow: React.FC<AudienceRowProps> = ({ index, style, data }) => {
                     {segment.growth && (
                       <div className="text-right">
                         <div className={`text-sm font-medium ${
-                          segment.growth.thisMonth > 0 ? 'text-green-600' : 'text-red-600'
+                          segment.growth.thisMonth > 0 ? 'text-success' : 'text-destructive'
                         }`}>
                           {segment.growth.thisMonth > 0 ? '+' : ''}{segment.growth.thisMonth.toFixed(1)}%
                         </div>

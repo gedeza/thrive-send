@@ -164,7 +164,111 @@ interface CardContext {
 }
 ```
 
-## Styling
+## Enhanced Minimalist Styling System
+
+### Official ThriveSend Card Implementation
+The Card component implements the **Enhanced Minimalist Design System** for optimal performance and professional appearance.
+
+#### Mandatory Card Classes
+- **Base**: `card-enhanced` (includes border, shadow, transitions)
+- **Accent Cards**: `card-accent` + `border-l-2 border-{semantic}/20`
+- **Background**: Always use `bg-card` for consistency
+- **Hover Effects**: `hover:shadow-professional transition-shadow duration-200`
+
+#### Enhanced Card Variants
+```typescript
+// Enhanced Minimalist Card Implementation
+<Card className="card-enhanced border-l-2 border-primary/20 bg-card">
+  <CardContent className="p-4">
+    <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+      <Icon className="h-6 w-6 text-primary" />
+    </div>
+  </CardContent>
+</Card>
+
+// Success-themed card
+<Card className="card-enhanced border-l-2 border-success/20 bg-card">
+  <CardContent>Success content</CardContent>
+</Card>
+
+// Muted-themed card
+<Card className="card-enhanced border-l-2 border-muted/40 bg-card">
+  <CardContent>Secondary content</CardContent>
+</Card>
+
+// Warning/Error card
+<Card className="card-enhanced border-l-2 border-destructive/20 bg-card">
+  <CardContent>Critical content</CardContent>
+</Card>
+```
+
+#### Professional Icon Containers
+```typescript
+// Standard icon container pattern
+<div className="p-3 bg-{semantic}/10 rounded-lg border border-{semantic}/20">
+  <Icon className="h-6 w-6 text-{semantic}" />
+</div>
+
+// Examples by semantic color
+<div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+  <Users className="h-6 w-6 text-primary" />
+</div>
+
+<div className="p-3 bg-success/10 rounded-lg border border-success/20">
+  <CheckCircle className="h-6 w-6 text-success" />
+</div>
+
+<div className="p-3 bg-muted/10 rounded-lg border border-muted/20">
+  <Settings className="h-6 w-6 text-muted-foreground" />
+</div>
+```
+
+#### Performance-Optimized Shadows
+```css
+/* Enhanced shadow system */
+.shadow-enhanced: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04)
+.shadow-professional: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05)
+
+/* Implementation */
+.card-enhanced {
+  @apply border-enhanced shadow-enhanced hover:shadow-professional transition-shadow duration-200;
+}
+```
+
+#### Semantic Color System (Maximum 4)
+- **Primary**: Interactive elements, CTAs (`text-primary`, `border-primary/20`)
+- **Success**: Positive states, completed items (`text-success`, `border-success/20`)
+- **Muted**: Secondary information, backgrounds (`text-muted-foreground`, `border-muted/40`)
+- **Destructive**: Warnings, errors, critical actions (`text-destructive`, `border-destructive/20`)
+
+#### Typography Hierarchy (Color-Independent)
+- **Card Titles**: `text-lg font-medium`
+- **Card Subtitles**: `text-sm text-muted-foreground`
+- **Metric Values**: `text-2xl font-bold`
+- **Metric Labels**: `text-xs text-muted-foreground`
+
+### Implementation Rules (MANDATORY)
+1. **ALL cards MUST use**: `card-enhanced` base class
+2. **Icon containers MUST use**: `bg-{semantic}/10 border border-{semantic}/20`
+3. **Hover states MUST use**: `hover:shadow-professional transition-shadow duration-200`
+4. **Border accents MUST use**: `border-l-2 border-{semantic}/20`
+5. **NO gradients allowed**: Use solid backgrounds only
+6. **Typography over color**: Information hierarchy through fonts, not colors
+
+### Deprecated Patterns (DO NOT USE)
+```typescript
+// ❌ Old gradient-heavy approach
+<Card className="bg-gradient-to-r from-primary/5 to-transparent border-l-4 border-primary hover:shadow-lg transform hover:-translate-y-1">
+
+// ❌ Complex gradient icon containers  
+<div className="p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl shadow-sm">
+
+// ✅ New Enhanced Minimalist approach
+<Card className="card-enhanced border-l-2 border-primary/20 bg-card">
+<div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+```
+
+### Traditional Styling (Legacy)
 - Uses Tailwind CSS for styling
 - Follows design system color tokens
 - Implements consistent spacing

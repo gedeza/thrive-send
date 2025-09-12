@@ -107,11 +107,11 @@ interface ServiceProviderClientStats {
 
 // Badge coloring for client types
 const typeBadge = {
-  MUNICIPALITY: "bg-yellow-100 text-yellow-800",
-  BUSINESS: "bg-blue-100 text-blue-800",
-  STARTUP: "bg-purple-100 text-purple-800",
-  INDIVIDUAL: "bg-pink-100 text-pink-800",
-  NONPROFIT: "bg-green-100 text-green-800"
+  MUNICIPALITY: "bg-warning/10 text-warning",
+  BUSINESS: "bg-primary/10 text-primary",
+  STARTUP: "bg-primary/10 text-primary",
+  INDIVIDUAL: "bg-muted/10 text-muted-foreground",
+  NONPROFIT: "bg-success/10 text-success"
 } as const;
 
 // Icon mapping for social platforms
@@ -150,17 +150,75 @@ interface MetricCardProps {
 }
 
 function MetricCard({ title, value, description, icon, change, isLoading, trend = 'neutral' }: MetricCardProps) {
+  // Get styles based on title for color-coded theming - Enhanced Minimalist
+  const getStyles = (title: string) => {
+    const lowerTitle = title.toLowerCase();
+    if (lowerTitle.includes('total') || lowerTitle.includes('clients')) {
+      return {
+        cardBorder: 'card-enhanced border-l-2 border-primary/20 bg-card',
+        iconBg: 'p-3 bg-primary/10 rounded-lg border border-primary/20',
+        iconColor: 'h-6 w-6 text-primary',
+        numberColor: 'text-2xl font-bold text-primary tracking-tight',
+        changeColor: 'bg-primary/10 text-primary border border-primary/20',
+        category: 'Client Growth'
+      };
+    } else if (lowerTitle.includes('active') || lowerTitle.includes('activity')) {
+      return {
+        cardBorder: 'card-enhanced border-l-2 border-success/20 bg-card',
+        iconBg: 'p-3 bg-success/10 rounded-lg border border-success/20',
+        iconColor: 'h-6 w-6 text-success',
+        numberColor: 'text-2xl font-bold text-success tracking-tight',
+        changeColor: 'bg-success/10 text-success border border-success/20',
+        category: 'Activity Status'
+      };
+    } else if (lowerTitle.includes('performance') || lowerTitle.includes('score')) {
+      return {
+        cardBorder: 'card-enhanced border-l-2 border-success/20 bg-card',
+        iconBg: 'p-3 bg-success/10 rounded-lg border border-success/20',
+        iconColor: 'h-6 w-6 text-success',
+        numberColor: 'text-2xl font-bold text-success tracking-tight',
+        changeColor: 'bg-success/10 text-success border border-success/20',
+        category: 'Performance Metrics'
+      };
+    } else if (lowerTitle.includes('top') || lowerTitle.includes('performer')) {
+      return {
+        cardBorder: 'card-enhanced border-l-2 border-success/20 bg-card',
+        iconBg: 'p-3 bg-success/10 rounded-lg border border-success/20',
+        iconColor: 'h-6 w-6 text-success',
+        numberColor: 'text-2xl font-bold text-success tracking-tight',
+        changeColor: 'bg-success/10 text-success border border-success/20',
+        category: 'Recognition'
+      };
+    } else {
+      return {
+        cardBorder: 'card-enhanced border-l-2 border-muted/40 bg-card',
+        iconBg: 'p-3 bg-muted/10 rounded-lg border border-muted/20',
+        iconColor: 'h-6 w-6 text-muted-foreground',
+        numberColor: 'text-2xl font-bold text-muted-foreground tracking-tight',
+        changeColor: 'bg-muted/10 text-muted-foreground border border-muted/20',
+        category: 'General Metrics'
+      };
+    }
+  };
+
+  const styles = getStyles(title);
+
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-8 w-20" />
-              <Skeleton className="h-3 w-32" />
+      <Card className={`hover:shadow-professional transition-shadow duration-200 ${styles.cardBorder}`}>
+        <CardContent className="p-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2 flex-1">
+                <Skeleton className="h-3 w-20 rounded" />
+                <Skeleton className="h-10 w-24 rounded" />
+              </div>
+              <Skeleton className="h-14 w-14 rounded-xl" />
             </div>
-            <Skeleton className="h-8 w-8 rounded" />
+            <div className="space-y-2">
+              <Skeleton className="h-3 w-32 rounded" />
+              <Skeleton className="h-4 w-28 rounded" />
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -168,30 +226,47 @@ function MetricCard({ title, value, description, icon, change, isLoading, trend 
   }
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-3xl font-bold">{typeof value === 'number' ? value.toLocaleString() : value}</p>
-            {change !== undefined && (
-              <div className={cn(
-                "flex items-center text-xs font-medium mt-1",
-                change >= 0 ? 'text-green-600' : 'text-red-600'
-              )}>
-                <TrendingUp className={cn(
-                  "mr-1 h-3 w-3",
-                  change < 0 && "rotate-180"
-                )} />
-                {change >= 0 ? '+' : ''}{change}%
+    <Card className={`hover:shadow-professional transition-shadow duration-200 ${styles.cardBorder}`}>
+      <CardContent className="p-4">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  {styles.category}
+                </span>
               </div>
-            )}
-          </div>
-          <div className="p-3 bg-primary/10 rounded-full">
-            <div className="h-6 w-6 text-primary">
-              {icon}
+              <h3 className="text-sm font-medium text-foreground">{title}</h3>
+            </div>
+            <div className={styles.iconBg}>
+              <div className={styles.iconColor}>
+                {icon}
+              </div>
             </div>
           </div>
+          
+          <div className="space-y-2">
+            <p className={styles.numberColor}>
+              {typeof value === 'number' ? value.toLocaleString() : value}
+            </p>
+            {description && (
+              <p className="text-sm text-muted-foreground font-medium">{description}</p>
+            )}
+          </div>
+          
+          {change !== undefined && (
+            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium ${styles.changeColor}`}>
+              {change >= 0 ? (
+                <TrendingUp className="h-3 w-3" />
+              ) : (
+                <div className="h-3 w-3 rotate-180">
+                  <TrendingUp className="h-3 w-3" />
+                </div>
+              )}
+              <span>{change >= 0 ? '+' : ''}{change}%</span>
+              <span className="text-muted-foreground">vs last period</span>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -396,11 +471,11 @@ function ClientsPageContent() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
             <Users className="h-8 w-8 text-primary" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
               Client Management
             </h1>
           </div>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-base text-muted-foreground max-w-2xl mx-auto">
             Build and manage strong client relationships. Track engagement, monitor projects, and grow your business partnerships.
           </p>
         </div>
@@ -441,7 +516,7 @@ function ClientsPageContent() {
           title="Active Clients"
           value={stats?.activeClients || 0}
           description="Currently active accounts"
-          icon={<Activity className="h-6 w-6 text-blue-600" />}
+          icon={<Activity className="h-6 w-6 text-primary" />}
           isLoading={statsLoading}
         />
         
@@ -449,7 +524,7 @@ function ClientsPageContent() {
           title="Avg Performance"
           value={`${stats?.averagePerformanceScore || 0}%`}
           description="Client performance average"
-          icon={<TrendingUp className="h-6 w-6 text-green-600" />}
+          icon={<TrendingUp className="h-6 w-6 text-success" />}
           isLoading={statsLoading}
         />
         
@@ -457,7 +532,7 @@ function ClientsPageContent() {
           title="Top Performer"
           value={stats?.topPerformingClients?.[0]?.name || 'N/A'}
           description="Highest scoring client"
-          icon={<CheckCircle2 className="h-6 w-6 text-orange-600" />}
+          icon={<CheckCircle2 className="h-6 w-6 text-warning" />}
           isLoading={statsLoading}
         />
       </div>
@@ -630,14 +705,14 @@ function ClientsPageContent() {
 
       {/* Error State */}
       {error && (
-        <Card className="border-destructive/20 bg-destructive/5">
+        <Card className="card-enhanced border-l-2 border-destructive/20 bg-card">
           <CardContent className="p-6 text-center">
             <div className="flex justify-center mb-3">
-              <div className="p-2 bg-destructive/10 rounded-full">
+              <div className="p-3 bg-destructive/10 rounded-lg border border-destructive/20">
                 <RefreshCcw className="h-6 w-6 text-destructive" />
               </div>
             </div>
-            <h3 className="text-lg font-semibold mb-2">Failed to load clients</h3>
+            <h3 className="text-lg font-medium mb-2">Failed to load clients</h3>
             <p className="text-muted-foreground mb-4">{error}</p>
             <Button
               variant="outline"
@@ -654,14 +729,14 @@ function ClientsPageContent() {
 
       {/* Empty State */}
       {!loading && !error && filteredClients.length === 0 && (
-        <Card className="border-dashed">
+        <Card className="card-enhanced border-l-2 border-muted/40 bg-card border-dashed">
           <CardContent className="p-6 text-center">
             <div className="flex justify-center mb-4">
-              <div className="p-3 bg-muted rounded-full">
+              <div className="p-3 bg-muted/10 rounded-lg border border-muted/20">
                 <Users className="h-8 w-8 text-muted-foreground" />
               </div>
             </div>
-            <h3 className="text-lg font-semibold mb-2">No clients found</h3>
+            <h3 className="text-lg font-medium mb-2">No clients found</h3>
             <p className="text-muted-foreground mb-4 max-w-md mx-auto">
               {clients.length === 0 
                 ? "Get started by adding your first client to begin managing relationships and tracking performance."
@@ -739,9 +814,12 @@ interface ClientCardProps {
 function ClientCard({ client, viewMode, onDelete }: ClientCardProps) {
   if (viewMode === 'list') {
     return (
-      <Card className="hover:shadow-lg transition-all duration-200 border-l-4" style={{ 
-        borderLeftColor: client.status === 'active' ? '#22c55e' : '#6b7280' 
-      }}>
+      <Card className={cn(
+        "card-enhanced hover:shadow-professional transition-shadow duration-200 bg-card border-l-2",
+        client.status === 'active' 
+          ? 'border-success/20' 
+          : 'border-muted/40'
+      )}>
         <CardContent className="p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3 flex-1">
@@ -767,7 +845,7 @@ function ClientCard({ client, viewMode, onDelete }: ClientCardProps) {
                   <div className="flex items-center gap-2 mb-1">
                     <Link 
                       href={`/clients/${client.id}`} 
-                      className="font-semibold hover:text-primary transition-colors block truncate"
+                      className="font-medium hover:text-primary transition-colors block truncate"
                       title={client.name}
                     >
                       {client.name}
@@ -779,21 +857,21 @@ function ClientCard({ client, viewMode, onDelete }: ClientCardProps) {
                     )}
                   </div>
                   <div className="flex items-center gap-1 mt-1 flex-wrap">
-                    <Badge className={cn("text-xs px-1.5 py-0.5 whitespace-nowrap", typeBadge[client.type as keyof typeof typeBadge] || 'bg-gray-100 text-gray-800')}>
+                    <Badge className={cn("text-xs px-1.5 py-0.5 whitespace-nowrap", typeBadge[client.type as keyof typeof typeBadge] || 'bg-muted text-muted-foreground')}>
                       {client.type}
                     </Badge>
                     <Badge 
                       variant={client.status === 'active' ? 'default' : 'secondary'}
-                      className={cn("text-xs px-1.5 py-0.5 whitespace-nowrap", client.status === 'active' ? 'bg-green-100 text-green-800' : '')}
+                      className={cn("text-xs px-1.5 py-0.5 whitespace-nowrap", client.status === 'active' ? 'bg-success/10 text-success' : '')}
                     >
                       {client.status}
                     </Badge>
                     {client.performanceScore && (
                       <Badge className={cn(
                         "text-xs px-1.5 py-0.5 whitespace-nowrap",
-                        client.performanceScore >= 90 ? 'bg-green-100 text-green-800' :
-                        client.performanceScore >= 70 ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
+                        client.performanceScore >= 90 ? 'bg-success/10 text-success' :
+                        client.performanceScore >= 70 ? 'bg-warning/10 text-warning' :
+                        'bg-destructive/10 text-destructive'
                       )}>
                         {client.performanceScore}% score
                       </Badge>
@@ -917,9 +995,12 @@ function ClientCard({ client, viewMode, onDelete }: ClientCardProps) {
 
   // Grid view
   return (
-    <Card className="hover:shadow-lg transition-all duration-200 group border-l-4" style={{ 
-      borderLeftColor: client.status === 'active' ? '#22c55e' : '#6b7280' 
-    }}>
+    <Card className={cn(
+      "card-enhanced hover:shadow-professional transition-shadow duration-200 group bg-card border-l-2",
+      client.status === 'active' 
+        ? 'border-success/20' 
+        : 'border-muted/40'
+    )}>
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center space-x-2 flex-1 min-w-0 mr-2">
@@ -941,7 +1022,7 @@ function ClientCard({ client, viewMode, onDelete }: ClientCardProps) {
               <div className="flex items-center gap-2 mb-1">
                 <Link 
                   href={`/clients/${client.id}`} 
-                  className="font-semibold hover:text-primary transition-colors block truncate"
+                  className="font-medium hover:text-primary transition-colors block truncate"
                   title={client.name}
                 >
                   {client.name}
@@ -1010,21 +1091,21 @@ function ClientCard({ client, viewMode, onDelete }: ClientCardProps) {
         
         <div className="space-y-2">
           <div className="flex items-center gap-1 flex-wrap">
-            <Badge className={cn("text-xs px-1.5 py-0.5 whitespace-nowrap", typeBadge[client.type as keyof typeof typeBadge] || 'bg-gray-100 text-gray-800')}>
+            <Badge className={cn("text-xs px-1.5 py-0.5 whitespace-nowrap", typeBadge[client.type as keyof typeof typeBadge] || 'bg-muted text-muted-foreground')}>
               {client.type}
             </Badge>
             <Badge 
               variant={client.status === 'active' ? 'default' : 'secondary'}
-              className={cn("text-xs px-1.5 py-0.5 whitespace-nowrap", client.status === 'active' ? 'bg-green-100 text-green-800' : '')}
+              className={cn("text-xs px-1.5 py-0.5 whitespace-nowrap", client.status === 'active' ? 'bg-success/10 text-success' : '')}
             >
               {client.status}
             </Badge>
             {client.performanceScore && (
               <Badge className={cn(
                 "text-xs px-1.5 py-0.5 whitespace-nowrap",
-                client.performanceScore >= 90 ? 'bg-green-100 text-green-800' :
-                client.performanceScore >= 70 ? 'bg-yellow-100 text-yellow-800' :
-                'bg-red-100 text-red-800'
+                client.performanceScore >= 90 ? 'bg-success/10 text-success' :
+                client.performanceScore >= 70 ? 'bg-warning/10 text-warning' :
+                'bg-destructive/10 text-destructive'
               )}>
                 {client.performanceScore}% score
               </Badge>

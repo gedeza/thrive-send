@@ -66,69 +66,69 @@ import ClientAssignmentManager from '@/components/team/ClientAssignmentManager';
 
 // Types are now imported from the hook
 
-// Role configuration
+// Minimalist role configuration - Typography hierarchy over color
 const roleConfig = {
   OWNER: { 
     label: 'Owner', 
-    color: 'bg-purple-100 text-purple-800', 
     description: 'Full system access and management',
-    level: 10
+    level: 10,
+    priority: 'highest'
   },
   ADMIN: { 
     label: 'Administrator', 
-    color: 'bg-red-100 text-red-800', 
     description: 'Administrative access and user management',
-    level: 9
+    level: 9,
+    priority: 'highest'
   },
   MANAGER: { 
     label: 'Manager', 
-    color: 'bg-blue-100 text-blue-800', 
     description: 'Team and project management',
-    level: 8
+    level: 8,
+    priority: 'high'
   },
   CLIENT_MANAGER: { 
     label: 'Client Manager', 
-    color: 'bg-green-100 text-green-800', 
     description: 'Client relationship management',
-    level: 7
+    level: 7,
+    priority: 'high'
   },
   APPROVER: { 
     label: 'Approver', 
-    color: 'bg-orange-100 text-orange-800', 
     description: 'Content approval authority',
-    level: 6
+    level: 6,
+    priority: 'medium'
   },
   PUBLISHER: { 
     label: 'Publisher', 
-    color: 'bg-indigo-100 text-indigo-800', 
     description: 'Content publishing and distribution',
-    level: 5
+    level: 5,
+    priority: 'medium'
   },
   REVIEWER: { 
     label: 'Reviewer', 
-    color: 'bg-yellow-100 text-yellow-800', 
     description: 'Content review and quality assurance',
-    level: 4
+    level: 4,
+    priority: 'medium'
   },
   ANALYST: { 
     label: 'Analyst', 
-    color: 'bg-teal-100 text-teal-800', 
     description: 'Analytics and performance tracking',
-    level: 3
+    level: 3,
+    priority: 'medium'
   },
   CONTENT_CREATOR: { 
     label: 'Content Creator', 
-    color: 'bg-pink-100 text-pink-800', 
     description: 'Content creation and development',
-    level: 2
+    level: 2,
+    priority: 'standard'
   },
 } as const;
 
-// Status configuration
+// Simplified status configuration - Success color only for active status
 const statusConfig = {
-  ACTIVE: { label: 'Active', color: 'bg-green-100 text-green-800' },
-  PENDING: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
-  INACTIVE: { label: 'Inactive', color: 'bg-gray-100 text-gray-800' },
+  ACTIVE: { label: 'Active', isSuccess: true },
+  PENDING: { label: 'Pending', isSuccess: false },
+  INACTIVE: { label: 'Inactive', isSuccess: false },
 } as const;
 
 function getInitials(name: string) {
@@ -170,7 +170,7 @@ function formatRelativeTime(dateString: string) {
   }
 }
 
-// Metric card component
+// Simplified metric card component - Single border treatment
 interface MetricCardProps {
   title: string;
   value: string | number;
@@ -181,18 +181,61 @@ interface MetricCardProps {
   trend?: 'up' | 'down' | 'neutral';
 }
 
+const getMetricCardStyle = (title: string) => {
+  const lowerTitle = title.toLowerCase();
+  if (lowerTitle.includes('total') || lowerTitle.includes('members')) {
+    return {
+      cardStyle: 'card-enhanced border-l-2 border-primary/20',
+      iconBg: 'p-3 bg-primary/10 rounded-lg border border-primary/20',
+      iconColor: 'h-6 w-6 text-primary',
+      valueColor: 'text-2xl font-bold text-primary tracking-tight'
+    };
+  }
+  if (lowerTitle.includes('active')) {
+    return {
+      cardStyle: 'card-enhanced border-l-2 border-success/20',
+      iconBg: 'p-3 bg-success/10 rounded-lg border border-success/20',
+      iconColor: 'h-6 w-6 text-success',
+      valueColor: 'text-2xl font-bold text-success tracking-tight'
+    };
+  }
+  if (lowerTitle.includes('pending') || lowerTitle.includes('invitation')) {
+    return {
+      cardStyle: 'card-enhanced border-l-2 border-muted/20',
+      iconBg: 'p-3 bg-muted/10 rounded-lg border border-muted/20',
+      iconColor: 'h-6 w-6 text-muted-foreground',
+      valueColor: 'text-2xl font-bold text-muted-foreground tracking-tight'
+    };
+  }
+  return {
+    cardStyle: 'card-enhanced border-l-2 border-primary/20',
+    iconBg: 'p-3 bg-primary/10 rounded-lg border border-primary/20',
+    iconColor: 'h-6 w-6 text-primary',
+    valueColor: 'text-2xl font-bold text-primary tracking-tight'
+  };
+};
+
 function MetricCard({ title, value, description, icon, change, isLoading, trend = 'neutral' }: MetricCardProps) {
+  const styles = getMetricCardStyle(title);
+  
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-8 w-20" />
-              <Skeleton className="h-3 w-32" />
+      <Card className="card-enhanced border-l-2 border-muted/20 hover:shadow-professional transition-shadow duration-200">
+        <CardContent className="p-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2 flex-1">
+                <Skeleton className="h-3 w-20 rounded" />
+                <Skeleton className="h-10 w-24 rounded" />
+              </div>
+              <div className="p-3 bg-muted/10 rounded-lg border border-muted/20">
+                <Skeleton className="h-6 w-6" />
+              </div>
             </div>
-            <Skeleton className="h-8 w-8 rounded" />
+            <div className="space-y-2">
+              <Skeleton className="h-3 w-32 rounded" />
+              <Skeleton className="h-4 w-28 rounded" />
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -200,40 +243,66 @@ function MetricCard({ title, value, description, icon, change, isLoading, trend 
   }
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-3xl font-bold">{typeof value === 'number' ? value.toLocaleString() : value}</p>
-            {change !== undefined && (
-              <div className={cn(
-                "flex items-center text-xs font-medium mt-1",
-                change >= 0 ? 'text-green-600' : 'text-red-600'
-              )}>
-                <TrendingUp className={cn(
-                  "mr-1 h-3 w-3",
-                  change < 0 && "rotate-180"
-                )} />
-                {change >= 0 ? '+' : ''}{change}%
+    <Card className={`${styles.cardStyle} hover:shadow-professional transition-shadow duration-200`}>
+      <CardContent className="p-4">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1 flex-1">
+              <h3 className="text-sm font-medium text-foreground">{title}</h3>
+              <p className={styles.valueColor}>
+                {typeof value === 'number' ? value.toLocaleString() : value}
+              </p>
+            </div>
+            <div className={styles.iconBg}>
+              <div className={styles.iconColor}>
+                {icon}
               </div>
-            )}
-            {description && (
-              <p className="text-xs text-muted-foreground mt-1">{description}</p>
-            )}
-          </div>
-          <div className="p-3 bg-primary/10 rounded-full">
-            <div className="h-6 w-6 text-primary">
-              {icon}
             </div>
           </div>
+          
+          {description && (
+            <p className="text-sm text-muted-foreground font-medium">{description}</p>
+          )}
+          
+          {change !== undefined && (
+            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${
+              change >= 0 ? 'bg-success/10 text-success border-success/20' : 'bg-destructive/10 text-destructive border-destructive/20'
+            }`}>
+              {change >= 0 ? (
+                <TrendingUp className="h-3 w-3" />
+              ) : (
+                <div className="h-3 w-3 rotate-180">
+                  <TrendingUp className="h-3 w-3" />
+                </div>
+              )}
+              <span>{change >= 0 ? '+' : ''}{change}%</span>
+              <span>vs last period</span>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
   );
 }
 
-// Team member card component
+// Enhanced role styling functions for team member cards
+const getRoleCardStyle = (role: ServiceProviderRole) => {
+  const config = roleConfig[role];
+  if (config.level >= 9) return 'card-enhanced border-l-2 border-destructive/20';
+  if (config.level >= 7) return 'card-enhanced border-l-2 border-primary/20';
+  if (config.level >= 5) return 'card-enhanced border-l-2 border-success/20';
+  return 'card-enhanced border-l-2 border-muted/20';
+};
+
+const getRoleBadgeStyle = (role: ServiceProviderRole) => {
+  const config = roleConfig[role];
+  if (config.level >= 9) return 'bg-destructive/10 text-destructive border border-destructive/20';
+  if (config.level >= 7) return 'bg-primary/10 text-primary border border-primary/20';
+  if (config.level >= 5) return 'bg-success/10 text-success border border-success/20';
+  return 'bg-muted/10 text-muted-foreground border border-muted/20';
+};
+
+// Simplified team member card component
 interface TeamMemberCardProps {
   member: TeamMember;
   onEdit?: (member: TeamMember) => void;
@@ -244,9 +313,11 @@ interface TeamMemberCardProps {
 function TeamMemberCard({ member, onEdit, onDelete, onViewDetails }: TeamMemberCardProps) {
   const roleInfo = roleConfig[member.role];
   const statusInfo = statusConfig[member.status];
+  const cardStyle = getRoleCardStyle(member.role);
+  const roleBadgeStyle = getRoleBadgeStyle(member.role);
 
   return (
-    <Card className="hover:shadow-lg transition-all duration-200">
+    <Card className={`${cardStyle} hover:shadow-professional transition-shadow duration-200`}>
       <CardContent className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center space-x-3 flex-1">
@@ -263,13 +334,18 @@ function TeamMemberCard({ member, onEdit, onDelete, onViewDetails }: TeamMemberC
             )}
             
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-lg truncate">{member.name}</h3>
+              <h3 className="font-medium text-lg truncate">{member.name}</h3>
               <p className="text-sm text-muted-foreground truncate">{member.email}</p>
               <div className="flex items-center gap-2 mt-2">
-                <Badge className={cn("text-xs px-2 py-1", roleInfo.color)}>
+                <Badge className={cn("text-xs px-2 py-1", roleBadgeStyle)}>
                   {roleInfo.label}
                 </Badge>
-                <Badge className={cn("text-xs px-2 py-1", statusInfo.color)}>
+                <Badge 
+                  className={cn(
+                    "text-xs px-2 py-1",
+                    statusInfo.isSuccess ? "bg-success/10 text-success border border-success/20" : "bg-muted/10 text-muted-foreground border border-muted/20"
+                  )}
+                >
                   {statusInfo.label}
                 </Badge>
               </div>
@@ -303,14 +379,14 @@ function TeamMemberCard({ member, onEdit, onDelete, onViewDetails }: TeamMemberC
           </DropdownMenu>
         </div>
 
-        {/* Performance metrics */}
+        {/* Performance metrics - Unified styling */}
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div className="text-center">
-            <p className="text-2xl font-bold text-primary">{member.performance.contentCreated}</p>
+            <p className="text-2xl font-bold">{member.performance.contentCreated}</p>
             <p className="text-xs text-muted-foreground">Content Created</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-green-600">{member.performance.clientsManaged}</p>
+            <p className="text-2xl font-bold">{member.performance.clientsManaged}</p>
             <p className="text-xs text-muted-foreground">Clients Managed</p>
           </div>
         </div>
@@ -473,23 +549,23 @@ export default function TeamManagementPage() {
 
   return (
     <TooltipProvider>
-      <div className="container mx-auto py-4 space-y-4">
+      <div className="container mx-auto py-4 space-y-8">
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="text-center">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <Users className="h-8 w-8 text-primary" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              Team Management
-            </h1>
+            <div className="p-2 bg-primary/10 rounded-xl">
+              <Users className="h-8 w-8 text-primary" />
+            </div>
+            <h1 className="text-3xl font-bold text-foreground">Team Management</h1>
           </div>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-muted-foreground max-w-2xl mx-auto">
             Manage your service provider team, assign roles, and track performance across all client accounts.
           </p>
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center justify-end gap-2 mb-8">
-          <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
+        <div className="flex items-center justify-end gap-2">
+          <Button asChild>
             <Link href="/team/invite" className="inline-flex items-center">
               <UserPlus className="mr-2 h-4 w-4" />
               Invite Team Member
@@ -497,8 +573,8 @@ export default function TeamManagementPage() {
           </Button>
         </div>
 
-        {/* Team metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        {/* Team metrics - Unified styling */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <MetricCard
             title="Total Members"
             value={stats?.totalMembers || 0}
@@ -511,7 +587,7 @@ export default function TeamManagementPage() {
             title="Active Members"
             value={stats?.activeMembers || 0}
             description="Currently active team members"
-            icon={<UserCheck className="h-6 w-6 text-green-600" />}
+            icon={<UserCheck className="h-6 w-6" />}
             isLoading={loading}
           />
           
@@ -519,7 +595,7 @@ export default function TeamManagementPage() {
             title="Pending Invitations"
             value={stats?.pendingInvitations || 0}
             description="Awaiting acceptance"
-            icon={<Mail className="h-6 w-6 text-yellow-600" />}
+            icon={<Mail className="h-6 w-6" />}
             isLoading={loading}
           />
           
@@ -527,7 +603,7 @@ export default function TeamManagementPage() {
             title="Avg Performance"
             value={`${stats?.averagePerformance || 0}/5`}
             description="Team performance rating"
-            icon={<Award className="h-6 w-6 text-orange-600" />}
+            icon={<Award className="h-6 w-6" />}
             isLoading={loading}
           />
         </div>
@@ -541,50 +617,60 @@ export default function TeamManagementPage() {
           
           <TabsContent value="members" className="space-y-6">
             {/* Search and filters */}
-            <div className="bg-muted/30 p-4 rounded-lg space-y-4">
-              <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-                <div className="flex-1 max-w-md">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                    <Input
-                      placeholder="Search team members..."
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      className="pl-10 bg-background"
-                    />
+            <Card className="card-enhanced border-l-2 border-primary/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
+                    <Search className="h-5 w-5 text-primary" />
+                  </div>
+                  Search & Filter Team Members
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+                  <div className="flex-1 max-w-md">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                      <Input
+                        placeholder="Search team members..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              <div className="flex flex-wrap items-center gap-2">
-                <Select value={roleFilter} onValueChange={setRoleFilter}>
-                  <SelectTrigger className="w-[180px] bg-background">
-                    <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Filter by role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Roles</SelectItem>
-                    {Object.entries(roleConfig).map(([role, config]) => (
-                      <SelectItem key={role} value={role}>
-                        {config.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
                 
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[150px] bg-background">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="ACTIVE">Active</SelectItem>
-                    <SelectItem value="PENDING">Pending</SelectItem>
-                    <SelectItem value="INACTIVE">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Select value={roleFilter} onValueChange={setRoleFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <Filter className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Filter by role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Roles</SelectItem>
+                      {Object.entries(roleConfig).map(([role, config]) => (
+                        <SelectItem key={role} value={role}>
+                          {config.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-[150px]">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="ACTIVE">Active</SelectItem>
+                      <SelectItem value="PENDING">Pending</SelectItem>
+                      <SelectItem value="INACTIVE">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Loading state */}
             {loading && (
@@ -594,15 +680,15 @@ export default function TeamManagementPage() {
                     <CardContent className="p-6">
                       <div className="animate-pulse space-y-4">
                         <div className="flex items-center space-x-3">
-                          <div className="h-12 w-12 bg-gray-200 rounded-full"></div>
+                          <div className="h-12 w-12 bg-muted rounded-full"></div>
                           <div className="space-y-2 flex-1">
-                            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                            <div className="h-4 bg-muted rounded w-3/4"></div>
+                            <div className="h-3 bg-muted rounded w-1/2"></div>
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
-                          <div className="h-8 bg-gray-200 rounded"></div>
-                          <div className="h-8 bg-gray-200 rounded"></div>
+                          <div className="h-8 bg-muted rounded"></div>
+                          <div className="h-8 bg-muted rounded"></div>
                         </div>
                       </div>
                     </CardContent>
@@ -613,18 +699,19 @@ export default function TeamManagementPage() {
 
             {/* Error state */}
             {error && (
-              <Card className="border-destructive/20 bg-destructive/5">
-                <CardContent className="p-6 text-center">
-                  <div className="flex justify-center mb-3">
-                    <div className="p-2 bg-destructive/10 rounded-full">
-                      <Users className="h-6 w-6 text-destructive" />
+              <Card className="card-enhanced border-l-2 border-destructive/20">
+                <CardContent className="p-8 text-center">
+                  <div className="flex justify-center mb-4">
+                    <div className="p-4 bg-destructive/10 rounded-lg border border-destructive/20">
+                      <Users className="h-8 w-8 text-destructive" />
                     </div>
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">Failed to load team members</h3>
+                  <h3 className="text-lg font-semibold text-destructive mb-2">Failed to load team members</h3>
                   <p className="text-muted-foreground mb-4">{error instanceof Error ? error.message : 'Unknown error occurred'}</p>
                   <Button
                     variant="outline"
                     onClick={() => refetch()}
+                    className="border-destructive/20 hover:bg-destructive/10"
                   >
                     Try Again
                   </Button>
@@ -634,24 +721,24 @@ export default function TeamManagementPage() {
 
             {/* Empty state */}
             {!loading && !error && filteredMembers.length === 0 && (
-              <Card className="border-dashed">
-                <CardContent className="p-6 text-center">
+              <Card className="card-enhanced border-l-2 border-muted/20 border-dashed">
+                <CardContent className="p-8 text-center">
                   <div className="flex justify-center mb-4">
-                    <div className="p-3 bg-muted rounded-full">
+                    <div className="p-4 bg-muted/10 rounded-lg border border-muted/20">
                       <Users className="h-8 w-8 text-muted-foreground" />
                     </div>
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">No team members found</h3>
-                  <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+                  <h3 className="text-lg font-semibold text-foreground mb-2">No team members found</h3>
+                  <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                     {members.length === 0 
                       ? "Get started by inviting your first team member to collaborate on client projects."
                       : "No team members match your current search criteria. Try adjusting your filters."
                     }
                   </p>
                   {members.length === 0 ? (
-                    <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                      <Link href="/team/invite" className="inline-flex items-center">
-                        <UserPlus className="h-4 w-4 mr-2" />
+                    <Button asChild className="inline-flex items-center gap-2">
+                      <Link href="/team/invite">
+                        <UserPlus className="h-4 w-4" />
                         Invite First Team Member
                       </Link>
                     </Button>
@@ -660,7 +747,7 @@ export default function TeamManagementPage() {
                       setSearch('');
                       setRoleFilter('all');
                       setStatusFilter('all');
-                    }}>
+                    }} className="border-muted/20 hover:bg-muted/10">
                       Clear Filters
                     </Button>
                   )}
@@ -725,7 +812,13 @@ export default function TeamManagementPage() {
                   <div>
                     <Label className="text-sm font-medium text-muted-foreground">Status</Label>
                     <div className="mt-1">
-                      <Badge className={cn("text-xs px-2 py-1", statusConfig[selectedMember.status].color)}>
+                      <Badge 
+                        variant={statusConfig[selectedMember.status].isSuccess ? "default" : "outline"}
+                        className={cn(
+                          "text-xs px-2 py-1",
+                          statusConfig[selectedMember.status].isSuccess && "bg-success/10 text-success border-success/20"
+                        )}
+                      >
                         {statusConfig[selectedMember.status].label}
                       </Badge>
                     </div>
@@ -744,24 +837,24 @@ export default function TeamManagementPage() {
                   </div>
                 </div>
 
-                {/* Performance Metrics */}
+                {/* Performance Metrics - Unified styling */}
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground mb-3 block">Performance Metrics</Label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="text-center p-3 bg-muted/50 rounded-lg">
-                      <p className="text-2xl font-bold text-primary">{selectedMember.performance.contentCreated}</p>
+                      <p className="text-2xl font-bold">{selectedMember.performance.contentCreated}</p>
                       <p className="text-xs text-muted-foreground">Content Created</p>
                     </div>
                     <div className="text-center p-3 bg-muted/50 rounded-lg">
-                      <p className="text-2xl font-bold text-green-600">{selectedMember.performance.reviewsCompleted}</p>
+                      <p className="text-2xl font-bold">{selectedMember.performance.reviewsCompleted}</p>
                       <p className="text-xs text-muted-foreground">Reviews Completed</p>
                     </div>
                     <div className="text-center p-3 bg-muted/50 rounded-lg">
-                      <p className="text-2xl font-bold text-orange-600">{selectedMember.performance.approvalsGiven}</p>
+                      <p className="text-2xl font-bold">{selectedMember.performance.approvalsGiven}</p>
                       <p className="text-xs text-muted-foreground">Approvals Given</p>
                     </div>
                     <div className="text-center p-3 bg-muted/50 rounded-lg">
-                      <p className="text-2xl font-bold text-blue-600">{selectedMember.performance.averageRating}/5</p>
+                      <p className="text-2xl font-bold">{selectedMember.performance.averageRating}/5</p>
                       <p className="text-xs text-muted-foreground">Avg Rating</p>
                     </div>
                   </div>

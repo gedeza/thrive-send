@@ -60,11 +60,11 @@ export default function MultiClientCampaignPage() {
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Total Reach</p>
-                <p className="text-3xl font-bold text-blue-600">45.2K</p>
+                <p className="text-3xl font-bold text-primary">45.2K</p>
                 <p className="text-sm text-muted-foreground">Combined audience</p>
               </div>
-              <div className="p-3 bg-blue-100 rounded-full">
-                <Users className="h-6 w-6 text-blue-600" />
+              <div className="p-3 bg-primary/10 rounded-full">
+                <Users className="h-6 w-6 text-primary" />
               </div>
             </div>
           </CardContent>
@@ -75,11 +75,11 @@ export default function MultiClientCampaignPage() {
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Avg. Engagement</p>
-                <p className="text-3xl font-bold text-green-600">8.4%</p>
+                <p className="text-3xl font-bold text-success">8.4%</p>
                 <p className="text-sm text-muted-foreground">Cross-client rate</p>
               </div>
-              <div className="p-3 bg-green-100 rounded-full">
-                <TrendingUp className="h-6 w-6 text-green-600" />
+              <div className="p-3 bg-success/10 rounded-full">
+                <TrendingUp className="h-6 w-6 text-success" />
               </div>
             </div>
           </CardContent>
@@ -90,11 +90,11 @@ export default function MultiClientCampaignPage() {
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Revenue Impact</p>
-                <p className="text-3xl font-bold text-orange-600">$32.1K</p>
+                <p className="text-3xl font-bold text-warning">$32.1K</p>
                 <p className="text-sm text-muted-foreground">This month</p>
               </div>
-              <div className="p-3 bg-orange-100 rounded-full">
-                <BarChart3 className="h-6 w-6 text-orange-600" />
+              <div className="p-3 bg-warning/10 rounded-full">
+                <BarChart3 className="h-6 w-6 text-warning" />
               </div>
             </div>
           </CardContent>

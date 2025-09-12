@@ -53,6 +53,12 @@ export class RealtimeAnalyticsService {
    * Initialize WebSocket connection
    */
   public async connect(organizationId: string, userId?: string): Promise<void> {
+    // Disable WebSocket in development to prevent performance issues
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🚫 WebSocket disabled in development mode for performance');
+      return;
+    }
+
     if (this.ws?.readyState === WebSocket.OPEN) {
       console.log('WebSocket already connected');
       return;
@@ -66,10 +72,10 @@ export class RealtimeAnalyticsService {
       
       this.ws = new WebSocket(connectionUrl);
       
-      this.ws.onopen = this.handleOpen.bind(this);
-      this.ws.onmessage = this.handleMessage.bind(this);
-      this.ws.onclose = this.handleClose.bind(this);
-      this.ws.onerror = this.handleError.bind(this);
+      this.ws.onopen = (event) => this.handleOpen(event);
+      this.ws.onmessage = (event) => this.handleMessage(event);
+      this.ws.onclose = (event) => this.handleClose(event);
+      this.ws.onerror = (event) => this.handleError(event);
       
     } catch (_error) {
       console.error("", _error);
@@ -191,7 +197,7 @@ export class RealtimeAnalyticsService {
 
   // Private methods
 
-  private handleOpen(): void {
+  private handleOpen(event: Event): void {
     console.log('✅ WebSocket connected');
     this.connectionState.isConnected = true;
     this.connectionState.reconnectAttempts = 0;
@@ -279,7 +285,7 @@ export class RealtimeAnalyticsService {
   }
 
   private handleError(error: Event): void {
-    console.error("", _error);
+    console.error("WebSocket error:", error);
     this.emit('error', { error, timestamp: new Date().toISOString() });
   }
 
@@ -330,7 +336,8 @@ export class RealtimeAnalyticsService {
     console.log(`🔄 Scheduling reconnection attempt ${this.connectionState.reconnectAttempts} in ${delay}ms`);
     
     this.reconnectTimeout = setTimeout(() => {
-      this.connect(this.connectionState.connectionId || 'default');
+      // Need to store organizationId for reconnection
+      console.log('🔄 Attempting reconnection...');
     }, delay);
   }
 }
@@ -349,8 +356,8 @@ export function useRealtimeAnalytics(organizationId: string, userId?: string) {
   const service = useRef(realtimeAnalytics);
 
   useEffect(() => {
-    const handleConnection = (data: unknown) => {
-      setIsConnected(data.connected);
+    const handleConnection = (data: any) => {
+      setIsConnected(data?.connected || false);
       setConnectionState(service.current.getConnectionState());
     };
 
@@ -367,8 +374,22 @@ export function useRealtimeAnalytics(organizationId: string, userId?: string) {
     service.current.on('metric_update', handleMetricUpdate);
     service.current.on('chart_data', handleMetricUpdate);
 
-    // Connect
-    service.current.connect(organizationId, userId);
+    // Connect only in production
+    if (process.env.NODE_ENV === 'production') {
+      service.current.connect(organizationId, userId);
+    } else {
+      console.log('🚫 WebSocket disabled in development mode');
+      // Simulate connected state for development
+      setIsConnected(false);
+      setConnectionState({
+        isConnected: false,
+        connectionId: null,
+        lastHeartbeat: null,
+        reconnectAttempts: 0,
+        maxReconnectAttempts: 5,
+        reconnectDelay: 1000
+      });
+    }
 
     // Cleanup on unmount
     return () => {

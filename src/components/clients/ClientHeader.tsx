@@ -17,23 +17,25 @@ interface ClientHeaderProps {
 
 export default function ClientHeader({ client }: ClientHeaderProps) {
   return (
-    <Card className="p-6">
+    <Card className="card-enhanced border-l-2 border-primary/20 p-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold">{client.name}</h1>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">{client.name}</h1>
           {client.industry && (
-            <p className="text-gray-500">{client.industry}</p>
+            <p className="text-muted-foreground">{client.industry}</p>
           )}
           
           <div className="mt-4 space-y-2">
             {client.website && (
-              <div className="flex items-center gap-2 text-gray-600">
-                <Globe className="h-4 w-4" />
+              <div className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
+                <div className="p-1 bg-primary/10 rounded border border-primary/20">
+                  <Globe className="h-4 w-4 text-primary" />
+                </div>
                 <a
                   href={client.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:underline"
+                  className="hover:text-primary transition-colors"
                 >
                   {client.website}
                 </a>
@@ -41,11 +43,13 @@ export default function ClientHeader({ client }: ClientHeaderProps) {
             )}
             
             {client.email && (
-              <div className="flex items-center gap-2 text-gray-600">
-                <Mail className="h-4 w-4" />
+              <div className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
+                <div className="p-1 bg-primary/10 rounded border border-primary/20">
+                  <Mail className="h-4 w-4 text-primary" />
+                </div>
                 <a
                   href={`mailto:${client.email}`}
-                  className="hover:underline"
+                  className="hover:text-primary transition-colors"
                 >
                   {client.email}
                 </a>
@@ -53,11 +57,13 @@ export default function ClientHeader({ client }: ClientHeaderProps) {
             )}
             
             {client.phone && (
-              <div className="flex items-center gap-2 text-gray-600">
-                <Phone className="h-4 w-4" />
+              <div className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
+                <div className="p-1 bg-primary/10 rounded border border-primary/20">
+                  <Phone className="h-4 w-4 text-primary" />
+                </div>
                 <a
                   href={`tel:${client.phone}`}
-                  className="hover:underline"
+                  className="hover:text-primary transition-colors"
                 >
                   {client.phone}
                 </a>
@@ -85,7 +91,7 @@ export default function ClientHeader({ client }: ClientHeaderProps) {
 
 export function ClientHeaderSkeleton() {
   return (
-    <Card className="p-6">
+    <Card className="card-enhanced border-l-2 border-muted/20 p-6">
       <div className="flex items-start justify-between">
         <div>
           <Skeleton className="h-8 w-48 mb-2" />

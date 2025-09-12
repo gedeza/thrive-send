@@ -370,12 +370,12 @@ const CreateCampaign: React.FC = () => {
       case 'basics':
         return (
           <div className="space-y-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Lightbulb className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-800">Smart Suggestion</span>
+                <Lightbulb className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-primary">Smart Suggestion</span>
               </div>
-              <p className="text-sm text-blue-700 mb-3">
+              <p className="text-sm text-primary/80 mb-3">
                 Based on your organization, we suggest: "{suggestions.name}"
               </p>
               <Button
@@ -383,7 +383,7 @@ const CreateCampaign: React.FC = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => applySuggestion('name', suggestions.name)}
-                className="text-blue-600 border-blue-300"
+                className="text-primary border-primary/30"
               >
                 Use Suggestion
               </Button>
@@ -487,12 +487,12 @@ const CreateCampaign: React.FC = () => {
       case 'schedule':
         return (
           <div className="space-y-6">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="bg-success/10 border border-success/20 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Info className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-medium text-green-800">Recommended Timeline</span>
+                <Info className="h-4 w-4 text-success" />
+                <span className="text-sm font-medium text-success">Recommended Timeline</span>
               </div>
-              <p className="text-sm text-green-700 mb-3">
+              <p className="text-sm text-success/80 mb-3">
                 Start next week and run for 30 days for optimal results
               </p>
               <div className="flex gap-2">
@@ -501,7 +501,7 @@ const CreateCampaign: React.FC = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => applySuggestion('startDate', suggestions.startDate)}
-                  className="text-green-600 border-green-300"
+                  className="text-success border-success/30"
                 >
                   Use Start Date
                 </Button>
@@ -510,7 +510,7 @@ const CreateCampaign: React.FC = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => applySuggestion('endDate', suggestions.endDate)}
-                  className="text-green-600 border-green-300"
+                  className="text-success border-success/30"
                 >
                   Use End Date
                 </Button>
@@ -645,12 +645,12 @@ const CreateCampaign: React.FC = () => {
       case 'budget':
         return (
           <div className="space-y-6">
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
-                <DollarSign className="h-4 w-4 text-yellow-600" />
-                <span className="text-sm font-medium text-yellow-800">Budget Recommendation</span>
+                <DollarSign className="h-4 w-4 text-warning" />
+                <span className="text-sm font-medium text-warning">Budget Recommendation</span>
               </div>
-              <p className="text-sm text-yellow-700 mb-3">
+              <p className="text-sm text-warning/80 mb-3">
                 Based on similar campaigns, we recommend a budget of ${suggestions.budget}
               </p>
               <Button
@@ -658,7 +658,7 @@ const CreateCampaign: React.FC = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => applySuggestion('budget', suggestions.budget)}
-                className="text-yellow-600 border-yellow-300"
+                className="text-warning border-warning/30"
               >
                 Use Suggested Budget
               </Button>
@@ -717,9 +717,9 @@ const CreateCampaign: React.FC = () => {
                           <SelectItem key={client.id} value={client.id} className="h-12 cursor-pointer">
                             <div className="flex items-center gap-3">
                               <div className={`w-3 h-3 rounded-full ${
-                                client.status === 'ACTIVE' ? 'bg-green-500' : 
-                                client.status === 'INACTIVE' ? 'bg-gray-400' : 
-                                'bg-yellow-500'
+                                client.status === 'ACTIVE' ? 'bg-success' : 
+                                client.status === 'INACTIVE' ? 'bg-muted' : 
+                                'bg-warning'
                               }`}></div>
                               <div className="flex flex-col">
                                 <span className="font-medium text-foreground">
@@ -760,11 +760,11 @@ const CreateCampaign: React.FC = () => {
                         <SelectItem key={status} value={status} className="h-12 cursor-pointer">
                           <div className="flex items-center gap-3">
                             <div className={`w-3 h-3 rounded-full ${
-                              status === 'active' ? 'bg-green-500' : 
-                              status === 'draft' ? 'bg-gray-400' : 
-                              status === 'completed' ? 'bg-blue-500' :
-                              status === 'paused' ? 'bg-yellow-500' :
-                              'bg-red-500'
+                              status === 'active' ? 'bg-success' : 
+                              status === 'draft' ? 'bg-muted' : 
+                              status === 'completed' ? 'bg-primary' :
+                              status === 'paused' ? 'bg-warning' :
+                              'bg-destructive'
                             }`}></div>
                             <div className="flex flex-col">
                               <span className="font-medium text-foreground">
@@ -832,10 +832,10 @@ const CreateCampaign: React.FC = () => {
                     className={cn(
                       "flex items-center justify-center w-10 h-10 rounded-full border-2 transition-colors",
                       index === currentStep
-                        ? "bg-blue-500 text-white border-blue-500"
+                        ? "bg-primary text-primary-foreground border-primary"
                         : completedSteps.includes(index)
-                        ? "bg-green-500 text-white border-green-500"
-                        : "bg-gray-100 text-gray-500 border-gray-300"
+                        ? "bg-success text-success-foreground border-success"
+                        : "bg-muted text-muted-foreground border-border"
                     )}
                   >
                     {completedSteps.includes(index) ? (
@@ -847,14 +847,14 @@ const CreateCampaign: React.FC = () => {
                   <div className="ml-3 hidden sm:block">
                     <p className={cn(
                       "text-sm font-medium",
-                      index === currentStep ? "text-blue-600" : "text-gray-500"
+                      index === currentStep ? "text-primary" : "text-muted-foreground"
                     )}>
                       {step.title}
                     </p>
-                    <p className="text-xs text-gray-400">{step.description}</p>
+                    <p className="text-xs text-muted-foreground">{step.description}</p>
                   </div>
                   {index < WIZARD_STEPS.length - 1 && (
-                    <ArrowRight className="h-4 w-4 text-gray-400 mx-4" />
+                    <ArrowRight className="h-4 w-4 text-muted-foreground mx-4" />
                   )}
                 </div>
               ))}
@@ -874,7 +874,7 @@ const CreateCampaign: React.FC = () => {
             </CardHeader>
             <CardContent>
               {submitError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-6">
+                <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-md mb-6">
                   {submitError}
                 </div>
               )}

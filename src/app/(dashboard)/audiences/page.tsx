@@ -174,18 +174,36 @@ export default function AudiencesPage() {
 
   const getStatusConfig = (status: string) => {
     const configs = {
-      ACTIVE: { color: 'bg-green-500', variant: 'default', label: 'Active' },
-      INACTIVE: { color: 'bg-gray-500', variant: 'secondary', label: 'Inactive' },
-      PROCESSING: { color: 'bg-yellow-500', variant: 'warning', label: 'Processing' }
+      ACTIVE: { 
+        badgeClass: 'bg-success/10 text-success border border-success/20', 
+        label: 'Active' 
+      },
+      INACTIVE: { 
+        badgeClass: 'bg-muted/10 text-muted-foreground border border-muted/20', 
+        label: 'Inactive' 
+      },
+      PROCESSING: { 
+        badgeClass: 'bg-primary/10 text-primary border border-primary/20', 
+        label: 'Processing' 
+      }
     };
     return configs[status as keyof typeof configs] || configs.ACTIVE;
   };
 
   const getTypeConfig = (type: string) => {
     const configs = {
-      CUSTOM: { label: 'Custom', color: 'text-blue-600' },
-      IMPORTED: { label: 'Imported', color: 'text-purple-600' },
-      DYNAMIC: { label: 'Dynamic', color: 'text-green-600' }
+      CUSTOM: { 
+        label: 'Custom', 
+        badgeClass: 'bg-primary/10 text-primary border border-primary/20' 
+      },
+      IMPORTED: { 
+        label: 'Imported', 
+        badgeClass: 'bg-muted/10 text-muted-foreground border border-muted/20' 
+      },
+      DYNAMIC: { 
+        label: 'Dynamic', 
+        badgeClass: 'bg-success/10 text-success border border-success/20' 
+      }
     };
     return configs[type as keyof typeof configs] || configs.CUSTOM;
   };
@@ -203,7 +221,12 @@ export default function AudiencesPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Audience Management</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+              <Users className="h-8 w-8 text-primary" />
+            </div>
+            <h1 className="text-3xl font-bold text-foreground">Audience Management</h1>
+          </div>
           <p className="text-muted-foreground">
             Manage audience segments, track engagement, and optimize targeting
           </p>
@@ -256,7 +279,7 @@ export default function AudiencesPage() {
                     <TabsContent value="csv" className="space-y-3">
                       <div className="space-y-2">
                         <Label htmlFor="csvFile">CSV File</Label>
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                        <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
                           <input
                             id="csvFile"
                             type="file"
@@ -270,24 +293,24 @@ export default function AudiencesPage() {
                           >
                             {csvFile ? (
                               <>
-                                <FileText className="h-8 w-8 text-green-600" />
+                                <FileText className="h-8 w-8 text-success" />
                                 <div className="text-sm">
                                   <span className="font-medium">{csvFile.name}</span>
-                                  <p className="text-gray-500">Click to change file</p>
+                                  <p className="text-muted-foreground">Click to change file</p>
                                 </div>
                               </>
                             ) : (
                               <>
-                                <Upload className="h-8 w-8 text-gray-400" />
+                                <Upload className="h-8 w-8 text-muted-foreground" />
                                 <div className="text-sm">
                                   <span className="font-medium">Click to upload CSV file</span>
-                                  <p className="text-gray-500">or drag and drop</p>
+                                  <p className="text-muted-foreground">or drag and drop</p>
                                 </div>
                               </>
                             )}
                           </label>
                         </div>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                           CSV should have columns: name, email, phone (optional)
                         </p>
                       </div>
@@ -302,7 +325,7 @@ export default function AudiencesPage() {
                           placeholder="Enter contacts (one per line)&#10;Format: Name, Email, Phone&#10;&#10;John Doe, john@example.com, +1234567890&#10;Jane Smith, jane@example.com"
                           rows={6}
                         />
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                           Enter contacts one per line in format: Name, Email, Phone (optional)
                         </p>
                       </div>
@@ -342,70 +365,122 @@ export default function AudiencesPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Audiences</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-8 w-16 mb-2" />
-            ) : (
-              <div className="text-2xl font-bold">{stats.totalAudiences}</div>
-            )}
-            <p className="text-xs text-muted-foreground">Across all segments</p>
+        <Card className="card-enhanced border-l-2 border-primary/20 hover:shadow-professional transition-shadow duration-200">
+          <CardContent className="p-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1 flex-1">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Total Audiences
+                  </span>
+                  <h3 className="text-sm font-medium text-foreground">Audience Count</h3>
+                </div>
+                <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+                  <Users className="h-7 w-7 text-primary" />
+                </div>
+              </div>
+              <div className="pt-2">
+                {isLoading ? (
+                  <Skeleton className="h-8 w-16 mb-2" />
+                ) : (
+                  <div className="text-2xl font-bold text-primary tracking-tight">{stats.totalAudiences}</div>
+                )}
+                <p className="text-xs text-muted-foreground">Across all segments</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Contacts</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-8 w-20 mb-2" />
-            ) : (
-              <div className="text-2xl font-bold">{stats.totalContacts.toLocaleString()}</div>
-            )}
-            <p className="text-xs text-muted-foreground">+12% from last month</p>
+        <Card className="card-enhanced border-l-2 border-success/20 hover:shadow-professional transition-shadow duration-200">
+          <CardContent className="p-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1 flex-1">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Total Contacts
+                  </span>
+                  <h3 className="text-sm font-medium text-foreground">Contact Database</h3>
+                </div>
+                <div className="p-4 bg-success/10 rounded-lg border border-success/20">
+                  <Target className="h-7 w-7 text-success" />
+                </div>
+              </div>
+              <div className="pt-2">
+                {isLoading ? (
+                  <Skeleton className="h-8 w-20 mb-2" />
+                ) : (
+                  <div className="text-2xl font-bold text-success tracking-tight">{stats.totalContacts.toLocaleString()}</div>
+                )}
+                <p className="text-xs text-muted-foreground">+12% from last month</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Segments</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-8 w-12 mb-2" />
-            ) : (
-              <div className="text-2xl font-bold">{stats.activeSegments}</div>
-            )}
-            <p className="text-xs text-muted-foreground">Across all audiences</p>
+        <Card className="card-enhanced border-l-2 border-muted/20 hover:shadow-professional transition-shadow duration-200">
+          <CardContent className="p-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1 flex-1">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Active Segments
+                  </span>
+                  <h3 className="text-sm font-medium text-foreground">Segment Activity</h3>
+                </div>
+                <div className="p-4 bg-muted/10 rounded-lg border border-muted/20">
+                  <BarChart3 className="h-7 w-7 text-muted-foreground" />
+                </div>
+              </div>
+              <div className="pt-2">
+                {isLoading ? (
+                  <Skeleton className="h-8 w-12 mb-2" />
+                ) : (
+                  <div className="text-2xl font-bold text-muted-foreground tracking-tight">{stats.activeSegments}</div>
+                )}
+                <p className="text-xs text-muted-foreground">Across all audiences</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg. Engagement</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-8 w-16 mb-2" />
-            ) : (
-              <div className="text-2xl font-bold">{stats.avgEngagementRate.toFixed(1)}%</div>
-            )}
-            <p className="text-xs text-muted-foreground">+5.2% from last month</p>
+        <Card className="card-enhanced border-l-2 border-primary/20 hover:shadow-professional transition-shadow duration-200">
+          <CardContent className="p-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1 flex-1">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Avg. Engagement
+                  </span>
+                  <h3 className="text-sm font-medium text-foreground">Engagement Rate</h3>
+                </div>
+                <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+                  <TrendingUp className="h-7 w-7 text-primary" />
+                </div>
+              </div>
+              <div className="pt-2">
+                {isLoading ? (
+                  <Skeleton className="h-8 w-16 mb-2" />
+                ) : (
+                  <div className="text-2xl font-bold text-primary tracking-tight">{stats.avgEngagementRate.toFixed(1)}%</div>
+                )}
+                <p className="text-xs text-muted-foreground">+5.2% from last month</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Filters */}
-      <Card className="mb-6">
-        <CardContent className="p-6">
+      <Card className="mb-6 card-enhanced border-l-2 border-primary/20 hover:shadow-professional transition-shadow duration-200">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
+              <Filter className="h-5 w-5 text-primary" />
+            </div>
+            Search & Filter Audiences
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -448,24 +523,37 @@ export default function AudiencesPage() {
       {isLoading && (
         <div className="space-y-6">
           {[...Array(3)].map((_, i) => (
-            <Card key={i}>
+            <Card key={i} className="card-enhanced border-l-2 border-muted/20">
               <CardContent className="p-6">
                 <div className="animate-pulse space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-2 flex-1">
-                      <Skeleton className="h-6 w-48" />
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-6 w-48" />
+                        <Skeleton className="h-5 w-16 rounded-full" />
+                        <Skeleton className="h-5 w-20 rounded-full" />
+                      </div>
                       <Skeleton className="h-4 w-96" />
                     </div>
                     <div className="flex gap-2">
                       <Skeleton className="h-8 w-16" />
                       <Skeleton className="h-8 w-16" />
+                      <Skeleton className="h-8 w-20" />
                     </div>
                   </div>
-                  <div className="grid grid-cols-4 gap-4">
-                    <Skeleton className="h-16 w-full" />
-                    <Skeleton className="h-16 w-full" />
-                    <Skeleton className="h-16 w-full" />
-                    <Skeleton className="h-16 w-full" />
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="p-3 bg-muted/5 rounded-lg border border-muted/20">
+                      <Skeleton className="h-16 w-full" />
+                    </div>
+                    <div className="p-3 bg-muted/5 rounded-lg border border-muted/20">
+                      <Skeleton className="h-16 w-full" />
+                    </div>
+                    <div className="p-3 bg-muted/5 rounded-lg border border-muted/20">
+                      <Skeleton className="h-16 w-full" />
+                    </div>
+                    <div className="p-3 bg-muted/5 rounded-lg border border-muted/20">
+                      <Skeleton className="h-16 w-full" />
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -476,18 +564,19 @@ export default function AudiencesPage() {
 
       {/* Error state */}
       {error && (
-        <Card className="border-destructive/20 bg-destructive/5">
-          <CardContent className="p-6 text-center">
-            <div className="flex justify-center mb-3">
-              <div className="p-2 bg-destructive/10 rounded-full">
-                <Users className="h-6 w-6 text-destructive" />
+        <Card className="card-enhanced border-l-2 border-destructive/20">
+          <CardContent className="p-8 text-center">
+            <div className="flex justify-center mb-4">
+              <div className="p-4 bg-destructive/10 rounded-lg border border-destructive/20">
+                <Users className="h-8 w-8 text-destructive" />
               </div>
             </div>
-            <h3 className="text-lg font-semibold mb-2">Failed to load audiences</h3>
+            <h3 className="text-lg font-semibold text-destructive mb-2">Failed to load audiences</h3>
             <p className="text-muted-foreground mb-4">{error instanceof Error ? error.message : 'Unknown error occurred'}</p>
             <Button
               variant="outline"
               onClick={() => refetch()}
+              className="border-destructive/20 hover:bg-destructive/10"
             >
               Try Again
             </Button>
@@ -503,11 +592,15 @@ export default function AudiencesPage() {
               <AudienceCard key={audience.id} audience={audience} />
             ))
           ) : (
-            <Card>
-              <CardContent className="text-center py-4">
-                <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-medium mb-2">No audiences found</h3>
-                <p className="text-muted-foreground mb-4">
+            <Card className="card-enhanced border-l-2 border-muted/20 border-dashed">
+              <CardContent className="text-center py-8">
+                <div className="flex justify-center mb-4">
+                  <div className="p-4 bg-muted/10 rounded-lg border border-muted/20">
+                    <Users className="h-12 w-12 text-muted-foreground" />
+                  </div>
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">No audiences found</h3>
+                <p className="text-muted-foreground mb-6">
                   {searchQuery || statusFilter !== 'all' || typeFilter !== 'all'
                     ? 'Try adjusting your filters'
                     : audiences.length === 0
@@ -531,6 +624,7 @@ export default function AudiencesPage() {
                       setStatusFilter('all');
                       setTypeFilter('all');
                     }}
+                    className="border-muted/20 hover:bg-muted/10"
                   >
                     Clear Filters
                   </Button>
@@ -549,16 +643,16 @@ function AudienceCard({ audience }: { audience: Audience }) {
   const typeConfig = getTypeConfig(audience.type);
 
   return (
-    <Card className="hover:shadow-lg transition-shadow">
+    <Card className="card-enhanced border-l-2 border-primary/20 hover:shadow-professional transition-shadow duration-200">
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-lg">{audience.name}</h3>
-              <Badge variant={statusConfig.variant as any}>
+              <h3 className="font-semibold text-lg text-foreground">{audience.name}</h3>
+              <Badge className={statusConfig.badgeClass}>
                 {statusConfig.label}
               </Badge>
-              <Badge variant="outline" className={typeConfig.color}>
+              <Badge className={typeConfig.badgeClass}>
                 {typeConfig.label}
               </Badge>
             </div>
@@ -612,30 +706,33 @@ function AudienceCard({ audience }: { audience: Audience }) {
 
         {/* Performance Metrics */}
         {audience.analytics && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-lg font-bold text-blue-600">
-                {audience.analytics.avgEngagementRate.toFixed(1)}%
+          <div className="space-y-3">
+            <h4 className="font-medium text-sm text-foreground">Performance Metrics</h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-3 bg-primary/10 rounded-lg border border-primary/20 text-center">
+                <div className="text-lg font-bold text-primary tracking-tight">
+                  {audience.analytics.avgEngagementRate.toFixed(1)}%
+                </div>
+                <p className="text-xs text-muted-foreground">Avg. Engagement</p>
               </div>
-              <p className="text-xs text-muted-foreground">Avg. Engagement</p>
-            </div>
-            <div className="text-center">
-              <div className="text-lg font-bold text-green-600">
-                +{audience.analytics.growth.monthly.toFixed(1)}%
+              <div className="p-3 bg-success/10 rounded-lg border border-success/20 text-center">
+                <div className="text-lg font-bold text-success tracking-tight">
+                  +{audience.analytics.growth.monthly.toFixed(1)}%
+                </div>
+                <p className="text-xs text-muted-foreground">Monthly Growth</p>
               </div>
-              <p className="text-xs text-muted-foreground">Monthly Growth</p>
-            </div>
-            <div className="text-center">
-              <div className="text-lg font-bold text-purple-600">
-                {audience.segments.length}
+              <div className="p-3 bg-muted/10 rounded-lg border border-muted/20 text-center">
+                <div className="text-lg font-bold text-muted-foreground tracking-tight">
+                  {audience.segments.length}
+                </div>
+                <p className="text-xs text-muted-foreground">Segments</p>
               </div>
-              <p className="text-xs text-muted-foreground">Segments</p>
-            </div>
-            <div className="text-center">
-              <div className="text-lg font-bold text-orange-600">
-                {audience.analytics.totalEngagement.toLocaleString()}
+              <div className="p-3 bg-primary/10 rounded-lg border border-primary/20 text-center">
+                <div className="text-lg font-bold text-primary tracking-tight">
+                  {audience.analytics.totalEngagement.toLocaleString()}
+                </div>
+                <p className="text-xs text-muted-foreground">Total Engagement</p>
               </div>
-              <p className="text-xs text-muted-foreground">Total Engagement</p>
             </div>
           </div>
         )}
@@ -643,19 +740,22 @@ function AudienceCard({ audience }: { audience: Audience }) {
         {/* Segments Preview */}
         {audience.segments.length > 0 && (
           <div className="space-y-3">
-            <h4 className="font-medium">Segments ({audience.segments.length})</h4>
+            <h4 className="font-medium text-sm text-foreground">Segments ({audience.segments.length})</h4>
             <div className="space-y-2">
               {audience.segments.slice(0, 2).map((segment) => (
-                <div key={segment.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div key={segment.id} className="flex items-center justify-between p-3 border border-muted/20 rounded-lg hover:bg-muted/5 hover:shadow-professional transition-all duration-200">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h5 className="font-medium text-sm">{segment.name}</h5>
-                      <Badge variant="outline" className="text-xs">
+                      <h5 className="font-medium text-sm text-foreground">{segment.name}</h5>
+                      <Badge className="bg-muted/10 text-muted-foreground border border-muted/20 text-xs">
                         {segment.type}
                       </Badge>
                     </div>
                     <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span>{segment.size.toLocaleString()} contacts</span>
+                      <span className="flex items-center gap-1">
+                        <Users className="h-3 w-3" />
+                        {segment.size.toLocaleString()} contacts
+                      </span>
                       {segment.performance && (
                         <>
                           <span>{segment.performance.engagementRate.toFixed(1)}% engagement</span>
@@ -666,8 +766,8 @@ function AudienceCard({ audience }: { audience: Audience }) {
                   </div>
                   {segment.growth && (
                     <div className="text-right">
-                      <div className={`text-sm font-medium ${
-                        segment.growth.thisMonth > 0 ? 'text-green-600' : 'text-red-600'
+                      <div className={`text-sm font-medium tracking-tight ${
+                        segment.growth.thisMonth > 0 ? 'text-success' : 'text-destructive'
                       }`}>
                         {segment.growth.thisMonth > 0 ? '+' : ''}{segment.growth.thisMonth.toFixed(1)}%
                       </div>
@@ -677,9 +777,11 @@ function AudienceCard({ audience }: { audience: Audience }) {
                 </div>
               ))}
               {audience.segments.length > 2 && (
-                <p className="text-sm text-muted-foreground text-center">
-                  +{audience.segments.length - 2} more segments
-                </p>
+                <div className="p-3 text-center border border-muted/20 border-dashed rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    +{audience.segments.length - 2} more segments
+                  </p>
+                </div>
               )}
             </div>
           </div>
@@ -689,28 +791,3 @@ function AudienceCard({ audience }: { audience: Audience }) {
   );
 }
 
-function getStatusConfig(status: string) {
-  const configs = {
-    ACTIVE: { color: 'bg-green-500', variant: 'default', label: 'Active' },
-    INACTIVE: { color: 'bg-gray-500', variant: 'secondary', label: 'Inactive' },
-    PROCESSING: { color: 'bg-yellow-500', variant: 'warning', label: 'Processing' }
-  };
-  return configs[status as keyof typeof configs] || configs.ACTIVE;
-}
-
-function getTypeConfig(type: string) {
-  const configs = {
-    CUSTOM: { label: 'Custom', color: 'text-blue-600' },
-    IMPORTED: { label: 'Imported', color: 'text-purple-600' },
-    DYNAMIC: { label: 'Dynamic', color: 'text-green-600' }
-  };
-  return configs[type as keyof typeof configs] || configs.CUSTOM;
-}
-
-function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  });
-}

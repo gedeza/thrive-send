@@ -184,25 +184,7 @@ export async function GET(request: Request) {
     const publishedContent = orgWithData.content.filter(c => c.status === 'PUBLISHED').length;
     const teamMembers = orgWithData.members.length;
 
-    // PRODUCTION: Enhanced metrics calculation using real data
-    const metrics: ServiceProviderMetrics = {
-      totalClients: realClients.length,
-      activeClients: realClients.filter(client => client.status === 'ACTIVE').length,
-      totalCampaigns,
-      activeCampaigns,
-      totalRevenue: 15250, // Demo calculation
-      marketplaceRevenue: 2280, // Demo calculation
-      teamUtilization: 89, // Demo calculation
-      avgClientSatisfaction: 4.3, // Demo calculation
-      
-      // Enhanced metrics
-      monthlyRecurringRevenue: 12500,
-      averageClientValue: 5083,
-      churnRate: 2.1,
-      growthRate: 12.5,
-    };
-
-    // PRODUCTION: Fetch real client data from database
+    // PRODUCTION: Fetch real client data from database FIRST
     const realClients = await prisma.client.findMany({
       where: {
         organizationId: dbOrganizationId
@@ -226,6 +208,24 @@ export async function GET(request: Request) {
         }
       }
     });
+
+    // PRODUCTION: Enhanced metrics calculation using real data
+    const metrics: ServiceProviderMetrics = {
+      totalClients: realClients.length,
+      activeClients: realClients.filter(client => client.status === 'ACTIVE').length,
+      totalCampaigns,
+      activeCampaigns,
+      totalRevenue: 15250, // Demo calculation
+      marketplaceRevenue: 2280, // Demo calculation
+      teamUtilization: 89, // Demo calculation
+      avgClientSatisfaction: 4.3, // Demo calculation
+      
+      // Enhanced metrics
+      monthlyRecurringRevenue: 12500,
+      averageClientValue: 5083,
+      churnRate: 2.1,
+      growthRate: 12.5,
+    };
 
     const clientSummary: ClientSummary[] = realClients.map(client => {
       const activeCampaigns = client.campaigns.length;

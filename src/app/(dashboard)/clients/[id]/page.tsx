@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoadingPage, LoadingSkeleton } from '@/components/common/LoadingSpinner';
+import { AlertTriangle } from 'lucide-react';
 import { useServiceProvider } from '@/context/ServiceProviderContext';
 import { useQuery, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect } from 'react';
@@ -79,13 +80,17 @@ function ClientDashboardContent({
     return (
       <div className="container mx-auto py-8">
         <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+          <div className="h-8 bg-muted/30 rounded w-1/3 border border-muted/10"></div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-24 bg-gray-200 rounded"></div>
+              <Card key={i} className="h-24 card-enhanced border-l-2 border-muted/20">
+                <div className="h-full bg-muted/10"></div>
+              </Card>
             ))}
           </div>
-          <div className="h-64 bg-gray-200 rounded"></div>
+          <Card className="h-64 card-enhanced border-l-2 border-muted/20">
+            <div className="h-full bg-muted/10"></div>
+          </Card>
         </div>
       </div>
     );
@@ -95,16 +100,21 @@ function ClientDashboardContent({
     console.error("", _error);
     return (
       <div className="container mx-auto py-8">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Error Loading Client</h1>
-          <p className="text-gray-600 mb-4">Failed to load client details</p>
-          <details className="text-sm text-gray-500">
-            <summary>Error Details</summary>
-            <pre className="mt-2 p-4 bg-gray-100 rounded text-left overflow-auto">
-              {JSON.stringify(error, null, 2)}
-            </pre>
-          </details>
-        </div>
+        <Card className="card-enhanced border-l-2 border-destructive/20">
+          <div className="text-center p-8">
+            <div className="p-4 bg-destructive/10 rounded-lg border border-destructive/20 w-fit mx-auto mb-4">
+              <AlertTriangle className="h-12 w-12 text-destructive" />
+            </div>
+            <h1 className="text-2xl font-bold text-destructive mb-4">Error Loading Client</h1>
+            <p className="text-muted-foreground mb-4">Failed to load client details</p>
+            <details className="text-sm text-muted-foreground">
+              <summary className="cursor-pointer hover:text-foreground transition-colors">Error Details</summary>
+              <pre className="mt-2 p-4 bg-muted/10 border border-muted/20 rounded text-left overflow-auto">
+                {JSON.stringify(error, null, 2)}
+              </pre>
+            </details>
+          </div>
+        </Card>
       </div>
     );
   }
@@ -137,9 +147,9 @@ function ClientDashboardContent({
                 <KPISection clientId={clientId} />
               </Suspense>
 
-              <Card className="col-span-full">
+              <Card className="col-span-full card-enhanced border-l-2 border-primary/20">
                 <Suspense fallback={
-                  <Card className="p-6">
+                  <Card className="p-6 card-enhanced border-l-2 border-muted/20">
                     <LoadingSkeleton rows={4} showAvatar={false} />
                   </Card>
                 }>
@@ -147,9 +157,9 @@ function ClientDashboardContent({
                 </Suspense>
               </Card>
 
-              <Card className="col-span-full md:col-span-2">
+              <Card className="col-span-full md:col-span-2 card-enhanced border-l-2 border-success/20">
                 <Suspense fallback={
-                  <Card className="p-6">
+                  <Card className="p-6 card-enhanced border-l-2 border-muted/20">
                     <LoadingSkeleton rows={3} showAvatar={false} />
                   </Card>
                 }>
@@ -157,9 +167,9 @@ function ClientDashboardContent({
                 </Suspense>
               </Card>
 
-              <Card>
+              <Card className="card-enhanced border-l-2 border-muted/20">
                 <Suspense fallback={
-                  <Card className="p-6">
+                  <Card className="p-6 card-enhanced border-l-2 border-muted/20">
                     <LoadingSkeleton rows={2} showAvatar={true} />
                   </Card>
                 }>
@@ -249,13 +259,13 @@ function KPILoadingState() {
   return (
     <>
       {[1, 2, 3].map((i) => (
-        <Card key={i} className="p-6">
+        <Card key={i} className="p-6 card-enhanced border-l-2 border-muted/20">
           <div className="flex items-center justify-between">
             <div>
-              <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-2" />
-              <div className="h-8 w-32 bg-gray-200 rounded animate-pulse" />
+              <div className="h-4 w-24 bg-muted/30 border border-muted/10 rounded animate-pulse mb-2" />
+              <div className="h-8 w-32 bg-muted/30 border border-muted/10 rounded animate-pulse" />
             </div>
-            <div className="h-8 w-8 bg-gray-200 rounded-full animate-pulse" />
+            <div className="h-8 w-8 bg-muted/30 border border-muted/10 rounded-full animate-pulse" />
           </div>
         </Card>
       ))}

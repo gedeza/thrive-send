@@ -26,19 +26,19 @@ interface Template {
 }
 
 const statusBadgeMap: Record<string, { className: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  PUBLISHED: { className: "bg-green-100 text-green-800", variant: "default" },
-  DRAFT: { className: "bg-yellow-100 text-yellow-900", variant: "secondary" },
-  PENDING_APPROVAL: { className: "bg-blue-100 text-blue-800", variant: "default" },
-  ARCHIVED: { className: "bg-gray-100 text-gray-600", variant: "outline" }
+  PUBLISHED: { className: "bg-success/10 text-success", variant: "default" },
+  DRAFT: { className: "bg-warning/10 text-warning", variant: "secondary" },
+  PENDING_APPROVAL: { className: "bg-primary/10 text-primary", variant: "default" },
+  ARCHIVED: { className: "bg-muted text-muted-foreground", variant: "outline" }
 };
 
 const categoryBadgeMap: Record<string, string> = {
-  email: "bg-blue-100 text-blue-800",
-  social: "bg-indigo-100 text-indigo-800",
-  blog: "bg-orange-100 text-orange-800",
-  marketing: "bg-purple-100 text-purple-800",
-  sales: "bg-emerald-100 text-emerald-800",
-  support: "bg-pink-100 text-pink-800"
+  email: "bg-primary/10 text-primary",
+  social: "bg-accent/10 text-accent",
+  blog: "bg-warning/10 text-warning",
+  marketing: "bg-accent/10 text-accent",
+  sales: "bg-success/10 text-success",
+  support: "bg-destructive/10 text-destructive"
 };
 
 // Loading component for template statistics
@@ -269,7 +269,7 @@ function TemplatesPageContent() {
       <div className="text-center mb-8">
         <div className="flex items-center justify-center gap-3 mb-4">
           <div className="p-3 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full">
-            <Sparkles className="h-8 w-8 text-blue-600" />
+            <Sparkles className="h-8 w-8 text-primary" />
           </div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             Content Templates
@@ -280,15 +280,15 @@ function TemplatesPageContent() {
         </p>
         <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <div className="w-2 h-2 bg-success rounded-full"></div>
             <span>10x faster content creation</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            <div className="w-2 h-2 bg-primary rounded-full"></div>
             <span>Brand consistency guaranteed</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+            <div className="w-2 h-2 bg-accent rounded-full"></div>
             <span>AI-powered suggestions</span>
           </div>
         </div>
@@ -323,12 +323,12 @@ function TemplatesPageContent() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-blue-700">Your Template Library</p>
-                  <p className="text-3xl font-bold text-blue-600">{templateStats.total}</p>
-                  <p className="text-xs text-blue-600/70">Ready to use instantly</p>
+                  <p className="text-sm font-medium text-primary">Your Template Library</p>
+                  <p className="text-3xl font-bold text-primary">{templateStats.total}</p>
+                  <p className="text-xs text-primary/70">Ready to use instantly</p>
                 </div>
-                <div className="p-3 bg-blue-500/10 rounded-full">
-                  <FileText className="h-6 w-6 text-blue-500" />
+                <div className="p-3 bg-primary/10 rounded-full">
+                  <FileText className="h-6 w-6 text-primary" />
                 </div>
               </div>
             </CardContent>
@@ -338,12 +338,12 @@ function TemplatesPageContent() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-green-700">Published & Active</p>
-                  <p className="text-3xl font-bold text-green-600">{templateStats.published}</p>
-                  <p className="text-xs text-green-600/70">Driving results now</p>
+                  <p className="text-sm font-medium text-success">Published & Active</p>
+                  <p className="text-3xl font-bold text-success">{templateStats.published}</p>
+                  <p className="text-xs text-success/70">Driving results now</p>
                 </div>
-                <div className="p-3 bg-green-500/10 rounded-full">
-                  <TrendingUp className="h-6 w-6 text-green-500" />
+                <div className="p-3 bg-success/10 rounded-full">
+                  <TrendingUp className="h-6 w-6 text-success" />
                 </div>
               </div>
             </CardContent>
@@ -353,12 +353,12 @@ function TemplatesPageContent() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-amber-700">In Development</p>
-                  <p className="text-3xl font-bold text-amber-600">{templateStats.draft}</p>
-                  <p className="text-xs text-amber-600/70">Almost ready to launch</p>
+                  <p className="text-sm font-medium text-warning">In Development</p>
+                  <p className="text-3xl font-bold text-warning">{templateStats.draft}</p>
+                  <p className="text-xs text-warning/70">Almost ready to launch</p>
                 </div>
-                <div className="p-3 bg-amber-500/10 rounded-full">
-                  <Edit className="h-6 w-6 text-amber-500" />
+                <div className="p-3 bg-warning/10 rounded-full">
+                  <Edit className="h-6 w-6 text-warning" />
                 </div>
               </div>
             </CardContent>
@@ -368,12 +368,12 @@ function TemplatesPageContent() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-purple-700">Email Campaigns</p>
-                  <p className="text-3xl font-bold text-purple-600">{templateStats.email}</p>
-                  <p className="text-xs text-purple-600/70">High-converting emails</p>
+                  <p className="text-sm font-medium text-accent">Email Campaigns</p>
+                  <p className="text-3xl font-bold text-accent">{templateStats.email}</p>
+                  <p className="text-xs text-accent/70">High-converting emails</p>
                 </div>
-                <div className="p-3 bg-purple-500/10 rounded-full">
-                  <Mail className="h-6 w-6 text-purple-500" />
+                <div className="p-3 bg-accent/10 rounded-full">
+                  <Mail className="h-6 w-6 text-accent" />
                 </div>
               </div>
             </CardContent>
@@ -386,8 +386,8 @@ function TemplatesPageContent() {
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex items-center gap-3 flex-1">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Search className="h-4 w-4 text-blue-600" />
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Search className="h-4 w-4 text-primary" />
               </div>
               <Input
                 type="search"
@@ -436,28 +436,28 @@ function TemplatesPageContent() {
         <Card className="mb-6 bg-gradient-to-r from-indigo-50/80 to-purple-50/80 border-indigo-200">
           <CardContent className="p-4">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 bg-indigo-100 rounded-lg">
-                <Sparkles className="h-5 w-5 text-indigo-600" />
+              <div className="p-2 bg-accent/10 rounded-lg">
+                <Sparkles className="h-5 w-5 text-accent" />
               </div>
               <div>
-                <h3 className="font-semibold text-indigo-900">AI-Powered Suggestions</h3>
-                <p className="text-sm text-indigo-700">Recommended templates based on your usage patterns</p>
+                <h3 className="font-semibold text-accent">AI-Powered Suggestions</h3>
+                <p className="text-sm text-accent">Recommended templates based on your usage patterns</p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" className="h-7 bg-white/70 hover:bg-indigo-100 border-indigo-200 text-indigo-700">
+              <Button variant="outline" size="sm" className="h-7 bg-white/70 hover:bg-accent/10 border-accent/20 text-accent">
                 <Mail className="h-3 w-3 mr-1" />
                 Welcome Email Series
               </Button>
-              <Button variant="outline" size="sm" className="h-7 bg-white/70 hover:bg-purple-100 border-purple-200 text-purple-700">
+              <Button variant="outline" size="sm" className="h-7 bg-white/70 hover:bg-accent/10 border-accent/20 text-accent">
                 <MessageSquare className="h-3 w-3 mr-1" />
                 Social Media Pack
               </Button>
-              <Button variant="outline" size="sm" className="h-7 bg-white/70 hover:bg-blue-100 border-blue-200 text-blue-700">
+              <Button variant="outline" size="sm" className="h-7 bg-white/70 hover:bg-primary/10 border-primary/20 text-primary">
                 <FileText className="h-3 w-3 mr-1" />
                 Newsletter Template
               </Button>
-              <Button variant="outline" size="sm" className="h-7 bg-white/70 hover:bg-green-100 border-green-200 text-green-700">
+              <Button variant="outline" size="sm" className="h-7 bg-white/70 hover:bg-success/10 border-success/20 text-success">
                 <TrendingUp className="h-3 w-3 mr-1" />
                 High-Converting CTA
               </Button>
@@ -475,13 +475,13 @@ function TemplatesPageContent() {
               <div className="rounded-full bg-gradient-to-r from-blue-500 to-purple-500 p-4 mb-4 group-hover:scale-110 transition-transform">
                 <Sparkles className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold mb-2 text-gray-800">Create Your Template</h3>
-              <p className="text-sm text-gray-600 mb-3">
+              <h3 className="text-xl font-bold mb-2 text-foreground">Create Your Template</h3>
+              <p className="text-sm text-muted-foreground mb-3">
                 🚀 Start with AI assistance<br/>
                 ⏱️ Save hours of work<br/>
                 🎯 Boost engagement
               </p>
-              <div className="text-xs text-blue-600 font-medium">
+              <div className="text-xs text-primary font-medium">
                 Click to get started →
               </div>
             </CardContent>
@@ -509,18 +509,18 @@ function TemplatesPageContent() {
                   </Badge>
                   <Badge 
                     variant="outline"
-                    className={`text-xs ${categoryBadgeMap[template.category] || 'bg-gray-100 text-gray-800'}`}
+                    className={`text-xs ${categoryBadgeMap[template.category] || 'bg-muted text-muted-foreground'}`}
                   >
                     {template.category === 'marketing' ? '🎯' : template.category === 'sales' ? '💼' : '🤝'} {template.category}
                   </Badge>
                 </div>
-                <div className="flex items-center text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                <div className="flex items-center text-primary bg-primary/10 px-2 py-1 rounded-full">
                   {getTypeIcon(template.type)}
                   <span className="ml-1 text-xs capitalize font-medium">{template.type}</span>
                 </div>
               </div>
-              <CardTitle className="text-base font-bold line-clamp-1 text-gray-800">{template.name}</CardTitle>
-              <CardDescription className="text-sm line-clamp-2 text-gray-600">{template.description}</CardDescription>
+              <CardTitle className="text-base font-bold line-clamp-1 text-foreground">{template.name}</CardTitle>
+              <CardDescription className="text-sm line-clamp-2 text-muted-foreground">{template.description}</CardDescription>
             </CardHeader>
             <CardContent className="p-4 pt-0 flex-grow">
               <div className="flex items-center justify-between text-xs mb-3">
@@ -528,22 +528,22 @@ function TemplatesPageContent() {
                 <div className="flex items-center gap-1">
                   {/* Performance indicator based on template status */}
                   {template.status === 'PUBLISHED' ? (
-                    <div className="flex items-center gap-1 text-green-600">
+                    <div className="flex items-center gap-1 text-success">
                       <TrendingUp className="h-3 w-3" />
                       <span className="font-medium text-xs">Top Performer</span>
                     </div>
                   ) : template.status === 'DRAFT' ? (
-                    <div className="flex items-center gap-1 text-amber-600">
+                    <div className="flex items-center gap-1 text-warning">
                       <Edit className="h-3 w-3" />
                       <span className="font-medium text-xs">In Progress</span>
                     </div>
                   ) : template.status === 'PENDING_APPROVAL' ? (
-                    <div className="flex items-center gap-1 text-blue-600">
+                    <div className="flex items-center gap-1 text-primary">
                       <Send className="h-3 w-3" />
                       <span className="font-medium text-xs">Under Review</span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-1 text-gray-500">
+                    <div className="flex items-center gap-1 text-muted-foreground">
                       <Bookmark className="h-3 w-3" />
                       <span className="font-medium text-xs">Archived</span>
                     </div>
@@ -558,7 +558,7 @@ function TemplatesPageContent() {
                   size="sm"
                   onClick={(e) => handleQuickAction(template.id, 'preview', e)}
                   disabled={quickActionLoading === `preview-${template.id}`}
-                  className="h-6 px-2 text-xs bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 flex-1"
+                  className="h-6 px-2 text-xs bg-primary/10 hover:bg-primary/20 border-primary/20 text-primary flex-1"
                 >
                   {quickActionLoading === `preview-${template.id}` ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
@@ -587,7 +587,7 @@ function TemplatesPageContent() {
               </div>
             </CardContent>
             <CardFooter className="flex gap-2 p-4 pt-2">
-              <Button variant="outline" size="sm" asChild className="h-8 px-3 text-xs flex-1 hover:bg-blue-50 hover:border-blue-200">
+              <Button variant="outline" size="sm" asChild className="h-8 px-3 text-xs flex-1 hover:bg-primary/10 hover:border-primary/20">
                 <Link href={`/templates/${template.id}`}>
                   <Eye className="h-3 w-3 mr-1" />
                   Preview
@@ -596,7 +596,7 @@ function TemplatesPageContent() {
               
               {template.status === 'DRAFT' ? (
                 <>
-                  <Button size="sm" asChild className="h-8 px-3 text-xs flex-1 bg-purple-600 hover:bg-purple-700">
+                  <Button size="sm" asChild className="h-8 px-3 text-xs flex-1 bg-accent hover:bg-accent/90">
                     <Link href={`/templates/editor/${template.id}`}>
                       <Edit className="h-3 w-3 mr-1" />
                       Edit
@@ -610,7 +610,7 @@ function TemplatesPageContent() {
                         description: `Go to Settings → Workflows to request approval for "${template.name}"`,
                       });
                     }}
-                    className="h-8 px-3 text-xs flex-1 bg-teal-600 hover:bg-teal-700"
+                    className="h-8 px-3 text-xs flex-1 bg-muted hover:bg-muted/90"
                     title="Request approval from team leads"
                   >
                     <Send className="h-3 w-3 mr-1" />
@@ -619,7 +619,7 @@ function TemplatesPageContent() {
                 </>
               ) : template.status === 'PENDING_APPROVAL' ? (
                 <>
-                  <Button size="sm" disabled className="h-8 px-3 text-xs flex-1 bg-blue-500">
+                  <Button size="sm" disabled className="h-8 px-3 text-xs flex-1 bg-primary/50">
                     <Send className="h-3 w-3 mr-1" />
                     Under Review
                   </Button>
@@ -631,7 +631,7 @@ function TemplatesPageContent() {
                         description: `Check Settings → Workflows to see approval progress for "${template.name}"`,
                       });
                     }}
-                    className="h-8 px-3 text-xs flex-1 bg-blue-600 hover:bg-blue-700"
+                    className="h-8 px-3 text-xs flex-1 bg-primary hover:bg-primary/90"
                     title="View approval status"
                   >
                     <Eye className="h-3 w-3 mr-1" />
@@ -640,7 +640,7 @@ function TemplatesPageContent() {
                 </>
               ) : template.status === 'PUBLISHED' ? (
                 <>
-                  <Button size="sm" asChild className="h-8 px-3 text-xs flex-1 bg-green-600 hover:bg-green-700">
+                  <Button size="sm" asChild className="h-8 px-3 text-xs flex-1 bg-success hover:bg-success/90">
                     <Link href={`/templates/editor/${template.id}`}>
                       <CheckCircle className="h-3 w-3 mr-1" />
                       Published
@@ -648,7 +648,7 @@ function TemplatesPageContent() {
                   </Button>
                 </>
               ) : (
-                <Button size="sm" asChild className="h-8 px-3 text-xs flex-1 bg-gray-600 hover:bg-gray-700">
+                <Button size="sm" asChild className="h-8 px-3 text-xs flex-1 bg-muted hover:bg-muted/90">
                   <Link href={`/templates/editor/${template.id}`}>
                     <Edit className="h-3 w-3 mr-1" />
                     View
@@ -661,7 +661,7 @@ function TemplatesPageContent() {
                 size="sm"
                 onClick={(e) => handleDuplicate(template.id, template.name, e)}
                 disabled={duplicatingId === template.id}
-                className="h-8 px-2 text-xs hover:bg-purple-50 hover:border-purple-200"
+                className="h-8 px-2 text-xs hover:bg-accent/10 hover:border-accent/20"
                 title="Duplicate this template"
               >
                 {duplicatingId === template.id ? (
@@ -680,33 +680,33 @@ function TemplatesPageContent() {
         <Card className="mt-6 bg-gradient-to-r from-emerald-50/80 to-teal-50/80 border-emerald-200">
           <CardContent className="p-4">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 bg-emerald-100 rounded-lg">
-                <TrendingUp className="h-5 w-5 text-emerald-600" />
+              <div className="p-2 bg-success/10 rounded-lg">
+                <TrendingUp className="h-5 w-5 text-success" />
               </div>
               <div>
-                <h3 className="font-semibold text-emerald-900">Template Performance Insights</h3>
-                <p className="text-sm text-emerald-700">Analytics to help optimize your templates</p>
+                <h3 className="font-semibold text-success">Template Performance Insights</h3>
+                <p className="text-sm text-success">Analytics to help optimize your templates</p>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-white/70 rounded-lg p-3 border border-emerald-100">
-                <div className="text-2xl font-bold text-emerald-600">{templateStats.total > 0 ? Math.round((templateStats.published / templateStats.total) * 100) : 0}%</div>
-                <div className="text-sm text-emerald-700">Templates Published</div>
-                <div className="text-xs text-emerald-600 mt-1">
+                <div className="text-2xl font-bold text-success">{templateStats.total > 0 ? Math.round((templateStats.published / templateStats.total) * 100) : 0}%</div>
+                <div className="text-sm text-success">Templates Published</div>
+                <div className="text-xs text-success mt-1">
                   ↗️ {templateStats.published > templateStats.draft ? 'Great publishing rate!' : 'Consider publishing more drafts'}
                 </div>
               </div>
               <div className="bg-white/70 rounded-lg p-3 border border-teal-100">
-                <div className="text-2xl font-bold text-teal-600">{templateStats.email + templateStats.social}</div>
-                <div className="text-sm text-teal-700">Multi-Channel Templates</div>
-                <div className="text-xs text-teal-600 mt-1">
+                <div className="text-2xl font-bold text-muted">{templateStats.email + templateStats.social}</div>
+                <div className="text-sm text-muted">Multi-Channel Templates</div>
+                <div className="text-xs text-muted mt-1">
                   📊 Diversified content strategy
                 </div>
               </div>
               <div className="bg-white/70 rounded-lg p-3 border border-blue-100">
-                <div className="text-2xl font-bold text-blue-600">2.5hrs</div>
-                <div className="text-sm text-blue-700">Estimated Time Saved</div>
-                <div className="text-xs text-blue-600 mt-1">
+                <div className="text-2xl font-bold text-primary">2.5hrs</div>
+                <div className="text-sm text-primary">Estimated Time Saved</div>
+                <div className="text-xs text-primary mt-1">
                   ⏱️ Per week with current templates
                 </div>
               </div>
@@ -721,11 +721,11 @@ function TemplatesPageContent() {
           <CardContent className="p-6 text-center">
             <div className="flex justify-center mb-4">
               <div className="p-4 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full">
-                <Sparkles className="h-12 w-12 text-blue-600" />
+                <Sparkles className="h-12 w-12 text-primary" />
               </div>
             </div>
-            <h3 className="text-2xl font-bold mb-3 text-gray-800">Your Template Library Awaits!</h3>
-            <p className="text-gray-600 mb-6 max-w-lg mx-auto leading-relaxed">
+            <h3 className="text-2xl font-bold mb-3 text-foreground">Your Template Library Awaits!</h3>
+            <p className="text-muted-foreground mb-6 max-w-lg mx-auto leading-relaxed">
               {searchQuery || selectedType !== 'all' || selectedCategory !== 'all'
                 ? "🔍 No templates match your search. Try different keywords or clear filters to explore all available templates."
                 : "🚀 Templates are your content creation superpowers! Start with your most frequently used content type and transform hours of work into minutes."}
@@ -738,17 +738,17 @@ function TemplatesPageContent() {
                     Create Your First Template
                   </Link>
                 </Button>
-                <div className="flex items-center justify-center gap-4 text-sm text-gray-500 mt-4">
+                <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground mt-4">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                    <div className="w-2 h-2 bg-success/60 rounded-full"></div>
                     <span>Instant content creation</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                    <div className="w-2 h-2 bg-primary/60 rounded-full"></div>
                     <span>Brand consistency</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                    <div className="w-2 h-2 bg-accent/60 rounded-full"></div>
                     <span>Time savings</span>
                   </div>
                 </div>
@@ -759,7 +759,7 @@ function TemplatesPageContent() {
                   setSearchQuery('');
                   setSelectedType('all');
                   setSelectedCategory('all');
-                }} className="border-gray-300 hover:bg-gray-50">
+                }} className="border-muted hover:bg-muted/10">
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Show All Templates
                 </Button>

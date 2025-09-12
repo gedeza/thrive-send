@@ -179,10 +179,10 @@ export default function CreateListingPage() {
                 id="title"
                 {...register('title')}
                 placeholder="Enter a compelling title for your listing"
-                className={errors.title ? 'border-red-500' : ''}
+                className={errors.title ? 'border-destructive' : ''}
               />
               {errors.title && (
-                <p className="text-sm text-red-500 mt-1">{errors.title.message}</p>
+                <p className="text-sm text-destructive mt-1">{errors.title.message}</p>
               )}
             </div>
 
@@ -193,10 +193,10 @@ export default function CreateListingPage() {
                 {...register('description')}
                 placeholder="Describe what you're offering and its benefits"
                 rows={4}
-                className={errors.description ? 'border-red-500' : ''}
+                className={errors.description ? 'border-destructive' : ''}
               />
               {errors.description && (
-                <p className="text-sm text-red-500 mt-1">{errors.description.message}</p>
+                <p className="text-sm text-destructive mt-1">{errors.description.message}</p>
               )}
             </div>
 
@@ -204,7 +204,7 @@ export default function CreateListingPage() {
               <div>
                 <Label htmlFor="type">Type</Label>
                 <Select onValueChange={(value) => setValue('type', value as any)}>
-                  <SelectTrigger className={errors.type ? 'border-red-500' : ''}>
+                  <SelectTrigger className={errors.type ? 'border-destructive' : ''}>
                     <SelectValue placeholder="Select listing type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -219,14 +219,14 @@ export default function CreateListingPage() {
                   </SelectContent>
                 </Select>
                 {errors.type && (
-                  <p className="text-sm text-red-500 mt-1">{errors.type.message}</p>
+                  <p className="text-sm text-destructive mt-1">{errors.type.message}</p>
                 )}
               </div>
 
               <div>
                 <Label htmlFor="category">Category</Label>
                 <Select onValueChange={(value) => setValue('category', value)}>
-                  <SelectTrigger className={errors.category ? 'border-red-500' : ''}>
+                  <SelectTrigger className={errors.category ? 'border-destructive' : ''}>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -238,7 +238,7 @@ export default function CreateListingPage() {
                   </SelectContent>
                 </Select>
                 {errors.category && (
-                  <p className="text-sm text-red-500 mt-1">{errors.category.message}</p>
+                  <p className="text-sm text-destructive mt-1">{errors.category.message}</p>
                 )}
               </div>
             </div>
@@ -261,10 +261,10 @@ export default function CreateListingPage() {
                   min="0.01"
                   {...register('price', { valueAsNumber: true })}
                   placeholder="0.00"
-                  className={errors.price ? 'border-red-500' : ''}
+                  className={errors.price ? 'border-destructive' : ''}
                 />
                 {errors.price && (
-                  <p className="text-sm text-red-500 mt-1">{errors.price.message}</p>
+                  <p className="text-sm text-destructive mt-1">{errors.price.message}</p>
                 )}
               </div>
 
@@ -343,7 +343,7 @@ export default function CreateListingPage() {
               </div>
             </div>
             {errors.tags && (
-              <p className="text-sm text-red-500">{errors.tags.message}</p>
+              <p className="text-sm text-destructive">{errors.tags.message}</p>
             )}
           </CardContent>
         </Card>
@@ -356,7 +356,7 @@ export default function CreateListingPage() {
           <CardContent className="space-y-4">
             <div>
               <Label htmlFor="files">Upload Files</Label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+              <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
                 <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground mb-2">
                   Drag and drop files here, or click to browse

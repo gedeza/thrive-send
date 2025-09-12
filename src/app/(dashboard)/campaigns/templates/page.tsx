@@ -177,13 +177,13 @@ export default function CampaignTemplatesPage() {
     return (
       <div className="container mx-auto px-4 py-6">
         <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="h-8 bg-muted rounded w-1/4"></div>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="space-y-4">
-                <div className="h-48 bg-gray-200 rounded"></div>
-                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-48 bg-muted rounded"></div>
+                <div className="h-4 bg-muted rounded w-3/4"></div>
+                <div className="h-4 bg-muted rounded w-1/2"></div>
               </div>
             ))}
           </div>
@@ -233,10 +233,10 @@ export default function CampaignTemplatesPage() {
         {showShowcaseTemplates && (
           <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border border-purple-200 dark:border-purple-800 rounded-lg max-w-4xl mx-auto">
             <div className="flex items-center justify-center gap-2 mb-2">
-              <Star className="h-4 w-4 text-purple-600" />
-              <span className="font-semibold text-purple-800 dark:text-purple-200">Marketing Showcase Mode</span>
+              <Star className="h-4 w-4 text-accent" />
+              <span className="font-semibold text-accent">Marketing Showcase Mode</span>
             </div>
-            <p className="text-sm text-purple-700 dark:text-purple-300">
+            <p className="text-sm text-accent">
               You're viewing beautiful sample templates perfect for demos and marketing materials. 
               These showcase templates display professional designs, ratings, and usage stats to demonstrate platform capabilities.
             </p>
@@ -253,13 +253,13 @@ export default function CampaignTemplatesPage() {
               type="checkbox"
               checked={showShowcaseTemplates}
               onChange={(e) => setShowShowcaseTemplates(e.target.checked)}
-              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              className="rounded border-muted text-primary focus:ring-primary"
             />
             <span className="text-muted-foreground">Show showcase templates</span>
           </label>
           
           {showShowcaseTemplates && (
-            <Badge variant="outline" className="text-xs bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border-purple-200">
+            <Badge variant="outline" className="text-xs bg-accent/10 text-accent border-accent/20">
               Marketing Demo Mode
             </Badge>
           )}
@@ -308,7 +308,7 @@ export default function CampaignTemplatesPage() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <LayoutTemplate className="h-12 w-12 text-blue-500 opacity-60" />
+                  <LayoutTemplate className="h-12 w-12 text-primary opacity-60" />
                 )}
               </div>
               
@@ -361,7 +361,7 @@ export default function CampaignTemplatesPage() {
                     <div className="flex items-center">
                       {isShowcase ? (
                         <>
-                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 mr-1" />
+                          <Star className="h-3 w-3 fill-warning text-warning mr-1" />
                           <span>{template.rating}</span>
                         </>
                       ) : (

@@ -24,7 +24,7 @@ export default function TestCleanDashboardPage() {
   return (
     <QueryClientProvider client={queryClient}>
       <ServiceProviderProvider>
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-muted/50">
           <div className="container mx-auto py-8 space-y-8">
             {/* Test Page Header */}
             <Card>
@@ -59,7 +59,7 @@ export default function TestCleanDashboardPage() {
                   />
                 </div>
                 
-                <div className="text-sm text-green-600 bg-green-50 p-3 rounded-lg">
+                <div className="text-sm text-success bg-success/10 p-3 rounded-lg">
                   ✅ Features to test:
                   <ul className="mt-2 space-y-1 list-disc list-inside">
                     <li>Client selection and switching</li>
@@ -83,7 +83,7 @@ export default function TestCleanDashboardPage() {
                 </p>
               </CardHeader>
               <CardContent>
-                <div className="text-sm text-blue-600 bg-blue-50 p-3 rounded-lg mb-6">
+                <div className="text-sm text-primary bg-primary/10 p-3 rounded-lg mb-6">
                   ℹ️ Dashboard features to test:
                   <ul className="mt-2 space-y-1 list-disc list-inside">
                     <li>Enhanced metrics cards with trend indicators</li>
@@ -113,9 +113,9 @@ export default function TestCleanDashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="p-4 bg-green-50 rounded-lg">
-                    <h4 className="font-semibold text-green-800">✅ Working Features</h4>
-                    <ul className="mt-2 text-sm text-green-700 space-y-1">
+                  <div className="p-4 bg-success/10 rounded-lg">
+                    <h4 className="font-semibold text-success">✅ Working Features</h4>
+                    <ul className="mt-2 text-sm text-success space-y-1">
                       <li>• Component rendering</li>
                       <li>• TypeScript types</li>
                       <li>• Basic interactions</li>
@@ -123,9 +123,9 @@ export default function TestCleanDashboardPage() {
                     </ul>
                   </div>
                   
-                  <div className="p-4 bg-yellow-50 rounded-lg">
-                    <h4 className="font-semibold text-yellow-800">⚠️ Needs Testing</h4>
-                    <ul className="mt-2 text-sm text-yellow-700 space-y-1">
+                  <div className="p-4 bg-warning/10 rounded-lg">
+                    <h4 className="font-semibold text-warning">⚠️ Needs Testing</h4>
+                    <ul className="mt-2 text-sm text-warning space-y-1">
                       <li>• API integration</li>
                       <li>• Real-time updates</li>
                       <li>• Error boundaries</li>
@@ -133,9 +133,9 @@ export default function TestCleanDashboardPage() {
                     </ul>
                   </div>
                   
-                  <div className="p-4 bg-blue-50 rounded-lg">
-                    <h4 className="font-semibold text-blue-800">🚀 Next Steps</h4>
-                    <ul className="mt-2 text-sm text-blue-700 space-y-1">
+                  <div className="p-4 bg-primary/10 rounded-lg">
+                    <h4 className="font-semibold text-primary">🚀 Next Steps</h4>
+                    <ul className="mt-2 text-sm text-primary space-y-1">
                       <li>• Analytics components</li>
                       <li>• Integration testing</li>
                       <li>• E2E test coverage</li>

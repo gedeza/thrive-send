@@ -36,26 +36,26 @@ export function ClientPerformanceRankings({
   const getRankIcon = (rank: number) => {
     switch (rank) {
       case 1:
-        return <Trophy className="h-4 w-4 text-yellow-500" />;
+        return <Trophy className="h-4 w-4 text-primary" />;
       case 2:
-        return <Medal className="h-4 w-4 text-gray-400" />;
+        return <Medal className="h-4 w-4 text-primary" />;
       case 3:
-        return <Award className="h-4 w-4 text-amber-600" />;
+        return <Award className="h-4 w-4 text-primary" />;
       default:
         return <Star className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
   const getPerformanceColor = (score: number) => {
-    if (score >= 90) return 'text-green-600';
-    if (score >= 70) return 'text-yellow-600';
-    return 'text-red-600';
+    if (score >= 90) return 'text-success';
+    if (score >= 70) return 'text-primary';
+    return 'text-destructive';
   };
 
   const getPerformanceBadgeColor = (score: number) => {
-    if (score >= 90) return 'bg-green-100 text-green-800';
-    if (score >= 70) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-red-100 text-red-800';
+    if (score >= 90) return 'bg-success/10 text-success border border-success/20';
+    if (score >= 70) return 'bg-primary/10 text-primary border border-primary/20';
+    return 'bg-destructive/10 text-destructive border border-destructive/20';
   };
 
   const getTrendIcon = (score: number) => {
@@ -64,9 +64,9 @@ export function ClientPerformanceRankings({
     
     switch (trend) {
       case 'up':
-        return <TrendingUp className="h-3 w-3 text-green-600" />;
+        return <TrendingUp className="h-3 w-3 text-success" />;
       case 'down':
-        return <TrendingDown className="h-3 w-3 text-red-600" />;
+        return <TrendingDown className="h-3 w-3 text-destructive" />;
       default:
         return <Minus className="h-3 w-3 text-muted-foreground" />;
     }
@@ -120,10 +120,12 @@ export function ClientPerformanceRankings({
   }
 
   return (
-    <Card>
+    <Card className="card-enhanced border-l-2 border-primary/20">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Trophy className="h-5 w-5" />
+          <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
+            <Trophy className="h-5 w-5 text-primary" />
+          </div>
           Client Performance Rankings
         </CardTitle>
       </CardHeader>
@@ -133,11 +135,12 @@ export function ClientPerformanceRankings({
             <div
               key={client.id}
               className={cn(
-                "flex items-center gap-3 p-3 rounded-lg border transition-all duration-200",
-                "hover:shadow-md hover:bg-muted/50 cursor-pointer",
-                index === 0 && "bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200",
-                index === 1 && "bg-gradient-to-r from-gray-50 to-slate-50 border-gray-200",
-                index === 2 && "bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-200"
+                "flex items-center gap-3 p-3 rounded-lg border transition-shadow duration-200",
+                "hover:shadow-professional hover:bg-muted/20 cursor-pointer",
+                index === 0 && "bg-primary/5 border-primary/20 border-l-2",
+                index === 1 && "bg-muted/5 border-muted/20 border-l-2",
+                index === 2 && "bg-primary/5 border-primary/20 border-l-2",
+                index > 2 && "border-muted/10 hover:border-muted/20"
               )}
               onClick={() => onClientSelect?.(client.id)}
             >
@@ -158,10 +161,10 @@ export function ClientPerformanceRankings({
                   <img
                     src={client.logoUrl}
                     alt={`${client.name} logo`}
-                    className="w-8 h-8 rounded-full object-cover border"
+                    className="w-8 h-8 rounded-full object-cover border border-muted/20"
                   />
                 ) : (
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-primary/10 text-primary border font-semibold text-xs">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-primary/10 text-primary border border-primary/20 font-semibold text-xs">
                     {client.name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2)}
                   </div>
                 )}

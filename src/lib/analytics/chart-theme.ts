@@ -4,28 +4,41 @@
  */
 
 export const chartColors = {
-  primary: 'var(--color-chart-blue)',
-  secondary: 'var(--color-chart-green)',
-  accent: 'var(--color-chart-purple)',
-  warning: 'var(--color-chart-orange)',
-  info: 'var(--color-chart-teal)',
-  danger: 'var(--color-chart-rose)',
+  primary: 'var(--color-chart-primary)',
+  success: 'var(--color-chart-success)',
+  accent: 'var(--color-chart-accent)',
 } as const;
 
 export const chartColorArray = [
   chartColors.primary,
-  chartColors.secondary,
+  chartColors.success,
   chartColors.accent,
-  chartColors.warning,
-  chartColors.info,
-  chartColors.danger,
 ];
+
+// Legacy mappings for backwards compatibility
+export const legacyChartColors = {
+  blue: chartColors.primary,
+  green: chartColors.success,
+  purple: chartColors.accent,
+  orange: chartColors.primary,
+  teal: chartColors.success,
+  rose: chartColors.accent,
+} as const;
 
 /**
  * Get standardized chart colors from CSS custom properties
  */
-export function getChartColors(count: number = 6): string[] {
-  return chartColorArray.slice(0, count);
+export function getChartColors(count: number = 3): string[] {
+  // For more than 3 colors, cycle through the 3-color palette
+  if (count <= 3) {
+    return chartColorArray.slice(0, count);
+  }
+  
+  const colors: string[] = [];
+  for (let i = 0; i < count; i++) {
+    colors.push(chartColorArray[i % 3]);
+  }
+  return colors;
 }
 
 /**

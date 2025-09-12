@@ -19,11 +19,11 @@ Chart.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarEleme
 // --- Colorful Analytics Card Component (Tailwind) ---
 type CardColor = "primary" | "success" | "warning" | "info" | "danger";
 const colorSchemes: Record<CardColor, string> = {
-  primary: "bg-indigo-100 text-indigo-800 border-indigo-400",
-  success: "bg-green-100 text-green-800 border-green-400",
-  warning: "bg-yellow-100 text-yellow-800 border-yellow-400",
-  info: "bg-sky-100 text-sky-800 border-sky-400",
-  danger: "bg-red-100 text-red-800 border-red-400",
+  primary: "bg-primary/10 text-primary border-primary/20",
+  success: "bg-success/10 text-success border-success/20",
+  warning: "bg-warning/10 text-warning border-warning/20",
+  info: "bg-sky-500/10 text-sky-700 border-sky-500/20",
+  danger: "bg-destructive/10 text-destructive border-destructive/20",
 };
 
 interface AnalyticsCardProps {
@@ -150,10 +150,10 @@ export const CampaignAnalyticsDashboard: React.FC = () => (
         ))}
       </div>
       <div className="text-xs mt-2 ml-1 text-slate-500 flex gap-4">
-        <span><span className="inline-block w-4 h-2 bg-green-100 border-l-4 border-green-400 rounded mr-1 align-middle"></span>Success</span>
+        <span><span className="inline-block w-4 h-2 bg-success/10 border-l-4 border-success rounded mr-1 align-middle"></span>Success</span>
         <span><span className="inline-block w-4 h-2 bg-indigo-100 border-l-4 border-indigo-400 rounded mr-1 align-middle"></span>Primary</span>
-        <span><span className="inline-block w-4 h-2 bg-yellow-100 border-l-4 border-yellow-400 rounded mr-1 align-middle"></span>Warning</span>
-        <span><span className="inline-block w-4 h-2 bg-red-100 border-l-4 border-red-400 rounded mr-1 align-middle"></span>Danger</span>
+        <span><span className="inline-block w-4 h-2 bg-warning/10 border-l-4 border-warning rounded mr-1 align-middle"></span>Warning</span>
+        <span><span className="inline-block w-4 h-2 bg-destructive/10 border-l-4 border-destructive rounded mr-1 align-middle"></span>Danger</span>
       </div>
     </div>
     {/* ---- DEVICE STATS ---- */}
@@ -184,7 +184,7 @@ export const CampaignAnalyticsDashboard: React.FC = () => (
       </div>
     </div>
     {/* ---- LINKS CLICKED ---- */}
-    <div className="rounded-2xl bg-yellow-50 border-l-4 border-yellow-400 p-6 shadow-sm">
+    <div className="rounded-2xl bg-warning/10 border-l-4 border-warning p-6 shadow-sm">
       <div className="flex items-center gap-3 mb-1">
         <MousePointerClick className="text-yellow-500" />
         <h3 className="text-lg font-bold text-yellow-700">Links Clicked</h3>

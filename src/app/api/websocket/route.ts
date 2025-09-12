@@ -57,8 +57,8 @@ function initializeWebSocketServer() {
       try {
         const message = JSON.parse(data.toString());
         handleWebSocketMessage(connectionId, message);
-      } catch (_error) {
-        console.error("", _error);
+      } catch (error) {
+        console.error("WebSocket message parsing error:", error);
         ws.send(JSON.stringify({
           type: 'error',
           message: 'Invalid message format',
@@ -75,7 +75,7 @@ function initializeWebSocketServer() {
 
     // Handle connection error
     ws.on('error', (error) => {
-      console.error("", _error);
+      console.error("WebSocket connection error:", error);
       clients.delete(connectionId);
     });
 
@@ -301,8 +301,8 @@ export async function POST(request: NextRequest) {
         .filter(client => client.organizationId === organizationId).length
     });
 
-  } catch (_error) {
-    console.error("", _error);
+  } catch (error) {
+    console.error("WebSocket broadcast error:", error);
     return Response.json({ error: 'Failed to broadcast event' }, { status: 500 });
   }
 }

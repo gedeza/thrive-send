@@ -311,10 +311,10 @@ export function PredictiveAnalytics({ className }: PredictiveAnalyticsProps) {
 
   const getModelStatus = (status: PredictionModel['status']) => {
     const statusConfig = {
-      active: { color: 'bg-green-100 text-green-700', icon: CheckCircle },
-      training: { color: 'bg-blue-100 text-blue-700', icon: RefreshCw },
-      deprecated: { color: 'bg-gray-100 text-gray-500', icon: Clock },
-      error: { color: 'bg-red-100 text-red-700', icon: AlertTriangle }
+      active: { color: 'bg-success/10 text-success border border-success/20', icon: CheckCircle },
+      training: { color: 'bg-primary/10 text-primary border border-primary/20', icon: RefreshCw },
+      deprecated: { color: 'bg-muted/10 text-muted-foreground border border-muted/20', icon: Clock },
+      error: { color: 'bg-destructive/10 text-destructive border border-destructive/20', icon: AlertTriangle }
     };
 
     const config = statusConfig[status];
@@ -329,23 +329,23 @@ export function PredictiveAnalytics({ className }: PredictiveAnalyticsProps) {
   };
 
   const getChangeIcon = (change: number) => {
-    if (change > 0) return <ArrowUp className="h-4 w-4 text-green-500" />;
-    if (change < 0) return <ArrowDown className="h-4 w-4 text-red-500" />;
-    return <Minus className="h-4 w-4 text-gray-500" />;
+    if (change > 0) return <ArrowUp className="h-4 w-4 text-success" />;
+    if (change < 0) return <ArrowDown className="h-4 w-4 text-destructive" />;
+    return <Minus className="h-4 w-4 text-muted-foreground" />;
   };
 
   const getChangeColor = (change: number) => {
-    if (change > 0) return 'text-green-600';
-    if (change < 0) return 'text-red-600';
-    return 'text-gray-600';
+    if (change > 0) return 'text-success';
+    if (change < 0) return 'text-destructive';
+    return 'text-muted-foreground';
   };
 
   const getSeverityBadge = (severity: string) => {
     const severityConfig = {
-      low: 'bg-blue-100 text-blue-700',
-      medium: 'bg-yellow-100 text-yellow-700',
-      high: 'bg-orange-100 text-orange-700',
-      critical: 'bg-red-100 text-red-700'
+      low: 'bg-primary/10 text-primary border border-primary/20',
+      medium: 'bg-muted/10 text-muted-foreground border border-muted/20',
+      high: 'bg-destructive/10 text-destructive border border-destructive/20',
+      critical: 'bg-destructive/10 text-destructive border border-destructive/20'
     };
 
     return (
@@ -357,10 +357,10 @@ export function PredictiveAnalytics({ className }: PredictiveAnalyticsProps) {
 
   const getChurnRiskColor = (risk: string) => {
     const riskColors = {
-      low: 'border-green-500 bg-green-50',
-      medium: 'border-yellow-500 bg-yellow-50',
-      high: 'border-orange-500 bg-orange-50',
-      critical: 'border-red-500 bg-red-50'
+      low: 'border-success/20 bg-success/5',
+      medium: 'border-muted/40 bg-muted/5',
+      high: 'border-destructive/20 bg-destructive/5',
+      critical: 'border-destructive/20 bg-destructive/5'
     };
     return riskColors[risk as keyof typeof riskColors];
   };
@@ -370,8 +370,8 @@ export function PredictiveAnalytics({ className }: PredictiveAnalyticsProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-purple-100 rounded-lg">
-            <Brain className="h-6 w-6 text-purple-600" />
+          <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+            <Brain className="h-6 w-6 text-primary" />
           </div>
           <div>
             <h1 className="text-3xl font-bold">Predictive Analytics</h1>
@@ -402,11 +402,11 @@ export function PredictiveAnalytics({ className }: PredictiveAnalyticsProps) {
       {/* Model Status Overview */}
       <div className="grid gap-4 md:grid-cols-4">
         {models.map((model) => (
-          <Card key={model.id} className="hover:shadow-md transition-shadow">
+          <Card key={model.id} className="card-enhanced border-l-2 border-primary/20 bg-card hover:shadow-professional transition-shadow duration-200">
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <Cpu className="h-5 w-5 text-purple-600" />
+                  <Cpu className="h-5 w-5 text-primary" />
                   <h4 className="font-semibold text-sm">{model.name}</h4>
                 </div>
                 {getModelStatus(model.status)}
@@ -457,7 +457,7 @@ export function PredictiveAnalytics({ className }: PredictiveAnalyticsProps) {
 
         <TabsContent value="predictions" className="space-y-6">
           {/* Filters */}
-          <Card>
+          <Card className="card-enhanced border-l-2 border-muted/40 bg-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
@@ -499,14 +499,14 @@ export function PredictiveAnalytics({ className }: PredictiveAnalyticsProps) {
           {/* Predictions Grid */}
           <div className="grid gap-6">
             {filteredPredictions.map((prediction) => (
-              <Card key={prediction.id} className="overflow-hidden">
+              <Card key={prediction.id} className="card-enhanced border-l-2 border-primary/20 bg-card overflow-hidden">
                 <CardContent className="p-6">
                   <div className="grid md:grid-cols-3 gap-6">
                     {/* Prediction Summary */}
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <h4 className="font-semibold text-lg">{prediction.metric}</h4>
-                        <Badge className="bg-purple-100 text-purple-700">
+                        <Badge className="bg-primary/10 text-primary border border-primary/20">
                           {prediction.timeframe} forecast
                         </Badge>
                       </div>
@@ -549,14 +549,14 @@ export function PredictiveAnalytics({ className }: PredictiveAnalyticsProps) {
                             <div className="flex items-center gap-2">
                               <div className={cn(
                                 'h-2 w-2 rounded-full',
-                                factor.trend === 'up' ? 'bg-green-500' :
-                                factor.trend === 'down' ? 'bg-red-500' : 'bg-gray-500'
+                                factor.trend === 'up' ? 'bg-success' :
+                                factor.trend === 'down' ? 'bg-destructive' : 'bg-muted-foreground'
                               )} />
                               <span className="text-sm">{factor.name}</span>
                             </div>
                             <span className={cn(
                               'text-sm font-medium',
-                              factor.impact > 0 ? 'text-green-600' : 'text-red-600'
+                              factor.impact > 0 ? 'text-success' : 'text-destructive'
                             )}>
                               {factor.impact > 0 ? '+' : ''}{factor.impact}%
                             </span>
@@ -568,10 +568,10 @@ export function PredictiveAnalytics({ className }: PredictiveAnalyticsProps) {
                     {/* Recommendation */}
                     <div className="space-y-4">
                       <h5 className="font-semibold">AI Recommendation</h5>
-                      <div className="p-4 bg-blue-50 rounded-lg">
+                      <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
                         <div className="flex items-start gap-3">
-                          <Sparkles className="h-5 w-5 text-blue-600 mt-0.5" />
-                          <p className="text-sm text-blue-800">
+                          <Sparkles className="h-5 w-5 text-primary mt-0.5" />
+                          <p className="text-sm text-primary/80">
                             {prediction.recommendation}
                           </p>
                         </div>
@@ -591,7 +591,7 @@ export function PredictiveAnalytics({ className }: PredictiveAnalyticsProps) {
         <TabsContent value="anomalies" className="space-y-6">
           <div className="space-y-4">
             {anomalies.map((anomaly) => (
-              <Card key={anomaly.id} className="border-l-4 border-l-orange-500">
+              <Card key={anomaly.id} className="card-enhanced border-l-2 border-destructive/20 bg-card">
                 <CardContent className="p-6">
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-4">
@@ -615,7 +615,7 @@ export function PredictiveAnalytics({ className }: PredictiveAnalyticsProps) {
                           <span className="text-muted-foreground">Deviation:</span>
                           <p className={cn(
                             'font-medium',
-                            anomaly.deviation < 0 ? 'text-red-600' : 'text-green-600'
+                            anomaly.deviation < 0 ? 'text-destructive' : 'text-success'
                           )}>
                             {anomaly.deviation}%
                           </p>
@@ -646,7 +646,7 @@ export function PredictiveAnalytics({ className }: PredictiveAnalyticsProps) {
                         <h5 className="font-semibold mb-2">Recommendations</h5>
                         <ul className="space-y-1">
                           {anomaly.recommendations.map((rec, index) => (
-                            <li key={index} className="text-sm text-blue-600 flex items-center gap-2">
+                            <li key={index} className="text-sm text-primary flex items-center gap-2">
                               <CheckCircle className="h-3 w-3" />
                               {rec}
                             </li>
@@ -664,7 +664,7 @@ export function PredictiveAnalytics({ className }: PredictiveAnalyticsProps) {
         <TabsContent value="churn" className="space-y-6">
           <div className="grid gap-4">
             {churnPredictions.map((churn) => (
-              <Card key={churn.userId} className={cn('border-l-4', getChurnRiskColor(churn.riskSegment))}>
+              <Card key={churn.userId} className={cn('card-enhanced border-l-2 bg-card', getChurnRiskColor(churn.riskSegment))}>
                 <CardContent className="p-6">
                   <div className="grid md:grid-cols-3 gap-6">
                     <div className="space-y-4">
@@ -699,7 +699,7 @@ export function PredictiveAnalytics({ className }: PredictiveAnalyticsProps) {
                         
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">Predicted Churn:</span>
-                          <span className="font-medium text-red-600">
+                          <span className="font-medium text-destructive">
                             {format(churn.predictedChurnDate, 'MMM d')}
                           </span>
                         </div>
@@ -712,7 +712,7 @@ export function PredictiveAnalytics({ className }: PredictiveAnalyticsProps) {
                         {churn.preventionActions.map((action, index) => (
                           <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                             <div className="flex items-center gap-3">
-                              <Target className="h-4 w-4 text-blue-600" />
+                              <Target className="h-4 w-4 text-primary" />
                               <span className="text-sm">{action}</span>
                             </div>
                             <Button variant="outline" size="sm">
@@ -731,44 +731,44 @@ export function PredictiveAnalytics({ className }: PredictiveAnalyticsProps) {
 
         <TabsContent value="insights" className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2">
-            <Card>
+            <Card className="card-enhanced border-l-2 border-primary/20 bg-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Award className="h-5 w-5 text-yellow-600" />
+                  <Award className="h-5 w-5 text-success" />
                   Top Insights
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="p-4 bg-green-50 rounded-lg">
+                <div className="p-4 bg-success/10 rounded-lg border border-success/20">
                   <div className="flex items-start gap-3">
-                    <TrendingUp className="h-5 w-5 text-green-600 mt-0.5" />
+                    <TrendingUp className="h-5 w-5 text-success mt-0.5" />
                     <div>
-                      <h4 className="font-medium text-green-800">High Conversion Opportunity</h4>
-                      <p className="text-sm text-green-700 mt-1">
+                      <h4 className="font-medium text-success">High Conversion Opportunity</h4>
+                      <p className="text-sm text-success/80 mt-1">
                         Video content shows 67% higher engagement. Recommended to increase video production by 40%.
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 bg-blue-50 rounded-lg">
+                <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
                   <div className="flex items-start gap-3">
-                    <Clock className="h-5 w-5 text-blue-600 mt-0.5" />
+                    <Clock className="h-5 w-5 text-primary mt-0.5" />
                     <div>
-                      <h4 className="font-medium text-blue-800">Optimal Timing Identified</h4>
-                      <p className="text-sm text-blue-700 mt-1">
+                      <h4 className="font-medium text-primary">Optimal Timing Identified</h4>
+                      <p className="text-sm text-primary/80 mt-1">
                         Posts between 2-4 PM show 85% higher engagement. Schedule more content in this window.
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 bg-orange-50 rounded-lg">
+                <div className="p-4 bg-destructive/10 rounded-lg border border-destructive/20">
                   <div className="flex items-start gap-3">
-                    <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5" />
+                    <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
                     <div>
-                      <h4 className="font-medium text-orange-800">Audience Saturation Risk</h4>
-                      <p className="text-sm text-orange-700 mt-1">
+                      <h4 className="font-medium text-destructive">Audience Saturation Risk</h4>
+                      <p className="text-sm text-destructive/80 mt-1">
                         Current audience showing declining engagement. Consider expanding to new demographics.
                       </p>
                     </div>
@@ -777,10 +777,10 @@ export function PredictiveAnalytics({ className }: PredictiveAnalyticsProps) {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="card-enhanced border-l-2 border-muted/40 bg-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Database className="h-5 w-5 text-purple-600" />
+                  <Database className="h-5 w-5 text-muted-foreground" />
                   Data Quality Report
                 </CardTitle>
               </CardHeader>

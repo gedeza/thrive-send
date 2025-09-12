@@ -48,7 +48,7 @@ const contentTypes = [
     label: 'Social Media Post', 
     icon: Globe,
     description: 'Share updates, engage your audience',
-    color: 'bg-purple-100 text-purple-800 border-purple-200',
+    color: 'bg-accent/10 text-accent border-accent/20',
     tips: 'Keep it engaging, use hashtags, add visuals'
   },
   { 
@@ -56,7 +56,7 @@ const contentTypes = [
     label: 'Blog Post', 
     icon: Send,
     description: 'Long-form content for your blog',
-    color: 'bg-blue-100 text-blue-800 border-blue-200',
+    color: 'bg-primary/10 text-primary border-primary/20',
     tips: 'Start with a strong headline, structure with headings'
   },
   { 
@@ -64,7 +64,7 @@ const contentTypes = [
     label: 'Email Campaign', 
     icon: Users,
     description: 'Newsletter or marketing email',
-    color: 'bg-orange-100 text-orange-800 border-orange-200',
+    color: 'bg-warning/10 text-warning border-warning/20',
     tips: 'Clear subject line, personal tone, strong CTA'
   },
   { 
@@ -72,7 +72,7 @@ const contentTypes = [
     label: 'Article', 
     icon: TrendingUp,
     description: 'Educational or informational piece',
-    color: 'bg-green-100 text-green-800 border-green-200',
+    color: 'bg-success/10 text-success border-success/20',
     tips: 'Research thoroughly, cite sources, provide value'
   }
 ];
@@ -82,7 +82,7 @@ const platforms = [
     id: 'twitter',
     name: 'Twitter/X',
     icon: Twitter,
-    color: 'bg-blue-100 text-blue-800 border-blue-200',
+    color: 'bg-primary/10 text-primary border-primary/20',
     charLimit: 280,
     hashtagLimit: 3,
     mediaSpecs: { image: '1200x675px', video: '1280x720px, 2:20min' },
@@ -96,7 +96,7 @@ const platforms = [
     id: 'linkedin',
     name: 'LinkedIn',
     icon: Linkedin,
-    color: 'bg-blue-100 text-blue-800 border-blue-200',
+    color: 'bg-primary/10 text-primary border-primary/20',
     charLimit: 3000,
     hashtagLimit: 5,
     mediaSpecs: { image: '1200x627px', video: '1280x720px, 10min' },
@@ -110,7 +110,7 @@ const platforms = [
     id: 'instagram',
     name: 'Instagram',
     icon: Instagram,
-    color: 'bg-pink-100 text-pink-800 border-pink-200',
+    color: 'bg-accent/10 text-accent border-accent/20',
     charLimit: 2200,
     hashtagLimit: 30,
     mediaSpecs: { image: '1080x1080px', video: '1080x1080px, 60s' },
@@ -124,7 +124,7 @@ const platforms = [
     id: 'facebook',
     name: 'Facebook',
     icon: Facebook,
-    color: 'bg-blue-100 text-blue-800 border-blue-200',
+    color: 'bg-primary/10 text-primary border-primary/20',
     charLimit: 63206,
     hashtagLimit: 3,
     mediaSpecs: { image: '1200x630px', video: '1280x720px, 240min' },
@@ -138,7 +138,7 @@ const platforms = [
     id: 'tiktok',
     name: 'TikTok',
     icon: Music,
-    color: 'bg-purple-100 text-purple-800 border-purple-200',
+    color: 'bg-accent/10 text-accent border-accent/20',
     charLimit: 4000,
     hashtagLimit: 20,
     mediaSpecs: { image: '1080x1920px', video: '1080x1920px, 10min' },
@@ -153,7 +153,7 @@ const platforms = [
     id: 'youtube',
     name: 'YouTube',
     icon: Youtube,
-    color: 'bg-red-100 text-red-800 border-red-200',
+    color: 'bg-destructive/10 text-destructive border-destructive/20',
     charLimit: 5000,
     hashtagLimit: 15,
     mediaSpecs: { image: '1280x720px', video: '1920x1080px, unlimited' },
@@ -167,7 +167,7 @@ const platforms = [
     id: 'email',
     name: 'Email',
     icon: Mail,
-    color: 'bg-green-100 text-green-800 border-green-200',
+    color: 'bg-success/10 text-success border-success/20',
     charLimit: 50000,
     hashtagLimit: 0,
     mediaSpecs: { image: '600px width', video: 'embedded links' },
@@ -733,20 +733,20 @@ export default function NewContentPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
       <div className="p-6 max-w-5xl mx-auto">
         {/* Enhanced Header */}
         <div className="mb-8">
           <Button
             variant="ghost"
             onClick={() => router.push('/content')}
-            className="mb-4 hover:bg-white/80"
+            className="mb-4 hover:bg-background/80"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Content Library
           </Button>
           <div className="text-center">
-            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Create Amazing Content
             </h1>
             <p className="text-muted-foreground mt-2">
@@ -762,7 +762,7 @@ export default function NewContentPage() {
             <Card className="border-0 shadow-lg bg-white/70 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-purple-600" />
+                  <Sparkles className="h-5 w-5 text-accent" />
                   What are you creating today?
                 </CardTitle>
               </CardHeader>
@@ -776,8 +776,8 @@ export default function NewContentPage() {
                         key={type.value}
                         className={`cursor-pointer transition-all duration-200 border-2 ${
                           isSelected 
-                            ? 'border-purple-500 bg-purple-50 shadow-md' 
-                            : 'border-gray-200 hover:border-purple-300 hover:shadow-sm'
+                            ? 'border-accent bg-accent/5 shadow-md' 
+                            : 'border-border hover:border-accent/50 hover:shadow-sm'
                         }`}
                         onClick={() => handleTypeChange(type.value)}
                       >
@@ -803,10 +803,10 @@ export default function NewContentPage() {
 
             {/* Platform Selection */}
             {showPlatformOptimization && (
-              <Card className="border-0 shadow-lg bg-white/70 backdrop-blur-sm">
+              <Card className="border-0 shadow-lg bg-background/70 backdrop-blur-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Globe className="h-5 w-5 text-green-600" />
+                    <Globe className="h-5 w-5 text-success" />
                     Target Platforms
                   </CardTitle>
                   <p className="text-sm text-muted-foreground">
@@ -827,8 +827,8 @@ export default function NewContentPage() {
                           key={platform.id}
                           className={`cursor-pointer transition-all duration-200 border-2 ${
                             isSelected 
-                              ? 'border-green-500 bg-green-50 shadow-md' 
-                              : 'border-gray-200 hover:border-green-300 hover:shadow-sm'
+                              ? 'border-success bg-success/5 shadow-md' 
+                              : 'border-border hover:border-success/50 hover:shadow-sm'
                           }`}
                           onClick={() => togglePlatform(platform.id)}
                         >
@@ -847,8 +847,8 @@ export default function NewContentPage() {
                                 </p>
                               </div>
                               {isSelected && (
-                                <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                                  <div className="w-2 h-2 bg-white rounded-full" />
+                                <div className="w-4 h-4 bg-success rounded-full flex items-center justify-center">
+                                  <div className="w-2 h-2 bg-background rounded-full" />
                                 </div>
                               )}
                             </div>
@@ -859,8 +859,8 @@ export default function NewContentPage() {
                   </div>
                   
                   {selectedPlatforms.length > 0 && (
-                    <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                      <p className="text-sm text-blue-700">
+                    <div className="mt-4 p-3 bg-primary/5 rounded-lg">
+                      <p className="text-sm text-primary">
                         <strong>Selected:</strong> {selectedPlatforms.map(id => 
                           platforms.find(p => p.id === id)?.name
                         ).join(', ')}
@@ -872,12 +872,12 @@ export default function NewContentPage() {
             )}
 
             {/* AI-Powered Template Integration */}
-            <Card className="border-0 shadow-lg bg-gradient-to-r from-blue-50/80 to-purple-50/80 backdrop-blur-sm">
+            <Card className="border-0 shadow-lg bg-gradient-to-r from-primary/5 to-accent/5 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Bot className="h-5 w-5 text-blue-600" />
+                  <Bot className="h-5 w-5 text-primary" />
                   AI Template Assistant
-                  <Badge variant="outline" className="ml-auto bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 border-blue-200">
+                  <Badge variant="outline" className="ml-auto bg-gradient-to-r from-primary/10 to-accent/10 text-primary border-primary/20">
                     <Sparkles className="h-3 w-3 mr-1" />
                     Premium Feature
                   </Badge>
@@ -923,7 +923,7 @@ export default function NewContentPage() {
                     }}
                     showAIRecommendations={true}
                     trigger={
-                      <Button className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all">
+                      <Button className="flex-1 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-custom-white shadow-lg hover:shadow-xl transition-all">
                         <Sparkles className="h-4 w-4 mr-2" />
                         Choose AI Template
                       </Button>
@@ -933,7 +933,7 @@ export default function NewContentPage() {
                   {/* AI Generate Button */}
                   <Button 
                     variant="outline" 
-                    className="flex-1 border-2 border-purple-200 hover:bg-purple-50 hover:border-purple-300 transition-all"
+                    className="flex-1 border-2 border-accent/20 hover:bg-accent/5 hover:border-accent/50 transition-all"
                     onClick={() => {
                       // TODO: Implement AI generation dialog
                       toast({
@@ -967,7 +967,7 @@ export default function NewContentPage() {
                             description: "Starting fresh with empty content",
                           });
                         }}
-                        className="h-6 px-2 text-gray-500 hover:text-gray-700"
+                        className="h-6 px-2 text-muted-foreground hover:text-foreground"
                       >
                         <X className="h-3 w-3" />
                       </Button>

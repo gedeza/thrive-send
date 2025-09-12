@@ -142,7 +142,7 @@ export default function ContentAnalyticsPage() {
         <Card>
           <CardContent className="p-6 text-center">
             <BarChart3 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h2 className="text-xl font-semibold mb-2">Organization Required</h2>
+            <h2 className="text-xl font-medium mb-2">Organization Required</h2>
             <p className="text-muted-foreground mb-4">
               Analytics requires an active organization context. Please ensure you're logged in and have access to an organization.
             </p>
@@ -164,7 +164,7 @@ export default function ContentAnalyticsPage() {
         <Card>
           <CardContent className="p-6 text-center">
             <BarChart3 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h2 className="text-xl font-semibold mb-2">Failed to Load Analytics</h2>
+            <h2 className="text-xl font-medium mb-2">Failed to Load Analytics</h2>
             <p className="text-muted-foreground mb-4">
               There was an error loading your content analytics data.
             </p>

@@ -103,23 +103,23 @@ export function ApprovalDashboard() {
   const getStatusColor = (status: ContentStatus) => {
     switch (status) {
       case 'DRAFT':
-        return 'bg-gray-500';
+        return 'bg-muted';
       case 'PENDING_REVIEW':
-        return 'bg-yellow-500';
+        return 'bg-warning';
       case 'IN_REVIEW':
-        return 'bg-blue-500';
+        return 'bg-primary';
       case 'CHANGES_REQUESTED':
         return 'bg-orange-500';
       case 'APPROVED':
-        return 'bg-green-500';
+        return 'bg-success';
       case 'REJECTED':
-        return 'bg-red-500';
+        return 'bg-destructive';
       case 'PUBLISHED':
         return 'bg-purple-500';
       case 'ARCHIVED':
         return 'bg-gray-400';
       default:
-        return 'bg-gray-500';
+        return 'bg-muted';
     }
   };
 
@@ -187,7 +187,7 @@ export function ApprovalDashboard() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="text-green-600"
+                      className="text-success"
                       onClick={() => handleApprove(approval.id)}
                     >
                       <CheckCircle className="h-4 w-4 mr-2" />
@@ -196,7 +196,7 @@ export function ApprovalDashboard() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="text-red-600"
+                      className="text-destructive"
                       onClick={() => handleReject(approval.id)}
                     >
                       <XCircle className="h-4 w-4 mr-2" />

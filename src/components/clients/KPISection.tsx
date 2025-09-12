@@ -51,9 +51,9 @@ async function getKPIData(clientId: string): Promise<KPIData> {
   }
 }
 
-function KPICard({ children, className }: { children: React.ReactNode; className?: string }) {
+function KPICard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <Card className={`p-6 ${className}`}>
+    <Card className={`p-6 card-enhanced ${className}`}>
       <div className="flex items-center justify-between">{children}</div>
     </Card>
   );
@@ -61,7 +61,7 @@ function KPICard({ children, className }: { children: React.ReactNode; className
 
 function LoadingKPICard() {
   return (
-    <Card className="p-6">
+    <Card className="p-6 card-enhanced border-l-2 border-muted/20">
       <div className="flex items-center justify-between">
         <div>
           <Skeleton className="h-4 w-24 mb-2" />
@@ -86,21 +86,23 @@ function KPILoadingState() {
 
 function KPIErrorState({ onRetry }: { onRetry: () => void }) {
   return (
-    <Alert intent="error" style={{ marginBottom: '1rem' }}>
-      <div className="flex items-center">
-        <AlertCircle className="h-4 w-4 mr-2" />
+    <Card className="p-6 card-enhanced border-l-2 border-destructive/20 col-span-full">
+      <div className="flex items-center justify-center text-center">
         <div>
-          <h4 className="font-semibold">Error</h4>
-          <p>Failed to load KPI data. Please try again later.</p>
+          <div className="p-3 bg-destructive/10 rounded-lg border border-destructive/20 w-fit mx-auto mb-4">
+            <AlertCircle className="h-8 w-8 text-destructive" />
+          </div>
+          <h4 className="font-semibold text-destructive mb-2">Error Loading KPIs</h4>
+          <p className="text-muted-foreground mb-4">Failed to load KPI data. Please try again later.</p>
           <button 
             onClick={onRetry}
-            className="mt-2 px-3 py-1 bg-red-100 text-red-800 rounded-md hover:bg-red-200 transition-colors"
+            className="px-4 py-2 bg-destructive/10 text-destructive border border-destructive/20 rounded-md hover:bg-destructive/20 transition-colors font-medium"
           >
             Retry
           </button>
         </div>
       </div>
-    </Alert>
+    </Card>
   );
 }
 
@@ -144,76 +146,82 @@ function KPIContent({ clientId }: { clientId: string }) {
 
   return (
     <>
-      <KPICard>
+      <KPICard className="border-l-2 border-primary/20">
         <div>
-          <p className="text-sm font-medium text-gray-500">Active Projects</p>
-          <h3 className="text-2xl font-bold">{kpis.activeProjects}</h3>
+          <p className="text-sm font-medium text-muted-foreground">Active Projects</p>
+          <h3 className="text-2xl font-bold text-primary tracking-tight">{kpis.activeProjects}</h3>
         </div>
-        <div className="rounded-full bg-green-100 p-2">
-          <TrendingUp className="h-4 w-4 text-green-600" />
+        <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
+          <TrendingUp className="h-5 w-5 text-primary" />
         </div>
       </KPICard>
 
-      <KPICard>
+      <KPICard className={`border-l-2 ${kpis.budgetUtilization > 80 ? 'border-destructive/20' : 'border-success/20'}`}>
         <div>
-          <p className="text-sm font-medium text-gray-500">Budget Utilization</p>
-          <h3 className="text-2xl font-bold">
+          <p className="text-sm font-medium text-muted-foreground">Budget Utilization</p>
+          <h3 className={`text-2xl font-bold tracking-tight ${kpis.budgetUtilization > 80 ? 'text-destructive' : 'text-success'}`}>
             {formatPercentage(kpis.budgetUtilization)}
           </h3>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             {formatCurrency(kpis.totalSpent)} of {formatCurrency(kpis.totalBudget)}
           </p>
         </div>
         {kpis.budgetUtilization > 80 ? (
-          <div className="rounded-full bg-red-100 p-2">
-            <TrendingUp className="h-4 w-4 text-red-600" />
+          <div className="p-2 bg-destructive/10 rounded-lg border border-destructive/20">
+            <TrendingUp className="h-5 w-5 text-destructive" />
           </div>
         ) : (
-          <div className="rounded-full bg-green-100 p-2">
-            <TrendingDown className="h-4 w-4 text-green-600" />
+          <div className="p-2 bg-success/10 rounded-lg border border-success/20">
+            <TrendingDown className="h-5 w-5 text-success" />
           </div>
         )}
       </KPICard>
 
-      <KPICard>
+      <KPICard className={`border-l-2 ${kpis.goalCompletion > 50 ? 'border-success/20' : 'border-muted/20'}`}>
         <div>
-          <p className="text-sm font-medium text-gray-500">Goal Completion</p>
-          <h3 className="text-2xl font-bold">
+          <p className="text-sm font-medium text-muted-foreground">Goal Completion</p>
+          <h3 className={`text-2xl font-bold tracking-tight ${kpis.goalCompletion > 50 ? 'text-success' : 'text-muted-foreground'}`}>
             {formatPercentage(kpis.goalCompletion)}
           </h3>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             {kpis.completedGoals} of {kpis.totalGoals} goals
           </p>
         </div>
         {kpis.goalCompletion > 50 ? (
-          <div className="rounded-full bg-green-100 p-2">
-            <TrendingUp className="h-4 w-4 text-green-600" />
+          <div className="p-2 bg-success/10 rounded-lg border border-success/20">
+            <TrendingUp className="h-5 w-5 text-success" />
           </div>
         ) : (
-          <div className="rounded-full bg-yellow-100 p-2">
-            <TrendingDown className="h-4 w-4 text-yellow-600" />
+          <div className="p-2 bg-muted/10 rounded-lg border border-muted/20">
+            <TrendingDown className="h-5 w-5 text-muted-foreground" />
           </div>
         )}
       </KPICard>
 
-      <KPICard>
+      <KPICard className={`border-l-2 ${
+        kpis.averageFeedback >= 4 ? 'border-success/20' :
+        kpis.averageFeedback >= 3 ? 'border-primary/20' : 'border-destructive/20'
+      }`}>
         <div>
-          <p className="text-sm font-medium text-gray-500">Client Satisfaction</p>
-          <h3 className="text-2xl font-bold">
+          <p className="text-sm font-medium text-muted-foreground">Client Satisfaction</p>
+          <h3 className={`text-2xl font-bold tracking-tight ${
+            kpis.averageFeedback >= 4 ? 'text-success' :
+            kpis.averageFeedback >= 3 ? 'text-primary' : 'text-destructive'
+          }`}>
             {kpis.averageFeedback.toFixed(1)} / 5
           </h3>
         </div>
         {kpis.averageFeedback >= 4 ? (
-          <div className="rounded-full bg-green-100 p-2">
-            <TrendingUp className="h-4 w-4 text-green-600" />
+          <div className="p-2 bg-success/10 rounded-lg border border-success/20">
+            <TrendingUp className="h-5 w-5 text-success" />
           </div>
         ) : kpis.averageFeedback >= 3 ? (
-          <div className="rounded-full bg-yellow-100 p-2">
-            <TrendingDown className="h-4 w-4 text-yellow-600" />
+          <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
+            <TrendingDown className="h-5 w-5 text-primary" />
           </div>
         ) : (
-          <div className="rounded-full bg-red-100 p-2">
-            <TrendingDown className="h-4 w-4 text-red-600" />
+          <div className="p-2 bg-destructive/10 rounded-lg border border-destructive/20">
+            <TrendingDown className="h-5 w-5 text-destructive" />
           </div>
         )}
       </KPICard>

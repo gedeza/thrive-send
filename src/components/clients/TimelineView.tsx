@@ -39,33 +39,37 @@ async function getTimelineData(clientId: string, limit?: number): Promise<Timeli
 function getStatusIcon(status: string) {
   switch (status.toLowerCase()) {
     case 'completed':
-      return <CheckCircle2 className="h-5 w-5 text-green-500" />;
+      return <CheckCircle2 className="h-5 w-5 text-success" />;
     case 'in_progress':
-      return <Clock className="h-5 w-5 text-blue-500" />;
+      return <Clock className="h-5 w-5 text-primary" />;
+    case 'delayed':
+      return <AlertTriangle className="h-5 w-5 text-destructive" />;
+    case 'cancelled':
+      return <Circle className="h-5 w-5 text-destructive" />;
     default:
-      return <Circle className="h-5 w-5 text-gray-400" />;
+      return <Circle className="h-5 w-5 text-muted-foreground" />;
   }
 }
 
 function getStatusColor(status: string) {
   switch (status.toLowerCase()) {
     case 'completed':
-      return 'bg-green-200';
+      return 'bg-success/30 border-l border-success/50';
     case 'in_progress':
-      return 'bg-blue-200';
+      return 'bg-primary/30 border-l border-primary/50';
     case 'delayed':
-      return 'bg-yellow-200';
+      return 'bg-destructive/30 border-l border-destructive/50';
     case 'cancelled':
-      return 'bg-red-200';
+      return 'bg-destructive/30 border-l border-destructive/50';
     default:
-      return 'bg-gray-200';
+      return 'bg-muted/30 border-l border-muted/50';
   }
 }
 
 function TimelineItemSkeleton() {
   return (
     <div className="relative pl-8">
-      <div className="absolute left-[9px] top-8 h-full w-0.5 bg-gray-200" />
+      <div className="absolute left-[9px] top-8 h-full w-0.5 bg-muted/20 border-l border-muted/10" />
       <div className="absolute left-0 mt-1">
         <Skeleton className="h-5 w-5 rounded-full" />
       </div>
@@ -91,7 +95,9 @@ function TimelineLoadingState() {
     <div className="space-y-8 p-6">
       <div className="flex items-center justify-between">
         <Skeleton className="h-6 w-24" />
-        <Skeleton className="h-5 w-5" />
+        <div className="p-2 bg-muted/10 rounded-lg border border-muted/20">
+          <Skeleton className="h-5 w-5" />
+        </div>
       </div>
       <div className="relative space-y-8">
         {[1, 2, 3].map((i) => (
@@ -105,13 +111,15 @@ function TimelineLoadingState() {
 function TimelineErrorState({ error, onRetry }: { error: string; onRetry: () => void }) {
   return (
     <div className="p-6 text-center">
-      <AlertTriangle className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
-      <h3 className="text-lg font-medium mb-1">Unable to load timeline</h3>
-      <p className="text-sm text-gray-500 mb-4">{error}</p>
+      <div className="p-3 bg-destructive/10 rounded-lg border border-destructive/20 w-fit mx-auto mb-4">
+        <AlertTriangle className="h-8 w-8 text-destructive" />
+      </div>
+      <h3 className="text-lg font-medium text-destructive mb-1">Unable to load timeline</h3>
+      <p className="text-sm text-muted-foreground mb-4">{error}</p>
       <Button
         variant="outline"
         onClick={onRetry}
-        className="flex items-center gap-2"
+        className="flex items-center gap-2 border-destructive/20 hover:bg-destructive/10"
       >
         <RefreshCcw className="h-4 w-4" />
         Try Again
@@ -155,13 +163,18 @@ export default function TimelineView({
   return (
     <div className="space-y-8 p-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Timeline</h3>
-        <CalendarDays className="h-5 w-5 text-gray-400" />
+        <h3 className="text-lg font-medium text-foreground">Timeline</h3>
+        <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
+          <CalendarDays className="h-5 w-5 text-primary" />
+        </div>
       </div>
 
       {items.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
-          <p>No timeline events available</p>
+        <div className="text-center py-8">
+          <div className="p-3 bg-muted/10 rounded-lg border border-muted/20 w-fit mx-auto mb-4">
+            <CalendarDays className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <p className="text-muted-foreground">No timeline events available</p>
         </div>
       ) : (
         <div className="relative space-y-8">
@@ -183,33 +196,33 @@ export default function TimelineView({
                 <div className="flex-1 space-y-2">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-gray-900">{item.title}</p>
+                      <p className="font-medium text-foreground">{item.title}</p>
                       {item.description && (
-                        <p className="text-sm text-gray-500">{item.description}</p>
+                        <p className="text-sm text-muted-foreground">{item.description}</p>
                       )}
                     </div>
-                    <time className="text-sm text-gray-500">
+                    <time className="text-sm text-muted-foreground">
                       {formatDateTime(item.date)}
                     </time>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <span
-                      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize ${
+                      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize border ${
                         item.status.toLowerCase() === 'completed'
-                          ? 'bg-green-100 text-green-700'
+                          ? 'bg-success/10 text-success border-success/20'
                           : item.status.toLowerCase() === 'in_progress'
-                          ? 'bg-blue-100 text-blue-700'
+                          ? 'bg-primary/10 text-primary border-primary/20'
                           : item.status.toLowerCase() === 'delayed'
-                          ? 'bg-yellow-100 text-yellow-700'
+                          ? 'bg-destructive/10 text-destructive border-destructive/20'
                           : item.status.toLowerCase() === 'cancelled'
-                          ? 'bg-red-100 text-red-700'
-                          : 'bg-gray-100 text-gray-700'
+                          ? 'bg-destructive/10 text-destructive border-destructive/20'
+                          : 'bg-muted/10 text-muted-foreground border-muted/20'
                       }`}
                     >
                       {item.status.replace('_', ' ').toLowerCase()}
                     </span>
-                    <span className="text-xs text-gray-500 capitalize">
+                    <span className="text-xs text-muted-foreground capitalize">
                       {item.type}
                     </span>
                   </div>

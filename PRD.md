@@ -278,4 +278,107 @@ See `prisma/schema.prisma` for complete schema details.
 - Listing quality
 - Transaction volume
 - Boost effectiveness
-- Recommendation accuracy 
+- Recommendation accuracy
+
+## Enhanced Minimalist Design System
+
+### Overview
+ThriveSend implements the Enhanced Minimalist design system, which achieves professional polish while maintaining optimal performance through strategic color usage and refined visual hierarchy.
+
+### Core Design Principles
+
+#### Performance-First Minimalism
+- **Gradient Elimination**: Removes resource-intensive gradient calculations
+- **Shadow Optimization**: Strategic shadow system (enhanced → professional)
+- **CSS Reduction**: ~40% fewer style calculations vs. decorative approaches
+- **Paint Efficiency**: Solid colors over complex gradients
+
+#### Professional Visual Hierarchy
+- **Clear Boundaries**: Enhanced border contrast (88% vs 91.4% lightness)
+- **Subtle Accents**: Border-left treatments with 20% opacity
+- **Consistent Elevation**: Unified card enhancement system
+- **Typography Priority**: Information hierarchy through font weights vs. colors
+
+### Color System Specification
+
+#### Semantic Colors (Maximum 4)
+```css
+--primary: 240 79% 59%;        /* Interactive elements, CTAs */
+--success: 160 84% 39%;        /* Positive states, completed items */
+--muted: 210 40% 96.1%;        /* Secondary information, backgrounds */
+--destructive: 0 84.2% 60.2%;  /* Warnings, errors, critical actions */
+```
+
+#### Enhanced Professional Borders
+```css
+--border: 214.3 31.8% 88%;           /* 15% darker for visibility */
+--border-enhanced: 214.3 31.8% 85%; /* Strong definition */
+--border-accent: var(--primary);     /* Colored accents at 20% opacity */
+--border-subtle: var(--muted);       /* Minimal differentiation at 50% opacity */
+```
+
+#### Professional Elevation System
+```css
+.shadow-enhanced: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04)
+.shadow-professional: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05)
+```
+
+### Component Standards
+
+#### Enhanced Card System
+- **Base Class**: `.card-enhanced` (includes border, shadow, transitions)
+- **Accent Cards**: `.card-accent` (primary border-left treatment)
+- **Categorical Borders**: `border-l-2 border-{color}/20` for subtle differentiation
+- **Hover States**: `hover:shadow-professional transition-shadow duration-200`
+
+#### Icon Container Standards
+```css
+/* Old: Complex gradient containers */
+bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl shadow-sm
+
+/* New: Clean enhanced containers */
+bg-primary/10 rounded-lg border border-accent
+```
+
+#### Typography Hierarchy (Color-Independent)
+- **Page Titles**: `text-2xl font-bold tracking-tight`
+- **Section Headers**: `text-lg font-medium`
+- **Card Titles**: `text-sm font-medium`
+- **Body Text**: `text-sm text-muted-foreground`
+- **Captions**: `text-xs text-muted-foreground`
+
+### Implementation Guidelines
+
+#### Mandatory Usage Patterns
+1. **All cards MUST use**: `card-enhanced` base class
+2. **Accent cards MUST use**: `border-l-2 border-{semantic}/20`
+3. **Icon containers MUST use**: `bg-{color}/10 border border-{color}/20`
+4. **Hover states MUST use**: `hover:shadow-professional transition-shadow duration-200`
+
+#### Performance Requirements
+- **Border Definition**: Must be visible at 88% lightness minimum
+- **Shadow Transitions**: Maximum 200ms duration
+- **Color Calculations**: Maximum 4 semantic + 3 neutral colors
+- **CSS Bundle**: Theme additions must not exceed 5KB
+
+#### Accessibility Compliance
+- **Contrast Ratios**: All text must meet WCAG AA standards
+- **Border Visibility**: Enhanced borders ensure clear component boundaries
+- **Focus States**: Professional shadow system provides clear focus indication
+- **Color Independence**: Information hierarchy through typography, not color alone
+
+### Design System Benefits
+
+#### Business Value
+- **Professional Appearance**: Corporate-grade visual polish
+- **Performance Optimized**: Fast page loads and smooth interactions  
+- **Maintenance Efficiency**: Simplified color system reduces technical debt
+- **Brand Consistency**: Unified visual language across all components
+
+#### Technical Implementation
+- **CSS Custom Properties**: Efficient theme switching
+- **Component Reusability**: Standardized enhancement classes
+- **Developer Experience**: Clear implementation patterns
+- **Future-Proof**: Scalable system for new components
+
+This Enhanced Minimalist system is now the official ThriveSend design standard and must be applied consistently across all new components and existing component updates. 

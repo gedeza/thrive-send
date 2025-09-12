@@ -118,27 +118,27 @@ export function EnhancedApprovalWorkflows({
     switch (status) {
       case 'pending_review':
         return { 
-          color: 'bg-yellow-100 text-yellow-800 border-yellow-200', 
+          color: 'bg-warning/10 text-warning border-warning/20', 
           icon: <Clock className="h-3 w-3" /> 
         };
       case 'approved':
         return { 
-          color: 'bg-green-100 text-green-800 border-green-200', 
+          color: 'bg-success/10 text-success border-success/20', 
           icon: <CheckCircle className="h-3 w-3" /> 
         };
       case 'needs_revision':
         return { 
-          color: 'bg-blue-100 text-blue-800 border-blue-200', 
+          color: 'bg-primary/10 text-primary border-primary/20', 
           icon: <Edit className="h-3 w-3" /> 
         };
       case 'rejected':
         return { 
-          color: 'bg-red-100 text-red-800 border-red-200', 
+          color: 'bg-destructive/10 text-destructive border-destructive/20', 
           icon: <XCircle className="h-3 w-3" /> 
         };
       default:
         return { 
-          color: 'bg-gray-100 text-gray-800 border-gray-200', 
+          color: 'bg-muted text-muted-foreground border-muted/20', 
           icon: <AlertCircle className="h-3 w-3" /> 
         };
     }
@@ -148,13 +148,13 @@ export function EnhancedApprovalWorkflows({
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
       case 'high':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-destructive/10 text-destructive border-destructive/20';
       case 'medium':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-warning/10 text-warning border-warning/20';
       case 'low':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-success/10 text-success border-success/20';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-muted text-muted-foreground border-muted/20';
     }
   };
 
@@ -321,10 +321,10 @@ export function EnhancedApprovalWorkflows({
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Pending Review</p>
-                  <p className="text-2xl font-bold text-yellow-600">{workflowData.summary.statusCounts.pending_review}</p>
+                  <p className="text-2xl font-bold text-warning">{workflowData.summary.statusCounts.pending_review}</p>
                 </div>
-                <div className="p-2 bg-yellow-100 rounded-lg">
-                  <Clock className="h-6 w-6 text-yellow-600" />
+                <div className="p-2 bg-warning/10 rounded-lg">
+                  <Clock className="h-6 w-6 text-warning" />
                 </div>
               </div>
             </CardContent>
@@ -335,10 +335,10 @@ export function EnhancedApprovalWorkflows({
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Approved</p>
-                  <p className="text-2xl font-bold text-green-600">{workflowData.summary.statusCounts.approved}</p>
+                  <p className="text-2xl font-bold text-success">{workflowData.summary.statusCounts.approved}</p>
                 </div>
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
+                <div className="p-2 bg-success/10 rounded-lg">
+                  <CheckCircle className="h-6 w-6 text-success" />
                 </div>
               </div>
             </CardContent>
@@ -349,10 +349,10 @@ export function EnhancedApprovalWorkflows({
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Needs Revision</p>
-                  <p className="text-2xl font-bold text-blue-600">{workflowData.summary.statusCounts.needs_revision}</p>
+                  <p className="text-2xl font-bold text-primary">{workflowData.summary.statusCounts.needs_revision}</p>
                 </div>
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Edit className="h-6 w-6 text-blue-600" />
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Edit className="h-6 w-6 text-primary" />
                 </div>
               </div>
             </CardContent>
@@ -365,8 +365,8 @@ export function EnhancedApprovalWorkflows({
                   <p className="text-sm font-medium text-muted-foreground">Avg Time</p>
                   <p className="text-2xl font-bold">{workflowData.summary.avgApprovalTime}</p>
                 </div>
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <BarChart3 className="h-6 w-6 text-purple-600" />
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <BarChart3 className="h-6 w-6 text-primary" />
                 </div>
               </div>
             </CardContent>
@@ -624,7 +624,7 @@ export function EnhancedApprovalWorkflows({
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-muted-foreground">Avg Approval Time</p>
                       <p className="text-3xl font-bold">{statsData.avgApprovalTime}h</p>
-                      <div className="flex items-center justify-center gap-1 text-sm text-green-600">
+                      <div className="flex items-center justify-center gap-1 text-sm text-success">
                         <TrendingUp className="h-4 w-4" />
                         <span>12% faster</span>
                       </div>
@@ -637,7 +637,7 @@ export function EnhancedApprovalWorkflows({
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-muted-foreground">Approval Rate</p>
                       <p className="text-3xl font-bold">{statsData.approvalRate}%</p>
-                      <div className="flex items-center justify-center gap-1 text-sm text-green-600">
+                      <div className="flex items-center justify-center gap-1 text-sm text-success">
                         <TrendingUp className="h-4 w-4" />
                         <span>+3.2%</span>
                       </div>
@@ -677,13 +677,13 @@ export function EnhancedApprovalWorkflows({
                 <CardContent>
                   <div className="space-y-4">
                     {statsData.bottlenecks.map((bottleneck) => (
-                      <div key={bottleneck.step} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                      <div key={bottleneck.step} className="flex items-center justify-between p-3 bg-warning/10 rounded-lg">
                         <div className="space-y-1">
                           <h4 className="font-medium capitalize">{bottleneck.step.replace('_', ' ')}</h4>
                           <p className="text-sm text-muted-foreground">{bottleneck.count} items affected</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-yellow-600">{bottleneck.avgTime.toFixed(1)}h</p>
+                          <p className="font-semibold text-warning">{bottleneck.avgTime.toFixed(1)}h</p>
                           <p className="text-sm text-muted-foreground">avg delay</p>
                         </div>
                       </div>

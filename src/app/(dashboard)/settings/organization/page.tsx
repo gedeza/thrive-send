@@ -151,12 +151,12 @@ export default function OrganizationSettingsPage() {
           <p className="text-sm md:text-base text-muted-foreground">
             Manage your organization's general settings and team members.
           </p>
-          <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-700">
+          <div className="mt-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+            <p className="text-sm text-primary">
               💡 <strong>Looking for billing?</strong> Visit the{' '}
               <Button 
                 variant="link" 
-                className="p-0 h-auto font-semibold text-blue-700 hover:text-blue-800"
+                className="p-0 h-auto font-semibold text-primary hover:text-primary/90"
                 onClick={() => router.push('/settings?tab=billing')}
               >
                 Billing & Subscription tab
@@ -195,7 +195,7 @@ export default function OrganizationSettingsPage() {
                     disabled={isSubmitting}
                   />
                   {organizationForm.formState.errors.name && (
-                    <p className="text-sm text-red-500">
+                    <p className="text-sm text-destructive">
                       {organizationForm.formState.errors.name.message}
                     </p>
                   )}
@@ -209,7 +209,7 @@ export default function OrganizationSettingsPage() {
                     disabled={isSubmitting}
                   />
                   {organizationForm.formState.errors.website && (
-                    <p className="text-sm text-red-500">
+                    <p className="text-sm text-destructive">
                       {organizationForm.formState.errors.website.message}
                     </p>
                   )}
@@ -223,7 +223,7 @@ export default function OrganizationSettingsPage() {
                     disabled={isSubmitting}
                   />
                   {organizationForm.formState.errors.logoUrl && (
-                    <p className="text-sm text-red-500">
+                    <p className="text-sm text-destructive">
                       {organizationForm.formState.errors.logoUrl.message}
                     </p>
                   )}

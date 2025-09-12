@@ -140,6 +140,44 @@ npm run dev
 yarn dev
 ```
 
+## Enhanced Minimalist Design System
+
+ThriveSend implements a performance-optimized design system that achieves professional polish while maintaining fast load times and optimal user experience.
+
+### Quick Implementation Guide
+
+#### For New Components
+```jsx
+// Use enhanced card system
+<Card className="card-enhanced border-l-2 border-primary/20 bg-card">
+  <CardContent className="p-4">
+    <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+      <Icon className="h-6 w-6 text-primary" />
+    </div>
+  </CardContent>
+</Card>
+```
+
+#### Available Classes
+- **Cards**: `card-enhanced`, `card-accent`
+- **Borders**: `border-enhanced`, `border-accent`, `border-subtle`
+- **Shadows**: `shadow-enhanced`, `shadow-professional`
+- **Colors**: `primary`, `success`, `muted`, `destructive` (maximum 4 semantic)
+
+#### Key Principles
+- ✅ **Performance First**: No gradients, optimized shadows
+- ✅ **Professional Polish**: Clear borders, consistent elevation
+- ✅ **Typography Hierarchy**: Information structure through fonts, not colors
+- ✅ **Accessibility**: WCAG AA compliant, color-independent navigation
+
+### Implementation Rules
+1. All new cards MUST use `card-enhanced` class
+2. Icon containers MUST use `bg-{color}/10 border border-{color}/20`
+3. Hover states MUST use `hover:shadow-professional transition-shadow duration-200`
+4. Border accents MUST use `border-l-2 border-{semantic}/20`
+
+For complete specifications, see [PRD Design System Section](PRD.md#enhanced-minimalist-design-system).
+
 ## Documentation
 
 ### User Roles

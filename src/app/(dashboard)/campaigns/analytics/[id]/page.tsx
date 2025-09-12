@@ -50,8 +50,8 @@ const getIconComponent = (iconName: string) => {
 
 // Fallback data for graceful degradation when APIs are unavailable
 const fallbackDeviceData = [
-  { device: 'Mobile', count: 4520, percentage: 61.0, icon: 'smartphone', color: 'text-indigo-600' },
-  { device: 'Desktop', count: 2650, percentage: 35.8, icon: 'monitor', color: 'text-blue-600' },
+  { device: 'Mobile', count: 4520, percentage: 61.0, icon: 'smartphone', color: 'text-accent' },
+  { device: 'Desktop', count: 2650, percentage: 35.8, icon: 'monitor', color: 'text-primary' },
   { device: 'Tablet', count: 240, percentage: 3.2, icon: 'tablet', color: 'text-slate-600' },
 ];
 
@@ -131,7 +131,7 @@ function MetricCard({ title, value, description, icon, change, isLoading, compac
             )}
             {change !== undefined && (
               <div className={`flex items-center text-xs ${
-                change >= 0 ? 'text-green-600' : 'text-red-600'
+                change >= 0 ? 'text-success' : 'text-destructive'
               }`}>
                 <TrendingUp className="mr-1 h-3 w-3" />
                 {change >= 0 ? '+' : ''}{change.toFixed(1)}%
@@ -167,13 +167,13 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
         (prev.percentage > current.percentage) ? prev : current
       );
       insights.push({
-        color: 'bg-blue-500',
+        color: 'bg-primary',
         text: `${topDevice.device} devices drove <strong>${topDevice.percentage}%</strong> of opens`
       });
     } else if (fallbackDeviceData?.length > 0) {
       const topDevice = fallbackDeviceData[0];
       insights.push({
-        color: 'bg-blue-500',
+        color: 'bg-primary',
         text: `${topDevice.device} devices drove <strong>${topDevice.percentage}%</strong> of opens`
       });
     }
@@ -182,13 +182,13 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
     if (linkData?.length > 0) {
       const topLink = linkData[0];
       insights.push({
-        color: 'bg-green-500',
+        color: 'bg-success',
         text: `${topLink.label} had <strong>${topLink.percentage}%</strong> of clicks`
       });
     } else if (fallbackLinksData?.length > 0) {
       const topLink = fallbackLinksData[0];
       insights.push({
-        color: 'bg-green-500',
+        color: 'bg-success',
         text: `${topLink.label} had <strong>${topLink.percentage}%</strong> of clicks`
       });
     }
@@ -201,7 +201,7 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
         const bounceRate = ((bouncedMetric.value / deliveredMetric.value) * 100).toFixed(1);
         const isHealthy = parseFloat(bounceRate) < 2;
         insights.push({
-          color: isHealthy ? 'bg-orange-500' : 'bg-red-500',
+          color: isHealthy ? 'bg-success' : 'bg-destructive',
           text: `Bounce rate at ${isHealthy ? 'healthy' : 'concerning'} <strong>${bounceRate}%</strong>`
         });
       }
@@ -218,17 +218,17 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
         
         if (openRate < 20) {
           insights.push({
-            color: 'bg-purple-500',
+            color: 'bg-primary',
             text: 'Consider A/B testing subject lines to improve open rates'
           });
         } else if (clickRate < 3) {
           insights.push({
-            color: 'bg-purple-500',
+            color: 'bg-primary',
             text: 'Consider optimizing email content to improve click rates'
           });
         } else {
           insights.push({
-            color: 'bg-purple-500',
+            color: 'bg-primary',
             text: 'Campaign performing well - consider scaling to larger audience'
           });
         }
@@ -238,9 +238,9 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
     // Fallback insights if no data available
     if (insights.length === 0) {
       insights.push(
-        { color: 'bg-gray-400', text: 'Loading insights...' },
-        { color: 'bg-gray-400', text: 'Analyzing campaign performance...' },
-        { color: 'bg-gray-400', text: 'Generating recommendations...' }
+        { color: 'bg-muted', text: 'Loading insights...' },
+        { color: 'bg-muted', text: 'Analyzing campaign performance...' },
+        { color: 'bg-muted', text: 'Generating recommendations...' }
       );
     }
 
@@ -342,7 +342,7 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
               title="Loading..."
               value="--"
               description="Loading metric data..."
-              icon={<div className="h-5 w-5 bg-gray-200 rounded animate-pulse" />}
+              icon={<div className="h-5 w-5 bg-muted rounded animate-pulse" />}
               isLoading={true}
             />
           ))
@@ -371,7 +371,7 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
               title="Loading..."
               value="--"
               description="Loading metric data..."
-              icon={<div className="h-4 w-4 bg-gray-200 rounded animate-pulse" />}
+              icon={<div className="h-4 w-4 bg-muted rounded animate-pulse" />}
               isLoading={true}
               compact
             />
@@ -417,7 +417,7 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-4 text-gray-500">
+                    <div className="text-center py-4 text-muted-foreground">
                       <p className="text-sm">Loading delivery funnel data...</p>
                     </div>
                   )}
@@ -530,7 +530,7 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
                       </div>
                     </div>
                     <div className="text-right ml-2">
-                      <div className="text-sm font-semibold text-blue-600">
+                      <div className="text-sm font-semibold text-primary">
                         {loading ? <Skeleton className="h-4 w-12" /> : link.clicks.toLocaleString()}
                       </div>
                       <div className="text-xs text-muted-foreground">

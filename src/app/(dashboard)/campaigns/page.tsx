@@ -67,11 +67,11 @@ interface Campaign {
 
 // Badge color map
 const statusBadgeMap: Record<CampaignStatus, string> = {
-  Scheduled: "bg-blue-100 text-blue-800",
-  Sent: "bg-green-100 text-green-800",
-  Draft: "bg-yellow-100 text-yellow-900",
-  Paused: "bg-orange-100 text-orange-700",
-  Archived: "bg-gray-100 text-gray-600"
+  Scheduled: "bg-primary/10 text-primary",
+  Sent: "bg-success/10 text-success",
+  Draft: "bg-warning/10 text-warning",
+  Paused: "bg-warning/10 text-warning",
+  Archived: "bg-muted text-muted-foreground"
 };
 
 const channelIcons: Record<CampaignChannel, JSX.Element> = {
@@ -160,21 +160,21 @@ export default function CampaignsPage() {
         };
       } else if (lowerTitle.includes('active')) {
         return {
-          iconBg: 'p-3 bg-blue-100 rounded-full',
-          iconColor: 'h-6 w-6 text-blue-600',
-          numberColor: 'text-3xl font-bold text-blue-600'
+          iconBg: 'p-3 bg-primary/10 rounded-full',
+          iconColor: 'h-6 w-6 text-primary',
+          numberColor: 'text-3xl font-bold text-primary'
         };
       } else if (lowerTitle.includes('success') || lowerTitle.includes('rate')) {
         return {
-          iconBg: 'p-3 bg-green-100 rounded-full',
-          iconColor: 'h-6 w-6 text-green-600',
-          numberColor: 'text-3xl font-bold text-green-600'
+          iconBg: 'p-3 bg-success/10 rounded-full',
+          iconColor: 'h-6 w-6 text-success',
+          numberColor: 'text-3xl font-bold text-success'
         };
       } else if (lowerTitle.includes('reach') || lowerTitle.includes('audience')) {
         return {
-          iconBg: 'p-3 bg-orange-100 rounded-full',
-          iconColor: 'h-6 w-6 text-orange-600',
-          numberColor: 'text-3xl font-bold text-orange-600'
+          iconBg: 'p-3 bg-warning/10 rounded-full',
+          iconColor: 'h-6 w-6 text-warning',
+          numberColor: 'text-3xl font-bold text-warning'
         };
       } else {
         return {
@@ -216,7 +216,7 @@ export default function CampaignsPage() {
               )}
               {change !== undefined && (
                 <div className={`flex items-center text-xs ${
-                  change >= 0 ? 'text-green-600' : 'text-red-600'
+                  change >= 0 ? 'text-success' : 'text-destructive'
                 }`}>
                   <TrendingUp className="mr-1 h-3 w-3" />
                   {change >= 0 ? '+' : ''}{change.toFixed(1)}% from last month

@@ -18,36 +18,51 @@
     --primary-dark: 240 80% 42%;
     --primary-foreground: 210 40% 98%;
  
-    --secondary: 160 84% 39%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --success: 160 84% 39%;
+    --success-foreground: 210 40% 98%;
  
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
  
-    --accent: 37 92% 50%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --warning: 37 92% 50%;
+    --warning-foreground: 222.2 47.4% 11.2%;
+
+    --accent: 222.2 84% 4.9%;
+    --accent-foreground: 210 40% 98%;
  
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
  
-    --border: 214.3 31.8% 91.4%;
+    --border: 214.3 31.8% 88%;
+    --border-enhanced: 214.3 31.8% 85%;
+    --border-accent: var(--primary);
+    --border-subtle: var(--muted);
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
  
     --radius: 0.5rem;
 
-    /* Chart & Data Visualization Colors */
-    --color-chart-blue: #3B82F6;
-    --color-chart-green: #10B981;
-    --color-chart-purple: #8B5CF6;
-    --color-chart-orange: #F97316;
-    --color-chart-teal: #14B8A6;
-    --color-chart-rose: #EC4899;
+    /* Legacy compatibility mappings */
+    --secondary: var(--success);
+    --secondary-foreground: var(--success-foreground);
 
-    /* Activity & Status Colors */
-    --activity-success: #10B981;
-    --activity-warning: #F59E0B;
-    --activity-info: #3B82F6;
+    /* 3-Color Chart System */
+    --color-chart-primary: hsl(var(--primary));
+    --color-chart-success: hsl(var(--success));
+    --color-chart-accent: hsl(var(--accent));
+    
+    /* Legacy chart mappings */
+    --color-chart-blue: var(--color-chart-primary);
+    --color-chart-green: var(--color-chart-success);
+    --color-chart-purple: var(--color-chart-accent);
+    --color-chart-orange: var(--color-chart-primary);
+    --color-chart-teal: var(--color-chart-success);
+    --color-chart-rose: var(--color-chart-accent);
+    
+    /* Activity status mappings */
+    --activity-success: hsl(var(--success));
+    --activity-warning: hsl(var(--warning));
+    --activity-info: hsl(var(--primary));
   }
  
   .dark {
@@ -63,8 +78,11 @@
     --primary: 210 40% 98%;
     --primary-foreground: 222.2 47.4% 11.2%;
  
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --success: 160 84% 39%;
+    --success-foreground: 210 40% 98%;
+    
+    --warning: 37 92% 50%;
+    --warning-foreground: 222.2 47.4% 11.2%;
  
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
@@ -75,7 +93,10 @@
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
  
-    --border: 217.2 32.6% 17.5%;
+    --border: 217.2 32.6% 20%;
+    --border-enhanced: 217.2 32.6% 25%;
+    --border-accent: var(--primary);
+    --border-subtle: var(--muted);
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
 
@@ -293,12 +314,27 @@ html, body {
   .font-medium { font-weight: 500; }
   .font-bold { font-weight: 600; }
   
-  /* Remove excessive font weights */
+  /* Remove excessive font weights - Force override */
+  .font-thin,
   .font-light,
+  .font-extralight,
+  .font-normal,
   .font-semibold,
   .font-extrabold,
   .font-black {
-    @apply font-medium; /* Fallback to medium weight */
+    font-weight: 500 !important; /* Force medium weight */
+  }
+  
+  /* Typography Size Override - Force consistent sizing */
+  .text-3xl,
+  .text-4xl,
+  .text-5xl,
+  .text-6xl,
+  .text-7xl,
+  .text-8xl,
+  .text-9xl {
+    font-size: 1.25rem !important; /* Force large text down to xl */
+    line-height: 1.75rem !important;
   }
 }
 
@@ -418,6 +454,40 @@ html, body {
   
   .lg\\:compact-mode .p-6 {
     padding: calc(1.5rem * var(--spacing-scale, 1));
+  }
+}
+
+/* Enhanced Professional Utilities */
+@layer utilities {
+  /* Professional Border System */
+  .border-enhanced {
+    border-color: hsl(var(--border-enhanced));
+  }
+  
+  .border-accent {
+    border-color: hsl(var(--border-accent) / 0.2);
+  }
+  
+  .border-subtle {
+    border-color: hsl(var(--border-subtle) / 0.5);
+  }
+  
+  /* Professional Elevation System */
+  .shadow-enhanced {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
+  }
+  
+  .shadow-professional {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05);
+  }
+  
+  /* Card Enhancement */
+  .card-enhanced {
+    @apply border-enhanced shadow-enhanced hover:shadow-professional transition-shadow duration-200;
+  }
+  
+  .card-accent {
+    @apply border-l-2 border-accent bg-card;
   }
 }
 

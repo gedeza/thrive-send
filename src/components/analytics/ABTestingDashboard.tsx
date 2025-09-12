@@ -395,7 +395,7 @@ export function ABTestingDashboard({ className }: ABTestingDashboardProps) {
               <h2 className="text-2xl font-bold">{currentTest.name}</h2>
               {getStatusBadge(currentTest.status)}
               {winningVariant && (
-                <Badge className="bg-yellow-100 text-yellow-700 flex items-center gap-1">
+                <Badge className="bg-success/10 text-success border border-success/20 flex items-center gap-1">
                   <Crown className="h-3 w-3" />
                   Winner: {winningVariant.name}
                 </Badge>
@@ -433,7 +433,7 @@ export function ABTestingDashboard({ className }: ABTestingDashboardProps) {
         </div>
 
         {/* Test Progress */}
-        <Card>
+        <Card className="card-enhanced border-l-2 border-primary/20 bg-card">
           <CardContent className="p-6">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -466,7 +466,7 @@ export function ABTestingDashboard({ className }: ABTestingDashboardProps) {
         </Card>
 
         {/* Hypothesis */}
-        <Card>
+        <Card className="card-enhanced border-l-2 border-muted/40 bg-card">
           <CardContent className="p-6">
             <h3 className="font-semibold mb-3">Hypothesis</h3>
             <p className="text-muted-foreground">{currentTest.hypothesis}</p>
@@ -481,9 +481,10 @@ export function ABTestingDashboard({ className }: ABTestingDashboardProps) {
             
             return (
               <Card key={variant.id} className={cn(
-                "relative",
-                isWinner && "border-yellow-500 shadow-md",
-                isControl && "border-blue-500"
+                "card-enhanced bg-card",
+                isWinner && "border-l-2 border-success/20 shadow-professional",
+                isControl && "border-l-2 border-primary/20",
+                !isWinner && !isControl && "border-l-2 border-muted/40"
               )}>
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
@@ -494,7 +495,7 @@ export function ABTestingDashboard({ className }: ABTestingDashboardProps) {
                           <Badge variant="outline" className="text-xs">Control</Badge>
                         )}
                         {isWinner && (
-                          <Badge className="bg-yellow-100 text-yellow-700 text-xs">
+                          <Badge className="bg-success/10 text-success border border-success/20 text-xs">
                             <Trophy className="mr-1 h-3 w-3" />
                             Winner
                           </Badge>
@@ -527,12 +528,12 @@ export function ABTestingDashboard({ className }: ABTestingDashboardProps) {
                   </div>
 
                   {variant.significance.isSignificant && (
-                    <div className="mt-4 p-3 bg-green-50 rounded-lg">
-                      <div className="flex items-center gap-2 text-sm text-green-700">
+                    <div className="mt-4 p-3 bg-success/10 rounded-lg border border-success/20">
+                      <div className="flex items-center gap-2 text-sm text-success">
                         <CheckCircle className="h-4 w-4" />
                         <span className="font-medium">Statistically Significant</span>
                       </div>
-                      <p className="text-xs text-green-600 mt-1">
+                      <p className="text-xs text-success/80 mt-1">
                         {variant.significance.confidenceLevel}% confidence level
                       </p>
                     </div>
@@ -568,7 +569,7 @@ export function ABTestingDashboard({ className }: ABTestingDashboardProps) {
         </div>
 
         {/* Results Table */}
-        <Card>
+        <Card className="card-enhanced border-l-2 border-primary/20 bg-card">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -592,9 +593,9 @@ export function ABTestingDashboard({ className }: ABTestingDashboardProps) {
                     
                     return (
                       <tr key={variant.id} className={cn(
-                        "border-b",
-                        isWinner && "bg-yellow-50",
-                        isControl && "bg-blue-50"
+                        "border-b border-enhanced",
+                        isWinner && "bg-success/5",
+                        isControl && "bg-primary/5"
                       )}>
                         <td className="p-4">
                           <div className="flex items-center gap-2">
@@ -603,7 +604,7 @@ export function ABTestingDashboard({ className }: ABTestingDashboardProps) {
                               <Badge variant="outline" className="text-xs">Control</Badge>
                             )}
                             {isWinner && (
-                              <Badge className="bg-yellow-100 text-yellow-700 text-xs">
+                              <Badge className="bg-success/10 text-success border border-success/20 text-xs">
                                 <Trophy className="mr-1 h-3 w-3" />
                                 Winner
                               </Badge>
@@ -666,7 +667,7 @@ export function ABTestingDashboard({ className }: ABTestingDashboardProps) {
                         </td>
                         <td className="text-right p-4">
                           {variant.significance.isSignificant ? (
-                            <Badge className="bg-green-100 text-green-700">
+                            <Badge className="bg-success/10 text-success border border-success/20">
                               <CheckCircle className="mr-1 h-3 w-3" />
                               {variant.significance.confidenceLevel}%
                             </Badge>
@@ -688,11 +689,11 @@ export function ABTestingDashboard({ className }: ABTestingDashboardProps) {
 
         {/* Statistical Summary */}
         <div className="grid gap-4 md:grid-cols-3">
-          <Card>
+          <Card className="card-enhanced border-l-2 border-primary/20 bg-card">
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Target className="h-5 w-5 text-blue-600" />
+                <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+                  <Target className="h-6 w-6 text-primary" />
                 </div>
                 <h4 className="font-semibold">Test Power</h4>
               </div>
@@ -701,11 +702,11 @@ export function ABTestingDashboard({ className }: ABTestingDashboardProps) {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="card-enhanced border-l-2 border-success/20 bg-card">
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Percent className="h-5 w-5 text-green-600" />
+                <div className="p-3 bg-success/10 rounded-lg border border-success/20">
+                  <Percent className="h-6 w-6 text-success" />
                 </div>
                 <h4 className="font-semibold">Sample Size</h4>
               </div>
@@ -718,11 +719,11 @@ export function ABTestingDashboard({ className }: ABTestingDashboardProps) {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="card-enhanced border-l-2 border-muted/40 bg-card">
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <Activity className="h-5 w-5 text-purple-600" />
+                <div className="p-3 bg-muted/10 rounded-lg border border-muted/20">
+                  <Activity className="h-6 w-6 text-muted-foreground" />
                 </div>
                 <h4 className="font-semibold">Confidence</h4>
               </div>
@@ -769,11 +770,11 @@ export function ABTestingDashboard({ className }: ABTestingDashboardProps) {
 
       {/* Test Summary Cards */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
+        <Card className="card-enhanced border-l-2 border-primary/20 bg-card">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Play className="h-5 w-5 text-blue-600" />
+              <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+                <Play className="h-6 w-6 text-primary" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Running Tests</p>
@@ -783,11 +784,11 @@ export function ABTestingDashboard({ className }: ABTestingDashboardProps) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="card-enhanced border-l-2 border-success/20 bg-card">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CheckCircle className="h-5 w-5 text-green-600" />
+              <div className="p-3 bg-success/10 rounded-lg border border-success/20">
+                <CheckCircle className="h-6 w-6 text-success" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Completed</p>
@@ -797,11 +798,11 @@ export function ABTestingDashboard({ className }: ABTestingDashboardProps) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="card-enhanced border-l-2 border-success/20 bg-card">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <Trophy className="h-5 w-5 text-yellow-600" />
+              <div className="p-3 bg-success/10 rounded-lg border border-success/20">
+                <Trophy className="h-6 w-6 text-success" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Winners Found</p>
@@ -811,11 +812,11 @@ export function ABTestingDashboard({ className }: ABTestingDashboardProps) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="card-enhanced border-l-2 border-muted/40 bg-card">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Users className="h-5 w-5 text-purple-600" />
+              <div className="p-3 bg-muted/10 rounded-lg border border-muted/20">
+                <Users className="h-6 w-6 text-muted-foreground" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Participants</p>
@@ -832,7 +833,7 @@ export function ABTestingDashboard({ className }: ABTestingDashboardProps) {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Test List */}
         <div className="lg:col-span-1">
-          <Card>
+          <Card className="card-enhanced border-l-2 border-primary/20 bg-card">
             <CardHeader>
               <CardTitle className="text-lg">Tests</CardTitle>
             </CardHeader>
@@ -868,7 +869,7 @@ export function ABTestingDashboard({ className }: ABTestingDashboardProps) {
         {/* Test Details */}
         <div className="lg:col-span-2">
           {currentTest ? (
-            <Card>
+            <Card className="card-enhanced border-l-2 border-primary/20 bg-card">
               <CardHeader>
                 <Tabs value={activeTab} onValueChange={(value: unknown) => setActiveTab(value)}>
                   <TabsList>
@@ -901,7 +902,7 @@ export function ABTestingDashboard({ className }: ABTestingDashboardProps) {
               </CardContent>
             </Card>
           ) : (
-            <Card>
+            <Card className="card-enhanced border-l-2 border-muted/40 bg-card">
               <CardContent className="flex items-center justify-center py-12 text-muted-foreground">
                 <div className="text-center">
                   <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />

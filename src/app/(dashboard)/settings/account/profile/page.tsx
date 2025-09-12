@@ -119,7 +119,7 @@ export default function ProfileSettingsPage() {
                 disabled={isSubmitting}
               />
               {form.formState.errors.firstName && (
-                <p className="text-sm text-red-500">
+                <p className="text-sm text-destructive">
                   {form.formState.errors.firstName.message}
                 </p>
               )}
@@ -132,7 +132,7 @@ export default function ProfileSettingsPage() {
                 disabled={isSubmitting}
               />
               {form.formState.errors.lastName && (
-                <p className="text-sm text-red-500">
+                <p className="text-sm text-destructive">
                   {form.formState.errors.lastName.message}
                 </p>
               )}
@@ -178,7 +178,7 @@ export default function ProfileSettingsPage() {
               disabled={isSubmitting}
             />
             {form.formState.errors.website && (
-              <p className="text-sm text-red-500">
+              <p className="text-sm text-destructive">
                 {form.formState.errors.website.message}
               </p>
             )}
@@ -194,7 +194,7 @@ export default function ProfileSettingsPage() {
               disabled={isSubmitting}
             />
             {form.formState.errors.bio && (
-              <p className="text-sm text-red-500">
+              <p className="text-sm text-destructive">
                 {form.formState.errors.bio.message}
               </p>
             )}

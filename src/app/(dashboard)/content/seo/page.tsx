@@ -86,10 +86,10 @@ export default function SEOContentPage() {
   });
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600 bg-green-100';
-    if (score >= 60) return 'text-yellow-600 bg-yellow-100';
-    if (score >= 40) return 'text-orange-600 bg-orange-100';
-    return 'text-red-600 bg-red-100';
+    if (score >= 80) return 'text-success bg-success/10';
+    if (score >= 60) return 'text-warning bg-warning/10';
+    if (score >= 40) return 'text-warning bg-warning/10';
+    return 'text-destructive bg-destructive/10';
   };
 
   const getScoreLabel = (score: number) => {

@@ -41,7 +41,7 @@ export default function LandingPage() {
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <div className="flex items-center">
                 <Send className="w-6 h-6 mr-2 text-primary" />
-                <span className="text-2xl font-extrabold bg-gradient-to-r from-primary to-accent text-transparent bg-clip-text">
+                <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent text-transparent bg-clip-text">
                   ThriveSend
                 </span>
               </div>
@@ -78,10 +78,10 @@ export default function LandingPage() {
           
           <div className="container mx-auto px-4 max-w-7xl">
             <div className="flex flex-col items-center max-w-4xl mx-auto text-center">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6 bg-gradient-to-r from-primary to-accent text-transparent bg-clip-text">
+              <h1 className="text-2xl font-bold leading-tight mb-6 bg-gradient-to-r from-primary to-accent text-transparent bg-clip-text">
                 Amplify Your Social Media Presence
               </h1>
-              <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-3xl">
+              <p className="text-base text-muted-foreground mb-10 max-w-3xl">
                 Our all-in-one platform helps enterprises, businesses, and content creators drive engagement, build stronger communities, and monetize their expertise across global markets.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
@@ -110,15 +110,15 @@ export default function LandingPage() {
             <div className="flex justify-center mt-16">
               <div className="bg-surface rounded-xl shadow-sm border border-border p-6 flex flex-col md:flex-row gap-10 animate-float">
                 <div className="stat text-center">
-                  <div className="text-2xl font-bold text-primary">250+</div>
+                  <div className="text-xl font-bold text-primary">250+</div>
                   <div className="text-sm text-muted-foreground">New Subscribers</div>
                 </div>
                 <div className="stat text-center">
-                  <div className="text-2xl font-bold text-primary">410%</div>
+                  <div className="text-xl font-bold text-primary">410%</div>
                   <div className="text-sm text-muted-foreground">Growth Rate</div>
                 </div>
                 <div className="stat text-center">
-                  <div className="text-2xl font-bold text-primary">40+</div>
+                  <div className="text-xl font-bold text-primary">40+</div>
                   <div className="text-sm text-muted-foreground">Countries</div>
                 </div>
               </div>
@@ -131,7 +131,7 @@ export default function LandingPage() {
           
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-extrabold mb-4 bg-gradient-to-r from-primary to-accent text-transparent bg-clip-text inline-block">
+              <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-primary to-accent text-transparent bg-clip-text inline-block">
                 Powerful Features for Everyone
               </h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
@@ -184,7 +184,7 @@ export default function LandingPage() {
           
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-extrabold mb-4 bg-gradient-to-r from-primary to-accent text-transparent bg-clip-text inline-block">
+              <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-primary to-accent text-transparent bg-clip-text inline-block">
                 What Our Users Say
               </h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
@@ -222,7 +222,7 @@ export default function LandingPage() {
           
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-extrabold mb-4 bg-gradient-to-r from-primary to-accent text-transparent bg-clip-text inline-block">
+              <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-primary to-accent text-transparent bg-clip-text inline-block">
                 Transparent Pricing for All Needs
               </h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
@@ -321,15 +321,15 @@ export default function LandingPage() {
                 </div>
               </div>
               <div className="bg-surface border border-border p-8 rounded-xl shadow-sm">
-                <h3 className="text-xl font-bold mb-4">Our Mission</h3>
+                <h3 className="text-lg font-bold mb-4">Our Mission</h3>
                 <p className="text-muted-foreground mb-6">
                   To empower businesses and content creators to build thriving communities and maximize their social media potential with intuitive, powerful tools.
                 </p>
-                <h3 className="text-xl font-bold mb-4">Our Vision</h3>
+                <h3 className="text-lg font-bold mb-4">Our Vision</h3>
                 <p className="text-muted-foreground mb-6">
                   A world where every business, regardless of size, can effectively leverage social media to grow their audience, build community, and generate revenue.
                 </p>
-                <h3 className="text-xl font-bold mb-4">Our Values</h3>
+                <h3 className="text-lg font-bold mb-4">Our Values</h3>
                 <ul className="space-y-3">
                   <li className="flex items-start gap-2">
                     <Check className="w-5 h-5 text-primary mt-1 flex-shrink-0" />

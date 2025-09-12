@@ -73,7 +73,7 @@ const boostTypes = [
     cost: '$0.50 per click',
     duration: '7-30 days',
     reach: 'High visibility',
-    color: 'bg-blue-500'
+    color: 'bg-primary'
   },
   {
     type: 'PROMOTED',
@@ -82,7 +82,7 @@ const boostTypes = [
     cost: '$0.75 per click',
     duration: '1-14 days',
     reach: 'Targeted audience',
-    color: 'bg-green-500'
+    color: 'bg-success'
   },
   {
     type: 'PRIORITY',
@@ -91,7 +91,7 @@ const boostTypes = [
     cost: '$1.00 per click',
     duration: '3-21 days',
     reach: 'Category focused',
-    color: 'bg-purple-500'
+    color: 'bg-accent'
   },
   {
     type: 'SPONSORED',
@@ -100,7 +100,7 @@ const boostTypes = [
     cost: '$1.25 per click',
     duration: '1-30 days',
     reach: 'Maximum exposure',
-    color: 'bg-orange-500'
+    color: 'bg-warning'
   }
 ];
 
@@ -115,17 +115,17 @@ export default function BoostMarketplacePage() {
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'active': return 'bg-green-500';
-      case 'completed': return 'bg-blue-500';
-      case 'paused': return 'bg-yellow-500';
-      case 'expired': return 'bg-gray-500';
-      default: return 'bg-gray-500';
+      case 'active': return 'bg-success';
+      case 'completed': return 'bg-primary';
+      case 'paused': return 'bg-warning';
+      case 'expired': return 'bg-muted';
+      default: return 'bg-muted';
     }
   };
 
   const getBoostTypeColor = (type: string) => {
     const boostType = boostTypes.find(bt => bt.type === type);
-    return boostType?.color || 'bg-gray-500';
+    return boostType?.color || 'bg-muted';
   };
 
   const calculateProgress = (startDate: string, endDate: string) => {
@@ -287,35 +287,35 @@ export default function BoostMarketplacePage() {
                       {/* Metrics Grid */}
                       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                         <div className="text-center">
-                          <div className="text-2xl font-bold text-blue-600">
+                          <div className="text-2xl font-bold text-primary">
                             {boost.metrics.impressions.toLocaleString()}
                           </div>
                           <p className="text-xs text-muted-foreground">Impressions</p>
                         </div>
                         
                         <div className="text-center">
-                          <div className="text-2xl font-bold text-green-600">
+                          <div className="text-2xl font-bold text-success">
                             {boost.metrics.clicks}
                           </div>
                           <p className="text-xs text-muted-foreground">Clicks</p>
                         </div>
                         
                         <div className="text-center">
-                          <div className="text-2xl font-bold text-purple-600">
+                          <div className="text-2xl font-bold text-accent">
                             {boost.metrics.conversions}
                           </div>
                           <p className="text-xs text-muted-foreground">Conversions</p>
                         </div>
                         
                         <div className="text-center">
-                          <div className="text-2xl font-bold text-orange-600">
+                          <div className="text-2xl font-bold text-warning">
                             {ctr}%
                           </div>
                           <p className="text-xs text-muted-foreground">CTR</p>
                         </div>
                         
                         <div className="text-center">
-                          <div className="text-2xl font-bold text-red-600">
+                          <div className="text-2xl font-bold text-destructive">
                             {conversionRate}%
                           </div>
                           <p className="text-xs text-muted-foreground">Conv. Rate</p>

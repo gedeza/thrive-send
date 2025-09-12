@@ -108,7 +108,7 @@ export default function GeneralOrganizationSettingsPage() {
               disabled={isSubmitting}
             />
             {form.formState.errors.name && (
-              <p className="text-sm text-red-500">
+              <p className="text-sm text-destructive">
                 {form.formState.errors.name.message}
               </p>
             )}
@@ -126,7 +126,7 @@ export default function GeneralOrganizationSettingsPage() {
               This will be used in your organization's URL
             </p>
             {form.formState.errors.slug && (
-              <p className="text-sm text-red-500">
+              <p className="text-sm text-destructive">
                 {form.formState.errors.slug.message}
               </p>
             )}
@@ -141,7 +141,7 @@ export default function GeneralOrganizationSettingsPage() {
               disabled={isSubmitting}
             />
             {form.formState.errors.website && (
-              <p className="text-sm text-red-500">
+              <p className="text-sm text-destructive">
                 {form.formState.errors.website.message}
               </p>
             )}
@@ -156,7 +156,7 @@ export default function GeneralOrganizationSettingsPage() {
               disabled={isSubmitting}
             />
             {form.formState.errors.logoUrl && (
-              <p className="text-sm text-red-500">
+              <p className="text-sm text-destructive">
                 {form.formState.errors.logoUrl.message}
               </p>
             )}

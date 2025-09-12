@@ -332,7 +332,7 @@ export default function CreateBoostPage() {
                       className="mt-1"
                     />
                     {validation.errors.some(e => e.includes('name')) && (
-                      <p className="text-sm text-red-500 mt-1">Product name is required</p>
+                      <p className="text-sm text-destructive mt-1">Product name is required</p>
                     )}
                   </div>
                   
@@ -407,11 +407,11 @@ export default function CreateBoostPage() {
                     rows={4}
                     className="mt-1"
                   />
-                  <div className={`text-xs mt-1 ${formData.description.length >= 50 ? 'text-muted-foreground' : 'text-red-500'}`}>
+                  <div className={`text-xs mt-1 ${formData.description.length >= 50 ? 'text-muted-foreground' : 'text-destructive'}`}>
                     {formData.description.length}/2000 characters (minimum 50)
                   </div>
                   {validation.errors.some(e => e.includes('Description')) && (
-                    <p className="text-sm text-red-500 mt-1">Description must be at least 50 characters</p>
+                    <p className="text-sm text-destructive mt-1">Description must be at least 50 characters</p>
                   )}
                 </div>
 
@@ -474,7 +474,7 @@ export default function CreateBoostPage() {
                     </Button>
                   </div>
                   {validation.errors.some(e => e.includes('feature')) && (
-                    <p className="text-sm text-red-500 mt-1">At least one feature is required</p>
+                    <p className="text-sm text-destructive mt-1">At least one feature is required</p>
                   )}
                 </div>
 
@@ -499,7 +499,7 @@ export default function CreateBoostPage() {
                     ))}
                   </div>
                   {validation.errors.some(e => e.includes('audience')) && (
-                    <p className="text-sm text-red-500 mt-1">Target audience is required</p>
+                    <p className="text-sm text-destructive mt-1">Target audience is required</p>
                   )}
                 </div>
 
@@ -581,7 +581,7 @@ export default function CreateBoostPage() {
                       </Select>
                     </div>
                     {validation.errors.some(e => e.includes('price')) && (
-                      <p className="text-sm text-red-500 mt-1">Base price must be greater than 0</p>
+                      <p className="text-sm text-destructive mt-1">Base price must be greater than 0</p>
                     )}
                   </div>
                   
@@ -726,12 +726,12 @@ export default function CreateBoostPage() {
               <CardContent className="space-y-6">
                 {/* Validation Summary */}
                 {validation.errors.length > 0 && (
-                  <div className="p-4 border border-red-200 bg-red-50 rounded-lg">
+                  <div className="p-4 border border-destructive/20 bg-destructive/10 rounded-lg">
                     <div className="flex items-center gap-2 mb-2">
-                      <AlertCircle className="h-4 w-4 text-red-600" />
-                      <span className="font-medium text-red-800">Errors to Fix:</span>
+                      <AlertCircle className="h-4 w-4 text-destructive" />
+                      <span className="font-medium text-destructive">Errors to Fix:</span>
                     </div>
-                    <ul className="text-sm text-red-700 space-y-1">
+                    <ul className="text-sm text-destructive space-y-1">
                       {validation.errors.map((error, index) => (
                         <li key={index}>• {error}</li>
                       ))}
@@ -740,12 +740,12 @@ export default function CreateBoostPage() {
                 )}
 
                 {validation.warnings.length > 0 && (
-                  <div className="p-4 border border-yellow-200 bg-yellow-50 rounded-lg">
+                  <div className="p-4 border border-warning/20 bg-warning/10 rounded-lg">
                     <div className="flex items-center gap-2 mb-2">
-                      <AlertCircle className="h-4 w-4 text-yellow-600" />
-                      <span className="font-medium text-yellow-800">Recommendations:</span>
+                      <AlertCircle className="h-4 w-4 text-warning" />
+                      <span className="font-medium text-warning">Recommendations:</span>
                     </div>
-                    <ul className="text-sm text-yellow-700 space-y-1">
+                    <ul className="text-sm text-warning space-y-1">
                       {validation.warnings.map((warning, index) => (
                         <li key={index}>• {warning}</li>
                       ))}

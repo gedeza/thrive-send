@@ -376,7 +376,7 @@ export default function ClientAssignmentManager({
               const clientAssignments = getAssignmentsByClient(client.id);
               
               return (
-                <Card key={client.id}>
+                <Card key={client.id} className="hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 border-l-4 border-primary bg-gradient-to-r from-primary/5 to-transparent">
                   <CardHeader className="pb-3">
                     <CardTitle className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -400,7 +400,7 @@ export default function ClientAssignmentManager({
                     ) : (
                       <div className="space-y-3">
                         {clientAssignments.map(assignment => (
-                          <div key={assignment.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div key={assignment.id} className="flex items-center justify-between p-3 border rounded-lg hover:shadow-md transition-all duration-200 hover:border-primary/20 bg-gradient-to-r from-muted/20 to-transparent">
                             <div className="flex items-center gap-3 flex-1">
                               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium">
                                 {getInitials(assignment.memberName)}
@@ -520,7 +520,7 @@ export default function ClientAssignmentManager({
 
         {/* Summary */}
         {localAssignments.length > 0 && (
-          <Card>
+          <Card className="hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 border-l-4 border-accent bg-gradient-to-r from-accent/5 to-transparent">
             <CardHeader>
               <CardTitle className="text-base">Assignment Summary</CardTitle>
             </CardHeader>
@@ -531,15 +531,15 @@ export default function ClientAssignmentManager({
                   <div className="text-xs text-muted-foreground">Total Assignments</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-green-600">{new Set(localAssignments.map(a => a.memberId)).size}</div>
+                  <div className="text-2xl font-bold text-success">{new Set(localAssignments.map(a => a.memberId)).size}</div>
                   <div className="text-xs text-muted-foreground">Assigned Members</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-blue-600">{new Set(localAssignments.map(a => a.clientId)).size}</div>
+                  <div className="text-2xl font-bold text-accent">{new Set(localAssignments.map(a => a.clientId)).size}</div>
                   <div className="text-xs text-muted-foreground">Clients Covered</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-orange-600">{localAssignments.filter(a => a.role === 'MANAGER').length}</div>
+                  <div className="text-2xl font-bold text-warning">{localAssignments.filter(a => a.role === 'MANAGER').length}</div>
                   <div className="text-xs text-muted-foreground">Client Managers</div>
                 </div>
               </div>

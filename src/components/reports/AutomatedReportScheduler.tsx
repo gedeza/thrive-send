@@ -214,11 +214,11 @@ function formatDate(dateString: string): string {
 
 function getStatusColor(status: string): string {
   switch (status) {
-    case 'active': return 'bg-green-100 text-green-800';
-    case 'paused': return 'bg-yellow-100 text-yellow-800';
-    case 'completed': return 'bg-blue-100 text-blue-800';
-    case 'failed': return 'bg-red-100 text-red-800';
-    default: return 'bg-gray-100 text-gray-800';
+    case 'active': return 'bg-success/10 text-success';
+    case 'paused': return 'bg-warning/10 text-warning';
+    case 'completed': return 'bg-primary/10 text-primary';
+    case 'failed': return 'bg-destructive/10 text-destructive';
+    default: return 'bg-muted text-muted-foreground';
   }
 }
 
@@ -234,11 +234,11 @@ function getStatusIcon(status: string) {
 
 function getFrequencyColor(frequency: string): string {
   switch (frequency) {
-    case 'daily': return 'bg-purple-100 text-purple-800';
-    case 'weekly': return 'bg-blue-100 text-blue-800';
-    case 'monthly': return 'bg-green-100 text-green-800';
-    case 'quarterly': return 'bg-orange-100 text-orange-800';
-    default: return 'bg-gray-100 text-gray-800';
+    case 'daily': return 'bg-purple-500/10 text-purple-700';
+    case 'weekly': return 'bg-primary/10 text-primary';
+    case 'monthly': return 'bg-success/10 text-success';
+    case 'quarterly': return 'bg-orange-500/10 text-orange-700';
+    default: return 'bg-muted text-muted-foreground';
   }
 }
 
@@ -356,7 +356,7 @@ function ReportCard({ report, onToggleStatus, onEdit, onDelete, onRunNow }: Repo
                 variant="ghost"
                 size="sm"
                 onClick={() => onDelete(report.id)}
-                className="text-red-600 hover:text-red-700"
+                className="text-destructive hover:text-destructive/80"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -712,7 +712,7 @@ export default function AutomatedReportScheduler() {
         
         <Card>
           <CardContent className="p-4 text-center">
-            <Play className="h-6 w-6 text-green-600 mx-auto mb-2" />
+            <Play className="h-6 w-6 text-success mx-auto mb-2" />
             <p className="text-2xl font-bold">{activeReports}</p>
             <p className="text-xs text-muted-foreground">Active</p>
           </CardContent>
@@ -720,7 +720,7 @@ export default function AutomatedReportScheduler() {
         
         <Card>
           <CardContent className="p-4 text-center">
-            <Pause className="h-6 w-6 text-yellow-600 mx-auto mb-2" />
+            <Pause className="h-6 w-6 text-warning mx-auto mb-2" />
             <p className="text-2xl font-bold">{pausedReports}</p>
             <p className="text-xs text-muted-foreground">Paused</p>
           </CardContent>
@@ -728,7 +728,7 @@ export default function AutomatedReportScheduler() {
         
         <Card>
           <CardContent className="p-4 text-center">
-            <Mail className="h-6 w-6 text-blue-600 mx-auto mb-2" />
+            <Mail className="h-6 w-6 text-primary mx-auto mb-2" />
             <p className="text-2xl font-bold">
               {reports.reduce((sum, r) => sum + r.recipients.length, 0)}
             </p>
@@ -768,8 +768,8 @@ export default function AutomatedReportScheduler() {
               .map((report) => (
                 <div key={report.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-100 rounded-lg">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
+                    <div className="p-2 bg-success/10 rounded-lg">
+                      <CheckCircle className="h-4 w-4 text-success" />
                     </div>
                     <div>
                       <p className="font-medium">{report.title}</p>

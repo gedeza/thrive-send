@@ -355,7 +355,7 @@ function ReportCard({ report, onDownload, onDelete, onDuplicate }: ReportCardPro
           </Badge>
         </div>
         
-        <CardTitle className="text-lg">{report.title}</CardTitle>
+        <CardTitle className="text-lg font-medium">{report.title}</CardTitle>
         <p className="text-sm text-muted-foreground">{report.description}</p>
         
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
@@ -495,7 +495,7 @@ function TemplateCard({ template, onUse }: TemplateCardProps) {
             </div>
             {template.isPopular && (
               <Badge 
-                className="bg-orange-100 text-orange-800 text-xs"
+                className="bg-warning/10 text-warning text-xs"
                 aria-label="Popular template"
               >
                 <Zap className="h-3 w-3 mr-1" aria-hidden="true" />
@@ -509,7 +509,7 @@ function TemplateCard({ template, onUse }: TemplateCardProps) {
         </div>
         
         <CardTitle 
-          className="text-lg" 
+          className="text-lg font-medium" 
           id={`template-title-${template.id}`}
         >
           {template.name}
@@ -699,11 +699,11 @@ export default function AdvancedReportsPage() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
             <FileBarChart className="h-8 w-8 text-primary" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
               {REPORTS_TEXT.TITLE}
             </h1>
           </div>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-base text-muted-foreground max-w-2xl mx-auto">
             {REPORTS_TEXT.SUBTITLE}
           </p>
         </div>
@@ -830,8 +830,8 @@ export default function AdvancedReportsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">{REPORTS_TEXT.STATS.TOTAL_REPORTS}</p>
-                  <p className="text-3xl font-bold">{reports.length}</p>
-                  <p className="text-xs text-green-600 mt-1">+3 {REPORTS_TEXT.STATS.THIS_MONTH.toLowerCase()}</p>
+                  <p className="text-2xl font-bold">{reports.length}</p>
+                  <p className="text-xs text-success mt-1">+3 {REPORTS_TEXT.STATS.THIS_MONTH.toLowerCase()}</p>
                 </div>
                 <div className="p-3 bg-primary/10 rounded-full">
                   <FileText className="h-6 w-6 text-primary" />
@@ -845,11 +845,11 @@ export default function AdvancedReportsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">{REPORTS_TEXT.STATS.SCHEDULED_REPORTS}</p>
-                  <p className="text-3xl font-bold">{scheduledReports.length}</p>
-                  <p className="text-xs text-blue-600 mt-1">2 running {REPORTS_TEXT.FREQUENCY.WEEKLY.toLowerCase()}</p>
+                  <p className="text-2xl font-bold">{scheduledReports.length}</p>
+                  <p className="text-xs text-primary mt-1">2 running {REPORTS_TEXT.FREQUENCY.WEEKLY.toLowerCase()}</p>
                 </div>
-                <div className="p-3 bg-blue-500/10 rounded-full">
-                  <Calendar className="h-6 w-6 text-blue-600" />
+                <div className="p-3 bg-primary/10 rounded-full">
+                  <Calendar className="h-6 w-6 text-primary" />
                 </div>
               </div>
             </CardContent>
@@ -860,11 +860,11 @@ export default function AdvancedReportsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">{REPORTS_TEXT.STATS.TEMPLATES_AVAILABLE}</p>
-                  <p className="text-3xl font-bold">{templates.length}</p>
-                  <p className="text-xs text-purple-600 mt-1">3 popular picks</p>
+                  <p className="text-2xl font-bold">{templates.length}</p>
+                  <p className="text-xs text-accent mt-1">3 popular picks</p>
                 </div>
-                <div className="p-3 bg-purple-500/10 rounded-full">
-                  <Bookmark className="h-6 w-6 text-purple-600" />
+                <div className="p-3 bg-accent/10 rounded-full">
+                  <Bookmark className="h-6 w-6 text-accent" />
                 </div>
               </div>
             </CardContent>
@@ -875,11 +875,11 @@ export default function AdvancedReportsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">{REPORTS_TEXT.STATS.REPORTS_GENERATED}</p>
-                  <p className="text-3xl font-bold">47</p>
-                  <p className="text-xs text-green-600 mt-1">{REPORTS_TEXT.TIME_PERIODS.THIS_QUARTER}</p>
+                  <p className="text-2xl font-bold">47</p>
+                  <p className="text-xs text-success mt-1">{REPORTS_TEXT.TIME_PERIODS.THIS_QUARTER}</p>
                 </div>
-                <div className="p-3 bg-green-500/10 rounded-full">
-                  <Award className="h-6 w-6 text-green-600" />
+                <div className="p-3 bg-success/10 rounded-full">
+                  <Award className="h-6 w-6 text-success" />
                 </div>
               </div>
             </CardContent>
@@ -1047,7 +1047,7 @@ export default function AdvancedReportsPage() {
                   <div className="flex justify-center mb-4">
                     <FileText className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">{REPORTS_TEXT.EMPTY_STATES.NO_REPORTS_FOUND}</h3>
+                  <h3 className="text-lg font-medium mb-2">{REPORTS_TEXT.EMPTY_STATES.NO_REPORTS_FOUND}</h3>
                   <p className="text-muted-foreground">
                     {REPORTS_TEXT.EMPTY_STATES.NO_REPORTS_DESCRIPTION}
                   </p>
@@ -1085,7 +1085,7 @@ export default function AdvancedReportsPage() {
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <h3 className="font-semibold text-lg">{schedule.reportTitle}</h3>
+                        <h3 className="font-medium text-lg">{schedule.reportTitle}</h3>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span className="capitalize">{schedule.frequency}</span>
                           <span>•</span>
@@ -1149,7 +1149,7 @@ export default function AdvancedReportsPage() {
                   <div className="flex justify-center mb-4">
                     <Calendar className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">{REPORTS_TEXT.EMPTY_STATES.NO_SCHEDULED_REPORTS}</h3>
+                  <h3 className="text-lg font-medium mb-2">{REPORTS_TEXT.EMPTY_STATES.NO_SCHEDULED_REPORTS}</h3>
                   <p className="text-muted-foreground mb-4">
                     Set up automated report generation and delivery
                   </p>

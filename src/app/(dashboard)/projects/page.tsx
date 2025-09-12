@@ -253,11 +253,11 @@ export default function ProjectsPage() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
             <Building2 className="h-8 w-8 text-primary" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
               Project Management
             </h1>
           </div>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-base text-muted-foreground max-w-2xl mx-auto">
             Track, organize, and manage all your projects in one place. Stay on top of deadlines and monitor progress.
           </p>
         </div>
@@ -280,7 +280,7 @@ export default function ProjectsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Projects</p>
-                  <p className="text-3xl font-bold text-primary">{projectStats.total}</p>
+                  <p className="text-2xl font-bold text-primary">{projectStats.total}</p>
                 </div>
                 <div className="p-3 bg-primary/10 rounded-full">
                   <Building2 className="h-6 w-6 text-primary" />
@@ -294,10 +294,10 @@ export default function ProjectsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Planned</p>
-                  <p className="text-3xl font-bold text-yellow-600">{projectStats.planned}</p>
+                  <p className="text-2xl font-bold text-warning">{projectStats.planned}</p>
                 </div>
-                <div className="p-3 bg-yellow-100 rounded-full">
-                  <Calendar className="h-6 w-6 text-yellow-600" />
+                <div className="p-3 bg-warning/10 rounded-full">
+                  <Calendar className="h-6 w-6 text-warning" />
                 </div>
               </div>
             </CardContent>
@@ -308,10 +308,10 @@ export default function ProjectsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">In Progress</p>
-                  <p className="text-3xl font-bold text-blue-600">{projectStats.inProgress}</p>
+                  <p className="text-2xl font-bold text-primary">{projectStats.inProgress}</p>
                 </div>
-                <div className="p-3 bg-blue-100 rounded-full">
-                  <Clock className="h-6 w-6 text-blue-600" />
+                <div className="p-3 bg-primary/10 rounded-full">
+                  <Clock className="h-6 w-6 text-primary" />
                 </div>
               </div>
             </CardContent>
@@ -322,10 +322,10 @@ export default function ProjectsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Completed</p>
-                  <p className="text-3xl font-bold text-green-600">{projectStats.completed}</p>
+                  <p className="text-2xl font-bold text-success">{projectStats.completed}</p>
                 </div>
-                <div className="p-3 bg-green-100 rounded-full">
-                  <CheckCircle2 className="h-6 w-6 text-green-600" />
+                <div className="p-3 bg-success/10 rounded-full">
+                  <CheckCircle2 className="h-6 w-6 text-success" />
                 </div>
               </div>
             </CardContent>
@@ -402,7 +402,7 @@ export default function ProjectsPage() {
           <Card className="p-6 text-center">
             <CardContent>
               <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Failed to Load Projects</h3>
+              <h3 className="text-lg font-medium mb-2">Failed to Load Projects</h3>
               <p className="text-muted-foreground mb-4">{error}</p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Button onClick={fetchProjects} variant="outline" className="w-full sm:w-auto">

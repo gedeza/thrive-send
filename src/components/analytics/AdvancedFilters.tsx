@@ -380,10 +380,10 @@ export function AdvancedFilters({ onFiltersChange, savedFilters = [], className 
           <div className="w-60">
             <div className="flex flex-wrap gap-1 mb-2">
               {(condition.value as string[] || []).map((val) => (
-                <Badge key={val} variant="secondary" className="text-xs">
+                <Badge key={val} variant="secondary" className="text-xs bg-primary/10 text-primary border border-primary/20">
                   {val}
                   <X 
-                    className="ml-1 h-3 w-3 cursor-pointer" 
+                    className="ml-1 h-3 w-3 cursor-pointer hover:text-destructive" 
                     onClick={() => {
                       const newValue = (condition.value as string[]).filter(v => v !== val);
                       updateCondition(groupId, condition.id, { value: newValue });
@@ -453,23 +453,23 @@ export function AdvancedFilters({ onFiltersChange, savedFilters = [], className 
   };
 
   return (
-    <Card className={cn('w-full', className)}>
+    <Card className={cn('card-enhanced border-l-2 border-primary/20 bg-card', className)}>
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Filter className="h-5 w-5 text-blue-600" />
+            <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+              <Filter className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-lg">Advanced Filters</CardTitle>
-              <p className="text-sm text-muted-foreground">
+              <CardTitle className="text-lg font-medium">Advanced Filters</CardTitle>
+              <p className="text-sm text-muted-foreground font-normal">
                 Create sophisticated filters to segment your analytics data
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {getTotalActiveFilters() > 0 && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-xs bg-success/10 text-success border border-success/20">
                 {getTotalActiveFilters()} active filter{getTotalActiveFilters() !== 1 ? 's' : ''}
               </Badge>
             )}
@@ -499,8 +499,8 @@ export function AdvancedFilters({ onFiltersChange, savedFilters = [], className 
                   <Card 
                     key={preset.id} 
                     className={cn(
-                      "cursor-pointer transition-all hover:shadow-md",
-                      selectedPreset === preset.id && "border-primary shadow-sm"
+                      "card-enhanced bg-card cursor-pointer hover:shadow-professional transition-shadow duration-200",
+                      selectedPreset === preset.id && "border-l-2 border-primary/20 shadow-professional"
                     )}
                     onClick={() => applyPreset(preset.id)}
                   >
@@ -515,7 +515,7 @@ export function AdvancedFilters({ onFiltersChange, savedFilters = [], className 
 
             <TabsContent value="advanced" className="space-y-6">
               {filterGroups.map((group, groupIndex) => (
-                <Card key={group.id} className="border-l-4 border-l-blue-500">
+                <Card key={group.id} className="card-enhanced border-l-2 border-success/20 bg-card">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
@@ -554,9 +554,9 @@ export function AdvancedFilters({ onFiltersChange, savedFilters = [], className 
 
                     <div className="space-y-3">
                       {group.conditions.map((condition, conditionIndex) => (
-                        <div key={condition.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                        <div key={condition.id} className="flex items-center gap-3 p-3 bg-muted/10 rounded-lg border border-muted/20">
                           {conditionIndex > 0 && (
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-xs bg-success/10 text-success border-success/20">
                               {group.logic}
                             </Badge>
                           )}
@@ -643,10 +643,12 @@ export function AdvancedFilters({ onFiltersChange, savedFilters = [], className 
             </TabsContent>
 
             <TabsContent value="saved" className="space-y-4">
-              <div className="text-center py-8 text-muted-foreground">
-                <Filter className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No saved filters yet</p>
-                <p className="text-sm">Create and save custom filters for quick access</p>
+              <div className="text-center py-8">
+                <div className="p-4 bg-muted/10 rounded-lg border border-muted/20 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+                  <Filter className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <p className="font-medium text-foreground mb-2">No saved filters yet</p>
+                <p className="text-sm text-muted-foreground">Create and save custom filters for quick access</p>
               </div>
             </TabsContent>
           </Tabs>
@@ -656,9 +658,17 @@ export function AdvancedFilters({ onFiltersChange, savedFilters = [], className 
       {/* Save Filter Dialog */}
       {showSaveDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-96">
+          <Card className="card-enhanced bg-card w-96">
             <CardHeader>
-              <CardTitle>Save Filter</CardTitle>
+              <CardTitle className="flex items-center gap-3">
+                <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+                  <Save className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <span className="text-lg font-medium">Save Filter</span>
+                  <p className="text-sm text-muted-foreground font-normal">Save current filter configuration</p>
+                </div>
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>

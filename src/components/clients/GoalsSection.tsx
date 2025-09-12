@@ -72,7 +72,7 @@ async function getGoalsData(clientId: string, limit?: number): Promise<GoalsResp
 
 function GoalCardSkeleton() {
   return (
-    <Card className="p-6">
+    <Card className="p-6 card-enhanced border-l-2 border-muted/20">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
@@ -109,7 +109,9 @@ function GoalsLoadingState() {
             <Skeleton className="h-4 w-24" />
           </div>
         </div>
-        <Skeleton className="h-9 w-32" />
+        <div className="p-2 bg-muted/10 rounded-lg border border-muted/20">
+          <Skeleton className="h-9 w-32" />
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -124,13 +126,15 @@ function GoalsLoadingState() {
 function GoalsErrorState({ error, onRetry }: { error: string; onRetry: () => void }) {
   return (
     <div className="p-6 text-center">
-      <AlertTriangle className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
-      <h3 className="text-lg font-medium mb-1">Unable to load goals</h3>
-      <p className="text-sm text-gray-500 mb-4">{error}</p>
+      <div className="p-3 bg-destructive/10 rounded-lg border border-destructive/20 w-fit mx-auto mb-4">
+        <AlertTriangle className="h-8 w-8 text-destructive" />
+      </div>
+      <h3 className="text-lg font-medium text-destructive mb-1">Unable to load goals</h3>
+      <p className="text-sm text-muted-foreground mb-4">{error}</p>
       <Button
         variant="outline"
         onClick={onRetry}
-        className="flex items-center gap-2"
+        className="flex items-center gap-2 border-destructive/20 hover:bg-destructive/10"
       >
         <RefreshCcw className="h-4 w-4" />
         Try Again
@@ -179,42 +183,62 @@ export default function GoalsSection({
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <h3 className="text-lg font-medium">Goals & Objectives</h3>
-          <div className="flex items-center gap-4 text-sm text-gray-500">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-success/10 rounded-lg border border-success/20">
+              <Target className="h-5 w-5 text-success" />
+            </div>
+            <h3 className="text-lg font-medium text-foreground">Goals & Objectives</h3>
+          </div>
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span>{stats.total} Total Goals</span>
-            <span>{stats.completed} Completed</span>
-            <span>{stats.inProgress} In Progress</span>
+            <span className="text-success">{stats.completed} Completed</span>
+            <span className="text-primary">{stats.inProgress} In Progress</span>
           </div>
         </div>
         <Button 
           size="sm"
           onClick={() => router.push(`/clients/${clientId}/goals/new`)}
+          className="flex items-center gap-2"
         >
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="h-4 w-4" />
           Add Goal
         </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        {goals.map((goal) => (
-          <Card key={goal.id} className="p-6">
+        {goals.map((goal) => {
+          const getGoalCardStyle = (status: string) => {
+            switch (status) {
+              case 'COMPLETED':
+                return 'card-enhanced border-l-2 border-success/20';
+              case 'IN_PROGRESS':
+                return 'card-enhanced border-l-2 border-primary/20';
+              case 'NOT_STARTED':
+                return 'card-enhanced border-l-2 border-muted/20';
+              default:
+                return 'card-enhanced border-l-2 border-destructive/20';
+            }
+          };
+          
+          return (
+          <Card key={goal.id} className={`p-6 ${getGoalCardStyle(goal.status)}`}>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                  <h4 className="font-medium">{goal.name}</h4>
-                  <p className="text-sm text-gray-500">
+                  <h4 className="font-medium text-foreground">{goal.name}</h4>
+                  <p className="text-sm text-muted-foreground">
                     {goal.milestones.length} Milestones
                   </p>
                 </div>
                 <span
-                  className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${
+                  className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize border ${
                     goal.status === 'COMPLETED'
-                      ? 'bg-green-100 text-green-700'
+                      ? 'bg-success/10 text-success border-success/20'
                       : goal.status === 'IN_PROGRESS'
-                      ? 'bg-blue-100 text-blue-700'
+                      ? 'bg-primary/10 text-primary border-primary/20'
                       : goal.status === 'NOT_STARTED'
-                      ? 'bg-gray-100 text-gray-700'
-                      : 'bg-yellow-100 text-yellow-700'
+                      ? 'bg-muted/10 text-muted-foreground border-muted/20'
+                      : 'bg-destructive/10 text-destructive border-destructive/20'
                   }`}
                 >
                   {goal.status.toLowerCase().replace('_', ' ')}
@@ -223,7 +247,7 @@ export default function GoalsSection({
 
               <div className="space-y-2">
                 {goal.description && (
-                  <p className="text-sm text-gray-600">{goal.description}</p>
+                  <p className="text-sm text-muted-foreground">{goal.description}</p>
                 )}
                 <div className="flex items-center justify-between">
                   <Progress 
@@ -233,7 +257,10 @@ export default function GoalsSection({
                     } 
                     className="h-2 flex-1 mr-4" 
                   />
-                  <span className="text-sm font-medium">
+                  <span className={`text-sm font-medium ${
+                    goal.status === 'COMPLETED' ? 'text-success' :
+                    goal.status === 'IN_PROGRESS' ? 'text-primary' : 'text-muted-foreground'
+                  }`}>
                     {goal.targetValue && goal.currentValue
                       ? Math.round((goal.currentValue / goal.targetValue) * 100)
                       : 0}%
@@ -244,19 +271,23 @@ export default function GoalsSection({
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
                   {getStatusIcon(goal.status)}
-                  <span className="capitalize">
+                  <span className={`capitalize ${
+                    goal.status === 'COMPLETED' ? 'text-success' :
+                    goal.status === 'IN_PROGRESS' ? 'text-primary' :
+                    goal.status === 'NOT_STARTED' ? 'text-muted-foreground' : 'text-destructive'
+                  }`}>
                     {goal.status.toLowerCase().replace('_', ' ')}
                   </span>
                 </div>
                 {goal.endDate && (
-                  <time className="text-gray-500">
+                  <time className="text-muted-foreground">
                     Due {formatDate(goal.endDate)}
                   </time>
                 )}
               </div>
             </div>
           </Card>
-        ))}
+        );})}
       </div>
     </div>
   );
@@ -265,12 +296,12 @@ export default function GoalsSection({
 function getStatusIcon(status: string) {
   switch (status.toLowerCase()) {
     case 'completed':
-      return <CheckCircle2 className="h-5 w-5 text-green-500" />;
+      return <CheckCircle2 className="h-5 w-5 text-success" />;
     case 'in_progress':
-      return <Clock className="h-5 w-5 text-blue-500" />;
+      return <Clock className="h-5 w-5 text-primary" />;
     case 'not_started':
-      return <Target className="h-5 w-5 text-gray-400" />;
+      return <Target className="h-5 w-5 text-muted-foreground" />;
     default:
-      return <AlertCircle className="h-5 w-5 text-yellow-500" />;
+      return <AlertCircle className="h-5 w-5 text-destructive" />;
   }
 } 

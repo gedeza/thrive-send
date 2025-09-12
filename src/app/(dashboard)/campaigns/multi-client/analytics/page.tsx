@@ -140,7 +140,7 @@ const MetricCard = ({ title, value, description, icon, change }: {
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-3xl font-bold text-primary">
+          <p className="text-2xl font-bold text-primary">
             {typeof value === 'number' ? value.toLocaleString() : value}
           </p>
           {description && (
@@ -148,7 +148,7 @@ const MetricCard = ({ title, value, description, icon, change }: {
           )}
           {change !== undefined && (
             <div className={`flex items-center text-xs ${
-              change >= 0 ? 'text-green-600' : 'text-red-600'
+              change >= 0 ? 'text-success' : 'text-destructive'
             }`}>
               <TrendingUp className="mr-1 h-3 w-3" />
               {change >= 0 ? '+' : ''}{change.toFixed(1)}% from last period
@@ -205,7 +205,7 @@ export default function MultiClientAnalyticsPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Multi-Client Analytics</h1>
+            <h1 className="text-2xl font-bold">Multi-Client Analytics</h1>
             <p className="text-muted-foreground">
               Comprehensive analytics across all your multi-client campaigns
             </p>
@@ -314,7 +314,7 @@ export default function MultiClientAnalyticsPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <span>Total ROI</span>
-                    <span className="font-medium text-green-600">+284%</span>
+                    <span className="font-medium text-success">+284%</span>
                   </div>
                 </div>
               </CardContent>
@@ -327,15 +327,15 @@ export default function MultiClientAnalyticsPage() {
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2" />
+                    <div className="w-2 h-2 bg-success rounded-full mt-2" />
                     <p className="text-sm">Technology sector clients show 40% higher engagement</p>
                   </div>
                   <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2" />
+                    <div className="w-2 h-2 bg-primary rounded-full mt-2" />
                     <p className="text-sm">Multi-channel campaigns outperform single-channel by 25%</p>
                   </div>
                   <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-orange-500 rounded-full mt-2" />
+                    <div className="w-2 h-2 bg-warning rounded-full mt-2" />
                     <p className="text-sm">3 clients need optimization for better conversion rates</p>
                   </div>
                 </div>

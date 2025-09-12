@@ -67,25 +67,25 @@ const SEARCH_DEBOUNCE_MS = 300;
 const CONTENT_TYPE_CONFIG = {
   blog: { 
     label: 'Blog Post', 
-    color: 'bg-blue-100 text-blue-800 border-blue-200',
+    color: 'bg-primary/10 text-primary border-primary/20',
     icon: Newspaper,
     description: 'Long-form blog content'
   },
   article: { 
     label: 'Article', 
-    color: 'bg-green-100 text-green-800 border-green-200',
+    color: 'bg-success/10 text-success border-success/20',
     icon: FileText,
     description: 'Editorial or informational article'
   },
   social: { 
     label: 'Social Media', 
-    color: 'bg-purple-100 text-purple-800 border-purple-200',
+    color: 'bg-accent/10 text-accent border-accent/20',
     icon: Share2,
     description: 'Social media post'
   },
   email: { 
     label: 'Email Campaign', 
-    color: 'bg-orange-100 text-orange-800 border-orange-200',
+    color: 'bg-warning/10 text-warning border-warning/20',
     icon: Mail,
     description: 'Email newsletter or campaign'
   },
@@ -93,9 +93,9 @@ const CONTENT_TYPE_CONFIG = {
 
 // Status configurations
 const STATUS_CONFIG = {
-  draft: { label: 'Draft', color: 'bg-gray-100 text-gray-800 border-gray-200', icon: Edit },
-  published: { label: 'Published', color: 'bg-green-100 text-green-800 border-green-200', icon: Eye },
-  scheduled: { label: 'Scheduled', color: 'bg-blue-100 text-blue-800 border-blue-200', icon: Calendar },
+  draft: { label: 'Draft', color: 'bg-muted text-muted-foreground border-muted', icon: Edit },
+  published: { label: 'Published', color: 'bg-success/10 text-success border-success/20', icon: Eye },
+  scheduled: { label: 'Scheduled', color: 'bg-primary/10 text-primary border-primary/20', icon: Calendar },
 } as const;
 
 function ContentLibraryPage() {
@@ -449,8 +449,8 @@ function ContentLibraryPage() {
             </div>
           ) : (
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                <Users className="h-6 w-6 text-blue-600" />
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Users className="h-6 w-6 text-primary" />
               </div>
               <div>
                 <div className="font-semibold text-lg">All Clients Content Overview</div>
@@ -553,21 +553,21 @@ function ContentLibraryPage() {
               switch(status) {
                 case 'draft':
                   return {
-                    iconBg: 'p-3 bg-yellow-100 rounded-full',
-                    iconColor: 'h-6 w-6 text-yellow-600',
-                    numberColor: 'text-3xl font-bold text-yellow-600'
+                    iconBg: 'p-3 bg-warning/10 rounded-full',
+                    iconColor: 'h-6 w-6 text-warning',
+                    numberColor: 'text-3xl font-bold text-warning'
                   };
                 case 'published':
                   return {
-                    iconBg: 'p-3 bg-green-100 rounded-full',
-                    iconColor: 'h-6 w-6 text-green-600',
-                    numberColor: 'text-3xl font-bold text-green-600'
+                    iconBg: 'p-3 bg-success/10 rounded-full',
+                    iconColor: 'h-6 w-6 text-success',
+                    numberColor: 'text-3xl font-bold text-success'
                   };
                 case 'scheduled':
                   return {
-                    iconBg: 'p-3 bg-blue-100 rounded-full',
-                    iconColor: 'h-6 w-6 text-blue-600',
-                    numberColor: 'text-3xl font-bold text-blue-600'
+                    iconBg: 'p-3 bg-primary/10 rounded-full',
+                    iconColor: 'h-6 w-6 text-primary',
+                    numberColor: 'text-3xl font-bold text-primary'
                   };
                 default:
                   return {
@@ -635,20 +635,20 @@ function ContentLibraryPage() {
               {selectedClient.name} Content Performance
             </h3>
             <div className="grid gap-4 md:grid-cols-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <p className="text-2xl font-bold text-blue-600">{filteredContent.length}</p>
+              <div className="text-center p-4 bg-primary/5 rounded-lg">
+                <p className="text-2xl font-bold text-primary">{filteredContent.length}</p>
                 <p className="text-sm text-muted-foreground">Client Content Items</p>
               </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <p className="text-2xl font-bold text-green-600">{selectedClient.performanceScore || 0}%</p>
+              <div className="text-center p-4 bg-success/5 rounded-lg">
+                <p className="text-2xl font-bold text-success">{selectedClient.performanceScore || 0}%</p>
                 <p className="text-sm text-muted-foreground">Client Performance Score</p>
               </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <p className="text-2xl font-bold text-purple-600">{selectedClient.activeCampaigns || 0}</p>
+              <div className="text-center p-4 bg-accent/5 rounded-lg">
+                <p className="text-2xl font-bold text-accent">{selectedClient.activeCampaigns || 0}</p>
                 <p className="text-sm text-muted-foreground">Active Campaigns</p>
               </div>
-              <div className="text-center p-4 bg-orange-50 rounded-lg">
-                <p className="text-2xl font-bold text-orange-600">{selectedClient.engagementRate?.toFixed(1) || '0.0'}%</p>
+              <div className="text-center p-4 bg-warning/5 rounded-lg">
+                <p className="text-2xl font-bold text-warning">{selectedClient.engagementRate?.toFixed(1) || '0.0'}%</p>
                 <p className="text-sm text-muted-foreground">Engagement Rate</p>
               </div>
             </div>
@@ -683,19 +683,19 @@ function ContentLibraryPage() {
             </h3>
             <div className="grid gap-4 md:grid-cols-4">
               <div className="text-center">
-                <p className="text-2xl font-bold text-blue-600">{(contentStats.totalViews || 0).toLocaleString()}</p>
+                <p className="text-2xl font-bold text-primary">{(contentStats.totalViews || 0).toLocaleString()}</p>
                 <p className="text-sm text-muted-foreground">Total Views</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-pink-600">{(contentStats.totalLikes || 0).toLocaleString()}</p>
+                <p className="text-2xl font-bold text-accent">{(contentStats.totalLikes || 0).toLocaleString()}</p>
                 <p className="text-sm text-muted-foreground">Total Likes</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-green-600">{(contentStats.totalShares || 0).toLocaleString()}</p>
+                <p className="text-2xl font-bold text-success">{(contentStats.totalShares || 0).toLocaleString()}</p>
                 <p className="text-sm text-muted-foreground">Total Shares</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-purple-600">{(contentStats.totalEngagement || 0).toLocaleString()}</p>
+                <p className="text-2xl font-bold text-warning">{(contentStats.totalEngagement || 0).toLocaleString()}</p>
                 <p className="text-sm text-muted-foreground">Total Engagement</p>
               </div>
             </div>
@@ -721,7 +721,7 @@ function ContentLibraryPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-gray-100"
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-muted"
                     onClick={() => setSearchQuery('')}
                   >
                     ×
@@ -825,7 +825,7 @@ function ContentLibraryPage() {
 
       {/* Bulk Actions Bar */}
       {showBulkActions && (
-        <Card className="border-blue-200 bg-blue-50/50">
+        <Card className="border-primary/20 bg-primary/5">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -836,7 +836,7 @@ function ContentLibraryPage() {
                   }}
                   onCheckedChange={handleSelectAll}
                 />
-                <span className="text-sm font-medium text-blue-900">
+                <span className="text-sm font-medium text-primary">
                   {selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''} selected
                 </span>
               </div>
@@ -933,8 +933,8 @@ function ContentLibraryPage() {
         <div className="text-center py-12">
           <div className="mx-auto max-w-md">
             <div className="mb-4">
-              <div className="mx-auto h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center">
-                <Search className="h-6 w-6 text-gray-400" />
+              <div className="mx-auto h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                <Search className="h-6 w-6 text-muted-foreground" />
               </div>
             </div>
             <h3 className="text-lg font-semibold mb-2">
@@ -1126,12 +1126,12 @@ function ContentCard({ item, analytics, isSelected, onSelect, onDelete, realtime
   return (
     <Card className={cn(
       "group hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4",
-      isSelected ? "border-l-blue-500 bg-blue-50" : "border-l-transparent hover:border-l-gray-300"
+      isSelected ? "border-l-primary bg-primary/5" : "border-l-transparent hover:border-l-muted"
     )} style={{ 
       borderLeftColor: !isSelected ? (
-        item.status?.toLowerCase() === 'published' ? '#22c55e' :
-        item.status?.toLowerCase() === 'scheduled' ? '#3b82f6' :
-        item.status?.toLowerCase() === 'draft' ? '#f59e0b' : '#6b7280'
+        item.status?.toLowerCase() === 'published' ? 'hsl(var(--success))' :
+        item.status?.toLowerCase() === 'scheduled' ? 'hsl(var(--primary))' :
+        item.status?.toLowerCase() === 'draft' ? 'hsl(var(--warning))' : 'hsl(var(--muted))'
       ) : undefined
     }}>
       <CardHeader className="pb-3">
@@ -1143,7 +1143,7 @@ function ContentCard({ item, analytics, isSelected, onSelect, onDelete, realtime
               className="mt-1"
             />
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-base font-semibold leading-tight mb-2 group-hover:text-blue-600 transition-colors">
+              <CardTitle className="text-base font-semibold leading-tight mb-2 group-hover:text-primary transition-colors">
                 {truncateText(item.title, 60)}
               </CardTitle>
               <div className="flex flex-wrap items-center gap-2">
@@ -1264,7 +1264,7 @@ function ContentCard({ item, analytics, isSelected, onSelect, onDelete, realtime
             )}
           </div>
           {item.scheduledAt && (
-            <span className="text-blue-600 font-medium">
+            <span className="text-primary font-medium">
               {format(new Date(item.scheduledAt), 'MMM d, h:mm a')}
             </span>
           )}
@@ -1282,12 +1282,12 @@ function ContentListItem({ item, analytics, isSelected, onSelect, onDelete, real
   return (
     <Card className={cn(
       "group hover:shadow-lg transition-all duration-200 border-l-4",
-      isSelected ? "border-l-blue-500 bg-blue-50" : "border-l-transparent hover:border-l-gray-300"
+      isSelected ? "border-l-primary bg-primary/5" : "border-l-transparent hover:border-l-muted"
     )} style={{ 
       borderLeftColor: !isSelected ? (
-        item.status?.toLowerCase() === 'published' ? '#22c55e' :
-        item.status?.toLowerCase() === 'scheduled' ? '#3b82f6' :
-        item.status?.toLowerCase() === 'draft' ? '#f59e0b' : '#6b7280'
+        item.status?.toLowerCase() === 'published' ? 'hsl(var(--success))' :
+        item.status?.toLowerCase() === 'scheduled' ? 'hsl(var(--primary))' :
+        item.status?.toLowerCase() === 'draft' ? 'hsl(var(--warning))' : 'hsl(var(--muted))'
       ) : undefined
     }}>
       <CardContent className="p-4">
@@ -1300,7 +1300,7 @@ function ContentListItem({ item, analytics, isSelected, onSelect, onDelete, real
             
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-2">
-                <h3 className="font-semibold text-base group-hover:text-blue-600 transition-colors truncate">
+                <h3 className="font-semibold text-base group-hover:text-primary transition-colors truncate">
                   {item.title}
                 </h3>
                 <div className="flex items-center gap-2 flex-shrink-0">

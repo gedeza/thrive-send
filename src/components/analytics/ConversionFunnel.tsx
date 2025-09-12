@@ -269,28 +269,28 @@ export function ConversionFunnel({ campaignId, timeframe = '30d', showControls =
   };
 
   const getDropoffColor = (dropoffRate: number) => {
-    if (dropoffRate > 50) return 'text-red-600';
-    if (dropoffRate > 30) return 'text-yellow-600';
-    return 'text-green-600';
+    if (dropoffRate > 50) return 'text-destructive';
+    if (dropoffRate > 30) return 'text-primary';
+    return 'text-success';
   };
 
   const getConversionColor = (conversionRate: number, stageIndex: number) => {
     // Lower stages naturally have lower conversion rates
     const expectedRate = 100 - (stageIndex * 20);
-    if (conversionRate >= expectedRate * 0.8) return 'text-green-600';
-    if (conversionRate >= expectedRate * 0.6) return 'text-yellow-600';
-    return 'text-red-600';
+    if (conversionRate >= expectedRate * 0.8) return 'text-success';
+    if (conversionRate >= expectedRate * 0.6) return 'text-primary';
+    return 'text-destructive';
   };
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="card-enhanced bg-card">
         <CardContent className="p-6">
           <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-gray-300 rounded w-1/4"></div>
+            <div className="h-4 bg-muted rounded w-1/4"></div>
             <div className="space-y-2">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-16 bg-gray-300 rounded"></div>
+                <div key={i} className="h-16 bg-muted rounded"></div>
               ))}
             </div>
           </div>
@@ -301,9 +301,11 @@ export function ConversionFunnel({ campaignId, timeframe = '30d', showControls =
 
   if (!funnel) {
     return (
-      <Card>
+      <Card className="card-enhanced bg-card">
         <CardContent className="p-6 text-center">
-          <BarChart3 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <div className="p-3 bg-muted/10 rounded-lg border border-muted/20 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <BarChart3 className="h-8 w-8 text-muted-foreground" />
+          </div>
           <h3 className="text-lg font-medium mb-2">No Funnel Data Available</h3>
           <p className="text-muted-foreground">Set up conversion tracking to see funnel analytics</p>
         </CardContent>
@@ -343,51 +345,59 @@ export function ConversionFunnel({ campaignId, timeframe = '30d', showControls =
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="card-enhanced border-l-2 border-primary/20 bg-card hover:shadow-professional transition-shadow duration-200">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Visitors</p>
-                <p className="text-2xl font-bold">{formatNumber(funnel.totalVisitors)}</p>
+                <p className="text-2xl font-bold text-primary">{formatNumber(funnel.totalVisitors)}</p>
               </div>
-              <Users className="h-8 w-8 text-blue-500" />
+              <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+                <Users className="h-6 w-6 text-primary" />
+              </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="card-enhanced border-l-2 border-success/20 bg-card hover:shadow-professional transition-shadow duration-200">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Conversions</p>
-                <p className="text-2xl font-bold">{formatNumber(funnel.totalConversions)}</p>
+                <p className="text-2xl font-bold text-success">{formatNumber(funnel.totalConversions)}</p>
               </div>
-              <Target className="h-8 w-8 text-green-500" />
+              <div className="p-3 bg-success/10 rounded-lg border border-success/20">
+                <Target className="h-6 w-6 text-success" />
+              </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="card-enhanced border-l-2 border-success/20 bg-card hover:shadow-professional transition-shadow duration-200">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Conversion Rate</p>
-                <p className="text-2xl font-bold">{formatPercentage(funnel.overallConversionRate)}</p>
+                <p className="text-2xl font-bold text-success">{formatPercentage(funnel.overallConversionRate)}</p>
               </div>
-              <TrendingUp className="h-8 w-8 text-purple-500" />
+              <div className="p-3 bg-success/10 rounded-lg border border-success/20">
+                <TrendingUp className="h-6 w-6 text-success" />
+              </div>
             </div>
           </CardContent>
         </Card>
         
         {funnel.revenue && (
-          <Card>
+          <Card className="card-enhanced border-l-2 border-destructive/20 bg-card hover:shadow-professional transition-shadow duration-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Revenue</p>
-                  <p className="text-2xl font-bold">${formatNumber(funnel.revenue)}</p>
+                  <p className="text-2xl font-bold text-destructive">${formatNumber(funnel.revenue)}</p>
                 </div>
-                <BarChart3 className="h-8 w-8 text-orange-500" />
+                <div className="p-3 bg-destructive/10 rounded-lg border border-destructive/20">
+                  <BarChart3 className="h-6 w-6 text-destructive" />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -395,11 +405,16 @@ export function ConversionFunnel({ campaignId, timeframe = '30d', showControls =
       </div>
 
       {/* Funnel Visualization */}
-      <Card>
+      <Card className="card-enhanced bg-card hover:shadow-professional transition-shadow duration-200">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Conversion Funnel
+          <CardTitle className="flex items-center gap-3">
+            <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+              <Filter className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <span className="text-lg font-medium">Conversion Funnel</span>
+              <p className="text-sm text-muted-foreground font-normal">User journey visualization</p>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">
@@ -418,19 +433,24 @@ export function ConversionFunnel({ campaignId, timeframe = '30d', showControls =
                     onClick={() => setSelectedStage(isSelected ? null : stage.id)}
                   >
                     <div 
-                      className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-4 text-white shadow-lg hover:shadow-xl transition-shadow"
+                      className={`card-enhanced border-l-2 border-primary/20 bg-card p-4 hover:shadow-professional transition-shadow duration-200 ${isSelected ? 'ring-2 ring-primary' : ''}`}
                       style={{ width: `${stageWidth}%` }}
                     >
                       <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-semibold">{stage.name}</h4>
-                          <p className="text-blue-100 text-sm">{stage.description}</p>
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
+                            <Target className="h-4 w-4 text-primary" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-foreground">{stage.name}</h4>
+                            <p className="text-muted-foreground text-sm">{stage.description}</p>
+                          </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-xl font-bold">
+                          <div className="text-xl font-bold text-primary">
                             {formatNumber(stage.visitors)}
                           </div>
-                          <div className="text-blue-100 text-sm">
+                          <div className="text-muted-foreground text-sm">
                             {formatPercentage(stage.conversionRate)}
                           </div>
                         </div>
@@ -452,29 +472,29 @@ export function ConversionFunnel({ campaignId, timeframe = '30d', showControls =
 
                   {/* Stage Details (when selected) */}
                   {isSelected && (
-                    <Card className="ml-4 border-l-4 border-l-blue-500">
+                    <Card className="ml-4 card-enhanced border-l-2 border-success/20 bg-card">
                       <CardContent className="p-4">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                           <div>
                             <p className="text-sm text-muted-foreground">Visitors</p>
-                            <p className="text-lg font-semibold">{formatNumber(stage.visitors)}</p>
+                            <p className="text-lg font-semibold text-primary">{formatNumber(stage.visitors)}</p>
                           </div>
                           <div>
                             <p className="text-sm text-muted-foreground">Conversion Rate</p>
-                            <p className={`text-lg font-semibold ${getConversionColor(stage.conversionRate, index)}`}>
+                            <p className="text-lg font-semibold text-success">
                               {formatPercentage(stage.conversionRate)}
                             </p>
                           </div>
                           {stage.avgTimeSpent && (
                             <div>
                               <p className="text-sm text-muted-foreground">Avg. Time Spent</p>
-                              <p className="text-lg font-semibold">{stage.avgTimeSpent}s</p>
+                              <p className="text-lg font-semibold text-muted-foreground">{stage.avgTimeSpent}s</p>
                             </div>
                           )}
                           {stage.value && stage.value > 0 && (
                             <div>
                               <p className="text-sm text-muted-foreground">Value Generated</p>
-                              <p className="text-lg font-semibold">${formatNumber(stage.value)}</p>
+                              <p className="text-lg font-semibold text-destructive">${formatNumber(stage.value)}</p>
                             </div>
                           )}
                         </div>
@@ -489,9 +509,17 @@ export function ConversionFunnel({ campaignId, timeframe = '30d', showControls =
       </Card>
 
       {/* Stage Comparison Table */}
-      <Card>
+      <Card className="card-enhanced bg-card hover:shadow-professional transition-shadow duration-200">
         <CardHeader>
-          <CardTitle>Stage Performance Details</CardTitle>
+          <CardTitle className="flex items-center gap-3">
+            <div className="p-3 bg-muted/10 rounded-lg border border-muted/20">
+              <BarChart3 className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div>
+              <span className="text-lg font-medium">Stage Performance Details</span>
+              <p className="text-sm text-muted-foreground font-normal">Detailed breakdown by stage</p>
+            </div>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -508,7 +536,7 @@ export function ConversionFunnel({ campaignId, timeframe = '30d', showControls =
               </thead>
               <tbody>
                 {funnel.stages.map((stage, index) => (
-                  <tr key={stage.id} className="border-b hover:bg-muted/50">
+                  <tr key={stage.id} className="border-b hover:bg-muted/20 transition-colors duration-200">
                     <td className="p-2">
                       <div>
                         <div className="font-medium">{stage.name}</div>

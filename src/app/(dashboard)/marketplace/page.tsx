@@ -288,10 +288,10 @@ const demoRevenueStats: RevenueStats = {
 
 function getPopularityIcon(popularity: string) {
   switch (popularity) {
-    case 'hot': return <Zap className="h-4 w-4 text-orange-500" />;
-    case 'trending': return <TrendingUp className="h-4 w-4 text-blue-500" />;
-    case 'new': return <Sparkles className="h-4 w-4 text-green-500" />;
-    case 'bestseller': return <Crown className="h-4 w-4 text-yellow-500" />;
+    case 'hot': return <Zap className="h-4 w-4 text-warning" />;
+    case 'trending': return <TrendingUp className="h-4 w-4 text-primary" />;
+    case 'new': return <Sparkles className="h-4 w-4 text-success" />;
+    case 'bestseller': return <Crown className="h-4 w-4 text-warning" />;
     default: return null;
   }
 }
@@ -363,7 +363,7 @@ function BoostCard({ boost, onPurchase }: BoostCardProps) {
           </div>
         </div>
         
-        <CardTitle className="text-xl">{boost.name}</CardTitle>
+        <CardTitle className="text-lg font-medium">{boost.name}</CardTitle>
         <p className="text-sm text-muted-foreground">{boost.description}</p>
         
         <div className="flex items-center gap-2 mt-2">
@@ -379,7 +379,7 @@ function BoostCard({ boost, onPurchase }: BoostCardProps) {
       <CardContent className="space-y-4">
         {/* Pricing */}
         <div className="flex items-center gap-2">
-          <span className="text-3xl font-bold text-primary">
+          <span className="text-2xl font-bold text-primary">
             {formatCurrency(boost.price)}
           </span>
           {isOnSale && (
@@ -388,7 +388,7 @@ function BoostCard({ boost, onPurchase }: BoostCardProps) {
             </span>
           )}
           {isOnSale && (
-            <Badge className="bg-red-500 text-white text-xs">
+            <Badge className="bg-destructive text-destructive-foreground text-xs">
               SAVE {formatCurrency(boost.originalPrice! - boost.price)}
             </Badge>
           )}
@@ -397,15 +397,15 @@ function BoostCard({ boost, onPurchase }: BoostCardProps) {
         {/* Metrics */}
         <div className="grid grid-cols-3 gap-3 text-center">
           <div>
-            <p className="text-lg font-bold text-green-600">{boost.metrics.averageIncrease}</p>
+            <p className="font-bold text-success">{boost.metrics.averageIncrease}</p>
             <p className="text-xs text-muted-foreground">Avg Increase</p>
           </div>
           <div>
-            <p className="text-lg font-bold text-blue-600">{boost.metrics.successRate}%</p>
+            <p className="font-bold text-primary">{boost.metrics.successRate}%</p>
             <p className="text-xs text-muted-foreground">Success Rate</p>
           </div>
           <div>
-            <p className="text-lg font-bold text-purple-600">{boost.estimatedROI}</p>
+            <p className="font-bold text-primary">{boost.estimatedROI}</p>
             <p className="text-xs text-muted-foreground">Est. ROI</p>
           </div>
         </div>
@@ -415,7 +415,7 @@ function BoostCard({ boost, onPurchase }: BoostCardProps) {
           <p className="text-sm font-medium">Key Features:</p>
           {boost.features.slice(0, 3).map((feature, index) => (
             <div key={index} className="flex items-center gap-2 text-sm">
-              <CheckCircle className="h-3 w-3 text-green-500 flex-shrink-0" />
+              <CheckCircle className="h-3 w-3 text-success flex-shrink-0" />
               <span className="text-muted-foreground">{feature}</span>
             </div>
           ))}
@@ -429,7 +429,7 @@ function BoostCard({ boost, onPurchase }: BoostCardProps) {
         {/* Rating and reviews */}
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-1">
-            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+            <Star className="h-4 w-4 fill-warning text-warning" />
             <span className="font-medium">{boost.rating}</span>
             <span className="text-muted-foreground">({boost.reviews} reviews)</span>
           </div>
@@ -472,7 +472,7 @@ function BoostCard({ boost, onPurchase }: BoostCardProps) {
                   <div className="grid gap-2">
                     {boost.features.map((feature, index) => (
                       <div key={index} className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                        <CheckCircle className="h-4 w-4 text-success flex-shrink-0" />
                         <span>{feature}</span>
                       </div>
                     ))}
@@ -483,11 +483,11 @@ function BoostCard({ boost, onPurchase }: BoostCardProps) {
                   <h4 className="font-semibold mb-2">Performance Metrics</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-3 bg-muted rounded-lg">
-                      <p className="text-2xl font-bold text-green-600">{boost.metrics.averageIncrease}</p>
+                      <p className="text-2xl font-bold text-success">{boost.metrics.averageIncrease}</p>
                       <p className="text-sm text-muted-foreground">Average Increase</p>
                     </div>
                     <div className="p-3 bg-muted rounded-lg">
-                      <p className="text-2xl font-bold text-blue-600">{boost.metrics.successRate}%</p>
+                      <p className="text-2xl font-bold text-primary">{boost.metrics.successRate}%</p>
                       <p className="text-sm text-muted-foreground">Success Rate</p>
                     </div>
                   </div>
@@ -561,11 +561,11 @@ export default function MarketplacePage() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
             <ShoppingCart className="h-8 w-8 text-primary" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
               Marketplace
             </h1>
           </div>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-base text-muted-foreground max-w-2xl mx-auto">
             Supercharge your clients' social media performance with premium boosts and track your revenue growth
           </p>
         </div>
@@ -577,8 +577,8 @@ export default function MarketplacePage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
-                  <p className="text-3xl font-bold text-primary">{formatCurrency(revenueStats.totalRevenue)}</p>
-                  <p className="text-xs text-green-600 mt-1">+12% from last month</p>
+                  <p className="text-2xl font-bold text-primary">{formatCurrency(revenueStats.totalRevenue)}</p>
+                  <p className="text-xs text-success mt-1">+12% from last month</p>
                 </div>
                 <div className="p-3 bg-primary/10 rounded-full">
                   <DollarSign className="h-6 w-6 text-primary" />
@@ -592,11 +592,11 @@ export default function MarketplacePage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Monthly Revenue</p>
-                  <p className="text-3xl font-bold text-green-600">{formatCurrency(revenueStats.monthlyRevenue)}</p>
-                  <p className="text-xs text-green-600 mt-1">+8% from last month</p>
+                  <p className="text-2xl font-bold text-success">{formatCurrency(revenueStats.monthlyRevenue)}</p>
+                  <p className="text-xs text-success mt-1">+8% from last month</p>
                 </div>
-                <div className="p-3 bg-green-500/10 rounded-full">
-                  <TrendingUp className="h-6 w-6 text-green-600" />
+                <div className="p-3 bg-success/10 rounded-full">
+                  <TrendingUp className="h-6 w-6 text-success" />
                 </div>
               </div>
             </CardContent>
@@ -607,11 +607,11 @@ export default function MarketplacePage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Active Boosts</p>
-                  <p className="text-3xl font-bold text-blue-600">{revenueStats.activeBoosts}</p>
+                  <p className="text-2xl font-bold text-primary">{revenueStats.activeBoosts}</p>
                   <p className="text-xs text-muted-foreground mt-1">{revenueStats.totalPurchases} total purchases</p>
                 </div>
-                <div className="p-3 bg-blue-500/10 rounded-full">
-                  <Rocket className="h-6 w-6 text-blue-600" />
+                <div className="p-3 bg-primary/10 rounded-full">
+                  <Rocket className="h-6 w-6 text-primary" />
                 </div>
               </div>
             </CardContent>
@@ -622,11 +622,11 @@ export default function MarketplacePage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Average ROI</p>
-                  <p className="text-3xl font-bold text-purple-600">{revenueStats.averageROI}%</p>
+                  <p className="text-2xl font-bold text-primary">{revenueStats.averageROI}%</p>
                   <p className="text-xs text-muted-foreground mt-1">Across all clients</p>
                 </div>
-                <div className="p-3 bg-purple-500/10 rounded-full">
-                  <BarChart3 className="h-6 w-6 text-purple-600" />
+                <div className="p-3 bg-primary/10 rounded-full">
+                  <BarChart3 className="h-6 w-6 text-primary" />
                 </div>
               </div>
             </CardContent>
@@ -717,7 +717,7 @@ export default function MarketplacePage() {
                   <div className="flex justify-center mb-4">
                     <Package className="h-8 w-8 text-muted-foreground" />
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">No boosts found</h3>
+                  <h3 className="text-lg font-medium mb-2">No boosts found</h3>
                   <p className="text-muted-foreground">
                     Try adjusting your search criteria or filters
                   </p>
@@ -734,17 +734,17 @@ export default function MarketplacePage() {
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <h3 className="font-semibold text-lg">{purchase.productName}</h3>
+                        <h3 className="font-medium text-lg">{purchase.productName}</h3>
                         <p className="text-sm text-muted-foreground">
                           {purchase.clientName} • {formatDate(purchase.purchaseDate)}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-xl font-bold">{formatCurrency(purchase.price)}</p>
+                        <p className="text-lg font-bold">{formatCurrency(purchase.price)}</p>
                         <Badge className={cn(
-                          purchase.status === 'active' && "bg-green-100 text-green-800",
-                          purchase.status === 'completed' && "bg-blue-100 text-blue-800",
-                          purchase.status === 'cancelled' && "bg-red-100 text-red-800"
+                          purchase.status === 'active' && "bg-success/10 text-success",
+                          purchase.status === 'completed' && "bg-primary/10 text-primary",
+                          purchase.status === 'cancelled' && "bg-destructive/10 text-destructive"
                         )}>
                           {purchase.status}
                         </Badge>
@@ -754,19 +754,19 @@ export default function MarketplacePage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div>
                         <p className="text-sm text-muted-foreground">Impressions</p>
-                        <p className="text-lg font-bold">{purchase.performance.impressions.toLocaleString()}</p>
+                        <p className="font-bold">{purchase.performance.impressions.toLocaleString()}</p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Engagements</p>
-                        <p className="text-lg font-bold">{purchase.performance.engagements.toLocaleString()}</p>
+                        <p className="font-bold">{purchase.performance.engagements.toLocaleString()}</p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Conversions</p>
-                        <p className="text-lg font-bold">{purchase.performance.conversions}</p>
+                        <p className="font-bold">{purchase.performance.conversions}</p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">ROI</p>
-                        <p className="text-lg font-bold text-green-600">+{purchase.performance.roi}%</p>
+                        <p className="font-bold text-success">+{purchase.performance.roi}%</p>
                       </div>
                     </div>
                   </CardContent>
@@ -780,7 +780,7 @@ export default function MarketplacePage() {
                   <div className="flex justify-center mb-4">
                     <ShoppingCart className="h-8 w-8 text-muted-foreground" />
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">No purchases yet</h3>
+                  <h3 className="text-lg font-medium mb-2">No purchases yet</h3>
                   <p className="text-muted-foreground mb-4">
                     Start boosting your clients' performance with our marketplace products
                   </p>

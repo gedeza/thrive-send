@@ -29,214 +29,274 @@ export default function ServiceProviderDashboard() {
       description: 'Cross-client template sharing with advanced customization',
       icon: <FileText className="h-8 w-8" />,
       href: '/service-provider/templates',
-      color: 'bg-blue-500',
       stats: '45 shared templates',
-      completed: true
+      completed: true,
+      priority: 1
     },
     {
       title: 'Client Analytics',
       description: 'Advanced analytics dashboard with cross-client insights',
       icon: <BarChart3 className="h-8 w-8" />,
       href: '/service-provider/analytics',
-      color: 'bg-green-500',
       stats: '94% performance increase',
-      completed: true
+      completed: true,
+      priority: 2
     },
     {
       title: 'Approval Workflows',
       description: 'Enhanced multi-step approval processes',
       icon: <CheckCircle className="h-8 w-8" />,
       href: '/service-provider/approvals',
-      color: 'bg-purple-500',
       stats: '127 items processed',
-      completed: true
+      completed: true,
+      priority: 3
     },
     {
       title: 'Bulk Operations',
       description: 'Execute operations across multiple clients simultaneously',
       icon: <Zap className="h-8 w-8" />,
       href: '/service-provider/bulk-operations',
-      color: 'bg-orange-500',
       stats: '87.5% success rate',
-      completed: true
+      completed: true,
+      priority: 4
     },
     {
       title: 'Content Scheduler',
       description: 'Advanced scheduling with timezone optimization',
       icon: <Clock className="h-8 w-8" />,
       href: '/service-provider/scheduling',
-      color: 'bg-teal-500',
       stats: '156 scheduled posts',
-      completed: true
+      completed: true,
+      priority: 5
     }
   ];
 
   const quickStats = [
-    { label: 'Active Clients', value: '3', icon: <Users className="h-5 w-5" />, color: 'text-blue-600' },
-    { label: 'Templates Shared', value: '45', icon: <FileText className="h-5 w-5" />, color: 'text-green-600' },
-    { label: 'Success Rate', value: '94.2%', icon: <Target className="h-5 w-5" />, color: 'text-purple-600' },
-    { label: 'Monthly Growth', value: '+23%', icon: <TrendingUp className="h-5 w-5" />, color: 'text-orange-600' }
+    { label: 'Active Clients', value: '3', icon: <Users className="h-5 w-5" /> },
+    { label: 'Templates Shared', value: '45', icon: <FileText className="h-5 w-5" /> },
+    { label: 'Success Rate', value: '94.2%', icon: <Target className="h-5 w-5" /> },
+    { label: 'Monthly Growth', value: '+23%', icon: <TrendingUp className="h-5 w-5" /> }
   ];
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Building2 className="h-8 w-8 text-blue-600" />
-            Service Provider Dashboard
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Manage content operations across multiple clients with advanced B2B2G features
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <Badge variant="outline" className="text-green-600 border-green-200">
-            <Star className="h-3 w-3 mr-1" />
-            Week 2 Complete
-          </Badge>
-          <Badge variant="secondary">
-            Enhanced Content Features
-          </Badge>
-        </div>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {quickStats.map((stat, index) => (
-          <Card key={index}>
+    <div className="container mx-auto py-4 max-w-7xl">
+      <div className="space-y-8">
+        {/* Header */}
+        <div className="mb-8">
+          <Card className="border border-primary bg-gradient-to-r from-primary/5 to-transparent hover:shadow-lg transition-all duration-300">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
-                  <p className="text-2xl font-bold">{stat.value}</p>
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-primary/10 rounded-xl">
+                    <Building2 className="h-8 w-8 text-primary" />
+                  </div>
+                  <div>
+                    <h1 className="text-3xl font-bold text-foreground">Service Provider Dashboard</h1>
+                    <p className="text-muted-foreground mt-1">
+                      Manage content operations across multiple clients with advanced B2B2G features
+                    </p>
+                  </div>
                 </div>
-                <div className={`p-2 rounded-lg bg-gray-100 ${stat.color}`}>
-                  {stat.icon}
+                <div className="flex items-center gap-3">
+                  <Badge variant="outline" className="text-success border-success/20 bg-success/5">
+                    <Star className="h-3 w-3 mr-1" />
+                    Week 2 Complete
+                  </Badge>
+                  <Badge variant="secondary" className="border">
+                    Enhanced Content Features
+                  </Badge>
                 </div>
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+        </div>
 
-      {/* Feature Overview */}
-      <div>
-        <h2 className="text-2xl font-semibold mb-6">B2B2G Service Provider Features</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((feature, index) => (
-            <Card key={index} className="hover:shadow-lg transition-all duration-200 group">
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {quickStats.map((stat, index) => (
+            <Card key={index} className="border hover:shadow-md transition-all duration-300">
               <CardContent className="p-6">
-                <div className="space-y-4">
-                  {/* Icon and Status */}
-                  <div className="flex items-start justify-between">
-                    <div className={`p-3 rounded-lg text-white ${feature.color}`}>
-                      {feature.icon}
-                    </div>
-                    {feature.completed && (
-                      <Badge variant="outline" className="text-green-600 border-green-200">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Ready
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  {/* Content */}
+                <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      {feature.description}
-                    </p>
-                    <p className="text-sm font-medium text-blue-600">
-                      {feature.stats}
-                    </p>
+                    <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
+                    <p className="text-2xl font-bold">{stat.value}</p>
                   </div>
-                  
-                  {/* Action */}
-                  <Link href={feature.href}>
-                    <Button className="w-full group-hover:bg-primary/90 transition-colors">
-                      Access {feature.title}
-                      <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                  </Link>
+                  <div className="p-2 rounded-lg bg-muted/10 text-muted-foreground">
+                    {stat.icon}
+                  </div>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
+
+        {/* Feature Overview */}
+        <div>
+          <Card className="mb-6 border border-primary bg-gradient-to-r from-primary/5 to-transparent">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Target className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-semibold text-foreground">B2B2G Service Provider Features</h2>
+                  <p className="text-sm text-muted-foreground mt-1">Advanced tools for multi-client content management</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {features.map((feature, index) => (
+              <Card key={index} className="hover:shadow-lg transition-all duration-300 group border">
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    {/* Icon and Status */}
+                    <div className="flex items-start justify-between">
+                      <div className="p-3 rounded-lg bg-primary/10 text-primary shadow-md">
+                        {feature.icon}
+                      </div>
+                      {feature.completed && (
+                        <Badge variant="outline" className="text-success border-success/20 bg-success/5">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Ready
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    {/* Content */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold">{feature.title}</h3>
+                        <span className="text-xs font-medium text-muted-foreground bg-muted/10 px-2 py-1 rounded">
+                          Priority {feature.priority}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {feature.description}
+                      </p>
+                      <div className="p-2 bg-muted/5 rounded border-l-2 border-primary">
+                        <p className="text-sm font-medium text-foreground">
+                          {feature.stats}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* Action */}
+                    <Link href={feature.href}>
+                      <Button variant="outline" className="w-full group-hover:bg-primary/10 group-hover:border-primary transition-all duration-300">
+                        Access {feature.title}
+                        <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        {/* Implementation Status */}
+        <Card className="border border-primary bg-gradient-to-r from-primary/5 to-transparent hover:shadow-lg transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <CheckCircle className="h-5 w-5 text-primary" />
+              </div>
+              Week 2 Implementation Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card className="p-4 border hover:shadow-md transition-all duration-300">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 bg-success rounded-full"></div>
+                    <h4 className="font-semibold">Day 1 Complete</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Cross-client template sharing system</p>
+                </Card>
+                <Card className="p-4 border hover:shadow-md transition-all duration-300">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 bg-success rounded-full"></div>
+                    <h4 className="font-semibold">Day 2 Complete</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Advanced analytics & performance metrics</p>
+                </Card>
+                <Card className="p-4 border hover:shadow-md transition-all duration-300">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 bg-success rounded-full"></div>
+                    <h4 className="font-semibold">Day 3 Complete</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Approval workflows, bulk ops & scheduling</p>
+                </Card>
+              </div>
+              
+              <div className="pt-4 border-t">
+                <Card className="p-4 border border-primary/20">
+                  <div className="flex items-center gap-3">
+                    <div className="text-2xl">🚀</div>
+                    <p className="text-sm text-muted-foreground">
+                      All Week 2 Enhanced Content Features have been successfully implemented with full B2B2G service provider architecture.
+                      Each feature includes comprehensive APIs, service layers, and interactive UI components with demo data for immediate testing.
+                    </p>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        <Card className="border border-primary bg-gradient-to-r from-primary/5 to-transparent hover:shadow-lg transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Zap className="h-5 w-5 text-primary" />
+              </div>
+              Quick Actions
+              <Badge variant="outline" className="ml-2 border">
+                4 Available
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Link href="/service-provider/templates">
+                <Card className="h-20 hover:shadow-md transition-all duration-300 border group">
+                  <CardContent className="p-4 flex flex-col items-center justify-center gap-2 h-full">
+                    <FileText className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:scale-110 transition-all duration-300" />
+                    <span className="text-sm font-medium">Browse Templates</span>
+                  </CardContent>
+                </Card>
+              </Link>
+              <Link href="/service-provider/analytics">
+                <Card className="h-20 hover:shadow-md transition-all duration-300 border group">
+                  <CardContent className="p-4 flex flex-col items-center justify-center gap-2 h-full">
+                    <BarChart3 className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:scale-110 transition-all duration-300" />
+                    <span className="text-sm font-medium">View Analytics</span>
+                  </CardContent>
+                </Card>
+              </Link>
+              <Link href="/service-provider/bulk-operations">
+                <Card className="h-20 hover:shadow-md transition-all duration-300 border group">
+                  <CardContent className="p-4 flex flex-col items-center justify-center gap-2 h-full">
+                    <Zap className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:scale-110 transition-all duration-300" />
+                    <span className="text-sm font-medium">Bulk Operations</span>
+                  </CardContent>
+                </Card>
+              </Link>
+              <Link href="/service-provider/scheduling">
+                <Card className="h-20 hover:shadow-md transition-all duration-300 border group">
+                  <CardContent className="p-4 flex flex-col items-center justify-center gap-2 h-full">
+                    <Clock className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:scale-110 transition-all duration-300" />
+                    <span className="text-sm font-medium">Schedule Content</span>
+                  </CardContent>
+                </Card>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-
-      {/* Implementation Status */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            Week 2 Implementation Status
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                <h4 className="font-semibold text-green-800">Day 1 Complete</h4>
-                <p className="text-sm text-green-600 mt-1">Cross-client template sharing system</p>
-              </div>
-              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                <h4 className="font-semibold text-green-800">Day 2 Complete</h4>
-                <p className="text-sm text-green-600 mt-1">Advanced analytics & performance metrics</p>
-              </div>
-              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                <h4 className="font-semibold text-green-800">Day 3 Complete</h4>
-                <p className="text-sm text-green-600 mt-1">Approval workflows, bulk ops & scheduling</p>
-              </div>
-            </div>
-            
-            <div className="pt-4 border-t">
-              <p className="text-sm text-muted-foreground">
-                🚀 All Week 2 Enhanced Content Features have been successfully implemented with full B2B2G service provider architecture.
-                Each feature includes comprehensive APIs, service layers, and interactive UI components with demo data for immediate testing.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link href="/service-provider/templates">
-              <Button variant="outline" className="w-full h-20 flex flex-col gap-2">
-                <FileText className="h-5 w-5" />
-                <span className="text-sm">Browse Templates</span>
-              </Button>
-            </Link>
-            <Link href="/service-provider/analytics">
-              <Button variant="outline" className="w-full h-20 flex flex-col gap-2">
-                <BarChart3 className="h-5 w-5" />
-                <span className="text-sm">View Analytics</span>
-              </Button>
-            </Link>
-            <Link href="/service-provider/bulk-operations">
-              <Button variant="outline" className="w-full h-20 flex flex-col gap-2">
-                <Zap className="h-5 w-5" />
-                <span className="text-sm">Bulk Operations</span>
-              </Button>
-            </Link>
-            <Link href="/service-provider/scheduling">
-              <Button variant="outline" className="w-full h-20 flex flex-col gap-2">
-                <Clock className="h-5 w-5" />
-                <span className="text-sm">Schedule Content</span>
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

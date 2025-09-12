@@ -77,60 +77,59 @@ const invitationSchema = z.object({
 
 type InvitationFormData = z.infer<typeof invitationSchema>;
 
-// Role configuration
+// Enhanced Minimalist Role Configuration
+const getRoleColor = (role: string, level: number) => {
+  if (level >= 9) return 'bg-destructive/10 text-destructive border border-destructive/20';
+  if (level >= 7) return 'bg-primary/10 text-primary border border-primary/20';
+  if (level >= 5) return 'bg-success/10 text-success border border-success/20';
+  return 'bg-muted/10 text-muted-foreground border border-muted/20';
+};
+
 const roleConfig = {
   ADMIN: { 
     label: 'Administrator', 
-    color: 'bg-red-100 text-red-800', 
     description: 'Full administrative access including team management and organization settings',
     level: 9,
     permissions: ['manage_team', 'manage_clients', 'manage_campaigns', 'manage_content', 'view_analytics', 'manage_billing']
   },
   MANAGER: { 
     label: 'Manager', 
-    color: 'bg-blue-100 text-blue-800', 
     description: 'Project and team management with client oversight capabilities',
     level: 8,
     permissions: ['manage_projects', 'assign_team', 'manage_campaigns', 'manage_content', 'view_analytics']
   },
   CLIENT_MANAGER: { 
     label: 'Client Manager', 
-    color: 'bg-green-100 text-green-800', 
     description: 'Client relationship management and account oversight',
     level: 7,
     permissions: ['manage_client_relationships', 'view_client_analytics', 'manage_campaigns', 'communicate_clients']
   },
   APPROVER: { 
     label: 'Approver', 
-    color: 'bg-orange-100 text-orange-800', 
     description: 'Content approval authority with campaign oversight',
     level: 6,
     permissions: ['approve_content', 'manage_campaigns', 'view_analytics']
   },
   PUBLISHER: { 
     label: 'Publisher', 
-    color: 'bg-indigo-100 text-indigo-800', 
     description: 'Content publishing and distribution management',
     level: 5,
     permissions: ['publish_content', 'manage_social_accounts', 'schedule_content']
   },
   REVIEWER: { 
     label: 'Reviewer', 
-    color: 'bg-yellow-100 text-yellow-800', 
     description: 'Content review and quality assurance',
     level: 4,
     permissions: ['review_content', 'edit_content', 'view_analytics']
   },
   ANALYST: { 
     label: 'Analyst', 
-    color: 'bg-teal-100 text-teal-800', 
     description: 'Analytics and performance tracking specialist',
     level: 3,
     permissions: ['view_analytics', 'create_reports', 'export_data']
   },
   CONTENT_CREATOR: { 
     label: 'Content Creator', 
-    color: 'bg-pink-100 text-pink-800', 
     description: 'Content creation and development',
     level: 2,
     permissions: ['create_content', 'edit_own_content', 'view_basic_analytics']
@@ -343,14 +342,17 @@ export default function InviteTeamMemberPage() {
   if (!organizationId) {
     return (
       <div className="container mx-auto py-8 max-w-4xl">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Organization Context Missing</strong>
-            <br />
-            Unable to load organization context. Please refresh the page or contact support if the issue persists.
-          </AlertDescription>
-        </Alert>
+        <Card className="card-enhanced border-l-2 border-destructive/20">
+          <CardContent className="p-8 text-center">
+            <div className="p-4 bg-destructive/10 rounded-lg border border-destructive/20 w-fit mx-auto mb-4">
+              <AlertCircle className="h-8 w-8 text-destructive" />
+            </div>
+            <h3 className="font-semibold text-destructive mb-2">Organization Context Missing</h3>
+            <p className="text-muted-foreground">
+              Unable to load organization context. Please refresh the page or contact support if the issue persists.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -382,10 +384,12 @@ export default function InviteTeamMemberPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
           {/* Basic Information */}
-          <Card>
+          <Card className="card-enhanced border-l-2 border-primary/20 hover:shadow-professional transition-shadow duration-200">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <UserPlus className="h-5 w-5" />
+                <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
+                  <UserPlus className="h-5 w-5 text-primary" />
+                </div>
                 Basic Information
               </CardTitle>
             </CardHeader>
@@ -432,10 +436,12 @@ export default function InviteTeamMemberPage() {
           </Card>
 
           {/* Role Selection */}
-          <Card>
+          <Card className="card-enhanced border-l-2 border-success/20 hover:shadow-professional transition-shadow duration-200">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" />
+                <div className="p-2 bg-success/10 rounded-lg border border-success/20">
+                  <Shield className="h-5 w-5 text-success" />
+                </div>
                 Role & Permissions
               </CardTitle>
             </CardHeader>
@@ -450,7 +456,7 @@ export default function InviteTeamMemberPage() {
                     {Object.entries(roleConfig).map(([role, config]) => (
                       <SelectItem key={role} value={role}>
                         <div className="flex items-center gap-2">
-                          <Badge className={cn("text-xs", config.color)}>
+                          <Badge className={cn("text-xs", getRoleColor(role, config.level))}>
                             {config.label}
                           </Badge>
                           <span className="text-sm text-muted-foreground">
@@ -467,34 +473,40 @@ export default function InviteTeamMemberPage() {
               </div>
 
               {selectedRoleConfig && (
-                <Alert>
-                  <Info className="h-4 w-4" />
-                  <AlertDescription>
-                    <strong>{selectedRoleConfig.label} Role</strong>
-                    <p className="mb-2 mt-1">{selectedRoleConfig.description}</p>
-                    <div className="space-y-1">
-                      <p className="font-medium text-sm">Permissions included:</p>
+                <Card className="card-enhanced border-l-2 border-primary/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
+                        <Info className="h-4 w-4 text-primary" />
+                      </div>
+                      <h4 className="font-semibold text-foreground">{selectedRoleConfig.label} Role</h4>
+                    </div>
+                    <p className="text-muted-foreground mb-3">{selectedRoleConfig.description}</p>
+                    <div className="space-y-2">
+                      <p className="font-medium text-sm text-foreground">Permissions included:</p>
                       <div className="flex flex-wrap gap-1">
                         {selectedRoleConfig.permissions.map((permission) => (
-                          <Badge key={permission} variant="outline" className="text-xs">
+                          <Badge key={permission} className="text-xs bg-muted/10 text-muted-foreground border border-muted/20">
                             {permission.replace('_', ' ')}
                           </Badge>
                         ))}
                       </div>
                     </div>
-                  </AlertDescription>
-                </Alert>
+                  </CardContent>
+                </Card>
               )}
             </CardContent>
           </Card>
 
           {/* Client Assignments */}
-          <Card>
+          <Card className="card-enhanced border-l-2 border-muted/20 hover:shadow-professional transition-shadow duration-200">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
+                <div className="p-2 bg-muted/10 rounded-lg border border-muted/20">
+                  <Users className="h-5 w-5 text-muted-foreground" />
+                </div>
                 Client Assignments
-                <Badge variant="secondary" className="ml-2">
+                <Badge className="ml-2 bg-muted/10 text-muted-foreground border border-muted/20">
                   {clientAssignments.length} assigned
                 </Badge>
               </CardTitle>
@@ -539,7 +551,7 @@ export default function InviteTeamMemberPage() {
                 {clientAssignments.length > 0 && (
                   <div className="space-y-3">
                     {clientAssignments.map((assignment) => (
-                      <div key={assignment.clientId} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div key={assignment.clientId} className="flex items-center justify-between p-4 border border-muted/20 rounded-lg hover:shadow-professional transition-shadow duration-200 hover:border-primary/20 bg-muted/5">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <h4 className="font-medium">{assignment.clientName}</h4>
@@ -595,24 +607,31 @@ export default function InviteTeamMemberPage() {
                 )}
 
                 {clientAssignments.length === 0 && (
-                  <Alert>
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      <strong>No Client Assignments</strong>
-                      <br />
-                      This team member won't have access to any specific clients. They will only have organization-level access based on their role.
-                    </AlertDescription>
-                  </Alert>
+                  <Card className="card-enhanced border-l-2 border-muted/20">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="p-2 bg-muted/10 rounded-lg border border-muted/20">
+                          <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <h4 className="font-semibold text-foreground">No Client Assignments</h4>
+                      </div>
+                      <p className="text-muted-foreground">
+                        This team member won't have access to any specific clients. They will only have organization-level access based on their role.
+                      </p>
+                    </CardContent>
+                  </Card>
                 )}
               </div>
             </CardContent>
           </Card>
 
           {/* Invitation Message */}
-          <Card>
+          <Card className="card-enhanced border-l-2 border-primary/20 hover:shadow-professional transition-shadow duration-200">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Mail className="h-5 w-5" />
+                <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
+                  <Mail className="h-5 w-5 text-primary" />
+                </div>
                 Invitation Message
               </CardTitle>
             </CardHeader>

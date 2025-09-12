@@ -18,7 +18,8 @@ import { AnalyticsErrorBoundary } from '@/components/analytics/AnalyticsErrorBou
 import { 
   RefreshCw, 
   FileDown, 
-  TrendingUp, 
+  TrendingUp,
+  TrendingDown, 
   Users, 
   Eye, 
   Heart, 
@@ -89,10 +90,10 @@ function DataSourceBadge({ source }: { source?: string }) {
   if (!source) return null;
   
   const variants = {
-    'live': { bg: 'bg-green-100 text-green-800 border-green-200', icon: '🟢', label: 'Live Data' },
-    'service-provider': { bg: 'bg-blue-100 text-blue-800 border-blue-200', icon: '🔵', label: 'Service Data' },
-    'demo': { bg: 'bg-yellow-100 text-yellow-800 border-yellow-200', icon: '🟡', label: 'Demo Data' },
-    'unknown': { bg: 'bg-gray-100 text-gray-800 border-gray-200', icon: '⚪', label: 'Data' }
+    'live': { bg: 'bg-success/10 text-success border-success/20', icon: '🟢', label: 'Live Data' },
+    'service-provider': { bg: 'bg-primary/10 text-primary border-primary/20', icon: '🔵', label: 'Service Data' },
+    'demo': { bg: 'bg-warning/10 text-warning border-warning/20', icon: '🟡', label: 'Demo Data' },
+    'unknown': { bg: 'bg-muted text-muted-foreground border-border', icon: '⚪', label: 'Data' }
   };
   
   const variant = variants[source as keyof typeof variants] || variants.unknown;
@@ -204,7 +205,7 @@ function LineChartSkeleton() {
       <div className="flex justify-between items-end h-full">
         {[...Array(7)].map((_, i) => (
           <div key={i} className="flex flex-col items-center gap-2">
-            <Skeleton className={`w-2 bg-blue-200 animate-pulse`} style={{ height: `${Math.random() * 200 + 50}px` }} />
+            <Skeleton className={`w-2 bg-primary/20 animate-pulse`} style={{ height: `${Math.random() * 200 + 50}px` }} />
             <Skeleton className="h-3 w-8" />
           </div>
         ))}
@@ -229,7 +230,7 @@ function BarChartSkeleton() {
       <div className="flex justify-between items-end h-full gap-2">
         {['Facebook', 'Instagram', 'Twitter', 'LinkedIn', 'YouTube'].map((platform, i) => (
           <div key={platform} className="flex flex-col items-center gap-2 flex-1">
-            <Skeleton className={`w-full bg-green-200 animate-pulse max-w-12`} style={{ height: `${Math.random() * 180 + 80}px` }} />
+            <Skeleton className={`w-full bg-success/20 animate-pulse max-w-12`} style={{ height: `${Math.random() * 180 + 80}px` }} />
             <Skeleton className="h-3 w-full max-w-16" />
           </div>
         ))}
@@ -268,7 +269,7 @@ function HeatmapSkeleton() {
           <div key={i} className="space-y-1">
             <Skeleton className="h-6 w-full" />
             {[...Array(24)].map((_, j) => (
-              <Skeleton key={j} className={`h-2 w-full ${Math.random() > 0.3 ? 'bg-orange-200' : 'bg-orange-100'}`} />
+              <Skeleton key={j} className={`h-2 w-full ${Math.random() > 0.3 ? 'bg-warning/20' : 'bg-warning/10'}`} />
             ))}
           </div>
         ))}
@@ -283,38 +284,38 @@ function MetricCard({ title, value, description, icon, change, isLoading }: Metr
     const lowerTitle = title.toLowerCase();
     if (lowerTitle.includes('views') || lowerTitle.includes('reach')) {
       return {
-        iconBg: 'p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-sm',
-        iconColor: 'h-7 w-7 text-blue-600',
-        numberColor: 'text-2xl font-bold text-blue-700 tracking-tight',
-        cardBorder: 'border-l-4 border-blue-500 bg-gradient-to-r from-blue-50/50 to-transparent',
-        changeColor: 'bg-blue-50 text-blue-700',
+        iconBg: 'p-3 bg-primary/10 rounded-lg border border-primary/20',
+        iconColor: 'h-6 w-6 text-primary',
+        numberColor: 'text-2xl font-bold text-primary tracking-tight',
+        cardBorder: 'card-enhanced border-l-2 border-primary/20 bg-card',
+        changeColor: 'bg-primary/10 text-primary',
         category: 'Reach & Visibility'
       };
     } else if (lowerTitle.includes('engagement')) {
       return {
-        iconBg: 'p-4 bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl shadow-sm',
-        iconColor: 'h-7 w-7 text-pink-600',
-        numberColor: 'text-2xl font-bold text-pink-700 tracking-tight',
-        cardBorder: 'border-l-4 border-pink-500 bg-gradient-to-r from-pink-50/50 to-transparent',
-        changeColor: 'bg-pink-50 text-pink-700',
+        iconBg: 'p-3 bg-success/10 rounded-lg border border-success/20',
+        iconColor: 'h-6 w-6 text-success',
+        numberColor: 'text-2xl font-bold text-success tracking-tight',
+        cardBorder: 'card-enhanced border-l-2 border-success/20 bg-card',
+        changeColor: 'bg-success/10 text-success',
         category: 'User Interaction'
       };
     } else if (lowerTitle.includes('conversion') || lowerTitle.includes('revenue')) {
       return {
-        iconBg: 'p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-sm',
-        iconColor: 'h-7 w-7 text-green-600',
-        numberColor: 'text-2xl font-bold text-green-700 tracking-tight',
-        cardBorder: 'border-l-4 border-green-500 bg-gradient-to-r from-green-50/50 to-transparent',
-        changeColor: 'bg-green-50 text-green-700',
+        iconBg: 'p-3 bg-destructive/10 rounded-lg border border-destructive/20',
+        iconColor: 'h-6 w-6 text-destructive',
+        numberColor: 'text-2xl font-bold text-destructive tracking-tight',
+        cardBorder: 'card-enhanced border-l-2 border-destructive/20 bg-card',
+        changeColor: 'bg-destructive/10 text-destructive',
         category: 'Business Impact'
       };
     } else {
       return {
-        iconBg: 'p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl shadow-sm',
-        iconColor: 'h-7 w-7 text-gray-600',
-        numberColor: 'text-2xl font-bold text-gray-700 tracking-tight',
-        cardBorder: 'border-l-4 border-gray-500 bg-gradient-to-r from-gray-50/50 to-transparent',
-        changeColor: 'bg-gray-50 text-gray-700',
+        iconBg: 'p-3 bg-muted/10 rounded-lg border border-muted/20',
+        iconColor: 'h-6 w-6 text-muted-foreground',
+        numberColor: 'text-2xl font-bold text-muted-foreground tracking-tight',
+        cardBorder: 'card-enhanced border-l-2 border-muted/40 bg-card',
+        changeColor: 'bg-muted/10 text-muted-foreground',
         category: 'General Metrics'
       };
     }
@@ -324,19 +325,19 @@ function MetricCard({ title, value, description, icon, change, isLoading }: Metr
 
   if (isLoading) {
     return (
-      <Card className={`hover:shadow-lg transition-all duration-300 ${styles.cardBorder} metric-card-compact`}>
+      <Card className={`${styles.cardBorder} hover:shadow-professional transition-shadow duration-200`}>
         <CardContent className="p-4">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="space-y-2 flex-1">
-                <Skeleton className="h-3 w-20 rounded" />
-                <Skeleton className="h-10 w-24 rounded" />
+                <Skeleton className="h-3 w-20 rounded bg-muted" />
+                <Skeleton className="h-10 w-24 rounded bg-muted" />
               </div>
-              <Skeleton className="h-14 w-14 rounded-xl" />
+              <Skeleton className="h-14 w-14 rounded-xl bg-muted" />
             </div>
             <div className="space-y-2">
-              <Skeleton className="h-3 w-32 rounded" />
-              <Skeleton className="h-4 w-28 rounded" />
+              <Skeleton className="h-3 w-32 rounded bg-muted" />
+              <Skeleton className="h-4 w-28 rounded bg-muted" />
             </div>
           </div>
         </CardContent>
@@ -345,7 +346,7 @@ function MetricCard({ title, value, description, icon, change, isLoading }: Metr
   }
 
   return (
-    <Card className={`hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 ${styles.cardBorder} metric-card-compact`}>
+    <Card className={`${styles.cardBorder} hover:shadow-professional transition-shadow duration-200`}>
       <CardContent className="p-4">
         <div className="space-y-2">
           {/* Header with category and icon */}
@@ -356,7 +357,7 @@ function MetricCard({ title, value, description, icon, change, isLoading }: Metr
                   {styles.category}
                 </span>
               </div>
-              <h3 className="text-card-title text-foreground">{title}</h3>
+              <h3 className="text-sm font-medium text-foreground">{title}</h3>
             </div>
             <div className={styles.iconBg}>
               <div className={styles.iconColor}>
@@ -377,7 +378,12 @@ function MetricCard({ title, value, description, icon, change, isLoading }: Metr
           
           {/* Change indicator */}
           {change !== undefined && (
-            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${styles.changeColor}`}>
+            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${styles.changeColor} ${
+              styles.changeColor.includes('bg-primary') ? 'border-primary/20' :
+              styles.changeColor.includes('bg-success') ? 'border-success/20' :
+              styles.changeColor.includes('bg-destructive') ? 'border-destructive/20' :
+              'border-muted/20'
+            }`}>
               {change >= 0 ? (
                 <TrendingUp className="h-3 w-3" />
               ) : (
@@ -386,7 +392,7 @@ function MetricCard({ title, value, description, icon, change, isLoading }: Metr
                 </div>
               )}
               <span>{change >= 0 ? '+' : ''}{change.toFixed(1)}%</span>
-              <span className="text-muted-foreground">vs last period</span>
+              <span className="text-muted-foreground ml-1">vs last period</span>
             </div>
           )}
         </div>
@@ -709,7 +715,7 @@ function AnalyticsPageContent() {
         description: `Your analytics report has been ${format === 'pdf' ? 'opened for printing' : 'downloaded'}.`,
       });
     } catch (_error) {
-      console.error("", _error);
+      console.error("Export error:", _error);
       toast({
         title: "Export Failed",
         description: "There was an error generating your report. Please try again.",
@@ -733,7 +739,7 @@ function AnalyticsPageContent() {
         <div className="text-center mb-6">
           <div className="space-y-4">
             <div className="flex items-center justify-center gap-4 mb-4">
-              <div className="p-3 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl">
+              <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
                 <BarChart3 className="h-10 w-10 text-primary" />
               </div>
               <div className="text-left">
@@ -751,15 +757,15 @@ function AnalyticsPageContent() {
               </p>
               <div className="flex items-center justify-center gap-4 mt-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 bg-success rounded-full animate-pulse"></div>
                   <span>Real-time data</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
                   <span>Multi-platform tracking</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <div className="w-2 h-2 bg-muted rounded-full"></div>
                   <span>Advanced insights</span>
                 </div>
               </div>
@@ -1096,8 +1102,8 @@ function AnalyticsPageContent() {
                   {dataSource && (
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-full text-xs font-medium" data-tour="data-source">
                       <div className={`w-2 h-2 rounded-full ${
-                        dataSource === 'live' ? 'bg-green-500' : 
-                        dataSource === 'service-provider' ? 'bg-blue-500' : 'bg-yellow-500'
+                        dataSource === 'live' ? 'bg-success' : 
+                        dataSource === 'service-provider' ? 'bg-primary' : 'bg-warning'
                       }`}></div>
                       <span>{dataSource === 'live' ? 'Live Data' : dataSource === 'service-provider' ? 'Service Data' : 'Demo Data'}</span>
                     </div>
@@ -1159,14 +1165,14 @@ function AnalyticsPageContent() {
               </div>
               
               <div className="grid gap-4 md:grid-cols-2" data-tour="charts">
-                <Card className="hover:shadow-xl transition-all duration-300 border-l-4 border-blue-500 bg-gradient-to-r from-blue-50/30 to-transparent">
+                <Card className="card-enhanced border-l-2 border-primary/20 bg-card hover:shadow-professional transition-shadow duration-200">
                   <CardHeader className="pb-4">
                     <CardTitle className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-100 rounded-lg">
-                        <LineChart className="h-5 w-5 text-blue-600" />
+                      <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+                        <LineChart className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <span className="text-lg font-semibold">Performance Trend</span>
+                        <span className="text-lg font-medium">Performance Trend</span>
                         <p className="text-sm text-muted-foreground font-normal">Growth over time</p>
                       </div>
                     </CardTitle>
@@ -1180,14 +1186,14 @@ function AnalyticsPageContent() {
                   </CardContent>
                 </Card>
 
-                <Card className="hover:shadow-xl transition-all duration-300 border-l-4 border-green-500 bg-gradient-to-r from-green-50/30 to-transparent">
+                <Card className="card-enhanced border-l-2 border-success/20 bg-card hover:shadow-professional transition-shadow duration-200">
                   <CardHeader className="pb-4">
                     <CardTitle className="flex items-center gap-3">
-                      <div className="p-2 bg-green-100 rounded-lg">
-                        <BarChart3 className="h-5 w-5 text-green-600" />
+                      <div className="p-3 bg-success/10 rounded-lg border border-success/20">
+                        <BarChart3 className="h-5 w-5 text-success" />
                       </div>
                       <div>
-                        <span className="text-lg font-semibold">Platform Performance</span>
+                        <span className="text-lg font-medium">Platform Performance</span>
                         <p className="text-sm text-muted-foreground font-normal">Cross-platform comparison</p>
                       </div>
                     </CardTitle>
@@ -1216,40 +1222,40 @@ function AnalyticsPageContent() {
                 <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                   {generateInsights.map((insight, index) => {
                     const getInsightStyles = (type: string, priority: string) => {
-                      const baseStyles = "p-4 sm:p-6 rounded-xl border transition-all duration-300 hover:shadow-lg";
+                      const baseStyles = "card-enhanced transition-shadow duration-200 hover:shadow-professional";
                       
                       if (type === 'success') {
-                        return `${baseStyles} bg-gradient-to-br from-green-50 to-green-100/50 border-green-200 hover:border-green-300`;
+                        return `${baseStyles} border-l-2 border-success/20 bg-card`;
                       } else if (type === 'warning') {
-                        return `${baseStyles} bg-gradient-to-br from-amber-50 to-amber-100/50 border-amber-200 hover:border-amber-300`;
+                        return `${baseStyles} border-l-2 border-destructive/20 bg-card`;
                       } else if (type === 'opportunity') {
-                        return `${baseStyles} bg-gradient-to-br from-blue-50 to-blue-100/50 border-blue-200 hover:border-blue-300`;
+                        return `${baseStyles} border-l-2 border-primary/20 bg-card`;
                       } else {
-                        return `${baseStyles} bg-gradient-to-br from-gray-50 to-gray-100/50 border-gray-200 hover:border-gray-300`;
+                        return `${baseStyles} border-l-2 border-muted/40 bg-card`;
                       }
                     };
                     
                     return (
                       <Card key={index} className={getInsightStyles(insight.type, insight.priority)}>
-                        <CardContent className="p-0">
+                        <CardContent className="p-4">
                           <div className="space-y-4">
                             {/* Header */}
                             <div className="flex items-start gap-3">
-                              <div className={`p-2 rounded-lg ${
-                                insight.type === 'success' ? 'bg-green-100 text-green-600' :
-                                insight.type === 'warning' ? 'bg-amber-100 text-amber-600' :
-                                insight.type === 'opportunity' ? 'bg-blue-100 text-blue-600' :
-                                'bg-gray-100 text-gray-600'
+                              <div className={`p-3 rounded-lg border ${
+                                insight.type === 'success' ? 'bg-success/10 text-success border-success/20' :
+                                insight.type === 'warning' ? 'bg-destructive/10 text-destructive border-destructive/20' :
+                                insight.type === 'opportunity' ? 'bg-primary/10 text-primary border-primary/20' :
+                                'bg-muted/10 text-muted-foreground border-muted/20'
                               }`}>
                                 {insight.icon}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <h3 className="font-semibold text-sm leading-tight">{insight.title}</h3>
-                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                    insight.priority === 'high' ? 'bg-red-100 text-red-700' :
-                                    insight.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                                    'bg-gray-100 text-gray-700'
+                                  <h3 className="font-medium text-sm leading-tight">{insight.title}</h3>
+                                  <span className={`px-2 py-1 rounded-full text-xs font-medium border ${
+                                    insight.priority === 'high' ? 'bg-destructive/10 text-destructive border-destructive/20' :
+                                    insight.priority === 'medium' ? 'bg-primary/10 text-primary border-primary/20' :
+                                    'bg-muted/10 text-muted-foreground border-muted/20'
                                   }`}>
                                     {insight.priority}
                                   </span>
@@ -1261,7 +1267,7 @@ function AnalyticsPageContent() {
                             </div>
                             
                             {/* Recommendation */}
-                            <div className="bg-white/60 rounded-lg p-2.5 sm:p-3 border border-white/40">
+                            <div className="bg-muted/10 rounded-lg p-2.5 sm:p-3 border border-muted/20">
                               <p className="text-xs font-medium text-foreground mb-2">
                                 💡 Recommendation:
                               </p>
@@ -1337,14 +1343,14 @@ function AnalyticsPageContent() {
                 </p>
               </div>
               
-              <Card className="hover:shadow-xl transition-all duration-300 border-l-4 border-amber-500 bg-gradient-to-r from-amber-50/30 to-transparent">
+              <Card className="card-enhanced border-l-2 border-muted/40 bg-card hover:shadow-professional transition-shadow duration-200">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center gap-3">
-                    <div className="p-2 bg-amber-100 rounded-lg">
-                      <Activity className="h-5 w-5 text-amber-600" />
+                    <div className="p-3 bg-muted/10 rounded-lg border border-muted/20">
+                      <Activity className="h-5 w-5 text-muted-foreground" />
                     </div>
                     <div>
-                      <span className="text-lg font-semibold">Activity Heatmap</span>
+                      <span className="text-lg font-medium">Activity Heatmap</span>
                       <p className="text-sm text-muted-foreground font-normal">Peak engagement times</p>
                     </div>
                   </CardTitle>
@@ -1362,12 +1368,64 @@ function AnalyticsPageContent() {
 
           {/* Audience Tab */}
           <TabsContent value="audience" className="space-y-4">
+            {/* Header Section */}
+            <div className="space-y-2">
+              <div>
+                <h2 className="text-xl font-bold tracking-tight">Audience Analytics</h2>
+                <p className="text-muted-foreground">
+                  Deep insights into your audience demographics, behavior, and preferences
+                </p>
+              </div>
+            </div>
+
+            {/* Key Audience Metrics */}
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+              <MetricCard
+                title="Total Audience"
+                value={audienceData?.totalAudience || 0}
+                description="Unique users reached"
+                icon={<Users className="h-6 w-6" />}
+                change={audienceData?.audienceChange}
+                isLoading={isLoading}
+              />
+              <MetricCard
+                title="New Visitors"
+                value={audienceData?.newVisitors || 0}
+                description="First-time users"
+                icon={<Eye className="h-6 w-6" />}
+                change={audienceData?.newVisitorsChange}
+                isLoading={isLoading}
+              />
+              <MetricCard
+                title="Return Rate"
+                value={audienceData?.returnRate || '0%'}
+                description="Users coming back"
+                icon={<TrendingUp className="h-6 w-6" />}
+                change={audienceData?.returnRateChange}
+                isLoading={isLoading}
+              />
+              <MetricCard
+                title="Engagement Score"
+                value={audienceData?.engagementScore || '0/10'}
+                description="Overall audience engagement"
+                icon={<Heart className="h-6 w-6" />}
+                change={audienceData?.engagementScoreChange}
+                isLoading={isLoading}
+              />
+            </div>
+
+            {/* Charts Section */}
             <div className="grid gap-4 md:grid-cols-2">
-              <Card className="hover:shadow-lg transition-all duration-200 border-l-4" style={{ borderLeftColor: '#8b5cf6' }}>
+              <Card className="card-enhanced border-l-2 border-primary/20 bg-card hover:shadow-professional transition-shadow duration-200">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <PieChart className="h-5 w-5" />
-                    Device Distribution
+                  <CardTitle className="flex items-center gap-3">
+                    <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+                      <PieChart className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <span className="text-lg font-medium">Device Distribution</span>
+                      <p className="text-sm text-muted-foreground font-normal">User device preferences</p>
+                    </div>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -1389,11 +1447,16 @@ function AnalyticsPageContent() {
                 </CardContent>
               </Card>
 
-              <Card className="hover:shadow-lg transition-all duration-200 border-l-4" style={{ borderLeftColor: '#06b6d4' }}>
+              <Card className="card-enhanced border-l-2 border-success/20 bg-card hover:shadow-professional transition-shadow duration-200">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5" />
-                    Demographics
+                  <CardTitle className="flex items-center gap-3">
+                    <div className="p-3 bg-success/10 rounded-lg border border-success/20">
+                      <BarChart3 className="h-5 w-5 text-success" />
+                    </div>
+                    <div>
+                      <span className="text-lg font-medium">Demographics</span>
+                      <p className="text-sm text-muted-foreground font-normal">Audience breakdown</p>
+                    </div>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -1415,16 +1478,107 @@ function AnalyticsPageContent() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Additional Audience Insights */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card className="card-enhanced border-l-2 border-muted/40 bg-card hover:shadow-professional transition-shadow duration-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3">
+                    <div className="p-3 bg-muted/10 rounded-lg border border-muted/20">
+                      <Activity className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <span className="text-lg font-medium">Geographic Distribution</span>
+                      <p className="text-sm text-muted-foreground font-normal">Where your audience is located</p>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {(audienceData?.geographic || [
+                      { location: 'South Africa', percentage: 45, users: 2850 },
+                      { location: 'United States', percentage: 25, users: 1580 },
+                      { location: 'United Kingdom', percentage: 15, users: 950 },
+                      { location: 'Canada', percentage: 8, users: 506 },
+                      { location: 'Other', percentage: 7, users: 443 }
+                    ]).map((location: any, index: number) => (
+                      <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/20 border border-muted/30">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-5 rounded bg-primary/20 flex items-center justify-center">
+                            <span className="text-xs font-medium text-primary">
+                              {location.location.slice(0, 2).toUpperCase()}
+                            </span>
+                          </div>
+                          <span className="font-medium">{location.location}</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-semibold text-primary">{location.percentage}%</div>
+                          <div className="text-xs text-muted-foreground">{location.users?.toLocaleString() || 0} users</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="card-enhanced border-l-2 border-destructive/20 bg-card hover:shadow-professional transition-shadow duration-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3">
+                    <div className="p-3 bg-destructive/10 rounded-lg border border-destructive/20">
+                      <Clock className="h-5 w-5 text-destructive" />
+                    </div>
+                    <div>
+                      <span className="text-lg font-medium">Audience Behavior</span>
+                      <p className="text-sm text-muted-foreground font-normal">User interaction patterns</p>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {(audienceData?.behavior || [
+                      { metric: 'Avg. Session Duration', value: '3m 45s', change: 12.5, positive: true },
+                      { metric: 'Pages per Session', value: '4.2', change: 8.3, positive: true },
+                      { metric: 'Bounce Rate', value: '35%', change: -5.2, positive: true },
+                      { metric: 'Time on Page', value: '2m 15s', change: 15.7, positive: true }
+                    ]).map((behavior: any, index: number) => (
+                      <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/10 border border-muted/20">
+                        <div>
+                          <div className="font-medium">{behavior.metric}</div>
+                          <div className="text-2xl font-bold text-destructive">{behavior.value}</div>
+                        </div>
+                        <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${
+                          behavior.positive 
+                            ? 'bg-success/10 text-success border-success/20' 
+                            : 'bg-destructive/10 text-destructive border-destructive/20'
+                        }`}>
+                          {behavior.positive ? (
+                            <TrendingUp className="h-3 w-3" />
+                          ) : (
+                            <TrendingDown className="h-3 w-3" />
+                          )}
+                          <span>{behavior.positive ? '+' : ''}{behavior.change}%</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Engagement Tab */}
           <TabsContent value="engagement" className="space-y-4">
             <div className="grid gap-4">
-              <Card className="hover:shadow-lg transition-all duration-200 border-l-4" style={{ borderLeftColor: '#ec4899' }}>
+              <Card className="card-enhanced border-l-2 border-success/20 bg-card hover:shadow-professional transition-shadow duration-200">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <LineChart className="h-5 w-5" />
-                    Engagement Over Time
+                  <CardTitle className="flex items-center gap-3">
+                    <div className="p-3 bg-success/10 rounded-lg border border-success/20">
+                      <LineChart className="h-5 w-5 text-success" />
+                    </div>
+                    <div>
+                      <span className="text-lg font-medium">Engagement Over Time</span>
+                      <p className="text-sm text-muted-foreground font-normal">User interaction trends</p>
+                    </div>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -1440,7 +1594,18 @@ function AnalyticsPageContent() {
 
           {/* Revenue Tab */}
           <TabsContent value="revenue" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-3">
+            {/* Header Section */}
+            <div className="space-y-2">
+              <div>
+                <h2 className="text-xl font-bold tracking-tight">Revenue Analytics</h2>
+                <p className="text-muted-foreground">
+                  Comprehensive financial performance tracking and revenue optimization insights
+                </p>
+              </div>
+            </div>
+
+            {/* Key Revenue Metrics */}
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
               <MetricCard
                 title="Total Revenue"
                 value={revenueData?.totalRevenue || '$0'}
@@ -1465,45 +1630,424 @@ function AnalyticsPageContent() {
                 change={revenueData?.aovChange}
                 isLoading={isLoading}
               />
+              <MetricCard
+                title="Customer LTV"
+                value={revenueData?.customerLTV || '$0'}
+                description="Lifetime value"
+                icon={<Users className="h-6 w-6" />}
+                change={revenueData?.ltvChange}
+                isLoading={isLoading}
+              />
             </div>
 
-            <Card className="hover:shadow-lg transition-all duration-200 border-l-4" style={{ borderLeftColor: '#10b981' }}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <LineChart className="h-5 w-5" />
-                  Revenue Trend
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <RechartsLineChart
-                  data={revenueData?.revenueTrend}
-                  isLoading={isLoading}
-                  error={error}
-                />
-              </CardContent>
-            </Card>
+            {/* Revenue Charts */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card className="card-enhanced border-l-2 border-destructive/20 bg-card hover:shadow-professional transition-shadow duration-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3">
+                    <div className="p-3 bg-destructive/10 rounded-lg border border-destructive/20">
+                      <LineChart className="h-5 w-5 text-destructive" />
+                    </div>
+                    <div>
+                      <span className="text-lg font-medium">Revenue Trend</span>
+                      <p className="text-sm text-muted-foreground font-normal">Financial performance over time</p>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <RechartsLineChart
+                    data={revenueData?.revenueTrend}
+                    isLoading={isLoading}
+                    error={error}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card className="card-enhanced border-l-2 border-primary/20 bg-card hover:shadow-professional transition-shadow duration-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3">
+                    <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+                      <PieChart className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <span className="text-lg font-medium">Revenue Sources</span>
+                      <p className="text-sm text-muted-foreground font-normal">Income breakdown by channel</p>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <RechartsPieChart
+                    data={revenueData?.revenueBySource || [
+                      { name: 'Direct Sales', value: 45, revenue: 89500 },
+                      { name: 'Affiliate', value: 25, revenue: 49750 },
+                      { name: 'Partnerships', value: 20, revenue: 39800 },
+                      { name: 'Subscriptions', value: 10, revenue: 19900 }
+                    ]}
+                    isLoading={isLoading}
+                    error={error}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Revenue Insights */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card className="card-enhanced border-l-2 border-success/20 bg-card hover:shadow-professional transition-shadow duration-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3">
+                    <div className="p-3 bg-success/10 rounded-lg border border-success/20">
+                      <Target className="h-5 w-5 text-success" />
+                    </div>
+                    <div>
+                      <span className="text-lg font-medium">Top Performing Products</span>
+                      <p className="text-sm text-muted-foreground font-normal">Highest revenue generators</p>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {(revenueData?.topProducts || [
+                      { name: 'Premium Content Package', revenue: 35000, growth: 23.5, units: 156 },
+                      { name: 'Social Media Boost', revenue: 28500, growth: 18.2, units: 245 },
+                      { name: 'Analytics Pro', revenue: 22000, growth: 12.8, units: 189 },
+                      { name: 'Campaign Manager', revenue: 18750, growth: -5.2, units: 98 },
+                      { name: 'Content Creator Tools', revenue: 15200, growth: 31.4, units: 203 }
+                    ]).map((product: any, index: number) => (
+                      <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/10 border border-muted/20">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-success/20 flex items-center justify-center">
+                            <span className="text-sm font-semibold text-success">#{index + 1}</span>
+                          </div>
+                          <div>
+                            <div className="font-medium">{product.name}</div>
+                            <div className="text-xs text-muted-foreground">{product.units} units sold</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-destructive">${product.revenue.toLocaleString()}</div>
+                          <div className={`text-xs flex items-center gap-1 ${
+                            product.growth >= 0 
+                              ? 'text-success' 
+                              : 'text-destructive'
+                          }`}>
+                            {product.growth >= 0 ? (
+                              <TrendingUp className="h-3 w-3" />
+                            ) : (
+                              <TrendingDown className="h-3 w-3" />
+                            )}
+                            <span>{product.growth >= 0 ? '+' : ''}{product.growth}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="card-enhanced border-l-2 border-muted/40 bg-card hover:shadow-professional transition-shadow duration-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3">
+                    <div className="p-3 bg-muted/10 rounded-lg border border-muted/20">
+                      <BarChart3 className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <span className="text-lg font-medium">Revenue Forecasting</span>
+                      <p className="text-sm text-muted-foreground font-normal">Projected financial performance</p>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {(revenueData?.forecasting || [
+                      { period: 'Next Month', projection: 245000, confidence: 89, trend: 'up' },
+                      { period: 'Next Quarter', projection: 720000, confidence: 76, trend: 'up' },
+                      { period: 'Next 6 Months', projection: 1450000, confidence: 68, trend: 'stable' },
+                      { period: 'Next Year', projection: 2890000, confidence: 52, trend: 'up' }
+                    ]).map((forecast: any, index: number) => (
+                      <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/10">
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-lg ${
+                            forecast.trend === 'up' ? 'bg-success/10 border border-success/20' :
+                            forecast.trend === 'down' ? 'bg-destructive/10 border border-destructive/20' :
+                            'bg-muted/10 border border-muted/20'
+                          }`}>
+                            {forecast.trend === 'up' ? (
+                              <TrendingUp className="h-4 w-4 text-success" />
+                            ) : forecast.trend === 'down' ? (
+                              <TrendingDown className="h-4 w-4 text-destructive" />
+                            ) : (
+                              <Activity className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div>
+                            <div className="font-medium">{forecast.period}</div>
+                            <div className="text-xs text-muted-foreground">{forecast.confidence}% confidence</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-primary">${forecast.projection.toLocaleString()}</div>
+                          <div className="text-xs text-muted-foreground">projected</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Funnels Tab */}
           <TabsContent value="funnels" className="space-y-4">
-            <div className="flex items-center justify-between mb-6">
+            {/* Header Section */}
+            <div className="space-y-2">
               <div>
-                <h3 className="text-lg font-semibold">Conversion Funnels</h3>
-                <p className="text-sm text-muted-foreground">
-                  Track user journey and optimize conversion paths
+                <h2 className="text-xl font-bold tracking-tight">Conversion Funnels</h2>
+                <p className="text-muted-foreground">
+                  Analyze user journey paths, optimize conversion rates, and identify bottlenecks in your sales process
                 </p>
               </div>
-              <Button className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Create Funnel
-              </Button>
             </div>
-            
-            <ConversionFunnel 
-              campaignId={selectedCampaign !== 'all' ? selectedCampaign : undefined}
-              timeframe={timeframe === 'day' ? '7d' : timeframe === 'week' ? '30d' : timeframe === 'month' ? '90d' : '1y'}
-              showControls={true}
-            />
+
+            {/* Key Funnel Metrics */}
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+              <MetricCard
+                title="Funnel Conversion"
+                value={revenueData?.funnelConversion || '3.2%'}
+                description="Overall funnel rate"
+                icon={<Target className="h-6 w-6" />}
+                change={revenueData?.funnelConversionChange || 12.5}
+                isLoading={isLoading}
+              />
+              <MetricCard
+                title="Drop-off Rate"
+                value={revenueData?.dropoffRate || '64.8%'}
+                description="Users leaving funnel"
+                icon={<TrendingDown className="h-6 w-6" />}
+                change={revenueData?.dropoffChange || -8.3}
+                isLoading={isLoading}
+              />
+              <MetricCard
+                title="Avg. Time to Convert"
+                value={revenueData?.timeToConvert || '4.2 days'}
+                description="Customer journey duration"
+                icon={<Clock className="h-6 w-6" />}
+                change={revenueData?.timeToConvertChange || -15.7}
+                isLoading={isLoading}
+              />
+              <MetricCard
+                title="High-Intent Users"
+                value={revenueData?.highIntentUsers || '1,247'}
+                description="Users showing purchase signals"
+                icon={<Users className="h-6 w-6" />}
+                change={revenueData?.highIntentChange || 23.4}
+                isLoading={isLoading}
+              />
+            </div>
+
+            {/* Create Funnel Action */}
+            <Card className="card-enhanced border-l-2 border-primary/20 bg-card hover:shadow-professional transition-shadow duration-200">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+                      <Target className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-medium">Conversion Funnel Analysis</h3>
+                      <p className="text-sm text-muted-foreground font-normal">
+                        Track user journey and optimize conversion paths across all touchpoints
+                      </p>
+                    </div>
+                  </div>
+                  <Button className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-custom-white">
+                    <Plus className="h-4 w-4" />
+                    Create Funnel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Main Funnel Visualization */}
+            <Card className="card-enhanced bg-card hover:shadow-professional transition-shadow duration-200">
+              <CardContent className="p-4">
+                <ConversionFunnel 
+                  campaignId={selectedCampaign !== 'all' ? selectedCampaign : undefined}
+                  timeframe={timeframe === 'day' ? '7d' : timeframe === 'week' ? '30d' : timeframe === 'month' ? '90d' : '1y'}
+                  showControls={true}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Funnel Insights */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card className="card-enhanced border-l-2 border-success/20 bg-card hover:shadow-professional transition-shadow duration-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3">
+                    <div className="p-3 bg-success/10 rounded-lg border border-success/20">
+                      <TrendingUp className="h-5 w-5 text-success" />
+                    </div>
+                    <div>
+                      <span className="text-lg font-medium">Stage Performance</span>
+                      <p className="text-sm text-muted-foreground font-normal">Conversion rates by funnel stage</p>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {(revenueData?.stagePerformance || [
+                      { stage: 'Awareness', conversion: 15.2, visitors: 8500, benchmark: 12.0 },
+                      { stage: 'Interest', conversion: 8.7, visitors: 1292, benchmark: 6.5 },
+                      { stage: 'Consideration', conversion: 4.3, visitors: 112, benchmark: 4.0 },
+                      { stage: 'Purchase', conversion: 3.2, visitors: 48, benchmark: 2.8 },
+                      { stage: 'Retention', conversion: 68.4, visitors: 32, benchmark: 65.0 }
+                    ]).map((stage: any, index: number) => (
+                      <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/10 border border-muted/20">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                            stage.conversion >= stage.benchmark 
+                              ? 'bg-success/20 text-success' 
+                              : 'bg-destructive/20 text-destructive'
+                          }`}>
+                            {stage.conversion >= stage.benchmark ? (
+                              <TrendingUp className="h-4 w-4" />
+                            ) : (
+                              <TrendingDown className="h-4 w-4" />
+                            )}
+                          </div>
+                          <div>
+                            <div className="font-medium">{stage.stage}</div>
+                            <div className="text-xs text-muted-foreground">{stage.visitors.toLocaleString()} visitors</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className={`font-bold ${
+                            stage.conversion >= stage.benchmark 
+                              ? 'text-success' 
+                              : 'text-destructive'
+                          }`}>{stage.conversion}%</div>
+                          <div className="text-xs text-muted-foreground">vs {stage.benchmark}% benchmark</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="card-enhanced border-l-2 border-destructive/20 bg-card hover:shadow-professional transition-shadow duration-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3">
+                    <div className="p-3 bg-destructive/10 rounded-lg border border-destructive/20">
+                      <AlertTriangle className="h-5 w-5 text-destructive" />
+                    </div>
+                    <div>
+                      <span className="text-lg font-medium">Bottleneck Analysis</span>
+                      <p className="text-sm text-muted-foreground font-normal">Areas needing optimization</p>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {(revenueData?.bottlenecks || [
+                      { issue: 'High cart abandonment', impact: 'Severe', stage: 'Purchase', lostRevenue: 45000, suggestion: 'Simplify checkout process' },
+                      { issue: 'Long consideration phase', impact: 'Moderate', stage: 'Consideration', lostRevenue: 23000, suggestion: 'Add customer testimonials' },
+                      { issue: 'Low email engagement', impact: 'Moderate', stage: 'Interest', lostRevenue: 18500, suggestion: 'Improve email subject lines' },
+                      { issue: 'Mobile conversion gap', impact: 'High', stage: 'Purchase', lostRevenue: 32000, suggestion: 'Optimize mobile checkout' }
+                    ]).map((bottleneck: any, index: number) => (
+                      <div key={index} className="p-3 rounded-lg bg-destructive/5 border border-destructive/10">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <div className="font-medium text-foreground">{bottleneck.issue}</div>
+                            <div className="text-xs text-muted-foreground">Stage: {bottleneck.stage}</div>
+                          </div>
+                          <div className={`px-2 py-1 rounded-full text-xs font-medium border ${
+                            bottleneck.impact === 'Severe' ? 'bg-destructive/10 text-destructive border-destructive/20' :
+                            bottleneck.impact === 'High' ? 'bg-primary/10 text-primary border-primary/20' :
+                            'bg-muted/10 text-muted-foreground border-muted/20'
+                          }`}>
+                            {bottleneck.impact}
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm text-muted-foreground">{bottleneck.suggestion}</div>
+                          <div className="font-semibold text-destructive">${bottleneck.lostRevenue.toLocaleString()}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Funnel Optimization Recommendations */}
+            <Card className="card-enhanced border-l-2 border-muted/40 bg-card hover:shadow-professional transition-shadow duration-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <div className="p-3 bg-muted/10 rounded-lg border border-muted/20">
+                    <Zap className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <span className="text-lg font-medium">Optimization Opportunities</span>
+                    <p className="text-sm text-muted-foreground font-normal">AI-powered recommendations for funnel improvement</p>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {(revenueData?.optimizations || [
+                    { 
+                      title: 'Implement Exit-Intent Popups', 
+                      impact: 'High', 
+                      effort: 'Low', 
+                      expectedLift: 23,
+                      description: 'Capture users before they leave with targeted offers'
+                    },
+                    { 
+                      title: 'Add Social Proof Elements', 
+                      impact: 'Medium', 
+                      effort: 'Low', 
+                      expectedLift: 18,
+                      description: 'Display customer reviews and testimonials at key stages'
+                    },
+                    { 
+                      title: 'Optimize Page Load Speed', 
+                      impact: 'High', 
+                      effort: 'Medium', 
+                      expectedLift: 31,
+                      description: 'Reduce bounce rate by improving site performance'
+                    },
+                    { 
+                      title: 'Personalize Product Recommendations', 
+                      impact: 'Medium', 
+                      effort: 'High', 
+                      expectedLift: 15,
+                      description: 'Show relevant products based on user behavior'
+                    }
+                  ]).map((opt: any, index: number) => (
+                    <div key={index} className="p-3 rounded-lg bg-primary/5 border border-primary/10">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="font-medium">{opt.title}</div>
+                        <div className="flex items-center gap-2">
+                          <div className={`px-2 py-1 rounded-full text-xs font-medium border ${
+                            opt.impact === 'High' ? 'bg-success/10 text-success border-success/20' :
+                            'bg-muted/10 text-muted-foreground border-muted/20'
+                          }`}>
+                            {opt.impact}
+                          </div>
+                          <div className="font-semibold text-primary">+{opt.expectedLift}%</div>
+                        </div>
+                      </div>
+                      <div className="text-sm text-muted-foreground mb-2">{opt.description}</div>
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs text-muted-foreground">Effort: {opt.effort}</div>
+                        <Button size="sm" variant="outline" className="text-xs h-7">
+                          Learn More
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Service Provider Analytics Tab */}
@@ -1531,7 +2075,7 @@ function AnalyticsPageContent() {
 
           <TabsContent value="service-provider" className="space-y-4">
             <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-2">Service Provider Analytics</h3>
+              <h3 className="text-lg font-medium mb-2">Service Provider Analytics</h3>
               <p className="text-sm text-muted-foreground">
                 Advanced B2B2G analytics for managing multiple clients and cross-client performance comparison
               </p>
@@ -1562,7 +2106,7 @@ function AnalyticsPageContent() {
                 </div>
                 
                 {/* Progress Bar */}
-                <div className="w-full bg-gray-200 rounded-full h-2 mb-6">
+                <div className="w-full bg-muted rounded-full h-2 mb-6">
                   <div 
                     className="bg-primary h-2 rounded-full transition-all duration-300"
                     style={{ width: `${((currentTourStep + 1) / tourSteps.length) * 100}%` }}
@@ -1581,7 +2125,7 @@ function AnalyticsPageContent() {
                   </div>
                   
                   {/* Visual indicator */}
-                  <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4 border border-primary/20">
+                  <div className="bg-primary/10 rounded-lg p-4 border border-primary/20">
                     <div className="flex items-center gap-2 text-sm text-primary">
                       <div className="animate-pulse">
                         <div className="w-2 h-2 bg-primary rounded-full"></div>

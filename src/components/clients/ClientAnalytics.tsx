@@ -83,13 +83,38 @@ export default function ClientAnalytics({ clientId }: ClientAnalyticsProps) {
 
   if (error || !data) {
     return (
-      <div className="text-center text-red-500 p-4">
-        {error || "Unable to load analytics"}
-      </div>
+      <Card className="card-enhanced border-l-2 border-destructive/20">
+        <CardContent className="flex flex-col items-center justify-center py-8">
+          <div className="p-3 bg-destructive/10 rounded-lg border border-destructive/20 mb-4">
+            <Activity className="h-8 w-8 text-destructive" />
+          </div>
+          <div className="text-center text-destructive font-medium">
+            {error || "Unable to load analytics"}
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   const { analytics, projectMetrics, contentMetrics, healthScore } = data;
+
+  const getHealthScoreColor = (score: number) => {
+    if (score > 70) return 'text-success';
+    if (score > 40) return 'text-primary';
+    return 'text-destructive';
+  };
+
+  const getHealthScoreCardStyle = (score: number) => {
+    if (score > 70) return 'card-enhanced border-l-2 border-success/20';
+    if (score > 40) return 'card-enhanced border-l-2 border-primary/20';
+    return 'card-enhanced border-l-2 border-destructive/20';
+  };
+
+  const getHealthScoreIconBg = (score: number) => {
+    if (score > 70) return 'p-2 bg-success/10 rounded-lg border border-success/20';
+    if (score > 40) return 'p-2 bg-primary/10 rounded-lg border border-primary/20';
+    return 'p-2 bg-destructive/10 rounded-lg border border-destructive/20';
+  };
 
   const metrics = [
     {
@@ -97,28 +122,36 @@ export default function ClientAnalytics({ clientId }: ClientAnalyticsProps) {
       value: `${Math.round(healthScore)}%`,
       icon: Activity,
       description: "Overall client health",
-      color: healthScore > 70 ? "text-green-500" : healthScore > 40 ? "text-yellow-500" : "text-red-500",
+      color: getHealthScoreColor(healthScore),
+      cardStyle: getHealthScoreCardStyle(healthScore),
+      iconBg: getHealthScoreIconBg(healthScore),
     },
     {
       title: "Active Projects",
       value: projectMetrics.active,
       icon: TrendingUp,
       description: "Currently running",
-      color: "text-blue-500",
+      color: "text-primary",
+      cardStyle: "card-enhanced border-l-2 border-primary/20",
+      iconBg: "p-2 bg-primary/10 rounded-lg border border-primary/20",
     },
     {
       title: "Total Content",
       value: contentMetrics._count.id,
       icon: FileText,
       description: "Pieces created",
-      color: "text-purple-500",
+      color: "text-muted-foreground",
+      cardStyle: "card-enhanced border-l-2 border-muted/20",
+      iconBg: "p-2 bg-muted/10 rounded-lg border border-muted/20",
     },
     {
       title: "ROI",
       value: `${analytics[analytics.length - 1]?.roi.toFixed(2)}%`,
       icon: DollarSign,
       description: "Return on investment",
-      color: "text-green-500",
+      color: "text-success",
+      cardStyle: "card-enhanced border-l-2 border-success/20",
+      iconBg: "p-2 bg-success/10 rounded-lg border border-success/20",
     },
   ];
 
@@ -141,15 +174,17 @@ export default function ClientAnalytics({ clientId }: ClientAnalyticsProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {metrics.map((metric) => (
-          <Card key={metric.title}>
+          <Card key={metric.title} className={metric.cardStyle}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 {metric.title}
               </CardTitle>
-              <metric.icon className={`h-4 w-4 ${metric.color}`} />
+              <div className={metric.iconBg}>
+                <metric.icon className={`h-4 w-4 ${metric.color}`} />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{metric.value}</div>
+              <div className={`text-2xl font-bold tracking-tight ${metric.color}`}>{metric.value}</div>
               <p className="text-xs text-muted-foreground">
                 {metric.description}
               </p>
@@ -158,9 +193,14 @@ export default function ClientAnalytics({ clientId }: ClientAnalyticsProps) {
         ))}
       </div>
 
-      <Card>
+      <Card className="card-enhanced border-l-2 border-primary/20">
         <CardHeader>
-          <CardTitle>Performance Trends</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
+              <TrendingUp className="h-5 w-5 text-primary" />
+            </div>
+            Performance Trends
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-[300px]">
@@ -186,19 +226,22 @@ export default function ClientAnalytics({ clientId }: ClientAnalyticsProps) {
                 <Line
                   type="monotone"
                   dataKey="engagementRate"
-                  stroke="#2563eb"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={2}
                   name="Engagement Rate"
                 />
                 <Line
                   type="monotone"
                   dataKey="conversionRate"
-                  stroke="#16a34a"
+                  stroke="hsl(var(--success))"
+                  strokeWidth={2}
                   name="Conversion Rate"
                 />
                 <Line
                   type="monotone"
                   dataKey="healthScore"
-                  stroke="#eab308"
+                  stroke="hsl(var(--muted-foreground))"
+                  strokeWidth={2}
                   name="Health Score"
                 />
               </LineChart>
@@ -208,27 +251,32 @@ export default function ClientAnalytics({ clientId }: ClientAnalyticsProps) {
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
+        <Card className="card-enhanced border-l-2 border-primary/20">
           <CardHeader>
-            <CardTitle>Project Distribution</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
+                <Users className="h-5 w-5 text-primary" />
+              </div>
+              Project Distribution
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span>Active</span>
-                <span className="font-bold text-blue-500">
+                <span className="font-bold text-primary">
                   {projectMetrics.active}
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span>Completed</span>
-                <span className="font-bold text-green-500">
+                <span className="font-bold text-success">
                   {projectMetrics.completed}
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span>Planned</span>
-                <span className="font-bold text-yellow-500">
+                <span className="font-bold text-muted-foreground">
                   {projectMetrics.planned}
                 </span>
               </div>
@@ -242,9 +290,14 @@ export default function ClientAnalytics({ clientId }: ClientAnalyticsProps) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="card-enhanced border-l-2 border-success/20">
           <CardHeader>
-            <CardTitle>Budget Overview</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <div className="p-2 bg-success/10 rounded-lg border border-success/20">
+                <DollarSign className="h-5 w-5 text-success" />
+              </div>
+              Budget Overview
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -256,22 +309,22 @@ export default function ClientAnalytics({ clientId }: ClientAnalyticsProps) {
               </div>
               <div className="flex justify-between items-center">
                 <span>Used Budget</span>
-                <span className="font-bold text-blue-500">
+                <span className="font-bold text-primary">
                   ${analytics[analytics.length - 1]?.usedBudget.toLocaleString()}
                 </span>
               </div>
               <div className="flex justify-between items-center border-t pt-2">
                 <span>Remaining</span>
-                <span className="font-bold text-green-500">
+                <span className="font-bold text-success">
                   ${(
                     analytics[analytics.length - 1]?.totalBudget -
                     analytics[analytics.length - 1]?.usedBudget
                   ).toLocaleString()}
                 </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div className="w-full bg-muted/20 rounded-full h-2.5 border border-muted/10">
                 <div
-                  className="bg-blue-600 h-2.5 rounded-full"
+                  className="bg-primary h-2.5 rounded-full transition-all duration-300"
                   style={{
                     width: `${(analytics[analytics.length - 1]?.usedBudget /
                       analytics[analytics.length - 1]?.totalBudget) *

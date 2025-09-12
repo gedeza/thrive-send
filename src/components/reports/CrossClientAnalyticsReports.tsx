@@ -328,20 +328,20 @@ function formatPercentage(value: number): string {
 
 function getClientTypeColor(type: string): string {
   switch (type.toLowerCase()) {
-    case 'municipality': return 'bg-blue-100 text-blue-800';
-    case 'government': return 'bg-green-100 text-green-800';
-    case 'startup': return 'bg-purple-100 text-purple-800';
-    case 'business': return 'bg-orange-100 text-orange-800';
-    default: return 'bg-gray-100 text-gray-800';
+    case 'municipality': return 'bg-primary/10 text-primary';
+    case 'government': return 'bg-success/10 text-success';
+    case 'startup': return 'bg-accent/10 text-accent';
+    case 'business': return 'bg-warning/10 text-warning';
+    default: return 'bg-muted/10 text-muted-foreground';
   }
 }
 
 function getRankIcon(rank: number) {
   switch (rank) {
-    case 1: return <Award className="h-4 w-4 text-yellow-500" />;
-    case 2: return <Award className="h-4 w-4 text-gray-400" />;
-    case 3: return <Award className="h-4 w-4 text-orange-600" />;
-    default: return <Target className="h-4 w-4 text-gray-400" />;
+    case 1: return <Award className="h-4 w-4 text-warning" />;
+    case 2: return <Award className="h-4 w-4 text-muted-foreground" />;
+    case 3: return <Award className="h-4 w-4 text-accent" />;
+    default: return <Target className="h-4 w-4 text-muted-foreground" />;
   }
 }
 
@@ -378,7 +378,7 @@ function ClientComparisonCard({ comparison }: ClientComparisonCardProps) {
                 </p>
                 <p className={cn(
                   "text-sm flex items-center gap-1",
-                  client.change >= 0 ? 'text-green-600' : 'text-red-600'
+                  client.change >= 0 ? 'text-success' : 'text-destructive'
                 )}>
                   {client.change >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
                   {formatPercentage(client.change)}
@@ -430,7 +430,7 @@ function BenchmarkCard({ benchmark }: BenchmarkCardProps) {
                   <div className="text-center">
                     <p className={cn(
                       "font-medium",
-                      client.performanceVsBenchmark.engagement >= 0 ? 'text-green-600' : 'text-red-600'
+                      client.performanceVsBenchmark.engagement >= 0 ? 'text-success' : 'text-destructive'
                     )}>
                       {formatPercentage(client.performanceVsBenchmark.engagement)}
                     </p>
@@ -439,7 +439,7 @@ function BenchmarkCard({ benchmark }: BenchmarkCardProps) {
                   <div className="text-center">
                     <p className={cn(
                       "font-medium",
-                      client.performanceVsBenchmark.reach >= 0 ? 'text-green-600' : 'text-red-600'
+                      client.performanceVsBenchmark.reach >= 0 ? 'text-success' : 'text-destructive'
                     )}>
                       {formatPercentage(client.performanceVsBenchmark.reach)}
                     </p>
@@ -448,7 +448,7 @@ function BenchmarkCard({ benchmark }: BenchmarkCardProps) {
                   <div className="text-center">
                     <p className={cn(
                       "font-medium",
-                      client.performanceVsBenchmark.conversion >= 0 ? 'text-green-600' : 'text-red-600'
+                      client.performanceVsBenchmark.conversion >= 0 ? 'text-success' : 'text-destructive'
                     )}>
                       {formatPercentage(client.performanceVsBenchmark.conversion)}
                     </p>
@@ -546,7 +546,7 @@ export default function CrossClientAnalyticsReports() {
           
           <Card>
             <CardContent className="p-4 text-center">
-              <Activity className="h-6 w-6 text-blue-600 mx-auto mb-2" />
+              <Activity className="h-6 w-6 text-primary mx-auto mb-2" />
               <p className="text-2xl font-bold">{formatNumber(aggregatedMetrics.totalPosts)}</p>
               <p className="text-xs text-muted-foreground">Total Posts</p>
             </CardContent>
@@ -554,7 +554,7 @@ export default function CrossClientAnalyticsReports() {
           
           <Card>
             <CardContent className="p-4 text-center">
-              <Heart className="h-6 w-6 text-red-600 mx-auto mb-2" />
+              <Heart className="h-6 w-6 text-destructive mx-auto mb-2" />
               <p className="text-2xl font-bold">{formatNumber(aggregatedMetrics.totalEngagement)}</p>
               <p className="text-xs text-muted-foreground">Total Engagement</p>
             </CardContent>
@@ -562,7 +562,7 @@ export default function CrossClientAnalyticsReports() {
           
           <Card>
             <CardContent className="p-4 text-center">
-              <DollarSign className="h-6 w-6 text-green-600 mx-auto mb-2" />
+              <DollarSign className="h-6 w-6 text-success mx-auto mb-2" />
               <p className="text-2xl font-bold">{formatCurrency(aggregatedMetrics.totalRevenue)}</p>
               <p className="text-xs text-muted-foreground">Total Revenue</p>
             </CardContent>
@@ -570,7 +570,7 @@ export default function CrossClientAnalyticsReports() {
           
           <Card>
             <CardContent className="p-4 text-center">
-              <TrendingUp className="h-6 w-6 text-purple-600 mx-auto mb-2" />
+              <TrendingUp className="h-6 w-6 text-accent mx-auto mb-2" />
               <p className="text-2xl font-bold">{aggregatedMetrics.averageEngagementRate.toFixed(1)}%</p>
               <p className="text-xs text-muted-foreground">Avg Engagement</p>
             </CardContent>
@@ -578,7 +578,7 @@ export default function CrossClientAnalyticsReports() {
           
           <Card>
             <CardContent className="p-4 text-center">
-              <Zap className="h-6 w-6 text-orange-600 mx-auto mb-2" />
+              <Zap className="h-6 w-6 text-warning mx-auto mb-2" />
               <p className="text-2xl font-bold">{aggregatedMetrics.averageGrowthRate.toFixed(1)}%</p>
               <p className="text-xs text-muted-foreground">Avg Growth</p>
             </CardContent>
@@ -613,7 +613,7 @@ export default function CrossClientAnalyticsReports() {
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-muted-foreground">Growth Rate</p>
-                      <p className="text-lg font-bold text-green-600">
+                      <p className="text-lg font-bold text-success">
                         {formatPercentage(client.metrics.growthRate)}
                       </p>
                     </div>
@@ -698,26 +698,26 @@ export default function CrossClientAnalyticsReports() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                <h4 className="font-semibold text-green-800">Top Performer</h4>
-                <p className="text-sm text-green-600 mt-1">
+              <div className="text-center p-4 bg-success/10 rounded-lg">
+                <CheckCircle className="h-8 w-8 text-success mx-auto mb-2" />
+                <h4 className="font-semibold text-success">Top Performer</h4>
+                <p className="text-sm text-success mt-1">
                   TechFlow Innovations leads with 6.4% engagement rate
                 </p>
               </div>
               
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <TrendingUp className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                <h4 className="font-semibold text-blue-800">Growth Leader</h4>
-                <p className="text-sm text-blue-600 mt-1">
+              <div className="text-center p-4 bg-primary/10 rounded-lg">
+                <TrendingUp className="h-8 w-8 text-primary mx-auto mb-2" />
+                <h4 className="font-semibold text-primary">Growth Leader</h4>
+                <p className="text-sm text-primary mt-1">
                   Regional Health District shows 22.7% growth rate
                 </p>
               </div>
               
-              <div className="text-center p-4 bg-orange-50 rounded-lg">
-                <Target className="h-8 w-8 text-orange-600 mx-auto mb-2" />
-                <h4 className="font-semibold text-orange-800">Above Industry</h4>
-                <p className="text-sm text-orange-600 mt-1">
+              <div className="text-center p-4 bg-warning/10 rounded-lg">
+                <Target className="h-8 w-8 text-warning mx-auto mb-2" />
+                <h4 className="font-semibold text-warning">Above Industry</h4>
+                <p className="text-sm text-warning mt-1">
                   All clients perform above industry benchmarks
                 </p>
               </div>

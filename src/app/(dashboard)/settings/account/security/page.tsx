@@ -120,7 +120,7 @@ export default function SecuritySettingsPage() {
                 disabled={isSubmitting}
               />
               {form.formState.errors.currentPassword && (
-                <p className="text-sm text-red-500">
+                <p className="text-sm text-destructive">
                   {form.formState.errors.currentPassword.message}
                 </p>
               )}
@@ -134,7 +134,7 @@ export default function SecuritySettingsPage() {
                 disabled={isSubmitting}
               />
               {form.formState.errors.newPassword && (
-                <p className="text-sm text-red-500">
+                <p className="text-sm text-destructive">
                   {form.formState.errors.newPassword.message}
                 </p>
               )}
@@ -148,7 +148,7 @@ export default function SecuritySettingsPage() {
                 disabled={isSubmitting}
               />
               {form.formState.errors.confirmPassword && (
-                <p className="text-sm text-red-500">
+                <p className="text-sm text-destructive">
                   {form.formState.errors.confirmPassword.message}
                 </p>
               )}

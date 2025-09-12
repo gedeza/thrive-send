@@ -888,7 +888,7 @@ export default function SettingsPage() {
             <h2 className="text-4xl font-bold bg-gradient-to-r from-slate-600 via-gray-600 to-zinc-600 bg-clip-text text-transparent">
               Settings
             </h2>
-            <p className="text-gray-600 text-lg">
+            <p className="text-muted-foreground text-lg">
               Manage your account preferences and configurations
             </p>
           </div>
@@ -897,14 +897,14 @@ export default function SettingsPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-8">
-          <TabsTrigger value="profile" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">Profile</TabsTrigger>
-          <TabsTrigger value="email" className="data-[state=active]:bg-green-500 data-[state=active]:text-white">Email</TabsTrigger>
-          <TabsTrigger value="campaign" className="data-[state=active]:bg-purple-500 data-[state=active]:text-white">Campaign</TabsTrigger>
-          <TabsTrigger value="content" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white">Content</TabsTrigger>
-          <TabsTrigger value="workflows" className="data-[state=active]:bg-teal-500 data-[state=active]:text-white">Workflows</TabsTrigger>
-          <TabsTrigger value="users" className="data-[state=active]:bg-pink-500 data-[state=active]:text-white">Users</TabsTrigger>
-          <TabsTrigger value="billing" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">Billing</TabsTrigger>
-          <TabsTrigger value="organization" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white">Organization</TabsTrigger>
+          <TabsTrigger value="profile" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Profile</TabsTrigger>
+          <TabsTrigger value="email" className="data-[state=active]:bg-success data-[state=active]:text-success-foreground">Email</TabsTrigger>
+          <TabsTrigger value="campaign" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">Campaign</TabsTrigger>
+          <TabsTrigger value="content" className="data-[state=active]:bg-warning data-[state=active]:text-warning-foreground">Content</TabsTrigger>
+          <TabsTrigger value="workflows" className="data-[state=active]:bg-muted data-[state=active]:text-muted-foreground">Workflows</TabsTrigger>
+          <TabsTrigger value="users" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Users</TabsTrigger>
+          <TabsTrigger value="billing" className="data-[state=active]:bg-success data-[state=active]:text-success-foreground">Billing</TabsTrigger>
+          <TabsTrigger value="organization" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">Organization</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">
@@ -1196,7 +1196,7 @@ export default function SettingsPage() {
         <TabsContent value="workflows">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-teal-900">
+              <CardTitle className="flex items-center gap-2 text-foreground">
                 <Settings className="h-5 w-5" />
                 Template Approval Workflows
               </CardTitle>
@@ -1248,26 +1248,26 @@ export default function SettingsPage() {
                     <div className="p-6 bg-gradient-to-r from-emerald-50 to-green-50 border-2 border-emerald-200 rounded-xl shadow-sm">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
-                          <div className="p-2 bg-emerald-600 rounded-full">
+                          <div className="p-2 bg-success rounded-full">
                             <Crown className="h-5 w-5 text-white" />
                           </div>
-                          <h3 className="text-xl font-semibold text-emerald-800">Your Current Plan</h3>
+                          <h3 className="text-xl font-semibold text-success">Your Current Plan</h3>
                         </div>
-                        <span className="px-4 py-2 text-sm font-semibold bg-emerald-600 text-white rounded-full capitalize shadow-sm">
+                        <span className="px-4 py-2 text-sm font-semibold bg-success text-success-foreground rounded-full capitalize shadow-sm">
                           {subscriptionData?.plan || 'Professional'}
                         </span>
                       </div>
-                      <p className="text-emerald-700 mb-4">
+                      <p className="text-success mb-4">
                         {plans.find(p => p.id === currentPlan)?.description || 'Advanced features for growing teams'}
                       </p>
-                      <div className="flex items-center gap-6 text-emerald-700">
+                      <div className="flex items-center gap-6 text-success">
                         <div className="flex items-center gap-2">
-                          <span className="text-2xl font-bold text-emerald-800">
+                          <span className="text-2xl font-bold text-success">
                             {getCurrencyDisplayPrice(currentPlan)}
                           </span>
                           <span className="text-sm">/month</span>
                         </div>
-                        <span className="w-1 h-1 bg-emerald-400 rounded-full" />
+                        <span className="w-1 h-1 bg-success/60 rounded-full" />
                         <span className="text-sm">
                           Next billing: {subscriptionData?.nextBilling ? 
                             new Date(subscriptionData.nextBilling).toLocaleDateString() : 
@@ -1307,17 +1307,17 @@ export default function SettingsPage() {
                 {/* Actions */}
                 <div className="space-y-4">
                   {/* Plan Change Call-to-Action */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="font-medium text-blue-900">Want to change your plan?</h4>
-                        <p className="text-sm text-blue-700 mt-1">
+                        <h4 className="font-medium text-primary">Want to change your plan?</h4>
+                        <p className="text-sm text-primary mt-1">
                           Choose from Starter ({getCurrencyDisplayPrice('starter')}), Professional ({getCurrencyDisplayPrice('professional')}), or Enterprise ({getCurrencyDisplayPrice('enterprise')})
                         </p>
                       </div>
                       <Dialog>
                         <DialogTrigger asChild>
-                          <Button className="bg-blue-600 hover:bg-blue-700">
+                          <Button>
                             <Crown className="mr-2 h-4 w-4" />
                             Select Plan
                           </Button>
@@ -1327,8 +1327,8 @@ export default function SettingsPage() {
                         <DialogTitle className="text-center text-2xl font-bold">Choose Your Plan</DialogTitle>
                         <DialogDescription className="text-center text-base space-y-2">
                           <p>Select the plan that best fits your needs. You can change or cancel anytime.</p>
-                          <div className="bg-blue-50 p-3 rounded-lg mt-3">
-                            <p className="text-blue-700 font-medium text-sm">
+                          <div className="bg-primary/10 p-3 rounded-lg mt-3">
+                            <p className="text-primary font-medium text-sm">
                               💡 <strong>How to select:</strong> Click on any plan card below to choose it, then click the action button
                             </p>
                           </div>
@@ -1354,7 +1354,7 @@ export default function SettingsPage() {
                                       selectedPlan === plan.id 
                                         ? 'border-primary bg-primary/10 shadow-lg' 
                                         : 'border-border hover:border-primary/30'
-                                    } ${plan.id === currentPlan ? 'ring-2 ring-emerald-200 bg-emerald-50' : ''}`}
+                                    } ${plan.id === currentPlan ? 'ring-2 ring-success/20 bg-success/10' : ''}`}
                                   >
                                     <div className="flex items-center space-x-2 mb-4">
                                       <RadioGroupItem value={plan.id} id={plan.id} className="text-primary" />
@@ -1363,16 +1363,16 @@ export default function SettingsPage() {
                                           <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
                                         )}
                                         <div className={`p-2 rounded-lg ${
-                                          plan.id === 'starter' ? 'bg-blue-100 text-blue-600' :
-                                          plan.id === 'professional' ? 'bg-emerald-100 text-emerald-600' :
-                                          'bg-purple-100 text-purple-600'
+                                          plan.id === 'starter' ? 'bg-primary/10 text-primary' :
+                                          plan.id === 'professional' ? 'bg-success/10 text-success' :
+                                          'bg-accent/10 text-accent'
                                         }`}>
                                           <IconComponent className="h-4 w-4" />
                                         </div>
                                         <div>
                                           <h3 className="font-semibold text-lg">{plan.name}</h3>
                                           {plan.id === currentPlan && (
-                                            <span className="text-xs text-emerald-600 font-medium">
+                                            <span className="text-xs text-success font-medium">
                                               Current Plan
                                             </span>
                                           )}
@@ -1396,7 +1396,7 @@ export default function SettingsPage() {
                                     <ul className="space-y-2">
                                       {plan.features.map((feature, index) => (
                                         <li key={index} className="flex items-center gap-2 text-sm">
-                                          <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                          <Check className="h-4 w-4 text-success flex-shrink-0" />
                                           <span>{feature}</span>
                                         </li>
                                       ))}
@@ -1455,8 +1455,8 @@ export default function SettingsPage() {
                         
                         {/* Currency Selection */}
                         <div className="space-y-3">
-                          <h3 className="font-semibold text-green-800">Billing Currency</h3>
-                          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                          <h3 className="font-semibold text-success">Billing Currency</h3>
+                          <div className="p-4 bg-success/10 border border-success/20 rounded-lg">
                             <div className="flex items-center justify-between">
                               <div>
                                 <p className="font-medium">Current Currency: {supportedCurrencies[selectedCurrency as keyof typeof supportedCurrencies]?.name}</p>
@@ -1482,8 +1482,8 @@ export default function SettingsPage() {
                               </Select>
                             </div>
                             {selectedCurrency === 'ZAR' && (
-                              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                <p className="text-sm text-blue-700">
+                              <div className="mt-3 p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                                <p className="text-sm text-primary">
                                   🇿🇦 <strong>South African pricing:</strong> Professional plan is {getCurrencyDisplayPrice('professional')} per month
                                 </p>
                               </div>
@@ -1603,7 +1603,7 @@ export default function SettingsPage() {
                             <div className="flex items-center justify-between p-4 border rounded-lg">
                               <div className="flex items-center gap-3">
                                 <div className={`w-10 h-6 rounded flex items-center justify-center text-white text-xs font-bold ${
-                                  paymentMethod.brand === 'VISA' ? 'bg-blue-600' : 'bg-gray-600'
+                                  paymentMethod.brand === 'VISA' ? 'bg-primary' : 'bg-muted'
                                 }`}>
                                   {paymentMethod.brand}
                                 </div>
@@ -1745,16 +1745,16 @@ export default function SettingsPage() {
 
                         {/* Subscription Controls */}
                         <div className="space-y-3">
-                          <h3 className="font-semibold text-amber-800">Subscription Management</h3>
-                          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                          <h3 className="font-semibold text-warning">Subscription Management</h3>
+                          <div className="p-4 bg-warning/10 border border-warning/20 rounded-lg">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              <Button variant="outline" className="justify-start hover:bg-amber-100">
+                              <Button variant="outline" className="justify-start hover:bg-warning/10">
                                 <Settings className="mr-2 h-4 w-4" />
                                 Pause Subscription
                               </Button>
                               <Button 
                                 variant="outline" 
-                                className="justify-start text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                                className="justify-start text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
                                 onClick={handleCancelSubscription}
                               >
                                 <Loader2 className="mr-2 h-4 w-4" />
@@ -1766,12 +1766,12 @@ export default function SettingsPage() {
 
                         {/* Quick Actions */}
                         <div className="space-y-3">
-                          <h3 className="font-semibold text-blue-800">Quick Actions</h3>
-                          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                          <h3 className="font-semibold text-primary">Quick Actions</h3>
+                          <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               <Button 
                                 variant="outline" 
-                                className="justify-start hover:bg-blue-100"
+                                className="justify-start hover:bg-primary/10"
                                 onClick={handleDownloadAllInvoices}
                               >
                                 <Download className="mr-2 h-4 w-4" />
@@ -1779,7 +1779,7 @@ export default function SettingsPage() {
                               </Button>
                               <Button 
                                 variant="outline" 
-                                className="justify-start hover:bg-blue-100"
+                                className="justify-start hover:bg-primary/10"
                                 onClick={() => {
                                   toast({
                                     title: "Tax Information",
@@ -1861,9 +1861,9 @@ export default function SettingsPage() {
                                 )}
                               </span>
                               <span className={`px-2 py-1 text-xs rounded-full ${
-                                bill.status === 'paid' ? 'bg-green-100 text-green-700' :
-                                bill.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                                'bg-red-100 text-red-700'
+                                bill.status === 'paid' ? 'bg-success/10 text-success' :
+                                bill.status === 'pending' ? 'bg-warning/10 text-warning' :
+                                'bg-destructive/10 text-destructive'
                               }`}>
                                 {bill.status.charAt(0).toUpperCase() + bill.status.slice(1)}
                               </span>
@@ -2062,11 +2062,11 @@ export default function SettingsPage() {
                   <div className="space-y-4">
                     <Label>Organization Logo</Label>
                     <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
+                      <div className="w-16 h-16 border-2 border-dashed border-border rounded-lg flex items-center justify-center bg-muted">
                         {logoPreview ? (
                           <img src={logoPreview} alt="Logo preview" className="w-full h-full object-cover rounded-lg" />
                         ) : (
-                          <Upload className="h-6 w-6 text-gray-400" />
+                          <Upload className="h-6 w-6 text-muted-foreground" />
                         )}
                       </div>
                       <div className="space-y-2">
@@ -2126,44 +2126,44 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="p-4 border rounded-lg bg-blue-50">
+                  <div className="p-4 border rounded-lg bg-primary/10">
                     <div className="flex items-center gap-2 mb-2">
-                      <Users className="h-4 w-4 text-blue-600" />
-                      <span className="text-sm font-medium text-blue-900">Total Members</span>
+                      <Users className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium text-primary">Total Members</span>
                     </div>
-                    <div className="text-2xl font-bold text-blue-900">{organization?.membersCount || 0}</div>
-                    <p className="text-xs text-blue-700 mt-1">Active team members</p>
+                    <div className="text-2xl font-bold text-primary">{organization?.membersCount || 0}</div>
+                    <p className="text-xs text-primary mt-1">Active team members</p>
                   </div>
                   
-                  <div className="p-4 border rounded-lg bg-green-50">
+                  <div className="p-4 border rounded-lg bg-success/10">
                     <div className="flex items-center gap-2 mb-2">
-                      <Zap className="h-4 w-4 text-green-600" />
-                      <span className="text-sm font-medium text-green-900">Campaigns</span>
+                      <Zap className="h-4 w-4 text-success" />
+                      <span className="text-sm font-medium text-success">Campaigns</span>
                     </div>
-                    <div className="text-2xl font-bold text-green-900">{usageData?.campaigns?.used || 0}</div>
-                    <p className="text-xs text-green-700 mt-1">This month</p>
+                    <div className="text-2xl font-bold text-success">{usageData?.campaigns?.used || 0}</div>
+                    <p className="text-xs text-success mt-1">This month</p>
                   </div>
                   
-                  <div className="p-4 border rounded-lg bg-purple-50">
+                  <div className="p-4 border rounded-lg bg-accent/10">
                     <div className="flex items-center gap-2 mb-2">
-                      <Globe className="h-4 w-4 text-purple-600" />
-                      <span className="text-sm font-medium text-purple-900">Storage</span>
+                      <Globe className="h-4 w-4 text-accent" />
+                      <span className="text-sm font-medium text-accent">Storage</span>
                     </div>
-                    <div className="text-2xl font-bold text-purple-900">
+                    <div className="text-2xl font-bold text-accent">
                       {usageData?.storage?.used ? `${(usageData.storage.used / 1024 / 1024 / 1024).toFixed(1)}GB` : '0GB'}
                     </div>
-                    <p className="text-xs text-purple-700 mt-1">Content & media</p>
+                    <p className="text-xs text-accent mt-1">Content & media</p>
                   </div>
                   
-                  <div className="p-4 border rounded-lg bg-orange-50">
+                  <div className="p-4 border rounded-lg bg-warning/10">
                     <div className="flex items-center gap-2 mb-2">
-                      <MapPin className="h-4 w-4 text-orange-600" />
-                      <span className="text-sm font-medium text-orange-900">Created</span>
+                      <MapPin className="h-4 w-4 text-warning" />
+                      <span className="text-sm font-medium text-warning">Created</span>
                     </div>
-                    <div className="text-2xl font-bold text-orange-900">
+                    <div className="text-2xl font-bold text-warning">
                       {organization?.createdAt ? new Date(organization.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'N/A'}
                     </div>
-                    <p className="text-xs text-orange-700 mt-1">Organization age</p>
+                    <p className="text-xs text-warning mt-1">Organization age</p>
                   </div>
                 </div>
               </CardContent>
@@ -2207,9 +2207,9 @@ export default function SettingsPage() {
             </Card>
 
             {/* Danger Zone */}
-            <Card className="border-red-200">
+            <Card className="border-destructive/20">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-red-700">
+                <CardTitle className="flex items-center gap-2 text-destructive">
                   <AlertTriangle className="h-5 w-5" />
                   Danger Zone
                 </CardTitle>
@@ -2219,29 +2219,29 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="p-4 border border-red-200 rounded-lg bg-red-50">
+                  <div className="p-4 border border-destructive/20 rounded-lg bg-destructive/10">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="font-medium text-red-900">Transfer Organization</h4>
-                        <p className="text-sm text-red-700 mt-1">
+                        <h4 className="font-medium text-destructive">Transfer Organization</h4>
+                        <p className="text-sm text-destructive mt-1">
                           Transfer ownership of this organization to another member
                         </p>
                       </div>
-                      <Button variant="outline" className="border-red-300 text-red-700 hover:bg-red-100">
+                      <Button variant="outline" className="border-destructive/30 text-destructive hover:bg-destructive/10">
                         Transfer
                       </Button>
                     </div>
                   </div>
                   
-                  <div className="p-4 border border-red-200 rounded-lg bg-red-50">
+                  <div className="p-4 border border-destructive/20 rounded-lg bg-destructive/10">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="font-medium text-red-900">Delete Organization</h4>
-                        <p className="text-sm text-red-700 mt-1">
+                        <h4 className="font-medium text-destructive">Delete Organization</h4>
+                        <p className="text-sm text-destructive mt-1">
                           Permanently delete this organization and all its data
                         </p>
                       </div>
-                      <Button variant="destructive" className="bg-red-600 hover:bg-red-700">
+                      <Button variant="destructive">
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete
                       </Button>

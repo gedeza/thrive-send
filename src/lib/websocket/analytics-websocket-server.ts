@@ -72,8 +72,8 @@ export class AnalyticsWebSocketServer {
         try {
           const message = JSON.parse(data.toString());
           this.handleClientMessage(client, message);
-        } catch (_error) {
-          console.error("", _error);
+        } catch (error) {
+          console.error("Error parsing WebSocket message:", error);
           this.sendError(client, 'Invalid message format');
         }
       });
@@ -84,7 +84,7 @@ export class AnalyticsWebSocketServer {
       });
 
       client.on('error', (error) => {
-        console.error("", _error);
+        console.error("Analytics WebSocket client error:", error);
         this.clients.delete(clientId);
       });
 
@@ -101,7 +101,7 @@ export class AnalyticsWebSocketServer {
     });
 
     this.wss.on('error', (error) => {
-      console.error("", _error);
+      console.error("Analytics WebSocket server error:", error);
     });
   }
 
@@ -160,8 +160,8 @@ export class AnalyticsWebSocketServer {
     if (client.readyState === WebSocket.OPEN) {
       try {
         client.send(JSON.stringify(message));
-      } catch (_error) {
-        console.error("", _error);
+      } catch (error) {
+        console.error("Error sending WebSocket message:", error);
       }
     }
   }

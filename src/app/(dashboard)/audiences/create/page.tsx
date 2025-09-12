@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useOrganization } from '@clerk/nextjs';
 import { 
   ArrowLeft, 
   Users, 
@@ -15,7 +16,8 @@ import {
   Trash2,
   Info,
   Save,
-  Eye
+  Eye,
+  FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -60,8 +62,13 @@ interface AudienceCondition {
 export default function CreateAudiencePage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { state: { organizationId } } = useServiceProvider();
+  const { organization, isLoaded: isOrgLoaded } = useOrganization();
+  const { state: { organizationId: spOrganizationId } } = useServiceProvider();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Use ServiceProvider organizationId first, fallback to Clerk organization
+  const organizationId = spOrganizationId || organization?.id;
+  const isLoading = !isOrgLoaded;
   const [conditions, setConditions] = useState<AudienceCondition[]>([]);
   const [currentTag, setCurrentTag] = useState('');
   const [tags, setTags] = useState<string[]>([]);
@@ -197,16 +204,44 @@ export default function CreateAudiencePage() {
     }
   };
 
-  // Show error if no organization context
+  // Show loading state while organization is loading
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-4 max-w-4xl">
+        <Card className="card-enhanced border-l-2 border-primary/20">
+          <CardContent className="p-8 text-center">
+            <div className="space-y-4">
+              <div className="p-3 bg-primary/10 rounded-lg border border-primary/20 w-fit mx-auto">
+                <Users className="h-8 w-8 text-primary animate-pulse" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-primary">Loading Organization...</h3>
+                <p className="text-sm text-muted-foreground">Please wait while we set up your workspace</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show error if no organization context after loading
   if (!organizationId) {
     return (
       <div className="container mx-auto py-4 max-w-4xl">
-        <Alert variant="destructive">
-          <Info className="h-4 w-4" />
+        <Alert className="card-enhanced border-l-2 border-destructive/20">
+          <div className="p-2 bg-destructive/10 rounded-lg border border-destructive/20">
+            <Info className="h-4 w-4 text-destructive" />
+          </div>
           <AlertDescription>
-            <strong>Organization Context Missing</strong>
+            <strong className="text-destructive">Organization Context Missing</strong>
             <br />
             Unable to load organization context. Please refresh the page or contact support if the issue persists.
+            <div className="mt-3">
+              <Button variant="outline" size="sm" onClick={() => window.location.reload()} className="border-destructive/20 hover:bg-destructive/10">
+                Refresh Page
+              </Button>
+            </div>
           </AlertDescription>
         </Alert>
       </div>
@@ -217,119 +252,196 @@ export default function CreateAudiencePage() {
     <TooltipProvider>
       <div className="container mx-auto py-4 max-w-4xl">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-4">
-          <Link href="/audiences">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Audiences
-            </Button>
-          </Link>
-          
-          <div>
-            <h1 className="text-3xl font-bold">Create New Audience</h1>
-            <p className="text-muted-foreground">
-              Define your target audience with custom segmentation criteria
-            </p>
+        <div className="mb-8">
+          <div className="flex items-center gap-4 mb-6">
+            <Link href="/audiences">
+              <Button variant="ghost" size="sm" className="hover:bg-primary/10 transition-colors">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Audiences
+              </Button>
+            </Link>
           </div>
+          
+          <Card className="card-enhanced border-l-2 border-primary/20 hover:shadow-professional transition-shadow duration-200">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+                  <Users className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-foreground">Create New Audience</h1>
+                  <p className="text-muted-foreground mt-1">
+                    Define your target audience with custom segmentation criteria
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="basic">Basic Information</TabsTrigger>
-              <TabsTrigger value="targeting">Targeting Rules</TabsTrigger>
-              <TabsTrigger value="review">Review & Create</TabsTrigger>
-            </TabsList>
+            <div className="mb-6">
+              <TabsList className="grid w-full grid-cols-3 bg-muted/20 p-1 rounded-lg border border-muted/20">
+                <TabsTrigger value="basic" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-primary/20 data-[state=active]:shadow-professional transition-all duration-200">
+                  Basic Information
+                </TabsTrigger>
+                <TabsTrigger value="targeting" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-primary/20 data-[state=active]:shadow-professional transition-all duration-200">
+                  Targeting Rules
+                </TabsTrigger>
+                <TabsTrigger value="review" className="data-[state=active]:bg-success/10 data-[state=active]:text-success data-[state=active]:border data-[state=active]:border-success/20 data-[state=active]:shadow-professional transition-all duration-200">
+                  Review & Create
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value="basic" className="space-y-6">
               {/* Basic Information */}
-              <Card>
+              <Card className="card-enhanced border-l-2 border-primary/20 hover:shadow-professional transition-shadow duration-200">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
+                    <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
+                      <Users className="h-5 w-5 text-primary" />
+                    </div>
                     Audience Details
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Audience Name *</Label>
-                      <Input
-                        id="name"
-                        {...register('name')}
-                        placeholder="Enter audience name"
+                    <Card className="p-4 card-enhanced border-l-2 border-primary/20 hover:shadow-professional transition-shadow duration-200">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 bg-primary/10 rounded border border-primary/20">
+                            <Users className="h-4 w-4 text-primary" />
+                          </div>
+                          <Label htmlFor="name" className="font-medium">Audience Name *</Label>
+                        </div>
+                        <Input
+                          id="name"
+                          {...register('name')}
+                          placeholder="Enter audience name"
+                          className="border-primary/20 focus:border-primary focus:ring-primary/20"
+                        />
+                        {errors.name && (
+                          <p className="text-sm text-destructive flex items-center gap-1">
+                            <div className="w-1 h-1 bg-destructive rounded-full"></div>
+                            {errors.name.message}
+                          </p>
+                        )}
+                      </div>
+                    </Card>
+
+                    <Card className="p-4 card-enhanced border-l-2 border-primary/20 hover:shadow-professional transition-shadow duration-200">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 bg-primary/10 rounded border border-primary/20">
+                            <Target className="h-4 w-4 text-primary" />
+                          </div>
+                          <Label htmlFor="type" className="font-medium">Audience Type *</Label>
+                        </div>
+                        <Select value={selectedType} onValueChange={(value) => setValue('type', value as any)}>
+                          <SelectTrigger className="border-primary/20 focus:border-primary focus:ring-primary/20">
+                            <SelectValue placeholder="Select audience type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="CUSTOM" className="hover:bg-primary/10">
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-primary rounded-full border border-primary/20"></div>
+                                Custom Audience
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="IMPORTED" className="hover:bg-muted/10">
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-muted-foreground rounded-full border border-muted/20"></div>
+                                Imported List
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="DYNAMIC" className="hover:bg-success/10">
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-success rounded-full border border-success/20"></div>
+                                Dynamic/Auto-updating
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {errors.type && (
+                          <p className="text-sm text-destructive flex items-center gap-1">
+                            <div className="w-1 h-1 bg-destructive rounded-full"></div>
+                            {errors.type.message}
+                          </p>
+                        )}
+                      </div>
+                    </Card>
+                  </div>
+
+                  <Card className="p-4 card-enhanced border-l-2 border-muted/20 hover:shadow-professional transition-shadow duration-200">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 bg-muted/10 rounded border border-muted/20">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <Label htmlFor="description" className="font-medium">Description</Label>
+                      </div>
+                      <Textarea
+                        id="description"
+                        {...register('description')}
+                        placeholder="Describe your target audience, their characteristics, and what makes them unique..."
+                        rows={3}
+                        className="border-muted/20 focus:border-primary focus:ring-primary/20 resize-none"
                       />
-                      {errors.name && (
-                        <p className="text-sm text-destructive">{errors.name.message}</p>
-                      )}
+                      <p className="text-xs text-muted-foreground">Optional: This helps team members understand the audience purpose</p>
                     </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="type">Audience Type *</Label>
-                      <Select value={selectedType} onValueChange={(value) => setValue('type', value as any)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select audience type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="CUSTOM">Custom Audience</SelectItem>
-                          <SelectItem value="IMPORTED">Imported List</SelectItem>
-                          <SelectItem value="DYNAMIC">Dynamic/Auto-updating</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {errors.type && (
-                        <p className="text-sm text-destructive">{errors.type.message}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      {...register('description')}
-                      placeholder="Describe your target audience..."
-                      rows={3}
-                    />
-                  </div>
+                  </Card>
 
                   {/* Tags */}
-                  <div className="space-y-2">
-                    <Label>Tags</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        value={currentTag}
-                        onChange={(e) => setCurrentTag(e.target.value)}
-                        placeholder="Add a tag"
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                      />
-                      <Button type="button" onClick={addTag} variant="outline">
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    {tags.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {tags.map((tag) => (
-                          <Badge key={tag} variant="secondary" className="gap-1">
-                            {tag}
-                            <button
-                              type="button"
-                              onClick={() => removeTag(tag)}
-                              className="ml-1 hover:text-destructive"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </button>
-                          </Badge>
-                        ))}
+                  <Card className="p-4 card-enhanced border-l-2 border-success/20 hover:shadow-professional transition-shadow duration-200">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 bg-success/10 rounded border border-success/20">
+                          <Plus className="h-4 w-4 text-success" />
+                        </div>
+                        <Label className="font-medium">Tags</Label>
                       </div>
-                    )}
-                  </div>
+                      <div className="flex gap-2">
+                        <Input
+                          value={currentTag}
+                          onChange={(e) => setCurrentTag(e.target.value)}
+                          placeholder="Add a tag (e.g., enterprise, B2B, high-value)"
+                          onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                          className="border-success/20 focus:border-success focus:ring-success/20"
+                        />
+                        <Button type="button" onClick={addTag} variant="outline" className="border-success/30 hover:bg-success/10 hover:border-success">
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      {tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {tags.map((tag) => (
+                            <Badge key={tag} className="gap-1 bg-success/10 text-success border border-success/20 hover:bg-success/20 transition-colors">
+                              {tag}
+                              <button
+                                type="button"
+                                onClick={() => removeTag(tag)}
+                                className="ml-1 hover:text-destructive hover:bg-destructive/10 rounded p-0.5 transition-colors"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground">Tags help organize and categorize your audiences</p>
+                    </div>
+                  </Card>
 
                   {/* Type-specific information */}
                   {selectedType === 'DYNAMIC' && (
-                    <Alert>
-                      <Info className="h-4 w-4" />
+                    <Alert className="card-enhanced border-l-2 border-success/20">
+                      <div className="p-2 bg-success/10 rounded-lg border border-success/20">
+                        <Info className="h-4 w-4 text-success" />
+                      </div>
                       <AlertDescription>
-                        <strong>Dynamic Audience</strong>
+                        <strong className="text-success">Dynamic Audience</strong>
                         <br />
                         This audience will automatically update based on the targeting rules you define. 
                         New users matching your criteria will be added automatically.
@@ -342,43 +454,65 @@ export default function CreateAudiencePage() {
 
             <TabsContent value="targeting" className="space-y-6">
               {/* Targeting Rules */}
-              <Card>
+              <Card className="card-enhanced border-l-2 border-primary/20 hover:shadow-professional transition-shadow duration-200">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Target className="h-5 w-5" />
+                    <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
+                      <Target className="h-5 w-5 text-primary" />
+                    </div>
                     Targeting Conditions
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-muted-foreground">
-                      Define who should be included in this audience
-                    </p>
-                    <Button type="button" onClick={addCondition} variant="outline">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Condition
-                    </Button>
-                  </div>
+                  <Card className="p-4 card-enhanced border-l-2 border-primary/20">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded border border-primary/20">
+                          <Settings className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium">Targeting Rules</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Define who should be included in this audience
+                          </p>
+                        </div>
+                      </div>
+                      <Button type="button" onClick={addCondition}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Condition
+                      </Button>
+                    </div>
+                  </Card>
 
                   {conditions.length === 0 ? (
-                    <div className="text-center py-4 border-2 border-dashed rounded-lg">
-                      <Target className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                      <p className="text-muted-foreground">No targeting conditions set</p>
-                      <p className="text-sm text-muted-foreground">Add conditions to define your audience</p>
-                    </div>
+                    <Card className="p-8 card-enhanced border-l-2 border-muted/20 border-dashed text-center">
+                      <div className="space-y-3">
+                        <div className="p-3 bg-muted/10 rounded-lg border border-muted/20 w-fit mx-auto">
+                          <Target className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-foreground">No targeting conditions set</h3>
+                          <p className="text-sm text-muted-foreground">Add conditions to define your audience criteria</p>
+                        </div>
+                        <Button type="button" onClick={addCondition} variant="outline" className="mt-4 border-primary/20 hover:bg-primary/10">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Your First Condition
+                        </Button>
+                      </div>
+                    </Card>
                   ) : (
                     <div className="space-y-4">
                       {conditions.map((condition, index) => (
-                        <div key={condition.id} className="flex items-center gap-4 p-4 border rounded-lg">
+                        <div key={condition.id} className="flex items-center gap-4 p-4 border border-muted/20 rounded-lg hover:shadow-professional hover:bg-muted/5 transition-all duration-200">
                           {index > 0 && (
-                            <div className="text-sm font-medium text-muted-foreground">AND</div>
+                            <div className="text-sm font-medium text-primary bg-primary/10 px-2 py-1 rounded border border-primary/20">AND</div>
                           )}
                           
                           <Select 
                             value={condition.type} 
                             onValueChange={(value) => updateCondition(condition.id, { type: value as any })}
                           >
-                            <SelectTrigger className="w-40">
+                            <SelectTrigger className="w-40 border-muted/20 focus:border-primary focus:ring-primary/20">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -432,7 +566,7 @@ export default function CreateAudiencePage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => removeCondition(condition.id)}
-                            className="text-destructive hover:text-destructive"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded transition-colors"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -446,58 +580,102 @@ export default function CreateAudiencePage() {
 
             <TabsContent value="review" className="space-y-6">
               {/* Review */}
-              <Card>
+              <Card className="card-enhanced border-l-2 border-success/20 hover:shadow-professional transition-shadow duration-200">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Eye className="h-5 w-5" />
+                    <div className="p-2 bg-success/10 rounded-lg border border-success/20">
+                      <Eye className="h-5 w-5 text-success" />
+                    </div>
                     Review Audience Configuration
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h3 className="font-medium mb-2">Basic Information</h3>
-                      <div className="space-y-2 text-sm">
-                        <div><strong>Name:</strong> {watch('name') || 'Not set'}</div>
-                        <div><strong>Type:</strong> {watch('type')}</div>
-                        <div><strong>Description:</strong> {watch('description') || 'None'}</div>
-                        {tags.length > 0 && (
-                          <div>
-                            <strong>Tags:</strong>
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {tags.map((tag) => (
-                                <Badge key={tag} variant="secondary" className="text-xs">
-                                  {tag}
-                                </Badge>
-                              ))}
+                    <Card className="p-4 card-enhanced border-l-2 border-primary/20">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 bg-primary/10 rounded border border-primary/20">
+                            <Users className="h-4 w-4 text-primary" />
+                          </div>
+                          <h3 className="font-semibold text-primary">Basic Information</h3>
+                        </div>
+                        <div className="space-y-3 text-sm">
+                          <div className="flex justify-between items-center p-2 bg-background/50 rounded border">
+                            <span className="font-medium">Name:</span>
+                            <span className={watch('name') ? 'text-foreground' : 'text-muted-foreground'}>
+                              {watch('name') || 'Not set'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center p-2 bg-background/50 rounded border">
+                            <span className="font-medium">Type:</span>
+                            <Badge variant="outline" className="text-xs">{watch('type')}</Badge>
+                          </div>
+                          <div className="space-y-1">
+                            <span className="font-medium">Description:</span>
+                            <p className="text-muted-foreground p-2 bg-background/50 rounded border text-xs">
+                              {watch('description') || 'No description provided'}
+                            </p>
+                          </div>
+                          {tags.length > 0 && (
+                            <div className="space-y-2">
+                              <span className="font-medium">Tags:</span>
+                              <div className="flex flex-wrap gap-1">
+                                {tags.map((tag) => (
+                                  <Badge key={tag} variant="secondary" className="text-xs border border-success/20">
+                                    {tag}
+                                  </Badge>
+                                ))}
+                              </div>
                             </div>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card className="p-4 card-enhanced border-l-2 border-primary/20">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 bg-primary/10 rounded border border-primary/20">
+                            <Target className="h-4 w-4 text-primary" />
+                          </div>
+                          <h3 className="font-semibold text-primary">Targeting Conditions</h3>
+                        </div>
+                        {conditions.length === 0 ? (
+                          <div className="text-center py-6 border-2 border-dashed border-muted rounded bg-muted/10">
+                            <Target className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground">No conditions set</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {conditions.map((condition, index) => (
+                              <div key={condition.id} className="p-2 bg-background/50 rounded border text-xs">
+                                {index > 0 && (
+                                  <Badge variant="outline" className="text-xs mb-1 bg-primary/10 text-primary border-primary/20">
+                                    AND
+                                  </Badge>
+                                )}
+                                <div className="flex items-center gap-1 text-xs">
+                                  <Badge variant="secondary" className="text-xs">{condition.type}</Badge>
+                                  <span>→</span>
+                                  <span className="font-medium">{condition.field}</span>
+                                  <Badge variant="outline" className="text-xs">{condition.operator}</Badge>
+                                  <span className="font-medium text-primary">{condition.value}</span>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         )}
                       </div>
-                    </div>
-
-                    <div>
-                      <h3 className="font-medium mb-2">Targeting Conditions</h3>
-                      {conditions.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">No conditions set</p>
-                      ) : (
-                        <div className="space-y-1 text-sm">
-                          {conditions.map((condition, index) => (
-                            <div key={condition.id}>
-                              {index > 0 && <span className="text-muted-foreground">AND </span>}
-                              <span>
-                                {condition.type} → {condition.field} {condition.operator} {condition.value}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    </Card>
                   </div>
 
-                  <Alert>
-                    <Info className="h-4 w-4" />
+                  <Alert className="border-primary/20 bg-primary/5">
+                    <div className="p-1 bg-primary/10 rounded">
+                      <Info className="h-4 w-4 text-primary" />
+                    </div>
                     <AlertDescription>
+                      <strong className="text-primary">Ready to Create</strong>
+                      <br />
                       Review your audience configuration above. Once created, you can modify these settings later from the audience management page.
                     </AlertDescription>
                   </Alert>
@@ -507,7 +685,7 @@ export default function CreateAudiencePage() {
           </Tabs>
 
           {/* Form Actions */}
-          <div className="flex items-center justify-between pt-6 border-t">
+          <div className="flex items-center justify-between pt-6 border-t border-border bg-muted/5 rounded-lg p-4 mt-6">
             <Link href="/audiences">
               <Button type="button" variant="outline" disabled={isSubmitting}>
                 Cancel
@@ -529,7 +707,7 @@ export default function CreateAudiencePage() {
                 <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-custom-white mr-2"></div>
                       Creating...
                     </>
                   ) : (
