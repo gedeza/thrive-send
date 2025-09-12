@@ -50,9 +50,9 @@ const getIconComponent = (iconName: string) => {
 
 // Fallback data for graceful degradation when APIs are unavailable
 const fallbackDeviceData = [
-  { device: 'Mobile', count: 4520, percentage: 61.0, icon: 'smartphone', color: 'text-accent' },
-  { device: 'Desktop', count: 2650, percentage: 35.8, icon: 'monitor', color: 'text-primary' },
-  { device: 'Tablet', count: 240, percentage: 3.2, icon: 'tablet', color: 'text-slate-600' },
+  { device: 'Mobile', count: 4520, percentage: 61.0, icon: 'smartphone', color: 'text-primary' },
+  { device: 'Desktop', count: 2650, percentage: 35.8, icon: 'monitor', color: 'text-success' },
+  { device: 'Tablet', count: 240, percentage: 3.2, icon: 'tablet', color: 'text-muted-foreground' },
 ];
 
 const fallbackLinksData = [
@@ -279,7 +279,7 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
   // Fetch data only once on component mount
   useEffect(() => {
     refreshData();
-  }, [params.id]); // Simplified dependency
+  }, [params.id, refreshData]); // Include refreshData dependency
 
   return (
     <div className="space-y-4 p-4">
@@ -474,7 +474,7 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
             </CardHeader>
             <CardContent className="p-3 pt-0">
               <div className="grid gap-2 sm:grid-cols-3">
-                {(deviceData || fallbackDeviceData).map((device: any) => (
+                {(deviceData && Array.isArray(deviceData) ? deviceData : fallbackDeviceData).map((device: any) => (
                   <div key={device.device} className="p-3 border rounded-lg hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-2 mb-2">
                       {getIconComponent(device.icon)}
@@ -514,7 +514,7 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
             </CardHeader>
             <CardContent className="p-3 pt-0">
               <div className="space-y-2">
-                {(linkData || fallbackLinksData).map((link: any, index: number) => (
+                {(linkData && Array.isArray(linkData) ? linkData : fallbackLinksData).map((link: any, index: number) => (
                   <div key={link.url} className="flex items-center justify-between p-2 border rounded hover:bg-muted/50 transition-colors">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">

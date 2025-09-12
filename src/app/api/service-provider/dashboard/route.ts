@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
 
 // Enhanced interfaces from TDD
 interface ServiceProviderMetrics {
@@ -95,12 +95,12 @@ export async function GET(request: Request) {
     }
 
     // Apply same organization lookup logic as other APIs
-    let orgExists = await prisma.organization.findUnique({
+    let orgExists = await db.organization.findUnique({
       where: { id: organizationId }
     });
 
     if (!orgExists && organizationId.startsWith('org_')) {
-      orgExists = await prisma.organization.findUnique({
+      orgExists = await db.organization.findUnique({
         where: { clerkOrganizationId: organizationId }
       });
     }
@@ -112,7 +112,7 @@ export async function GET(request: Request) {
     const dbOrganizationId = orgExists.id;
 
     // Verify user has access to this organization
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { clerkId: userId }
     });
 
@@ -120,7 +120,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const userMembership = await prisma.organizationMember.findFirst({
+    const userMembership = await db.organizationMember.findFirst({
       where: {
         userId: user.id,
         organizationId: dbOrganizationId,
@@ -137,7 +137,7 @@ export async function GET(request: Request) {
     }
 
     // Get organization with related data for metrics calculation
-    const orgWithData = await prisma.organization.findUnique({
+    const orgWithData = await db.organization.findUnique({
       where: { id: dbOrganizationId },
       include: {
         campaigns: {
@@ -185,13 +185,13 @@ export async function GET(request: Request) {
     const teamMembers = orgWithData.members.length;
 
     // PRODUCTION: Fetch real client data from database FIRST
-    const realClients = await prisma.client.findMany({
+    const realClients = await db.client.findMany({
       where: {
         organizationId: dbOrganizationId
       },
       include: {
         campaigns: {
-          where: { status: 'ACTIVE' },
+          where: { status: 'active' },
           select: { id: true }
         },
         content: {
@@ -255,7 +255,7 @@ export async function GET(request: Request) {
     // PRODUCTION: Fetch real recent activity from database
     const recentActivities = await Promise.all([
       // Campaign activities
-      prisma.campaign.findMany({
+      db.campaign.findMany({
         where: {
           organizationId: dbOrganizationId,
           createdAt: {
@@ -267,7 +267,7 @@ export async function GET(request: Request) {
         take: 5
       }),
       // Content activities
-      prisma.content.findMany({
+      db.content.findMany({
         where: {
           organizationId: dbOrganizationId,
           updatedAt: {

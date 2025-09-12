@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 import { z } from 'zod';
 import { createMockAnalytics } from '@/lib/api/content-analytics-service';
 
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       let analyticsData = [];
       
       try {
-        analyticsData = await prisma.contentAnalytics.findMany({
+        analyticsData = await db.contentAnalytics.findMany({
           where: {
             contentId: { in: contentIds }
           },

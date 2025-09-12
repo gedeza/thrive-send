@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 
 export async function GET(
   request: NextRequest,
@@ -19,7 +19,7 @@ export async function GET(
     
     try {
       // Verify user has access to this organization
-      const userOrg = await prisma.userOrganization.findFirst({
+      const userOrg = await db.userOrganization.findFirst({
         where: {
           userId,
           organizationId,
@@ -40,7 +40,7 @@ export async function GET(
       }
 
       // Get organization details
-      const organization = await prisma.organization.findUnique({
+      const organization = await db.organization.findUnique({
         where: { id: organizationId },
         select: {
           id: true,
