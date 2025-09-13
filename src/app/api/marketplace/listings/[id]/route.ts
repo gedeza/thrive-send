@@ -25,7 +25,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const listing = await prisma.marketplaceListing.findUnique({
+    const listing = await db.marketplaceListing.findUnique({
       where: { id: params.id },
       include: {
         createdBy: {
@@ -96,7 +96,7 @@ export async function PUT(
     const validatedData = updateListingSchema.parse(body);
 
     // Check if user owns this listing
-    const existingListing = await prisma.marketplaceListing.findUnique({
+    const existingListing = await db.marketplaceListing.findUnique({
       where: { id: params.id }
     });
 
@@ -124,7 +124,7 @@ export async function PUT(
     }
 
     // Update the listing
-    const updatedListing = await prisma.marketplaceListing.update({
+    const updatedListing = await db.marketplaceListing.update({
       where: { id: params.id },
       data: {
         ...(validatedData.title && { title: validatedData.title }),
@@ -180,7 +180,7 @@ export async function DELETE(
     }
 
     // Check if user owns this listing
-    const existingListing = await prisma.marketplaceListing.findUnique({
+    const existingListing = await db.marketplaceListing.findUnique({
       where: { id: params.id }
     });
 
@@ -199,13 +199,13 @@ export async function DELETE(
     }
 
     // Check if listing has purchases
-    const purchaseCount = await prisma.marketplacePurchase.count({
+    const purchaseCount = await db.marketplacePurchase.count({
       where: { listingId: params.id }
     });
 
     if (purchaseCount > 0) {
       // Instead of deleting, mark as inactive
-      const updatedListing = await prisma.marketplaceListing.update({
+      const updatedListing = await db.marketplaceListing.update({
         where: { id: params.id },
         data: { status: 'INACTIVE' }
       });
@@ -217,7 +217,7 @@ export async function DELETE(
     }
 
     // Safe to delete if no purchases
-    await prisma.marketplaceListing.delete({
+    await db.marketplaceListing.delete({
       where: { id: params.id }
     });
 

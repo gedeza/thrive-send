@@ -881,11 +881,11 @@ export default function SettingsPage() {
     <div className="flex-1 space-y-4">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-gradient-to-r from-slate-500 to-gray-600 rounded-xl">
+          <div className="p-3 bg-gradient-to-r from-primary to-primary/80 rounded-xl">
             <Settings className="h-8 w-8 text-white" />
           </div>
           <div>
-            <h2 className="text-4xl font-bold bg-gradient-to-r from-slate-600 via-gray-600 to-zinc-600 bg-clip-text text-transparent">
+            <h2 className="text-4xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
               Settings
             </h2>
             <p className="text-muted-foreground text-lg">

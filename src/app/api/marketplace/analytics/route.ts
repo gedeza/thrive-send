@@ -58,12 +58,12 @@ export async function GET(request: NextRequest) {
       topListings
     ] = await Promise.all([
       // Total listings count
-      prisma.marketplaceListing.count({
+      db.marketplaceListing.count({
         where: { createdById: userId }
       }),
       
       // Active listings count
-      prisma.marketplaceListing.count({
+      db.marketplaceListing.count({
         where: { 
           createdById: userId,
           status: 'ACTIVE'
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
       Promise.resolve(Math.floor(Math.random() * 10000) + 1000),
       
       // Total revenue from purchases
-      prisma.marketplacePurchase.aggregate({
+      db.marketplacePurchase.aggregate({
         where: {
           listing: { createdById: userId },
           status: 'COMPLETED',
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
       }),
       
       // Recent purchases
-      prisma.marketplacePurchase.findMany({
+      db.marketplacePurchase.findMany({
         where: {
           listing: { createdById: userId },
           createdAt: {
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
       }),
       
       // Top performing listings
-      prisma.marketplaceListing.findMany({
+      db.marketplaceListing.findMany({
         where: { createdById: userId },
         include: {
           purchases: {
@@ -179,7 +179,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate period-over-period growth
     const previousPeriodStart = new Date(startDate.getTime() - (now.getTime() - startDate.getTime()));
-    const previousRevenue = await prisma.marketplacePurchase.aggregate({
+    const previousRevenue = await db.marketplacePurchase.aggregate({
       where: {
         listing: { createdById: userId },
         status: 'COMPLETED',

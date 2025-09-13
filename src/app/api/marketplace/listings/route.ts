@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
     }
 
     const [listings, total] = await Promise.all([
-      prisma.marketplaceListing.findMany({
+      db.marketplaceListing.findMany({
         where,
         orderBy,
         skip,
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
           }
         }
       }),
-      prisma.marketplaceListing.count({ where })
+      db.marketplaceListing.count({ where })
     ]);
 
     // Add calculated fields
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
     const validatedData = listingSchema.parse(body);
 
     // Get user's organization
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { id: userId },
       include: { organizations: true }
     });
@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
     const organizationId = user.organizations[0].id;
 
     // Create the listing
-    const listing = await prisma.marketplaceListing.create({
+    const listing = await db.marketplaceListing.create({
       data: {
         title: validatedData.title,
         description: validatedData.description,

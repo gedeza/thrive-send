@@ -221,7 +221,7 @@ export default function CampaignTemplatesPage() {
       
       {/* Header */}
       <div className="text-center">
-        <div className="flex items-center justify-center gap-3 mb-4">
+        <div className="flex items-center justify-center gap-3 mb-6">
           <LayoutTemplate className="h-8 w-8 text-primary" />
           <h1 className="text-3xl font-bold">Campaign Templates</h1>
         </div>
@@ -231,12 +231,12 @@ export default function CampaignTemplatesPage() {
         
         {/* Showcase Info Banner */}
         {showShowcaseTemplates && (
-          <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border border-purple-200 dark:border-purple-800 rounded-lg max-w-4xl mx-auto">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Star className="h-4 w-4 text-accent" />
-              <span className="font-semibold text-accent">Marketing Showcase Mode</span>
+          <div className="mt-6 p-4 bg-primary/10 border border-primary/20 rounded-lg max-w-4xl mx-auto">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Star className="h-4 w-4 text-primary" />
+              <span className="font-semibold text-primary">Marketing Showcase Mode</span>
             </div>
-            <p className="text-sm text-accent">
+            <p className="text-sm text-primary">
               You're viewing beautiful sample templates perfect for demos and marketing materials. 
               These showcase templates display professional designs, ratings, and usage stats to demonstrate platform capabilities.
             </p>
@@ -259,7 +259,7 @@ export default function CampaignTemplatesPage() {
           </label>
           
           {showShowcaseTemplates && (
-            <Badge variant="outline" className="text-xs bg-accent/10 text-accent border-accent/20">
+            <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20">
               Marketing Demo Mode
             </Badge>
           )}
@@ -298,9 +298,9 @@ export default function CampaignTemplatesPage() {
           }
 
           return (
-            <Card key={template.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+            <Card key={template.id} className="overflow-hidden hover:shadow-professional transition-shadow duration-200">
               {/* Template Preview/Image */}
-              <div className="aspect-video w-full bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-900 flex items-center justify-center">
+              <div className="aspect-video w-full bg-muted/10 border border-muted/20 flex items-center justify-center">
                 {isShowcase ? (
                   <img
                     src={template.image}
@@ -319,7 +319,7 @@ export default function CampaignTemplatesPage() {
                     <div className="flex items-center gap-2">
                       <CardTitle className="text-lg">{template.name}</CardTitle>
                       {isShowcase && (
-                        <Badge variant="outline" className="text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0">
+                        <Badge className="text-xs bg-primary/10 text-primary border border-primary/20">
                           Showcase
                         </Badge>
                       )}
@@ -361,7 +361,7 @@ export default function CampaignTemplatesPage() {
                     <div className="flex items-center">
                       {isShowcase ? (
                         <>
-                          <Star className="h-3 w-3 fill-warning text-warning mr-1" />
+                          <Star className="h-3 w-3 fill-primary text-primary mr-1" />
                           <span>{template.rating}</span>
                         </>
                       ) : (
@@ -421,8 +421,8 @@ export default function CampaignTemplatesPage() {
       {allTemplates.length === 0 && (
         <div className="text-center py-12">
           <LayoutTemplate className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No templates found</h3>
-          <p className="text-muted-foreground mb-4">
+          <h3 className="text-lg font-semibold mb-4">No templates found</h3>
+          <p className="text-muted-foreground mb-6">
             Create your first campaign template to get started.
           </p>
           <Button asChild>

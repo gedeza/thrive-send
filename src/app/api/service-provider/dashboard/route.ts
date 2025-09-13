@@ -65,33 +65,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Organization ID required' }, { status: 400 });
     }
 
-    // DEVELOPMENT MODE: Allow testing without authentication
-    // TODO: Remove this in production
     if (!userId) {
-      console.log('🚧 DEV MODE: Service Provider Dashboard - No auth required');
-      // Return demo data for development testing
-      return NextResponse.json({
-        organizationId: organizationId,
-        organizationName: 'Demo Service Provider',
-        organizationType: 'service_provider' as const,
-        metrics: {
-          totalClients: 3,
-          activeClients: 3,
-          totalCampaigns: 25,
-          activeCampaigns: 18,
-          totalRevenue: 15250,
-          marketplaceRevenue: 2280,
-          teamUtilization: 89,
-          avgClientSatisfaction: 4.3,
-          monthlyRecurringRevenue: 12500,
-          averageClientValue: 5083,
-          churnRate: 2.1,
-          growthRate: 12.5,
-        },
-        clientSummary: [],
-        recentActivity: [],
-        performanceTrends: []
-      });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Apply same organization lookup logic as other APIs
@@ -192,18 +167,24 @@ export async function GET(request: Request) {
       include: {
         campaigns: {
           where: { status: 'active' },
-          select: { id: true }
-        },
-        content: {
-          where: {
-            publishedAt: {
-              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
-            }
-          },
           select: { 
-            id: true, 
-            engagementRate: true,
-            updatedAt: true
+            id: true,
+            content: {
+              where: {
+                publishedAt: {
+                  gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
+                }
+              },
+              select: { 
+                id: true, 
+                updatedAt: true,
+                analytics: {
+                  select: {
+                    engagementRate: true
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -229,23 +210,26 @@ export async function GET(request: Request) {
 
     const clientSummary: ClientSummary[] = realClients.map(client => {
       const activeCampaigns = client.campaigns.length;
-      const avgEngagement = client.content.length > 0 
-        ? client.content.reduce((sum, content) => sum + (content.engagementRate || 0), 0) / client.content.length
+      
+      // Get all content from all campaigns
+      const allContent = client.campaigns.flatMap(campaign => campaign.content);
+      const avgEngagement = allContent.length > 0 
+        ? allContent.reduce((sum, content) => sum + (content.analytics?.engagementRate || 0), 0) / allContent.length
         : 0;
-      const lastActivity = client.content.length > 0
-        ? new Date(Math.max(...client.content.map(c => new Date(c.updatedAt).getTime())))
+      const lastActivity = allContent.length > 0
+        ? new Date(Math.max(...allContent.map(c => new Date(c.updatedAt).getTime())))
         : new Date(client.updatedAt);
       
       return {
         id: client.id,
         name: client.name,
-        type: client.industry || 'business',
+        type: (client.industry as any) || 'business',
         status: client.status as 'ACTIVE' | 'INACTIVE' | 'LEAD' | 'ARCHIVED',
         performanceScore: Math.min(95, Math.max(65, avgEngagement * 20 + activeCampaigns * 2)),
         trendDirection: avgEngagement > 5 ? 'up' : avgEngagement > 3 ? 'stable' : 'down',
         activeCampaigns,
         engagementRate: avgEngagement,
-        monthlyBudget: client.monthlyBudget || 0,
+        monthlyBudget: Number(client.monthlyBudget || 0),
         lastActivity
       };
     });
@@ -274,7 +258,12 @@ export async function GET(request: Request) {
             gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
           }
         },
-        include: { client: { select: { id: true, name: true } } },
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          updatedAt: true
+        },
         orderBy: { updatedAt: 'desc' },
         take: 5
       })
@@ -294,17 +283,17 @@ export async function GET(request: Request) {
       ...content.map(item => ({
         id: `content-${item.id}`,
         type: item.status === 'PUBLISHED' ? 'content_published' : 
-              item.status === 'PENDING_APPROVAL' ? 'approval_pending' : 'content_updated',
+              item.status === 'PENDING_REVIEW' ? 'approval_pending' : 'content_updated',
         description: item.status === 'PUBLISHED' 
           ? `Content "${item.title}" published successfully`
-          : item.status === 'PENDING_APPROVAL'
+          : item.status === 'PENDING_REVIEW'
           ? `Content "${item.title}" awaiting approval`
           : `Content "${item.title}" updated`,
-        clientId: item.clientId || 'unknown',
-        clientName: item.client?.name || 'Unknown Client',
+        clientId: undefined,
+        clientName: undefined,
         timestamp: item.updatedAt,
         severity: item.status === 'PUBLISHED' ? 'success' as const :
-                 item.status === 'PENDING_APPROVAL' ? 'warning' as const : 'info' as const
+                 item.status === 'PENDING_REVIEW' ? 'warning' as const : 'info' as const
       }))
     ];
 
@@ -334,10 +323,10 @@ export async function GET(request: Request) {
 
     return NextResponse.json(dashboardData);
 
-  } catch (_error) {
-    console.error("", _error);
+  } catch (error) {
+    console.error("Dashboard API Error:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

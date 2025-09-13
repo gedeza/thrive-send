@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       where.listingId = listingId;
     }
 
-    const boosts = await prisma.boost.findMany({
+    const boosts = await db.boost.findMany({
       where,
       include: {
         listing: {
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
     const validatedData = createBoostSchema.parse(body);
 
     // Verify user owns the listing
-    const listing = await prisma.marketplaceListing.findUnique({
+    const listing = await db.marketplaceListing.findUnique({
       where: { id: validatedData.listingId }
     });
 
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for overlapping active boosts
-    const overlappingBoosts = await prisma.boost.findMany({
+    const overlappingBoosts = await db.boost.findMany({
       where: {
         listingId: validatedData.listingId,
         status: 'ACTIVE',
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the boost
-    const boost = await prisma.boost.create({
+    const boost = await db.boost.create({
       data: {
         listingId: validatedData.listingId,
         type: validatedData.type,

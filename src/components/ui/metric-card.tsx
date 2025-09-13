@@ -13,12 +13,12 @@ export function MetricCard({ title, value, change }: MetricCardProps) {
 
   return (
     <Card className="p-4">
-      <h3 className="text-sm font-medium text-gray-500">{title}</h3>
+      <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
       <div className="mt-2 flex items-baseline">
-        <p className="text-2xl font-semibold">{value}</p>
+        <p className="text-2xl font-semibold text-foreground">{value}</p>
         <span
           className={`ml-2 flex items-baseline text-sm font-semibold ${
-            isPositive ? 'text-green-600' : isNegative ? 'text-red-600' : 'text-gray-500'
+            isPositive ? 'text-success' : isNegative ? 'text-destructive' : 'text-muted-foreground'
           }`}
         >
           {isPositive ? (

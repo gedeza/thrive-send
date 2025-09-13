@@ -75,20 +75,20 @@ export function CampaignPerformance({ campaignId, dateRange }: CampaignPerforman
             {metrics.length > 0 ? (
               metrics.map((metric: any) => (
                 <Card key={metric.title} className="p-4">
-                  <h3 className="text-sm font-medium text-gray-500">{metric.title || 'Unknown Metric'}</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground">{metric.title || 'Unknown Metric'}</h3>
                   <p className="text-2xl font-bold mt-1">{metric.value || 'N/A'}</p>
                   {metric.percentChange !== undefined && (
                     <div className="flex items-center mt-2">
                       <span className={`text-sm ${metric.percentChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {metric.percentChange >= 0 ? '↑' : '↓'} {Math.abs(metric.percentChange)}%
                       </span>
-                      <span className="text-sm text-gray-500 ml-2">vs previous period</span>
+                      <span className="text-sm text-muted-foreground ml-2">vs previous period</span>
                     </div>
                   )}
                 </Card>
               ))
             ) : (
-              <div className="col-span-full text-center py-8 text-gray-500">
+              <div className="col-span-full text-center py-8 text-muted-foreground">
                 <p>No performance metrics available</p>
               </div>
             )}
@@ -115,7 +115,7 @@ export function CampaignPerformance({ campaignId, dateRange }: CampaignPerforman
                 </LineChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-full text-gray-500">
+                <div className="flex items-center justify-center h-full text-muted-foreground">
                   <p>No performance trend data available</p>
                 </div>
               )}
@@ -176,7 +176,7 @@ export function CampaignPerformance({ campaignId, dateRange }: CampaignPerforman
                       <span className="text-lg font-bold">
                         {performanceData.metrics.find((m: any) => m.title === stage)?.value || 0}
                       </span>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-muted-foreground">
                         ({((index + 1) * 33.33).toFixed(1)}%)
                       </span>
                     </div>

@@ -207,10 +207,10 @@ export function AdvancedContentMetrics({
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-24 bg-gray-200 rounded animate-pulse" />
+                <div key={i} className="h-24 bg-muted/50 rounded animate-pulse" />
               ))}
             </div>
-            <div className="h-64 bg-gray-200 rounded animate-pulse" />
+            <div className="h-64 bg-muted/50 rounded animate-pulse" />
           </div>
         </CardContent>
       </Card>
@@ -448,7 +448,7 @@ export function AdvancedContentMetrics({
                   {advancedMetrics?.contentTypePerformance.map((contentType, index) => (
                     <div key={contentType.type} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-gray-100">
+                        <div className="p-2 rounded-lg bg-muted/50">
                           {contentType.type === 'email' && <MousePointer className="h-4 w-4" />}
                           {contentType.type === 'social' && <Users className="h-4 w-4" />}
                           {contentType.type === 'blog' && <BarChart3 className="h-4 w-4" />}

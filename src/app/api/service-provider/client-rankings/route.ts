@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify user has access to this organization
-    const userOrg = await prisma.userOrganization.findFirst({
+    const userOrg = await db.userOrganization.findFirst({
       where: {
         userId,
         organizationId,
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get clients with performance data
-    const clients = await prisma.client.findMany({
+    const clients = await db.client.findMany({
       where: {
         organizationId,
         isActive: true,

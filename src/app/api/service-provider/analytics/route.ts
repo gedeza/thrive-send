@@ -16,13 +16,44 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Organization ID required' }, { status: 400 });
     }
 
-    // DEVELOPMENT MODE: Allow testing without authentication
-    // TODO: Remove this in production
     if (!userId) {
-      // DEV MODE: Service Provider Analytics - No auth required
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 🚀 SERVICE PROVIDER ANALYTICS - Enhanced Demo Implementation with Dashboard Integration
+    // Get user's organization and verify access
+    const user = await db.user.findUnique({
+      where: { clerkId: userId },
+      include: { organizationMembers: { include: { organization: true } } }
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Find organization
+    let organization = await db.organization.findFirst({
+      where: {
+        OR: [
+          { id: organizationId },
+          { clerkOrganizationId: organizationId }
+        ]
+      }
+    });
+
+    if (!organization) {
+      return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+    }
+
+    // Check access
+    const hasAccess = user.organizationMembers.some(member => 
+      member.organizationId === organization!.id
+    );
+
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+    }
+
+    // Calculate date range for analytics
     const now = new Date();
     const timeRanges = {
       '7d': 7,
@@ -31,156 +62,190 @@ export async function GET(request: NextRequest) {
       '1y': 365
     };
     const daysBack = timeRanges[timeRange as keyof typeof timeRanges] || 30;
+    const startDate = new Date(now.getTime() - daysBack * 24 * 60 * 60 * 1000);
 
-    // First, try to get real data from dashboard API for consistency
-    let dashboardData = null;
-    try {
-      const dashboardResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/service-provider/dashboard?organizationId=${organizationId}`);
-      if (dashboardResponse.ok) {
-        dashboardData = await dashboardResponse.json();
-        // Integrated dashboard data into analytics
-      }
-    } catch (_error) {
-      // Dashboard integration failed, using fallback data
+    // Get real analytics data from database
+    const [
+      clients,
+      contentAnalytics,
+      campaigns,
+      templates,
+      totalRevenue
+    ] = await Promise.all([
+      // Get clients data
+      db.client.findMany({
+        where: { 
+          organizationId: organization.id,
+          createdAt: { gte: startDate }
+        },
+        include: {
+          _count: {
+            select: {
+              content: true,
+              campaigns: true
+            }
+          }
+        }
+      }),
+      
+      // Get content analytics aggregated
+      db.content.aggregate({
+        where: {
+          organizationId: organization.id,
+          createdAt: { gte: startDate }
+        },
+        _sum: {
+          views: true,
+          clicks: true,
+          shares: true,
+          likes: true
+        },
+        _avg: {
+          engagementRate: true,
+          conversionRate: true
+        },
+        _count: true
+      }),
+      
+      // Get campaigns data  
+      db.campaign.findMany({
+        where: {
+          organizationId: organization.id,
+          createdAt: { gte: startDate }
+        },
+        include: {
+          _count: {
+            select: { content: true }
+          }
+        }
+      }),
+      
+      // Get templates usage
+      db.contentTemplate.aggregate({
+        where: {
+          organizationId: organization.id,
+          createdAt: { gte: startDate }
+        },
+        _count: true
+      }),
+      
+      // Calculate revenue (using campaign budgets as proxy)
+      db.campaign.aggregate({
+        where: {
+          organizationId: organization.id,
+          createdAt: { gte: startDate }
+        },
+        _sum: {
+          budget: true
+        }
+      })
+    ]);
+
+    // Process real client analytics data from database
+    const clientAnalytics: Record<string, any> = {};
+
+    // Process each client with real database data
+    for (const client of clients) {
+      // Get client-specific content analytics
+      const clientContentAnalytics = await db.content.aggregate({
+        where: {
+          clientId: client.id,
+          createdAt: { gte: startDate }
+        },
+        _sum: {
+          views: true,
+          clicks: true,
+          shares: true,
+          likes: true
+        },
+        _avg: {
+          engagementRate: true,
+          conversionRate: true
+        },
+        _count: {
+          _all: true
+        }
+      });
+
+      // Get content type distribution for this client
+      const contentTypes = await db.content.groupBy({
+        by: ['type'],
+        where: {
+          clientId: client.id,
+          createdAt: { gte: startDate }
+        },
+        _count: {
+          _all: true
+        }
+      });
+
+      // Get top performing content for this client
+      const topContent = await db.content.findMany({
+        where: {
+          clientId: client.id,
+          publishedAt: { not: null },
+          createdAt: { gte: startDate }
+        },
+        select: {
+          id: true,
+          title: true,
+          type: true,
+          publishedAt: true,
+          views: true,
+          clicks: true,
+          engagementRate: true
+        },
+        orderBy: [
+          { views: 'desc' },
+          { engagementRate: 'desc' }
+        ],
+        take: 5
+      });
+
+      // Get performance data for this client
+      const performanceData = await getClientPerformanceData(client.id, startDate, now);
+
+      clientAnalytics[client.id] = {
+        clientId: client.id,
+        clientName: client.name,
+        clientType: client.industry || 'business',
+        contentMetrics: {
+          totalContent: clientContentAnalytics._count._all,
+          publishedContent: await db.content.count({
+            where: {
+              clientId: client.id,
+              status: 'PUBLISHED',
+              createdAt: { gte: startDate }
+            }
+          }),
+          draftContent: await db.content.count({
+            where: {
+              clientId: client.id,
+              status: 'DRAFT',
+              createdAt: { gte: startDate }
+            }
+          }),
+          contentTypes: contentTypes.reduce((acc, type) => {
+            acc[type.type.toLowerCase()] = type._count._all;
+            return acc;
+          }, {} as Record<string, number>),
+          avgEngagementRate: clientContentAnalytics._avg.engagementRate || 0,
+          totalViews: clientContentAnalytics._sum.views || 0,
+          totalClicks: clientContentAnalytics._sum.clicks || 0,
+          conversionRate: clientContentAnalytics._avg.conversionRate || 0
+        },
+        performanceData,
+        topContent: topContent.map(content => ({
+          id: content.id,
+          title: content.title,
+          type: content.type.toLowerCase(),
+          publishedAt: content.publishedAt?.toISOString(),
+          views: content.views || 0,
+          engagement: content.engagementRate || 0,
+          clicks: content.clicks || 0
+        }))
+      };
     }
-
-    // Use dashboard data to scale analytics appropriately with real-time variance
-    const baseMetrics = dashboardData?.metrics || {};
-    const clientCount = baseMetrics.totalClients || 3;
-    const baseRevenue = baseMetrics.totalRevenue || 45000;
-    const engagementBase = baseMetrics.avgClientSatisfaction ? (baseMetrics.avgClientSatisfaction * 2) : 8.0;
-    
-    // Add real-time variance to make data appear dynamic
-    const minuteVariance = Math.sin(now.getMinutes() * 0.105) * 0.08; // Changes every minute
-    const hourVariance = Math.cos(now.getHours() * 0.26) * 0.05; // Changes throughout the day
-    const secondVariance = Math.sin(now.getSeconds() * 0.1) * 0.02; // Subtle second-by-second changes
-    const totalVariance = minuteVariance + hourVariance + secondVariance;
-    
-    const totalRevenue = Math.floor(baseRevenue * (1 + totalVariance));
-
-    // Generate realistic demo data integrated with dashboard metrics
-    const clientAnalytics = {
-      'demo-client-1': {
-        clientId: 'demo-client-1',
-        clientName: 'City of Springfield',
-        clientType: 'government',
-        contentMetrics: {
-          totalContent: Math.floor((baseMetrics.totalCampaigns || 15) * 3 * (1 + totalVariance * 0.1)),
-          publishedContent: Math.floor((baseMetrics.totalCampaigns || 15) * 2.8 * (1 + totalVariance * 0.1)),
-          draftContent: Math.floor((baseMetrics.totalCampaigns || 15) * 0.2 * (1 + Math.abs(totalVariance))),
-          contentTypes: {
-            email: Math.floor((baseMetrics.totalCampaigns || 15) * 1.2 * (1 + hourVariance)),
-            social: Math.floor((baseMetrics.totalCampaigns || 15) * 1.0 * (1 + minuteVariance)),
-            blog: Math.floor((baseMetrics.totalCampaigns || 15) * 0.8 * (1 + secondVariance * 5))
-          },
-          avgEngagementRate: Math.max(6.0, parseFloat((engagementBase * (1 + totalVariance * 0.3)).toFixed(1))),
-          totalViews: Math.floor(totalRevenue * 0.28 * (1 + totalVariance * 0.5)),
-          totalClicks: Math.floor(totalRevenue * 0.023 * (1 + totalVariance * 0.8)),
-          conversionRate: Math.max(3.0, parseFloat(((baseMetrics.growthRate || 4.2) * (1 + totalVariance * 0.2)).toFixed(1)))
-        },
-        performanceData: generatePerformanceData(daysBack, 'government', totalRevenue / clientCount),
-        topContent: [
-          {
-            id: 'content-1',
-            title: 'City Council Meeting Updates',
-            type: 'email',
-            publishedAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-            views: 2100,
-            engagement: 12.5,
-            clicks: 263
-          },
-          {
-            id: 'content-2', 
-            title: 'Community Event Announcement',
-            type: 'social',
-            publishedAt: new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000).toISOString(),
-            views: 1800,
-            engagement: 9.7,
-            clicks: 175
-          }
-        ]
-      },
-      'demo-client-2': {
-        clientId: 'demo-client-2',
-        clientName: 'TechStart Inc.',
-        clientType: 'business',
-        contentMetrics: {
-          totalContent: Math.floor((baseMetrics.totalCampaigns || 15) * 2.5 * (1 + totalVariance * 0.15)),
-          publishedContent: Math.floor((baseMetrics.totalCampaigns || 15) * 2.3 * (1 + totalVariance * 0.12)),
-          draftContent: Math.floor((baseMetrics.totalCampaigns || 15) * 0.2 * (1 + Math.abs(minuteVariance) * 2)),
-          contentTypes: {
-            email: Math.floor((baseMetrics.totalCampaigns || 15) * 0.8 * (1 + hourVariance * 0.8)),
-            social: Math.floor((baseMetrics.totalCampaigns || 15) * 1.2 * (1 + minuteVariance * 1.2)),
-            blog: Math.floor((baseMetrics.totalCampaigns || 15) * 0.5 * (1 + secondVariance * 3))
-          },
-          avgEngagementRate: Math.max(10.0, parseFloat((engagementBase * 1.5 * (1 + totalVariance * 0.4)).toFixed(1))),
-          totalViews: Math.floor(totalRevenue * 0.42 * (1 + totalVariance * 0.6)),
-          totalClicks: Math.floor(totalRevenue * 0.053 * (1 + totalVariance * 0.9)),
-          conversionRate: Math.max(5.0, parseFloat(((baseMetrics.growthRate || 6.8) * 1.6 * (1 + totalVariance * 0.25)).toFixed(1)))
-        },
-        performanceData: generatePerformanceData(daysBack, 'business', totalRevenue / clientCount),
-        topContent: [
-          {
-            id: 'content-3',
-            title: 'Product Launch Campaign',
-            type: 'social',
-            publishedAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-            views: 3200,
-            engagement: 18.4,
-            clicks: 589
-          },
-          {
-            id: 'content-4',
-            title: 'Tech Industry Insights',
-            type: 'blog',
-            publishedAt: new Date(now.getTime() - 12 * 24 * 60 * 60 * 1000).toISOString(),
-            views: 2800,
-            engagement: 15.2,
-            clicks: 426
-          }
-        ]
-      },
-      'demo-client-3': {
-        clientId: 'demo-client-3',
-        clientName: 'Local Coffee Co.',
-        clientType: 'business',
-        contentMetrics: {
-          totalContent: Math.floor((baseMetrics.totalCampaigns || 15) * 2.1 * (1 + totalVariance * 0.12)),
-          publishedContent: Math.floor((baseMetrics.totalCampaigns || 15) * 1.9 * (1 + totalVariance * 0.1)),
-          draftContent: Math.floor((baseMetrics.totalCampaigns || 15) * 0.2 * (1 + Math.abs(hourVariance) * 1.5)),
-          contentTypes: {
-            email: Math.floor((baseMetrics.totalCampaigns || 15) * 0.7 * (1 + hourVariance * 0.6)),
-            social: Math.floor((baseMetrics.totalCampaigns || 15) * 1.1 * (1 + minuteVariance * 0.9)),
-            blog: Math.floor((baseMetrics.totalCampaigns || 15) * 0.4 * (1 + secondVariance * 4))
-          },
-          avgEngagementRate: Math.max(5.5, parseFloat((engagementBase * 0.85 * (1 + totalVariance * 0.35)).toFixed(1))),
-          totalViews: Math.floor(totalRevenue * 0.20 * (1 + totalVariance * 0.4)),
-          totalClicks: Math.floor(totalRevenue * 0.013 * (1 + totalVariance * 0.7)),
-          conversionRate: Math.max(2.5, parseFloat(((baseMetrics.growthRate || 3.2) * 0.75 * (1 + totalVariance * 0.3)).toFixed(1)))
-        },
-        performanceData: generatePerformanceData(daysBack, 'local', totalRevenue / clientCount),
-        topContent: [
-          {
-            id: 'content-5',
-            title: 'Seasonal Coffee Menu',
-            type: 'social',
-            publishedAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-            views: 1500,
-            engagement: 8.9,
-            clicks: 134
-          },
-          {
-            id: 'content-6',
-            title: 'Community Partnership News',
-            type: 'email',
-            publishedAt: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-            views: 1200,
-            engagement: 7.3,
-            clicks: 88
-          }
-        ]
-      }
-    };
 
     // If specific client requested, return only that client's data
     if (clientId && clientId !== 'all') {
@@ -242,44 +307,63 @@ export async function GET(request: NextRequest) {
 
     // Cross-client analytics requested
 
+    console.log('🔄 Service Provider Analytics API response:', {
+      totalClients: clients.length,
+      timeRange,
+      totalContent: contentAnalytics._sum.views || 0
+    });
+
     return NextResponse.json(response);
 
-    // TODO: Replace with actual database queries when schema is ready
-    /*
-    const analytics = await prisma.contentAnalytics.aggregate({
+  } catch (_error) {
+    // Service provider analytics error
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// Helper function to get real client performance data
+async function getClientPerformanceData(clientId: string, startDate: Date, endDate: Date) {
+  const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
+  const performanceData = [];
+
+  // Get daily performance data for the specified range
+  for (let i = 0; i < days; i++) {
+    const currentDate = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
+    const nextDate = new Date(currentDate.getTime() + 24 * 60 * 60 * 1000);
+
+    const dailyMetrics = await db.content.aggregate({
       where: {
-        content: {
-          organizationId: organizationId,
-          ...(clientId && clientId !== 'all' && { clientId }),
-          createdAt: {
-            gte: new Date(now.getTime() - daysBack * 24 * 60 * 60 * 1000)
-          }
+        clientId,
+        publishedAt: {
+          gte: currentDate,
+          lt: nextDate
         }
       },
       _sum: {
         views: true,
         clicks: true,
         shares: true,
-        likes: true,
-        comments: true
+        likes: true
       },
       _avg: {
-        engagementRate: true,
-        conversionRate: true
+        engagementRate: true
+      },
+      _count: {
+        _all: true
       }
     });
 
-    return NextResponse.json({
-      analytics,
-      timeRange,
-      clientId
+    performanceData.push({
+      date: currentDate.toISOString().split('T')[0],
+      views: dailyMetrics._sum.views || 0,
+      engagement: dailyMetrics._avg.engagementRate || 0,
+      clicks: dailyMetrics._sum.clicks || 0,
+      impressions: Math.round((dailyMetrics._sum.views || 0) * 1.8), // Estimated impressions
+      reach: Math.round((dailyMetrics._sum.views || 0) * 0.7) // Estimated reach
     });
-    */
-
-  } catch (_error) {
-    // Service provider analytics error
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
+
+  return performanceData;
 }
 
 // Helper function to generate realistic performance data with trends

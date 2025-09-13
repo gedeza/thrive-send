@@ -94,10 +94,10 @@ interface TemplateApprovalWorkflowProps {
 }
 
 const PRIORITY_COLORS = {
-  low: 'bg-gray-100 text-gray-700 border-gray-200',
-  medium: 'bg-blue-100 text-blue-700 border-blue-200',
-  high: 'bg-orange-100 text-orange-700 border-orange-200',
-  urgent: 'bg-red-100 text-red-700 border-red-200'
+  low: 'bg-muted/20 text-muted-foreground border-muted/30',
+  medium: 'bg-primary/10 text-primary border-primary/20',
+  high: 'bg-[var(--color-chart-orange)]/10 text-[var(--color-chart-orange)] border-[var(--color-chart-orange)]/20',
+  urgent: 'bg-destructive/10 text-destructive border-destructive/20'
 };
 
 const STATUS_COLORS = {

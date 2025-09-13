@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Building2, 
   Users, 
@@ -15,21 +16,115 @@ import {
   TrendingUp,
   Target,
   ArrowRight,
-  Star
+  Star,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import { useServiceProvider } from '@/context/ServiceProviderContext';
+import { useUser, useOrganization } from '@clerk/nextjs';
+
+interface DashboardData {
+  organizationId: string;
+  organizationName: string;
+  organizationType: 'service_provider' | 'enterprise';
+  metrics: {
+    totalClients: number;
+    activeClients: number;
+    totalCampaigns: number;
+    activeCampaigns: number;
+    totalRevenue: number;
+    marketplaceRevenue: number;
+    teamUtilization: number;
+    avgClientSatisfaction: number;
+    monthlyRecurringRevenue: number;
+    averageClientValue: number;
+    churnRate: number;
+    growthRate: number;
+  };
+  clientSummary: any[];
+  recentActivity: any[];
+  performanceTrends: any[];
+}
 
 export default function ServiceProviderDashboard() {
   const { state } = useServiceProvider();
+  const { user } = useUser();
+  const { organization } = useOrganization();
+  
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Fetch live dashboard data from API
+  useEffect(() => {
+    async function fetchDashboardData() {
+      console.log('🔍 ServiceProvider Dashboard: Checking organization...', { 
+        organization: organization?.id, 
+        user: user?.id 
+      });
+      
+      if (!organization?.id) {
+        console.log('❌ ServiceProvider Dashboard: No organization ID found');
+        setError('No organization found. Please ensure you are part of an organization.');
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        setLoading(true);
+        setError(null);
+        
+        console.log(`🚀 ServiceProvider Dashboard: Fetching data for org ${organization.id}`);
+        
+        const response = await fetch(
+          `/api/service-provider/dashboard?organizationId=${organization.id}`,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+          }
+        );
+        
+        console.log('🔍 ServiceProvider Dashboard: API Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+          throw new Error(errorData.error || `API Error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('✅ ServiceProvider Dashboard: Data received:', {
+          organizationName: data.organizationName,
+          clientCount: data.clientSummary?.length,
+          metricsKeys: Object.keys(data.metrics || {})
+        });
+        
+        setDashboardData(data);
+        setError(null);
+      } catch (err) {
+        console.error('❌ ServiceProvider Dashboard: Error details:', err);
+        setError(`Failed to load dashboard: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchDashboardData();
+  }, [organization?.id, user?.id]);
 
+  // Generate features with live data integration
   const features = [
     {
       title: 'Template Library',
       description: 'Cross-client template sharing with advanced customization',
       icon: <FileText className="h-8 w-8" />,
       href: '/service-provider/templates',
-      stats: '45 shared templates',
+      stats: loading ? 'Loading...' : `${dashboardData?.clientSummary?.length || 0} shared templates`,
       completed: true,
       priority: 1
     },
@@ -38,7 +133,7 @@ export default function ServiceProviderDashboard() {
       description: 'Advanced analytics dashboard with cross-client insights',
       icon: <BarChart3 className="h-8 w-8" />,
       href: '/service-provider/analytics',
-      stats: '94% performance increase',
+      stats: loading ? 'Loading...' : `${dashboardData?.metrics?.growthRate?.toFixed(1) || '0'}% growth rate`,
       completed: true,
       priority: 2
     },
@@ -47,7 +142,7 @@ export default function ServiceProviderDashboard() {
       description: 'Enhanced multi-step approval processes',
       icon: <CheckCircle className="h-8 w-8" />,
       href: '/service-provider/approvals',
-      stats: '127 items processed',
+      stats: loading ? 'Loading...' : `${dashboardData?.recentActivity?.length || 0} recent activities`,
       completed: true,
       priority: 3
     },
@@ -56,7 +151,7 @@ export default function ServiceProviderDashboard() {
       description: 'Execute operations across multiple clients simultaneously',
       icon: <Zap className="h-8 w-8" />,
       href: '/service-provider/bulk-operations',
-      stats: '87.5% success rate',
+      stats: loading ? 'Loading...' : `${dashboardData?.metrics?.teamUtilization || '0'}% team utilization`,
       completed: true,
       priority: 4
     },
@@ -65,18 +160,85 @@ export default function ServiceProviderDashboard() {
       description: 'Advanced scheduling with timezone optimization',
       icon: <Clock className="h-8 w-8" />,
       href: '/service-provider/scheduling',
-      stats: '156 scheduled posts',
+      stats: loading ? 'Loading...' : `${dashboardData?.metrics?.activeCampaigns || '0'} active campaigns`,
       completed: true,
       priority: 5
     }
   ];
 
+  // Generate quick stats with live data
   const quickStats = [
-    { label: 'Active Clients', value: '3', icon: <Users className="h-5 w-5" /> },
-    { label: 'Templates Shared', value: '45', icon: <FileText className="h-5 w-5" /> },
-    { label: 'Success Rate', value: '94.2%', icon: <Target className="h-5 w-5" /> },
-    { label: 'Monthly Growth', value: '+23%', icon: <TrendingUp className="h-5 w-5" /> }
+    { 
+      label: 'Active Clients', 
+      value: loading ? '...' : (dashboardData?.metrics?.activeClients?.toString() || '0'), 
+      icon: <Users className="h-5 w-5" /> 
+    },
+    { 
+      label: 'Total Campaigns', 
+      value: loading ? '...' : (dashboardData?.metrics?.totalCampaigns?.toString() || '0'), 
+      icon: <FileText className="h-5 w-5" /> 
+    },
+    { 
+      label: 'Client Satisfaction', 
+      value: loading ? '...' : `${dashboardData?.metrics?.avgClientSatisfaction?.toFixed(1) || '0'}/5`, 
+      icon: <Target className="h-5 w-5" /> 
+    },
+    { 
+      label: 'Monthly Growth', 
+      value: loading ? '...' : `+${dashboardData?.metrics?.growthRate?.toFixed(1) || '0'}%`, 
+      icon: <TrendingUp className="h-5 w-5" /> 
+    }
   ];
+  
+  // Loading state
+  if (loading) {
+    return (
+      <div className="container mx-auto py-4 max-w-7xl">
+        <div className="space-y-8">
+          <Card className="border border-primary bg-gradient-to-r from-primary/5 to-transparent">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-primary/10 rounded-xl">
+                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                </div>
+                <div>
+                  <Skeleton className="h-8 w-80 mb-2" />
+                  <Skeleton className="h-4 w-96" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Card key={i} className="border border-primary/20">
+                <CardContent className="p-6">
+                  <Skeleton className="h-4 w-24 mb-2" />
+                  <Skeleton className="h-8 w-16" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Error state
+  if (error) {
+    return (
+      <div className="container mx-auto py-4 max-w-7xl">
+        <Card className="border-destructive">
+          <CardContent className="p-6 text-center">
+            <p className="text-destructive mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()} variant="outline">
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-4 max-w-7xl">
@@ -93,17 +255,17 @@ export default function ServiceProviderDashboard() {
                   <div>
                     <h1 className="text-3xl font-bold text-foreground">Service Provider Dashboard</h1>
                     <p className="text-muted-foreground mt-1">
-                      Manage content operations across multiple clients with advanced B2B2G features
+                      {dashboardData?.organizationName || 'Organization'} - Advanced B2B2G content operations for {dashboardData?.metrics?.totalClients || 0} clients
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <Badge variant="outline" className="text-success border-success/20 bg-success/5">
                     <Star className="h-3 w-3 mr-1" />
-                    Week 2 Complete
+                    ${dashboardData?.metrics?.activeClients || 0} Active Clients
                   </Badge>
                   <Badge variant="secondary" className="border">
-                    Enhanced Content Features
+                    Revenue: ${dashboardData?.metrics?.totalRevenue?.toLocaleString() || '0'}
                   </Badge>
                 </div>
               </div>
@@ -114,7 +276,7 @@ export default function ServiceProviderDashboard() {
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {quickStats.map((stat, index) => (
-            <Card key={index} className="border hover:shadow-md transition-all duration-300">
+            <Card key={index} className="border border-primary/20 hover:shadow-md transition-all duration-300">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -147,7 +309,7 @@ export default function ServiceProviderDashboard() {
           </Card>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, index) => (
-              <Card key={index} className="hover:shadow-lg transition-all duration-300 group border">
+              <Card key={index} className="hover:shadow-lg transition-all duration-300 group border border-primary/20">
                 <CardContent className="p-6">
                   <div className="space-y-4">
                     {/* Icon and Status */}
@@ -208,21 +370,21 @@ export default function ServiceProviderDashboard() {
           <CardContent>
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="p-4 border hover:shadow-md transition-all duration-300">
+                <Card className="p-4 border border-primary/20 hover:shadow-md transition-all duration-300">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-2 h-2 bg-success rounded-full"></div>
                     <h4 className="font-semibold">Day 1 Complete</h4>
                   </div>
                   <p className="text-sm text-muted-foreground">Cross-client template sharing system</p>
                 </Card>
-                <Card className="p-4 border hover:shadow-md transition-all duration-300">
+                <Card className="p-4 border border-primary/20 hover:shadow-md transition-all duration-300">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-2 h-2 bg-success rounded-full"></div>
                     <h4 className="font-semibold">Day 2 Complete</h4>
                   </div>
                   <p className="text-sm text-muted-foreground">Advanced analytics & performance metrics</p>
                 </Card>
-                <Card className="p-4 border hover:shadow-md transition-all duration-300">
+                <Card className="p-4 border border-primary/20 hover:shadow-md transition-all duration-300">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-2 h-2 bg-success rounded-full"></div>
                     <h4 className="font-semibold">Day 3 Complete</h4>
@@ -262,7 +424,7 @@ export default function ServiceProviderDashboard() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Link href="/service-provider/templates">
-                <Card className="h-20 hover:shadow-md transition-all duration-300 border group">
+                <Card className="h-20 hover:shadow-md transition-all duration-300 border border-primary/20 group">
                   <CardContent className="p-4 flex flex-col items-center justify-center gap-2 h-full">
                     <FileText className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:scale-110 transition-all duration-300" />
                     <span className="text-sm font-medium">Browse Templates</span>
@@ -270,7 +432,7 @@ export default function ServiceProviderDashboard() {
                 </Card>
               </Link>
               <Link href="/service-provider/analytics">
-                <Card className="h-20 hover:shadow-md transition-all duration-300 border group">
+                <Card className="h-20 hover:shadow-md transition-all duration-300 border border-primary/20 group">
                   <CardContent className="p-4 flex flex-col items-center justify-center gap-2 h-full">
                     <BarChart3 className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:scale-110 transition-all duration-300" />
                     <span className="text-sm font-medium">View Analytics</span>
@@ -278,7 +440,7 @@ export default function ServiceProviderDashboard() {
                 </Card>
               </Link>
               <Link href="/service-provider/bulk-operations">
-                <Card className="h-20 hover:shadow-md transition-all duration-300 border group">
+                <Card className="h-20 hover:shadow-md transition-all duration-300 border border-primary/20 group">
                   <CardContent className="p-4 flex flex-col items-center justify-center gap-2 h-full">
                     <Zap className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:scale-110 transition-all duration-300" />
                     <span className="text-sm font-medium">Bulk Operations</span>
@@ -286,7 +448,7 @@ export default function ServiceProviderDashboard() {
                 </Card>
               </Link>
               <Link href="/service-provider/scheduling">
-                <Card className="h-20 hover:shadow-md transition-all duration-300 border group">
+                <Card className="h-20 hover:shadow-md transition-all duration-300 border border-primary/20 group">
                   <CardContent className="p-4 flex flex-col items-center justify-center gap-2 h-full">
                     <Clock className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:scale-110 transition-all duration-300" />
                     <span className="text-sm font-medium">Schedule Content</span>

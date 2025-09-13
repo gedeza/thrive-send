@@ -31,27 +31,27 @@ export function ServiceProviderHeader({
   isRefreshing = false,
 }: ServiceProviderHeaderProps) {
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
+    <header className="bg-background border-b border-border sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
         <div className="flex items-center justify-between h-14 sm:h-16">
           {/* Left side - Logo and context */}
           <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
             {/* ThriveSend Logo */}
             <div className="flex items-center space-x-2 flex-shrink-0">
-              <div className="h-7 w-7 sm:h-8 sm:w-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xs sm:text-sm">T</span>
+              <div className="h-7 w-7 sm:h-8 sm:w-8 bg-primary rounded-lg flex items-center justify-center">
+                <span className="text-custom-white font-bold text-xs sm:text-sm">T</span>
               </div>
-              <span className="font-bold text-lg sm:text-xl text-gray-900 hidden sm:block">ThriveSend</span>
+              <span className="font-bold text-lg sm:text-xl text-foreground hidden sm:block">ThriveSend</span>
             </div>
 
             {/* Separator */}
-            <div className="h-4 sm:h-6 w-px bg-gray-300 hidden sm:block"></div>
+            <div className="h-4 sm:h-6 w-px bg-border hidden sm:block"></div>
 
             {/* Organization and Context */}
             <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
               <div className="min-w-0">
-                <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">{organizationName}</div>
-                <div className="text-xs text-gray-500 truncate">
+                <div className="text-xs sm:text-sm font-medium text-foreground truncate">{organizationName}</div>
+                <div className="text-xs text-muted-foreground truncate">
                   {selectedClient ? (
                     <span className="truncate">Client: {selectedClient.name}</span>
                   ) : (
@@ -86,7 +86,7 @@ export function ServiceProviderHeader({
                 <Button variant="ghost" size="sm" className="h-8 w-8 sm:h-9 sm:w-9 p-0 relative">
                   <Bell className="h-4 w-4" />
                   {/* Notification badge */}
-                  <span className="absolute -top-1 -right-1 h-3 w-3 sm:h-4 sm:w-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 h-3 w-3 sm:h-4 sm:w-4 bg-destructive rounded-full text-xs text-custom-white flex items-center justify-center">
                     3
                   </span>
                 </Button>
@@ -97,19 +97,19 @@ export function ServiceProviderHeader({
                 <div className="space-y-1">
                   <DropdownMenuItem className="flex flex-col items-start p-3">
                     <div className="font-medium">Campaign needs approval</div>
-                    <div className="text-sm text-gray-500">Municipal Corp • 2 minutes ago</div>
+                    <div className="text-sm text-muted-foreground">Municipal Corp • 2 minutes ago</div>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="flex flex-col items-start p-3">
                     <div className="font-medium">New client inquiry</div>
-                    <div className="text-sm text-gray-500">Lead from contact form • 1 hour ago</div>
+                    <div className="text-sm text-muted-foreground">Lead from contact form • 1 hour ago</div>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="flex flex-col items-start p-3">
                     <div className="font-medium">Performance milestone reached</div>
-                    <div className="text-sm text-gray-500">Tech Startup Inc • 3 hours ago</div>
+                    <div className="text-sm text-muted-foreground">Tech Startup Inc • 3 hours ago</div>
                   </DropdownMenuItem>
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-center text-blue-600">
+                <DropdownMenuItem className="text-center text-primary">
                   View all notifications
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -152,8 +152,8 @@ export function ServiceProviderHeader({
                       </AvatarFallback>
                     </Avatar>
                     <div className="hidden lg:block text-left">
-                      <div className="text-sm font-medium text-gray-900 truncate max-w-24">{currentUser.name}</div>
-                      <div className="text-xs text-gray-500">{currentUser.role}</div>
+                      <div className="text-sm font-medium text-foreground truncate max-w-24">{currentUser.name}</div>
+                      <div className="text-xs text-muted-foreground">{currentUser.role}</div>
                     </div>
                   </div>
                 </Button>
@@ -162,8 +162,8 @@ export function ServiceProviderHeader({
                 <DropdownMenuLabel>
                   <div>
                     <div className="font-medium">{currentUser.name}</div>
-                    <div className="text-sm text-gray-500">{currentUser.email}</div>
-                    <div className="text-xs text-blue-600 mt-1">{currentUser.role}</div>
+                    <div className="text-sm text-muted-foreground">{currentUser.email}</div>
+                    <div className="text-xs text-primary mt-1">{currentUser.role}</div>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -181,7 +181,7 @@ export function ServiceProviderHeader({
                   Organization Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-red-600">
+                <DropdownMenuItem className="text-destructive">
                   <LogOut className="h-4 w-4 mr-2" />
                   Sign Out
                 </DropdownMenuItem>

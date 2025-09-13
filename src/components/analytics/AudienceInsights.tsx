@@ -79,11 +79,11 @@ export function AudienceInsights({ campaignId, dateRange }: AudienceInsightsProp
               <div key={region.region} className="space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="font-medium">{region.region}</span>
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-muted-foreground">
                     {region.percentage}%
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-muted/50 rounded-full h-2">
                   <div
                     className="bg-blue-600 h-2 rounded-full"
                     style={{ width: `${region.percentage}%` }}
@@ -133,11 +133,11 @@ export function AudienceInsights({ campaignId, dateRange }: AudienceInsightsProp
                 <div key={device.device} className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="font-medium">{device.device}</span>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-muted-foreground">
                       {device.percentage}%
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-muted/50 rounded-full h-2">
                     <div
                       className="bg-blue-600 h-2 rounded-full"
                       style={{ width: `${device.percentage}%` }}
@@ -155,11 +155,11 @@ export function AudienceInsights({ campaignId, dateRange }: AudienceInsightsProp
                 <div key={content.type} className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="font-medium">{content.type}</span>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-muted-foreground">
                       {content.percentage}%
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-muted/50 rounded-full h-2">
                     <div
                       className="bg-blue-600 h-2 rounded-full"
                       style={{ width: `${content.percentage}%` }}
@@ -218,11 +218,11 @@ export function AudienceInsights({ campaignId, dateRange }: AudienceInsightsProp
                     <div key={metric.metric} className="space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="font-medium">{metric.metric}</span>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-muted-foreground">
                           {metric.total?.toLocaleString() || 0}
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-muted/50 rounded-full h-2">
                         <div
                           className="bg-blue-600 h-2 rounded-full"
                           style={{ width: `${metric.percentage || 0}%` }}
@@ -240,11 +240,11 @@ export function AudienceInsights({ campaignId, dateRange }: AudienceInsightsProp
                     <div key={segment.name} className="space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="font-medium">{segment.name}</span>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-muted-foreground">
                           {segment.count?.toLocaleString() || 0}
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-muted/50 rounded-full h-2">
                         <div
                           className="bg-blue-600 h-2 rounded-full"
                           style={{ width: `${segment.percentage || 0}%` }}
@@ -259,7 +259,7 @@ export function AudienceInsights({ campaignId, dateRange }: AudienceInsightsProp
         </TabsContent>
       </Tabs>
 
-      <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+      <div className="mt-6 p-4 bg-muted/50 rounded-lg">
         <h3 className="text-lg font-semibold mb-2">Audience Summary</h3>
         <div className="space-y-2">
           <div className="flex justify-between">

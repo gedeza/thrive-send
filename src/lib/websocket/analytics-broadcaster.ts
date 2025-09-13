@@ -1,6 +1,6 @@
 import { getAnalyticsWebSocketServer } from './analytics-websocket-server';
 import { ContentAnalytics } from '@/lib/api/content-analytics-service';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 
 interface RealTimeUpdate {
   contentId: string;
@@ -52,7 +52,7 @@ export class AnalyticsBroadcaster {
   private async generateSimulatedUpdates(): Promise<void> {
     try {
       // Get some content IDs from database for realistic simulation
-      const recentContent = await prisma.content.findMany({
+      const recentContent = await db.content.findMany({
         take: 10,
         orderBy: { createdAt: 'desc' },
         select: {
@@ -122,7 +122,7 @@ export class AnalyticsBroadcaster {
   // Get current analytics value from database
   private async getCurrentAnalytics(contentId: string, field: keyof ContentAnalytics): Promise<number> {
     try {
-      const analytics = await prisma.contentAnalytics.findUnique({
+      const analytics = await db.contentAnalytics.findUnique({
         where: { contentId },
         select: { [field]: true }
       });
@@ -141,7 +141,7 @@ export class AnalyticsBroadcaster {
     value: number
   ): Promise<void> {
     try {
-      await prisma.contentAnalytics.upsert({
+      await db.contentAnalytics.upsert({
         where: { contentId },
         update: {
           [field]: value,

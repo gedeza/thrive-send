@@ -115,7 +115,7 @@ function formatDate(dateString: string): string {
 }
 
 function getClientStatusColor(status: string): string {
-  return SEMANTIC_COLORS.CLIENT_STATUS[status as keyof typeof SEMANTIC_COLORS.CLIENT_STATUS] || 'bg-muted text-muted-foreground';
+  return SEMANTIC_COLORS.CLIENT_STATUS[status as keyof typeof SEMANTIC_COLORS.CLIENT_STATUS] || 'bg-muted/50 text-muted-foreground';
 }
 
 function getPopularityIcon(popularity: string) {
@@ -143,7 +143,7 @@ function RevenueCard({ title, value, change, period, icon, trend = 'neutral', is
   const { formatCurrency } = useCurrency();
   const getTrendColor = () => {
     if (change === undefined) return 'text-muted-foreground';
-    return change >= 0 ? 'text-green-600' : 'text-red-600';
+    return change >= 0 ? 'text-success' : 'text-destructive';
   };
 
   const getTrendIcon = () => {
@@ -170,7 +170,7 @@ function RevenueCard({ title, value, change, period, icon, trend = 'neutral', is
               </div>
             )}
           </div>
-          <div className="p-3 bg-primary/10 rounded-full">
+          <div className="p-3 bg-primary/10 border border-primary/20 rounded-full">
             <div className="h-6 w-6 text-primary">
               {icon}
             </div>
@@ -291,7 +291,7 @@ function ProductRevenueTable({ products, showAll = false, onProductClick }: Prod
           
           <div className="text-right">
             <p className="text-xl font-bold">{formatCurrency(product.totalSales)}</p>
-            <p className="text-sm text-green-600">
+            <p className="text-sm text-primary">
               +{formatCurrency(product.totalSales * (product.profitMargin / 100))} {REVENUE_DASHBOARD_TEXT.TABLES.PROFIT}
             </p>
           </div>
@@ -387,19 +387,19 @@ export default function ServiceProviderRevenueDashboard() {
               <DollarSign className="h-8 w-8 text-primary" />
               Revenue Dashboard
             </h2>
-            <div className="w-64 h-4 bg-gray-200 rounded animate-pulse mt-2" />
+            <div className="w-64 h-4 bg-primary/20 rounded animate-pulse mt-2" />
           </div>
           <div className="flex gap-2">
-            <div className="w-32 h-10 bg-gray-200 rounded animate-pulse" />
-            <div className="w-24 h-10 bg-gray-200 rounded animate-pulse" />
+            <div className="w-32 h-10 bg-primary/20 rounded animate-pulse" />
+            <div className="w-24 h-10 bg-primary/20 rounded animate-pulse" />
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-32 bg-gray-200 rounded-lg animate-pulse" />
+            <div key={i} className="h-32 bg-primary/10 rounded-lg animate-pulse" />
           ))}
         </div>
-        <div className="h-80 bg-gray-200 rounded-lg animate-pulse" />
+        <div className="h-80 bg-primary/10 rounded-lg animate-pulse" />
       </div>
     );
   }

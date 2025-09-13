@@ -231,7 +231,7 @@ export function ExportReporting({ className }: ExportReportingProps) {
       monthly: 'bg-purple-100 text-purple-700',
       quarterly: 'bg-orange-100 text-orange-700'
     };
-    return colors[frequency as keyof typeof colors] || 'bg-gray-100 text-gray-700';
+    return colors[frequency as keyof typeof colors] || 'bg-muted/50 text-muted-foreground';
   };
 
   const getFormatIcon = (format: string) => {
@@ -408,9 +408,14 @@ export function ExportReporting({ className }: ExportReportingProps) {
             {/* Export Options & Preview */}
             <div className="space-y-6">
               {/* Date Range */}
-              <Card>
+              <Card className="card-enhanced border-l-2 border-primary/20 hover:shadow-professional transition-shadow duration-200">
                 <CardHeader>
-                  <CardTitle className="text-lg">Date Range</CardTitle>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <div className="p-2 bg-primary/10 border border-primary/20 rounded-lg">
+                      <CalendarIcon className="h-4 w-4 text-primary" />
+                    </div>
+                    Date Range
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Popover>
@@ -446,9 +451,14 @@ export function ExportReporting({ className }: ExportReportingProps) {
               </Card>
 
               {/* Additional Options */}
-              <Card>
+              <Card className="card-enhanced border-l-2 border-muted/20 hover:shadow-professional transition-shadow duration-200">
                 <CardHeader>
-                  <CardTitle className="text-lg">Options</CardTitle>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <div className="p-2 bg-muted/10 border border-muted/20 rounded-lg">
+                      <Settings className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    Options
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center space-x-2">
@@ -495,9 +505,14 @@ export function ExportReporting({ className }: ExportReportingProps) {
               </Card>
 
               {/* Export Summary */}
-              <Card>
+              <Card className="card-enhanced border-l-2 border-success/20 hover:shadow-professional transition-shadow duration-200">
                 <CardHeader>
-                  <CardTitle className="text-lg">Export Summary</CardTitle>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <div className="p-2 bg-success/10 border border-success/20 rounded-lg">
+                      <BarChart3 className="h-4 w-4 text-success" />
+                    </div>
+                    Export Summary
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex justify-between text-sm">

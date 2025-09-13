@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify user has access to this organization
-    const userOrg = await prisma.userOrganization.findFirst({
+    const userOrg = await db.userOrganization.findFirst({
       where: {
         userId,
         organizationId,
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     const activities: any[] = [];
 
     // Recent campaigns
-    const recentCampaigns = await prisma.campaign.findMany({
+    const recentCampaigns = await db.campaign.findMany({
       where: {
         organizationId,
         createdAt: {
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Recent content publications
-    const recentContent = await prisma.content.findMany({
+    const recentContent = await db.content.findMany({
       where: {
         organizationId,
         status: 'PUBLISHED',
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Recent client additions
-    const recentClients = await prisma.client.findMany({
+    const recentClients = await db.client.findMany({
       where: {
         organizationId,
         createdAt: {
@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Recent approval requests
-    const recentApprovals = await prisma.content.findMany({
+    const recentApprovals = await db.content.findMany({
       where: {
         organizationId,
         status: 'PENDING_APPROVAL',

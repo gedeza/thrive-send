@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
@@ -187,7 +187,7 @@ export async function GET(request: NextRequest) {
     };
 
     const [content, totalCount] = await Promise.all([
-      prisma.content.findMany({
+      db.content.findMany({
         where: whereClause,
         include: {
           client: {
@@ -201,7 +201,7 @@ export async function GET(request: NextRequest) {
         skip: (page - 1) * limit,
         take: limit,
       }),
-      prisma.content.count({ where: whereClause }),
+      db.content.count({ where: whereClause }),
     ]);
 
     return NextResponse.json({
@@ -287,7 +287,7 @@ export async function POST(request: NextRequest) {
 
     // TODO: Replace with actual database creation when schema is ready
     /*
-    const newContent = await prisma.content.create({
+    const newContent = await db.content.create({
       data: {
         title,
         content,

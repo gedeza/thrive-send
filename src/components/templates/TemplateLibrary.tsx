@@ -158,13 +158,13 @@ export function TemplateLibrary({ onTemplateSelect, onTemplateApply }: TemplateL
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-bold">Template Library</h2>
           <div className="flex gap-2">
-            <div className="w-32 h-10 bg-gray-200 rounded animate-pulse" />
-            <div className="w-32 h-10 bg-gray-200 rounded animate-pulse" />
+            <div className="w-32 h-10 bg-muted rounded animate-pulse" />
+            <div className="w-32 h-10 bg-muted rounded animate-pulse" />
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-64 bg-gray-200 rounded-lg animate-pulse" />
+            <div key={i} className="h-64 bg-muted rounded-lg animate-pulse" />
           ))}
         </div>
       </div>
@@ -175,7 +175,7 @@ export function TemplateLibrary({ onTemplateSelect, onTemplateApply }: TemplateL
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <p className="text-red-500 mb-4">Failed to load templates</p>
+        <p className="text-destructive mb-4">Failed to load templates</p>
         <Button onClick={() => refetch()}>Try Again</Button>
       </div>
     );
@@ -210,8 +210,8 @@ export function TemplateLibrary({ onTemplateSelect, onTemplateApply }: TemplateL
           <Card>
             <CardContent className="p-3 sm:p-6">
               <div className="flex items-center">
-                <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg">
-                  <FileText className="h-4 w-4 sm:h-6 sm:w-6 text-blue-600" />
+                <div className="p-1.5 sm:p-2 bg-primary/10 rounded-lg">
+                  <FileText className="h-4 w-4 sm:h-6 sm:w-6 text-primary" />
                 </div>
                 <div className="ml-2 sm:ml-4">
                   <p className="text-xs sm:text-sm font-medium text-muted-foreground">Total Templates</p>
@@ -224,8 +224,8 @@ export function TemplateLibrary({ onTemplateSelect, onTemplateApply }: TemplateL
           <Card>
             <CardContent className="p-3 sm:p-6">
               <div className="flex items-center">
-                <div className="p-1.5 sm:p-2 bg-green-100 rounded-lg">
-                  <Share2 className="h-4 w-4 sm:h-6 sm:w-6 text-green-600" />
+                <div className="p-1.5 sm:p-2 bg-primary/10 rounded-lg">
+                  <Share2 className="h-4 w-4 sm:h-6 sm:w-6 text-primary" />
                 </div>
                 <div className="ml-2 sm:ml-4">
                   <p className="text-xs sm:text-sm font-medium text-muted-foreground">Total Usage</p>
@@ -238,8 +238,8 @@ export function TemplateLibrary({ onTemplateSelect, onTemplateApply }: TemplateL
           <Card>
             <CardContent className="p-3 sm:p-6">
               <div className="flex items-center">
-                <div className="p-1.5 sm:p-2 bg-purple-100 rounded-lg">
-                  <TrendingUp className="h-4 w-4 sm:h-6 sm:w-6 text-purple-600" />
+                <div className="p-1.5 sm:p-2 bg-primary/10 rounded-lg">
+                  <TrendingUp className="h-4 w-4 sm:h-6 sm:w-6 text-primary" />
                 </div>
                 <div className="ml-2 sm:ml-4">
                   <p className="text-xs sm:text-sm font-medium text-muted-foreground">Avg Engagement</p>
@@ -252,8 +252,8 @@ export function TemplateLibrary({ onTemplateSelect, onTemplateApply }: TemplateL
           <Card>
             <CardContent className="p-3 sm:p-6">
               <div className="flex items-center">
-                <div className="p-1.5 sm:p-2 bg-orange-100 rounded-lg">
-                  <Users className="h-4 w-4 sm:h-6 sm:w-6 text-orange-600" />
+                <div className="p-1.5 sm:p-2 bg-primary/10 rounded-lg">
+                  <Users className="h-4 w-4 sm:h-6 sm:w-6 text-primary" />
                 </div>
                 <div className="ml-2 sm:ml-4">
                   <p className="text-xs sm:text-sm font-medium text-muted-foreground">Shareable Clients</p>
@@ -363,8 +363,8 @@ export function TemplateLibrary({ onTemplateSelect, onTemplateApply }: TemplateL
               <div className="space-y-4">
                 {/* Template Preview */}
                 {template.previewImage && (
-                  <div className="w-full h-24 sm:h-32 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400" />
+                  <div className="w-full h-24 sm:h-32 bg-muted/50 rounded-lg flex items-center justify-center">
+                    <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
                   </div>
                 )}
                 
@@ -579,7 +579,7 @@ function TemplateShareDialog({
         {sharingStatus.sharedWith.length > 0 ? (
           <div className="space-y-2">
             {sharingStatus.sharedWith.map((client: any) => (
-              <div key={client.clientId} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-green-50 rounded-lg gap-2">
+              <div key={client.clientId} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-success/10 rounded-lg gap-2">
                 <div className="flex-1">
                   <p className="font-medium text-sm sm:text-base truncate">{client.clientName}</p>
                   <p className="text-xs sm:text-sm text-muted-foreground">
@@ -747,7 +747,7 @@ function TemplatePreviewDialog({
             </div>
             
             {/* Content Display */}
-            <div className="p-3 sm:p-4 bg-gray-50 rounded-lg max-h-64 overflow-y-auto border">
+            <div className="p-3 sm:p-4 bg-muted/30 rounded-lg max-h-64 overflow-y-auto border">
               {contentView === 'preview' ? (
                 <div 
                   className="prose prose-sm max-w-none"
@@ -763,7 +763,7 @@ function TemplatePreviewDialog({
         <TabsContent value="fields" className="mt-4">
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {template.customizableFields.map((field) => (
-              <div key={field.field} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg gap-2">
+              <div key={field.field} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-muted/30 rounded-lg gap-2">
                 <div className="flex-1">
                   <span className="font-medium text-sm sm:text-base">{field.field}</span>
                   <p className="text-xs sm:text-sm text-muted-foreground">{field.label}</p>
@@ -776,11 +776,11 @@ function TemplatePreviewDialog({
         
         <TabsContent value="stats" className="mt-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <div className="p-3 sm:p-4 bg-blue-50 rounded-lg">
+            <div className="p-3 sm:p-4 bg-primary/10 rounded-lg">
               <p className="text-xs sm:text-sm text-muted-foreground">Total Usage</p>
               <p className="text-xl sm:text-2xl font-bold">{template.totalUsage}</p>
             </div>
-            <div className="p-3 sm:p-4 bg-green-50 rounded-lg">
+            <div className="p-3 sm:p-4 bg-success/10 rounded-lg">
               <p className="text-xs sm:text-sm text-muted-foreground">Avg Engagement</p>
               <p className="text-xl sm:text-2xl font-bold">{template.averageEngagement}%</p>
             </div>

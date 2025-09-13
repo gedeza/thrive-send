@@ -29,7 +29,7 @@ export async function GET(
     }
 
     // Get user and their organization membership (similar to main content API)
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { clerkId: userId },
       include: {
         organizationMemberships: {
@@ -47,14 +47,14 @@ export async function GET(
     const organizationId = user.organizationMemberships[0].organizationId;
 
     // Get all users in the same organization
-    const organizationMembers = await prisma.organizationMember.findMany({
+    const organizationMembers = await db.organizationMember.findMany({
       where: { organizationId },
       include: { user: true }
     });
 
     const memberUserIds = organizationMembers.map(member => member.user.id);
 
-    const content = await prisma.content.findFirst({
+    const content = await db.content.findFirst({
       where: {
         id: params.id,
         authorId: { in: memberUserIds }, // Filter by organization members instead of just userId
@@ -84,7 +84,7 @@ export async function PATCH(
     }
 
     // Get user and their organization membership
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { clerkId: userId },
       include: {
         organizationMemberships: {
@@ -102,14 +102,14 @@ export async function PATCH(
     const organizationId = user.organizationMemberships[0].organizationId;
 
     // Get all users in the same organization
-    const organizationMembers = await prisma.organizationMember.findMany({
+    const organizationMembers = await db.organizationMember.findMany({
       where: { organizationId },
       include: { user: true }
     });
 
     const memberUserIds = organizationMembers.map(member => member.user.id);
 
-    const content = await prisma.content.findFirst({
+    const content = await db.content.findFirst({
       where: {
         id: params.id,
         authorId: { in: memberUserIds }, // Filter by organization members
@@ -148,7 +148,7 @@ export async function PATCH(
     // Always update the updatedAt timestamp
     updateData.updatedAt = new Date();
 
-    const updatedContent = await prisma.content.update({
+    const updatedContent = await db.content.update({
       where: {
         id: params.id,
       },
@@ -177,7 +177,7 @@ export async function PUT(
     }
 
     // Get user and their organization membership
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { clerkId: userId },
       include: {
         organizationMemberships: {
@@ -195,14 +195,14 @@ export async function PUT(
     const organizationId = user.organizationMemberships[0].organizationId;
 
     // Get all users in the same organization
-    const organizationMembers = await prisma.organizationMember.findMany({
+    const organizationMembers = await db.organizationMember.findMany({
       where: { organizationId },
       include: { user: true }
     });
 
     const memberUserIds = organizationMembers.map(member => member.user.id);
 
-    const content = await prisma.content.findFirst({
+    const content = await db.content.findFirst({
       where: {
         id: params.id,
         authorId: { in: memberUserIds }, // Filter by organization members
@@ -222,7 +222,7 @@ export async function PUT(
       status: body.status?.toUpperCase() || 'DRAFT',
     };
 
-    const updatedContent = await prisma.content.update({
+    const updatedContent = await db.content.update({
       where: {
         id: params.id,
       },
@@ -261,7 +261,7 @@ export async function DELETE(
     }
 
     // Get user and their organization membership
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { clerkId: userId },
       include: {
         organizationMemberships: {
@@ -279,7 +279,7 @@ export async function DELETE(
     const organizationId = user.organizationMemberships[0].organizationId;
 
     // Get all users in the same organization
-    const organizationMembers = await prisma.organizationMember.findMany({
+    const organizationMembers = await db.organizationMember.findMany({
       where: { organizationId },
       include: { user: true }
     });
@@ -287,7 +287,7 @@ export async function DELETE(
     const memberUserIds = organizationMembers.map(member => member.user.id);
 
     // Find content that belongs to the organization
-    const content = await prisma.content.findFirst({
+    const content = await db.content.findFirst({
       where: {
         id: params.id,
         authorId: { in: memberUserIds }, // Must be in the same organization
@@ -308,7 +308,7 @@ export async function DELETE(
 
     // Delete related calendar events first (if any)
     try {
-      await prisma.calendarEvent.deleteMany({
+      await db.calendarEvent.deleteMany({
         where: {
           contentId: params.id,
         },
@@ -319,7 +319,7 @@ export async function DELETE(
     }
 
     // Delete the content
-    await prisma.content.delete({
+    await db.content.delete({
       where: {
         id: params.id,
       },

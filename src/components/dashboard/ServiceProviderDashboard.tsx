@@ -77,13 +77,13 @@ export function ServiceProviderDashboard({ className = '' }: ServiceProviderDash
     return (
       <div className={`p-6 ${className}`}>
         <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+          <div className="h-8 bg-muted/50 rounded w-1/3"></div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-24 bg-gray-200 rounded"></div>
+              <div key={i} className="h-24 bg-muted/50 rounded"></div>
             ))}
           </div>
-          <div className="h-64 bg-gray-200 rounded"></div>
+          <div className="h-64 bg-muted/50 rounded"></div>
         </div>
       </div>
     );
@@ -114,7 +114,7 @@ export function ServiceProviderDashboard({ className = '' }: ServiceProviderDash
   }
 
   return (
-    <div className={`min-h-screen bg-gray-50 ${className}`}>
+    <div className={`min-h-screen bg-background ${className}`}>
       {/* Service Provider Header */}
       <div className="mb-4 lg:mb-6">
         <ServiceProviderHeader
@@ -300,7 +300,7 @@ function ClientSpecificDashboard({ client }: { client: any }) {
         <CardContent className="p-4 lg:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center space-x-4">
-              <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+              <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center overflow-hidden flex-shrink-0"
                 {client.logoUrl ? (
                   <img 
                     src={client.logoUrl} 
@@ -308,12 +308,12 @@ function ClientSpecificDashboard({ client }: { client: any }) {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <Users className="h-6 w-6 text-gray-400" />
+                  <Users className="h-6 w-6 text-muted-foreground" />
                 )}
               </div>
               <div className="min-w-0">
-                <h1 className="text-xl lg:text-2xl font-bold text-gray-900 truncate">{client.name}</h1>
-                <p className="text-gray-500 text-sm">{client.type} • {client.status}</p>
+                <h1 className="text-xl lg:text-2xl font-bold text-foreground truncate">{client.name}</h1>
+                <p className="text-muted-foreground text-sm">{client.type} • {client.status}</p>
               </div>
             </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
@@ -368,7 +368,7 @@ function ClientSpecificDashboard({ client }: { client: any }) {
           <CardTitle>Client Analytics</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-500">Client-specific analytics and content management will be displayed here.</p>
+          <p className="text-muted-foreground">Client-specific analytics and content management will be displayed here.</p>
         </CardContent>
       </Card>
     </div>
@@ -392,10 +392,10 @@ function MetricCard({
   color?: 'blue' | 'green' | 'purple' | 'orange';
 }) {
   const colorClasses = {
-    blue: 'text-blue-600 bg-blue-50',
-    green: 'text-green-600 bg-green-50',
-    purple: 'text-purple-600 bg-purple-50',
-    orange: 'text-orange-600 bg-orange-50',
+    blue: 'text-primary bg-primary/10 border border-primary/20',
+    green: 'text-success bg-success/10 border border-success/20',
+    purple: 'text-purple-600 bg-purple-50 border border-purple-200',
+    orange: 'text-orange-600 bg-orange-50 border border-orange-200',
   };
 
   return (
@@ -403,13 +403,13 @@ function MetricCard({
       <CardContent className="p-4 lg:p-6">
         <div className="flex items-center justify-between">
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-gray-600 truncate">{title}</p>
-            <p className="text-xl lg:text-2xl font-bold text-gray-900 truncate">{value}</p>
+            <p className="text-sm font-medium text-muted-foreground truncate">{title}</p>
+            <p className="text-xl lg:text-2xl font-bold text-foreground truncate">{value}</p>
             {description && (
-              <p className="text-sm text-gray-500 mt-1 truncate">{description}</p>
+              <p className="text-sm text-muted-foreground mt-1 truncate">{description}</p>
             )}
             {trend && (
-              <p className="text-xs text-gray-400 mt-1 truncate">{trend}</p>
+              <p className="text-xs text-muted-foreground mt-1 truncate">{trend}</p>
             )}
           </div>
           <div className={`h-10 w-10 lg:h-12 lg:w-12 rounded-lg flex items-center justify-center flex-shrink-0 ml-3 ${colorClasses[color]}`}>

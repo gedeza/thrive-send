@@ -11,7 +11,7 @@ export async function GET() {
     }
 
     // Get user from database
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { clerkId: userId }
     });
 
@@ -20,7 +20,7 @@ export async function GET() {
     }
 
     // Fetch recent activities for the user
-    const activities = await prisma.content.findMany({
+    const activities = await db.content.findMany({
       where: {
         authorId: user.id
       },

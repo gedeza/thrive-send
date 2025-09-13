@@ -161,7 +161,7 @@ export function FunnelManager({
       CLICK: { icon: '👆', label: 'Click', color: 'bg-green-100 text-green-800' },
       FORM_SUBMIT: { icon: '📝', label: 'Form Submit', color: 'bg-yellow-100 text-yellow-800' },
       PURCHASE: { icon: '💰', label: 'Purchase', color: 'bg-purple-100 text-purple-800' },
-      CUSTOM: { icon: '⚡', label: 'Custom Event', color: 'bg-gray-100 text-gray-800' },
+      CUSTOM: { icon: '⚡', label: 'Custom Event', color: 'bg-muted/50 text-muted-foreground' },
     };
     return configs[eventType as keyof typeof configs] || configs.CUSTOM;
   };
@@ -503,7 +503,7 @@ export function FunnelManager({
                   <p className="text-sm text-muted-foreground">
                     Use JavaScript to manually track events:
                   </p>
-                  <pre className="bg-gray-100 p-3 rounded text-xs overflow-x-auto">
+                  <pre className="bg-muted/50 p-3 rounded text-xs overflow-x-auto">
 {`// Track custom event
 thriveSend.track('purchase_complete', {
   value: 99.99,

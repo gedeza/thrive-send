@@ -19,7 +19,7 @@ export async function GET(
     
     try {
       // Verify user has access to this organization
-      const userOrg = await db.userOrganization.findFirst({
+      const userOrg = await db.organizationMember.findFirst({
         where: {
           userId,
           organizationId,

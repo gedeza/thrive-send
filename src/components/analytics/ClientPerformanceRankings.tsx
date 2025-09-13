@@ -51,9 +51,9 @@ export function ClientPerformanceRankings({
   const getRankingIcon = (position: number) => {
     switch (position) {
       case 0: return <Crown className="h-5 w-5 text-yellow-500" />;
-      case 1: return <Trophy className="h-5 w-5 text-gray-400" />;
+      case 1: return <Trophy className="h-5 w-5 text-muted-foreground" />;
       case 2: return <Award className="h-5 w-5 text-amber-600" />;
-      default: return <Medal className="h-5 w-5 text-gray-400" />;
+      default: return <Medal className="h-5 w-5 text-muted-foreground" />;
     }
   };
 
@@ -61,7 +61,7 @@ export function ClientPerformanceRankings({
   const getRankingBadgeColor = (position: number) => {
     switch (position) {
       case 0: return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 1: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 1: return 'bg-muted/50 text-muted-foreground border-primary/20';
       case 2: return 'bg-amber-100 text-amber-800 border-amber-200';
       default: return 'bg-blue-100 text-blue-800 border-blue-200';
     }
@@ -138,7 +138,7 @@ export function ClientPerformanceRankings({
         <CardContent>
           <div className="space-y-4">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-16 bg-gray-200 rounded animate-pulse" />
+              <div key={i} className="h-16 bg-muted/50 rounded animate-pulse" />
             ))}
           </div>
         </CardContent>
@@ -179,7 +179,7 @@ export function ClientPerformanceRankings({
                 key={client.clientId}
                 className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all cursor-pointer hover:shadow-md ${
                   index === 0 ? 'border-yellow-200 bg-yellow-50' :
-                  index === 1 ? 'border-gray-200 bg-gray-50' :
+                  index === 1 ? 'border-primary/20 bg-muted/50' :
                   index === 2 ? 'border-amber-200 bg-amber-50' :
                   'border-gray-100 bg-white hover:border-blue-200'
                 }`}

@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
     
     let boosts;
     try {
-      boosts = await prisma.boostProduct.findMany({
+      boosts = await db.boostProduct.findMany({
         where: filters,
         orderBy,
         take: limit,
@@ -181,7 +181,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Get total count for pagination
-    const totalCount = await prisma.boostProduct.count({
+    const totalCount = await db.boostProduct.count({
       where: filters
     });
 
@@ -241,12 +241,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Get or create user in database
-    let dbUser = await prisma.user.findUnique({
+    let dbUser = await db.user.findUnique({
       where: { clerkId: userId }
     });
 
     if (!dbUser) {
-      dbUser = await prisma.user.create({
+      dbUser = await db.user.create({
         data: {
           clerkId: userId,
           email: user.emailAddresses[0]?.emailAddress || '',
@@ -259,7 +259,7 @@ export async function POST(request: NextRequest) {
 
     // Verify user has access to organization
     if (organizationId) {
-      const membership = await prisma.organizationMember.findFirst({
+      const membership = await db.organizationMember.findFirst({
         where: {
           userId: dbUser.id,
           organizationId,
@@ -278,7 +278,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create boost product
-    const boostProduct = await prisma.boostProduct.create({
+    const boostProduct = await db.boostProduct.create({
       data: {
         name,
         description,

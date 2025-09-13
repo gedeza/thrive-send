@@ -142,7 +142,7 @@ export function Sidebar({
                       "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
                       isActive
                         ? "bg-primary/10 text-primary font-medium"
-                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                        : "text-muted-foreground hover:bg-primary/10 hover:text-primary",
                       isCollapsed && "justify-center"
                     )}
                   >
@@ -185,7 +185,7 @@ export function Sidebar({
                       "flex items-center px-3 py-2 rounded-md text-sm cursor-pointer transition-colors w-full",
                       isActive
                         ? "bg-primary/10 text-primary font-medium"
-                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                        : "text-muted-foreground hover:bg-primary/10 hover:text-primary",
                       isCollapsed && "justify-center"
                     )}
                     aria-label={item.label}
@@ -220,7 +220,7 @@ export function Sidebar({
                               "flex items-center px-3 py-1.5 rounded-md text-sm transition-colors",
                               (child.isActive ?? (pathname === child.href || pathname?.startsWith(child.href)))
                                 ? "bg-primary/10 text-primary font-medium"
-                                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
                             )}
                           >
                             {child.icon && (
@@ -236,7 +236,7 @@ export function Sidebar({
                               "flex items-center px-3 py-1.5 rounded-md text-sm cursor-pointer transition-colors w-full",
                               child.isActive
                                 ? "bg-primary/10 text-primary font-medium"
-                                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
                             )}
                           >
                             {child.icon && (
@@ -260,7 +260,7 @@ export function Sidebar({
         <div className="p-3 border-t">
           <button
             onClick={toggleCollapsed}
-            className="w-full flex items-center justify-center p-2 rounded-md bg-accent/50 hover:bg-accent text-foreground hover:text-accent-foreground"
+            className="w-full flex items-center justify-center p-2 rounded-md bg-primary/10 hover:bg-primary/20 text-foreground hover:text-primary"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             aria-pressed={collapsed}
             aria-expanded={!collapsed}

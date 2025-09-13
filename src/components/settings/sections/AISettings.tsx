@@ -592,35 +592,63 @@ export default function AISettings() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="text-center p-4 border rounded-lg">
-              <div className="text-2xl font-bold text-blue-600 mb-1">
+            <div className="text-center p-4 border rounded-lg bg-card">
+              <div className="text-2xl font-bold text-primary mb-1">
                 {aiUsageStats.totalRequests.toLocaleString()}
               </div>
               <div className="text-sm text-muted-foreground">AI Requests This Month</div>
               <div className="text-xs text-muted-foreground mt-1">
                 {aiUsageStats.monthlyLimit.toLocaleString()} limit
               </div>
+              <div className="w-full bg-muted/50 rounded-full h-1.5 mt-2">
+                <div
+                  className="bg-primary h-1.5 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min((aiUsageStats.totalRequests / aiUsageStats.monthlyLimit) * 100, 100)}%` }}
+                />
+              </div>
             </div>
             
-            <div className="text-center p-4 border rounded-lg">
-              <div className="text-2xl font-bold text-green-600 mb-1">
+            <div className="text-center p-4 border rounded-lg bg-card">
+              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mb-1">
                 {aiUsageStats.contentGenerated}
               </div>
               <div className="text-sm text-muted-foreground">Content Pieces Generated</div>
+              <div className="flex items-center justify-center gap-1 mt-2">
+                <div className="h-1.5 w-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400"></div>
+                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Active</span>
+              </div>
             </div>
             
-            <div className="text-center p-4 border rounded-lg">
-              <div className="text-2xl font-bold text-purple-600 mb-1">
+            <div className="text-center p-4 border rounded-lg bg-card">
+              <div className="text-2xl font-bold text-chart-2 mb-1">
                 {Math.round((aiUsageStats.totalRequests / aiUsageStats.monthlyLimit) * 100)}%
               </div>
               <div className="text-sm text-muted-foreground">Monthly Usage</div>
+              <div className={cn(
+                "text-xs font-medium mt-2",
+                Math.round((aiUsageStats.totalRequests / aiUsageStats.monthlyLimit) * 100) > 80 
+                  ? "text-destructive" 
+                  : Math.round((aiUsageStats.totalRequests / aiUsageStats.monthlyLimit) * 100) > 60 
+                  ? "text-amber-600 dark:text-amber-400" 
+                  : "text-emerald-600 dark:text-emerald-400"
+              )}>
+                {Math.round((aiUsageStats.totalRequests / aiUsageStats.monthlyLimit) * 100) > 80 
+                  ? "High Usage" 
+                  : Math.round((aiUsageStats.totalRequests / aiUsageStats.monthlyLimit) * 100) > 60 
+                  ? "Moderate Usage" 
+                  : "Low Usage"}
+              </div>
             </div>
             
-            <div className="text-center p-4 border rounded-lg">
-              <div className="text-2xl font-bold text-amber-600 mb-1">
+            <div className="text-center p-4 border rounded-lg bg-card">
+              <div className="text-2xl font-bold text-chart-4 mb-1">
                 {(aiUsageStats.tokensUsed / 1000).toFixed(1)}K
               </div>
               <div className="text-sm text-muted-foreground">Tokens Consumed</div>
+              <div className="flex items-center justify-center gap-1 mt-2">
+                <div className="h-1.5 w-1.5 rounded-full bg-chart-4"></div>
+                <span className="text-xs text-chart-4 font-medium">Processing</span>
+              </div>
             </div>
           </div>
         </CardContent>

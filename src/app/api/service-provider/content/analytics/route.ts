@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
@@ -253,7 +253,7 @@ export async function GET(request: NextRequest) {
 
     // TODO: Replace with actual database analytics when schema is ready
     /*
-    const analytics = await prisma.contentAnalytics.aggregate({
+    const analytics = await db.contentAnalytics.aggregate({
       where: {
         content: {
           serviceProviderId: organizationId,

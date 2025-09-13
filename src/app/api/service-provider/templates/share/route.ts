@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
     // TODO: Replace with actual database operations when schema is ready
     /*
     if (shareType === 'share') {
-      await prisma.contentTemplate.update({
+      await db.contentTemplate.update({
         where: { 
           id: templateId,
           serviceProviderId: serviceProviderId
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
       });
 
       // Create sharing history records
-      await prisma.templateSharingHistory.createMany({
+      await db.templateSharingHistory.createMany({
         data: clientIds.map(clientId => ({
           templateId,
           clientId,
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
       });
 
     } else if (shareType === 'unshare') {
-      await prisma.contentTemplate.update({
+      await db.contentTemplate.update({
         where: { 
           id: templateId,
           serviceProviderId: serviceProviderId
@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
       });
 
       // Create unsharing history records
-      await prisma.templateSharingHistory.createMany({
+      await db.templateSharingHistory.createMany({
         data: clientIds.map(clientId => ({
           templateId,
           clientId,
@@ -273,7 +273,7 @@ export async function GET(request: NextRequest) {
 
     // TODO: Replace with actual database query when schema is ready
     /*
-    const template = await prisma.contentTemplate.findUnique({
+    const template = await db.contentTemplate.findUnique({
       where: {
         id: templateId,
         serviceProviderId: serviceProviderId

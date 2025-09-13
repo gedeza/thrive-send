@@ -109,7 +109,7 @@ export function RevenueAnalyticsDashboard({
     } else if (trend === 'down' || (value && value < 0)) {
       return <ArrowDown className="h-4 w-4 text-red-600" />;
     }
-    return <Minus className="h-4 w-4 text-gray-400" />;
+    return <Minus className="h-4 w-4 text-muted-foreground" />;
   }, []);
 
   // Currency formatting handled by useAnalyticsCurrency hook
@@ -184,19 +184,19 @@ export function RevenueAnalyticsDashboard({
         <div className="flex justify-between items-center">
           <div>
             <h2 className="text-2xl font-bold">Revenue Analytics</h2>
-            <div className="w-96 h-4 bg-gray-200 rounded animate-pulse mt-2" />
+            <div className="w-96 h-4 bg-muted/50 rounded animate-pulse mt-2" />
           </div>
           <div className="flex gap-2">
-            <div className="w-32 h-10 bg-gray-200 rounded animate-pulse" />
-            <div className="w-24 h-10 bg-gray-200 rounded animate-pulse" />
+            <div className="w-32 h-10 bg-muted/50 rounded animate-pulse" />
+            <div className="w-24 h-10 bg-muted/50 rounded animate-pulse" />
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-32 bg-gray-200 rounded-lg animate-pulse" />
+            <div key={i} className="h-32 bg-muted/50 rounded-lg animate-pulse" />
           ))}
         </div>
-        <div className="h-96 bg-gray-200 rounded-lg animate-pulse" />
+        <div className="h-96 bg-muted/50 rounded-lg animate-pulse" />
       </div>
     );
   }
@@ -204,7 +204,7 @@ export function RevenueAnalyticsDashboard({
   if (!revenueData) {
     return (
       <Card className="p-8 text-center">
-        <Info className="h-8 w-8 mx-auto mb-4 text-gray-400" />
+        <Info className="h-8 w-8 mx-auto mb-4 text-muted-foreground" />
         <h3 className="text-lg font-semibold mb-2">No Revenue Data</h3>
         <p className="text-muted-foreground">
           Revenue analytics data is not available yet.
@@ -350,7 +350,7 @@ export function RevenueAnalyticsDashboard({
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {revenueStreams.map((stream, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div key={index} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                     <div>
                       <h3 className="font-medium">{stream.name}</h3>
                       <p className="text-2xl font-bold text-green-600">{formatCurrency(stream.amount)}</p>
@@ -378,10 +378,10 @@ export function RevenueAnalyticsDashboard({
             <CardContent>
               <div className="space-y-4">
                 {topRevenueClients.map((client: ClientRevenueAnalytics, index: number) => (
-                  <div key={client.clientId} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div key={client.clientId} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${
-                        index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-500' : 'bg-blue-500'
+                        index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-muted/50' : index === 2 ? 'bg-orange-500' : 'bg-blue-500'
                       }`}>
                         {index + 1}
                       </div>
@@ -425,7 +425,7 @@ export function RevenueAnalyticsDashboard({
                         <span className="text-sm font-medium">{stream.name}</span>
                         <span className="text-sm font-bold">{formatCurrency(stream.amount)}</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-muted/50 rounded-full h-2">
                         <div 
                           className="bg-blue-600 h-2 rounded-full" 
                           style={{ width: `${stream.percentage}%` }}
@@ -481,7 +481,7 @@ export function RevenueAnalyticsDashboard({
               <CardContent>
                 <div className="space-y-4">
                   {revenueData.revenueForecasting.slice(0, 6).map((forecast, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                       <div>
                         <p className="font-medium">{forecast.month}</p>
                         <p className="text-sm text-muted-foreground">
@@ -574,7 +574,7 @@ export function RevenueAnalyticsDashboard({
             <CardContent>
               <div className="space-y-4">
                 {revenueData.businessIntelligence.churnRiskAssessment.slice(0, 5).map((client: ChurnRiskClient) => (
-                  <div key={client.clientId} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div key={client.clientId} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                     <div>
                       <h3 className="font-medium">{client.clientName}</h3>
                       <p className="text-sm text-muted-foreground">

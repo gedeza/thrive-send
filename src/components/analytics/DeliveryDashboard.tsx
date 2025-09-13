@@ -218,7 +218,7 @@ export function DeliveryDashboard({ organizationId, campaignId }: DeliveryDashbo
         {Array.from({ length: 6 }).map((_, i) => (
           <Card key={i} className="animate-pulse">
             <CardContent className="p-6">
-              <div className="h-32 bg-gray-200 rounded"></div>
+              <div className="h-32 bg-muted/50 rounded"></div>
             </CardContent>
           </Card>
         ))}
@@ -231,8 +231,8 @@ export function DeliveryDashboard({ organizationId, campaignId }: DeliveryDashbo
       {/* Header Controls */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Email Delivery Analytics</h2>
-          <p className="text-gray-600">Real-time tracking and performance insights</p>
+          <h2 className="text-2xl font-bold text-muted-foreground">Email Delivery Analytics</h2>
+          <p className="text-muted-foreground">Real-time tracking and performance insights</p>
         </div>
         
         <div className="flex gap-2">
@@ -322,7 +322,7 @@ export function DeliveryDashboard({ organizationId, campaignId }: DeliveryDashbo
               {healthScore.recommendations.length > 0 && (
                 <div className="mt-4">
                   <h4 className="font-medium mb-2">Recommendations:</h4>
-                  <ul className="space-y-1 text-sm text-gray-600">
+                  <ul className="space-y-1 text-sm text-muted-foreground">
                     {healthScore.recommendations.map((rec, index) => (
                       <li key={index} className="flex items-start gap-2">
                         <span className="text-blue-500">•</span>
@@ -343,9 +343,9 @@ export function DeliveryDashboard({ organizationId, campaignId }: DeliveryDashbo
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Emails Sent</p>
+                <p className="text-sm font-medium text-muted-foreground">Emails Sent</p>
                 <p className="text-2xl font-bold">{currentMetrics.totalSent?.toLocaleString() || 0}</p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   {currentMetrics.deliveryRate?.toFixed(1) || 0}% delivered
                 </p>
               </div>
@@ -358,9 +358,9 @@ export function DeliveryDashboard({ organizationId, campaignId }: DeliveryDashbo
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Opens</p>
+                <p className="text-sm font-medium text-muted-foreground">Opens</p>
                 <p className="text-2xl font-bold">{currentMetrics.totalOpened?.toLocaleString() || 0}</p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   {currentMetrics.openRate?.toFixed(1) || 0}% open rate
                 </p>
               </div>
@@ -373,9 +373,9 @@ export function DeliveryDashboard({ organizationId, campaignId }: DeliveryDashbo
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Clicks</p>
+                <p className="text-sm font-medium text-muted-foreground">Clicks</p>
                 <p className="text-2xl font-bold">{currentMetrics.totalClicked?.toLocaleString() || 0}</p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   {currentMetrics.clickRate?.toFixed(1) || 0}% click rate
                 </p>
               </div>
@@ -388,9 +388,9 @@ export function DeliveryDashboard({ organizationId, campaignId }: DeliveryDashbo
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Bounces</p>
+                <p className="text-sm font-medium text-muted-foreground">Bounces</p>
                 <p className="text-2xl font-bold">{currentMetrics.totalBounced?.toLocaleString() || 0}</p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   {currentMetrics.bounceRate?.toFixed(1) || 0}% bounce rate
                 </p>
               </div>
@@ -530,7 +530,7 @@ export function DeliveryDashboard({ organizationId, campaignId }: DeliveryDashbo
                     <div className="text-3xl font-bold text-green-600">
                       {analytics.metrics.deliveryRate.toFixed(1)}%
                     </div>
-                    <div className="text-sm text-gray-600">Delivery Rate</div>
+                    <div className="text-sm text-muted-foreground">Delivery Rate</div>
                     <div className="mt-2">
                       {analytics.metrics.deliveryRate >= 95 ? (
                         <TrendingUp className="h-5 w-5 text-green-600 mx-auto" />
@@ -544,7 +544,7 @@ export function DeliveryDashboard({ organizationId, campaignId }: DeliveryDashbo
                     <div className="text-3xl font-bold text-blue-600">
                       {analytics.metrics.openRate.toFixed(1)}%
                     </div>
-                    <div className="text-sm text-gray-600">Open Rate</div>
+                    <div className="text-sm text-muted-foreground">Open Rate</div>
                     <div className="mt-2">
                       {analytics.metrics.openRate >= 20 ? (
                         <TrendingUp className="h-5 w-5 text-green-600 mx-auto" />
@@ -558,7 +558,7 @@ export function DeliveryDashboard({ organizationId, campaignId }: DeliveryDashbo
                     <div className="text-3xl font-bold text-purple-600">
                       {analytics.metrics.clickRate.toFixed(1)}%
                     </div>
-                    <div className="text-sm text-gray-600">Click Rate</div>
+                    <div className="text-sm text-muted-foreground">Click Rate</div>
                     <div className="mt-2">
                       {analytics.metrics.clickRate >= 3 ? (
                         <TrendingUp className="h-5 w-5 text-green-600 mx-auto" />

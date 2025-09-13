@@ -349,9 +349,9 @@ function NetworkVisualization({ className }: { className?: string }) {
       <CardContent>
         <div className="space-y-4">
           {/* Network Visualization Area */}
-          <div className="relative w-full h-96 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center">
+          <div className="relative w-full h-96 bg-muted/50 rounded-lg border-2 border-dashed border-primary/20 flex items-center justify-center">
             <div className="text-center space-y-2">
-              <Network className="h-12 w-12 mx-auto text-gray-400" />
+              <Network className="h-12 w-12 mx-auto text-muted-foreground" />
               <p className="text-sm text-muted-foreground">Interactive Network Visualization</p>
               <p className="text-xs text-muted-foreground">
                 Advanced D3.js network would be rendered here with dynamic force simulation
@@ -547,7 +547,7 @@ function RealTimeStreamChart({ className }: { className?: string }) {
       <CardContent>
         <div className="space-y-4">
           {/* Chart Area */}
-          <div className="h-64 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center relative overflow-hidden">
+          <div className="h-64 bg-muted/50 rounded-lg border-2 border-dashed border-primary/20 flex items-center justify-center relative overflow-hidden">
             {/* Simulated real-time line chart */}
             <div className="absolute inset-4">
               <svg className="w-full h-full">
@@ -788,9 +788,9 @@ export function AdvancedDataVisualization({
             <CardContent>
               <div className="space-y-4">
                 {/* Map placeholder */}
-                <div className="w-full h-96 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center">
+                <div className="w-full h-96 bg-muted/50 rounded-lg border-2 border-dashed border-primary/20 flex items-center justify-center">
                   <div className="text-center space-y-2">
-                    <Map className="h-12 w-12 mx-auto text-gray-400" />
+                    <Map className="h-12 w-12 mx-auto text-muted-foreground" />
                     <p className="text-sm text-muted-foreground">Interactive Geographic Map</p>
                     <p className="text-xs text-muted-foreground">
                       World map with data visualization would be rendered here

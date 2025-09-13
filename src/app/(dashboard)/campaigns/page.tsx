@@ -69,8 +69,8 @@ interface Campaign {
 const statusBadgeMap: Record<CampaignStatus, string> = {
   Scheduled: "bg-primary/10 text-primary",
   Sent: "bg-success/10 text-success",
-  Draft: "bg-warning/10 text-warning",
-  Paused: "bg-warning/10 text-warning",
+  Draft: "bg-muted/10 text-muted-foreground",
+  Paused: "bg-destructive/10 text-destructive",
   Archived: "bg-muted text-muted-foreground"
 };
 
@@ -172,9 +172,9 @@ export default function CampaignsPage() {
         };
       } else if (lowerTitle.includes('reach') || lowerTitle.includes('audience')) {
         return {
-          iconBg: 'p-3 bg-warning/10 rounded-full',
-          iconColor: 'h-6 w-6 text-warning',
-          numberColor: 'text-3xl font-bold text-warning'
+          iconBg: 'p-3 bg-primary/10 rounded-full',
+          iconColor: 'h-6 w-6 text-primary',
+          numberColor: 'text-3xl font-bold text-primary'
         };
       } else {
         return {
@@ -373,7 +373,7 @@ export default function CampaignsPage() {
       <div className="text-center mb-8">
         <div className="flex items-center justify-center gap-3 mb-4">
           <Target className="h-8 w-8 text-primary" />
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold text-foreground">
             Campaigns
           </h1>
         </div>
@@ -615,12 +615,12 @@ interface CampaignCardProps {
 const CampaignCard = memo(function CampaignCard({ campaign, viewMode }: CampaignCardProps) {
   if (viewMode === 'list') {
     return (
-      <Card className="hover:shadow-lg transition-all duration-200 border-l-4" style={{ 
-        borderLeftColor: campaign.status === 'Sent' ? '#22c55e' : 
-                         campaign.status === 'Scheduled' ? '#3b82f6' :
-                         campaign.status === 'Draft' ? '#f59e0b' :
-                         campaign.status === 'Paused' ? '#f97316' : '#6b7280'
-      }}>
+      <Card className={`hover:shadow-professional transition-shadow duration-200 border-l-2 ${
+        campaign.status === 'Sent' ? 'border-success/20' :
+        campaign.status === 'Scheduled' ? 'border-primary/20' :
+        campaign.status === 'Draft' ? 'border-muted/20' :
+        campaign.status === 'Paused' ? 'border-destructive/20' : 'border-muted/20'
+      }`}>
         <CardContent className="p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3 flex-1">
@@ -707,12 +707,12 @@ const CampaignCard = memo(function CampaignCard({ campaign, viewMode }: Campaign
   
   // Grid view
   return (
-    <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer group border-l-4" style={{ 
-      borderLeftColor: campaign.status === 'Sent' ? '#22c55e' : 
-                       campaign.status === 'Scheduled' ? '#3b82f6' :
-                       campaign.status === 'Draft' ? '#f59e0b' :
-                       campaign.status === 'Paused' ? '#f97316' : '#6b7280'
-    }}>
+    <Card className={`hover:shadow-professional transition-shadow duration-200 cursor-pointer group border-l-2 ${
+      campaign.status === 'Sent' ? 'border-success/20' :
+      campaign.status === 'Scheduled' ? 'border-primary/20' :
+      campaign.status === 'Draft' ? 'border-muted/20' :
+      campaign.status === 'Paused' ? 'border-destructive/20' : 'border-muted/20'
+    }`}>
       <CardContent className="p-4">
         <div className="space-y-3">
           <div className="flex items-start justify-between">

@@ -99,7 +99,7 @@ export function ABTestAnalytics({ testId, dateRange }: ABTestAnalyticsProps) {
                     </div>
                   ))
                 ) : (
-                  <div className="text-gray-500">No metrics available for Variant A</div>
+                  <div className="text-muted-foreground">No metrics available for Variant A</div>
                 )}
               </div>
             </div>
@@ -115,13 +115,13 @@ export function ABTestAnalytics({ testId, dateRange }: ABTestAnalyticsProps) {
                     </div>
                   ))
                 ) : (
-                  <div className="text-gray-500">No metrics available for Variant B</div>
+                  <div className="text-muted-foreground">No metrics available for Variant B</div>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+          <div className="mt-6 p-4 bg-muted/50 rounded-lg">
             <h3 className="text-lg font-semibold mb-2">Test Summary</h3>
             <div className="space-y-2">
               <div className="flex justify-between">
@@ -176,7 +176,7 @@ export function ABTestAnalytics({ testId, dateRange }: ABTestAnalyticsProps) {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground">
                 <p>No time series data available for detailed metrics</p>
               </div>
             )}
@@ -190,17 +190,17 @@ export function ABTestAnalytics({ testId, dateRange }: ABTestAnalyticsProps) {
               {timeline.length > 0 ? (
                 timeline.map((event: any) => (
                   <div key={event.date} className="flex items-start gap-4">
-                    <div className="w-24 text-sm text-gray-500">
+                    <div className="w-24 text-sm text-muted-foreground">
                       {event.date ? new Date(event.date).toLocaleDateString() : 'N/A'}
                     </div>
                     <div className="flex-1">
                       <div className="font-medium">{event.title || 'Untitled Event'}</div>
-                      <div className="text-sm text-gray-600">{event.description || 'No description available'}</div>
+                      <div className="text-sm text-muted-foreground">{event.description || 'No description available'}</div>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-muted-foreground">
                   <p>No timeline events available</p>
                 </div>
               )}

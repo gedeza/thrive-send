@@ -240,7 +240,7 @@ export function ReportBuilder({ campaignId, dateRange }: ReportBuilderProps) {
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
-                                className="p-3 bg-gray-50 rounded-md cursor-move"
+                                className="p-3 bg-muted/50 rounded-md cursor-move"
                               >
                                 {component.title}
                               </div>

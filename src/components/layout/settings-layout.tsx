@@ -44,7 +44,7 @@ export function SettingsLayout({ children, tabs }: SettingsLayoutProps) {
                   value={tab.href}
                   className={cn(
                     "w-full justify-start px-3 py-2",
-                    pathname === tab.href && "bg-muted"
+                    pathname === tab.href && "bg-muted/50"
                   )}
                 >
                   {tab.label}

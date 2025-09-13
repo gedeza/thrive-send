@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 
 // Simple in-memory storage for demo reports when database is unavailable
 const sessionReports = new Map<string, any[]>();
@@ -145,7 +145,7 @@ export async function GET(request: NextRequest) {
     try {
       console.log('Attempting to fetch automated reports from database...');
       
-      databaseReports = await prisma.scheduledReport.findMany({
+      databaseReports = await db.scheduledReport.findMany({
         where: {
           organizationId: organizationId
         },
@@ -267,7 +267,7 @@ export async function POST(request: NextRequest) {
       console.log('Attempting to create automated report in database...');
       
       // Create scheduled report in database
-      createdReport = await prisma.scheduledReport.create({
+      createdReport = await db.scheduledReport.create({
         data: {
           title,
           type,
@@ -434,7 +434,7 @@ export async function PATCH(request: NextRequest) {
       
       switch (action) {
         case 'pause':
-          await prisma.scheduledReport.update({
+          await db.scheduledReport.update({
             where: { id: reportId },
             data: { 
               status: 'paused',
@@ -450,12 +450,12 @@ export async function PATCH(request: NextRequest) {
           break;
           
         case 'resume':
-          const reportToResume = await prisma.scheduledReport.findUnique({
+          const reportToResume = await db.scheduledReport.findUnique({
             where: { id: reportId },
             select: { frequency: true }
           });
           
-          await prisma.scheduledReport.update({
+          await db.scheduledReport.update({
             where: { id: reportId },
             data: { 
               status: 'active',
@@ -475,7 +475,7 @@ export async function PATCH(request: NextRequest) {
           
         case 'run_now':
           // Create execution record
-          const execution = await prisma.reportExecution.create({
+          const execution = await db.reportExecution.create({
             data: {
               scheduledReportId: reportId,
               status: 'running',
@@ -484,7 +484,7 @@ export async function PATCH(request: NextRequest) {
           });
           
           // Update last run time
-          await prisma.scheduledReport.update({
+          await db.scheduledReport.update({
             where: { id: reportId },
             data: { 
               lastRun: new Date(),
@@ -504,7 +504,7 @@ export async function PATCH(request: NextRequest) {
           // Simulate completion after delay (in real app would be async job)
           setTimeout(async () => {
             try {
-              await prisma.reportExecution.update({
+              await db.reportExecution.update({
                 where: { id: execution.id },
                 data: {
                   status: 'completed',
@@ -529,7 +529,7 @@ export async function PATCH(request: NextRequest) {
             );
           }
           
-          await prisma.scheduledReport.update({
+          await db.scheduledReport.update({
             where: { id: reportId },
             data: {
               ...updateData,
@@ -600,7 +600,7 @@ export async function DELETE(request: NextRequest) {
       console.log(`Attempting to delete automated report: ${reportId}`);
       
       // Verify report belongs to organization
-      const reportExists = await prisma.scheduledReport.findFirst({
+      const reportExists = await db.scheduledReport.findFirst({
         where: {
           id: reportId,
           organizationId: organizationId
@@ -615,14 +615,14 @@ export async function DELETE(request: NextRequest) {
       }
       
       // Delete all executions first (due to foreign key constraint)
-      await prisma.reportExecution.deleteMany({
+      await db.reportExecution.deleteMany({
         where: {
           scheduledReportId: reportId
         }
       });
       
       // Delete the scheduled report
-      await prisma.scheduledReport.delete({
+      await db.scheduledReport.delete({
         where: {
           id: reportId
         }

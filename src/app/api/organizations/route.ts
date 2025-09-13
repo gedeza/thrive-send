@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     console.log('Creating organization for user:', userId);
 
     // Get user from database
-    let user = await prisma.user.findUnique({
+    let user = await db.user.findUnique({
       where: { clerkId: userId },
       include: {
         organizationMemberships: true
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
     if (!user) {
       // Create user if they don't exist
       console.log('Creating new user for clerkId:', userId);
-      user = await prisma.user.create({
+      user = await db.user.create({
         data: {
           clerkId: userId,
           email: `${userId}@temp.com`, // Temporary email, will be updated later
@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
       console.log('Validated data:', validatedData);
 
       // Check if slug is already taken
-      const existingOrg = await prisma.organization.findFirst({
+      const existingOrg = await db.organization.findFirst({
         where: { slug: validatedData.slug }
       });
 
@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
         clerkOrganizationId: validatedData.clerkOrganizationId,
       });
 
-      const organization = await prisma.organization.create({
+      const organization = await db.organization.create({
         data: {
           name: validatedData.name,
           slug: validatedData.slug,

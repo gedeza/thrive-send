@@ -38,7 +38,7 @@ export async function GET(
     }
 
     // Fetch reviews with reviewer information
-    const reviews = await prisma.marketplaceReview.findMany({
+    const reviews = await db.marketplaceReview.findMany({
       where: { listingId },
       include: {
         reviewer: {
@@ -118,7 +118,7 @@ export async function POST(
     const validatedData = reviewSchema.parse(body);
 
     // Check if user exists
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { clerkId: userId }
     });
 
@@ -127,7 +127,7 @@ export async function POST(
     }
 
     // Check if listing exists
-    const listing = await prisma.marketplaceListing.findUnique({
+    const listing = await db.marketplaceListing.findUnique({
       where: { id: listingId }
     });
 
@@ -136,7 +136,7 @@ export async function POST(
     }
 
     // Check if user already reviewed this listing
-    const existingReview = await prisma.marketplaceReview.findFirst({
+    const existingReview = await db.marketplaceReview.findFirst({
       where: {
         listingId,
         reviewerId: user.id
@@ -151,7 +151,7 @@ export async function POST(
     }
 
     // Create the review
-    const review = await prisma.marketplaceReview.create({
+    const review = await db.marketplaceReview.create({
       data: {
         listingId,
         reviewerId: user.id,
@@ -215,7 +215,7 @@ export async function PUT(
     const validatedData = reviewSchema.parse(reviewData);
 
     // Check if user exists
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { clerkId: userId }
     });
 
@@ -224,7 +224,7 @@ export async function PUT(
     }
 
     // Find the review and verify ownership
-    const existingReview = await prisma.marketplaceReview.findFirst({
+    const existingReview = await db.marketplaceReview.findFirst({
       where: {
         id: reviewId,
         listingId,
@@ -240,7 +240,7 @@ export async function PUT(
     }
 
     // Update the review
-    const updatedReview = await prisma.marketplaceReview.update({
+    const updatedReview = await db.marketplaceReview.update({
       where: { id: reviewId },
       data: {
         rating: validatedData.rating,

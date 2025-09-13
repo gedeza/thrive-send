@@ -388,7 +388,7 @@ export function RealTimeCollaboration({
       case 'insight': return 'border-yellow-500 bg-yellow-50';
       case 'question': return 'border-blue-500 bg-blue-50';
       case 'action_item': return 'border-red-500 bg-red-50';
-      default: return 'border-gray-500 bg-gray-50';
+      default: return 'border-gray-500 bg-muted/50';
     }
   };
 
@@ -397,7 +397,7 @@ export function RealTimeCollaboration({
       case 'high': return 'bg-red-100 text-red-700';
       case 'medium': return 'bg-yellow-100 text-yellow-700';
       case 'low': return 'bg-green-100 text-green-700';
-      default: return 'bg-gray-100 text-gray-700';
+      default: return 'bg-muted/50 text-muted-foreground';
     }
   };
 
@@ -466,7 +466,7 @@ export function RealTimeCollaboration({
 
           return (
             <div
-              className="absolute z-50 w-80 bg-white rounded-lg shadow-xl border border-gray-200"
+              className="absolute z-50 w-80 bg-white rounded-lg shadow-xl border border-primary/20"
               style={{
                 left: Math.min(annotation.position.x + 20, window.innerWidth - 340),
                 top: Math.min(annotation.position.y, window.innerHeight - 400),
@@ -509,7 +509,7 @@ export function RealTimeCollaboration({
                   )}
                 </div>
 
-                <p className="text-sm text-gray-700 mb-3">{annotation.content}</p>
+                <p className="text-sm text-muted-foreground mb-3">{annotation.content}</p>
 
                 {annotation.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-3">
@@ -571,7 +571,7 @@ export function RealTimeCollaboration({
                               <span>•</span>
                               <span>{formatDistanceToNow(reply.createdAt, { addSuffix: true })}</span>
                             </div>
-                            <p className="text-gray-700">{reply.content}</p>
+                            <p className="text-muted-foreground">{reply.content}</p>
                           </div>
                         </div>
                       );
@@ -608,10 +608,10 @@ export function RealTimeCollaboration({
 
       {/* Collaboration Panel */}
       <div className={cn(
-        "transition-all duration-300 bg-white border border-gray-200 rounded-lg shadow-sm",
+        "transition-all duration-300 bg-white border border-primary/20 rounded-lg shadow-sm",
         isPanelExpanded ? "w-80" : "w-12"
       )}>
-        <div className="p-3 border-b border-gray-200 flex items-center justify-between">
+        <div className="p-3 border-b border-primary/20 flex items-center justify-between">
           {isPanelExpanded && (
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-primary" />
@@ -648,7 +648,7 @@ export function RealTimeCollaboration({
               <TabsContent value="users" className="space-y-3 mt-4">
                 <div className="space-y-2">
                   {activeUsers.map(user => (
-                    <div key={user.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50">
+                    <div key={user.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50">
                       <div className="relative">
                         <Avatar className="h-8 w-8">
                           <AvatarImage src={user.avatar} />
@@ -658,7 +658,7 @@ export function RealTimeCollaboration({
                         </Avatar>
                         <div className={cn(
                           "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white",
-                          user.isOnline ? "bg-green-500" : "bg-gray-400"
+                          user.isOnline ? "bg-green-500" : "bg-muted/50"
                         )} />
                       </div>
                       <div className="flex-1 min-w-0">

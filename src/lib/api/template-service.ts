@@ -112,7 +112,8 @@ export async function getServiceProviderTemplates(params: {
   sortOrder?: string;
 }): Promise<TemplateListResponse> {
   try {
-    console.log('🎨 Fetching service provider templates:', params);
+    console.log('🚀 CLIENT: Starting template fetch with params:', params);
+    console.log('🚀 CLIENT: Making API call to', SERVICE_PROVIDER_TEMPLATE_API_URL);
     
     const queryParams = new URLSearchParams({
       organizationId: params.organizationId,
@@ -125,6 +126,8 @@ export async function getServiceProviderTemplates(params: {
       ...(params.sortOrder && { sortOrder: params.sortOrder }),
     });
 
+    console.log('🚀 CLIENT: Final URL:', `${SERVICE_PROVIDER_TEMPLATE_API_URL}?${queryParams}`);
+    
     const response = await fetch(`${SERVICE_PROVIDER_TEMPLATE_API_URL}?${queryParams}`, {
       headers: {
         'Content-Type': 'application/json',
@@ -132,9 +135,16 @@ export async function getServiceProviderTemplates(params: {
       credentials: 'include',
     });
 
+    console.log('🚀 CLIENT: Response received:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+      headers: Object.fromEntries(response.headers.entries())
+    });
+
     if (!response.ok) {
       const error = await response.json();
-      console.error("", _error);
+      console.error('🚀 CLIENT: API Error Response:', error);
       throw new Error(error.message || 'Failed to fetch templates');
     }
 

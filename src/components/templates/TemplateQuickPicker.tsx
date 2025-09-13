@@ -89,9 +89,9 @@ const typeIcons = {
 };
 
 const statusColors = {
-  PUBLISHED: 'bg-green-100 text-green-800 border-green-200',
-  DRAFT: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  ARCHIVED: 'bg-gray-100 text-gray-800 border-gray-200'
+  PUBLISHED: 'bg-success/10 text-success border-success/20',
+  DRAFT: 'bg-[var(--color-chart-yellow)]/10 text-[var(--color-chart-yellow)] border-[var(--color-chart-yellow)]/20',
+  ARCHIVED: 'bg-muted/20 text-muted-foreground border-muted/30'
 };
 
 export function TemplateQuickPicker({

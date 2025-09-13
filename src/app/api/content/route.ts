@@ -68,7 +68,7 @@ export async function GET(request: Request) {
     }
 
     // Get user and their organization membership (similar to calendar API)
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { clerkId: userId },
       include: { organizationMemberships: true },
     });
@@ -139,7 +139,7 @@ export async function GET(request: Request) {
     const orderBy = { [sortField]: sortDirection };
 
     const [content, total] = await Promise.all([
-      prisma.content.findMany({
+      db.content.findMany({
         where,
         select: {
           id: true,
@@ -183,7 +183,7 @@ export async function GET(request: Request) {
         take: limit,
         orderBy,
       }),
-      prisma.content.count({ where }),
+      db.content.count({ where }),
     ]);
 
     console.log('✅ Content API GET: Query completed:', {
@@ -230,7 +230,7 @@ export async function POST(request: Request) {
     }
 
     // Get the user from our database using their Clerk ID
-    let user = await prisma.user.findUnique({
+    let user = await db.user.findUnique({
       where: { clerkId }
     });
 
@@ -242,7 +242,7 @@ export async function POST(request: Request) {
       try {
         // We'll create a minimal user record - this should ideally be handled by webhooks
         // but this provides a fallback for development/testing
-        user = await prisma.user.create({
+        user = await db.user.create({
           data: {
             clerkId,
             email: `user-${clerkId}@temp.local`, // Temporary email - should be updated by webhook
@@ -280,7 +280,7 @@ export async function POST(request: Request) {
         const slug = validatedData.slug || validatedData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
         // Check if slug already exists
-        const existingContent = await prisma.content.findUnique({
+        const existingContent = await db.content.findUnique({
           where: { slug }
         });
 
@@ -299,7 +299,7 @@ export async function POST(request: Request) {
         });
 
         // Create content transaction
-        const content = await prisma.$transaction(async (tx) => {
+        const content = await db.$transaction(async (tx) => {
           console.log('📝 API: Starting content creation transaction...');
           // First create the content
           const newContent = await tx.content.create({
@@ -339,7 +339,7 @@ export async function POST(request: Request) {
         });
 
         // CRITICAL FIX: Fetch complete content data for calendar integration
-        const completeContent = await prisma.content.findUnique({
+        const completeContent = await db.content.findUnique({
           where: { id: content.id },
           select: {
             id: true,
@@ -475,7 +475,7 @@ export async function PUT(request: Request) {
     const { id, ...data } = body;
     const validatedData = contentSchema.parse(data);
 
-    const existingContent = await prisma.content.findFirst({
+    const existingContent = await db.content.findFirst({
       where: {
         id,
         authorId: userId,
@@ -486,7 +486,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Content not found' }, { status: 404 });
     }
 
-    const content = await prisma.content.update({
+    const content = await db.content.update({
       where: { id },
       data: {
         ...validatedData,

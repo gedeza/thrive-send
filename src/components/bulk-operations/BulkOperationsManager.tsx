@@ -122,37 +122,37 @@ export function BulkOperationsManager({
     switch (status) {
       case 'completed':
         return { 
-          color: 'bg-green-100 text-green-800 border-green-200', 
+          color: 'bg-success/10 text-success border-success/20', 
           icon: <CheckCircle className="h-3 w-3" /> 
         };
       case 'in_progress':
         return { 
-          color: 'bg-blue-100 text-blue-800 border-blue-200', 
+          color: 'bg-primary/10 text-primary border-primary/20', 
           icon: <Clock className="h-3 w-3" /> 
         };
       case 'failed':
         return { 
-          color: 'bg-red-100 text-red-800 border-red-200', 
+          color: 'bg-destructive/10 text-destructive border-destructive/20', 
           icon: <XCircle className="h-3 w-3" /> 
         };
       case 'cancelled':
         return { 
-          color: 'bg-gray-100 text-gray-800 border-gray-200', 
+          color: 'bg-muted/10 text-muted-foreground border-muted/20', 
           icon: <Square className="h-3 w-3" /> 
         };
       case 'paused':
         return { 
-          color: 'bg-yellow-100 text-yellow-800 border-yellow-200', 
+          color: 'bg-[var(--color-chart-yellow)]/10 text-[var(--color-chart-yellow)] border-[var(--color-chart-yellow)]/20', 
           icon: <Pause className="h-3 w-3" /> 
         };
       case 'scheduled':
         return { 
-          color: 'bg-purple-100 text-purple-800 border-purple-200', 
+          color: 'bg-accent/10 text-accent border-accent/20', 
           icon: <Calendar className="h-3 w-3" /> 
         };
       default:
         return { 
-          color: 'bg-gray-100 text-gray-800 border-gray-200', 
+          color: 'bg-muted/10 text-muted-foreground border-muted/20', 
           icon: <AlertTriangle className="h-3 w-3" /> 
         };
     }
@@ -470,8 +470,8 @@ export function BulkOperationsManager({
                   <p className="text-sm font-medium text-muted-foreground">Today's Operations</p>
                   <p className="text-2xl font-bold">{bulkOpsData.operationStats.totalOperationsToday}</p>
                 </div>
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Zap className="h-6 w-6 text-blue-600" />
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Zap className="h-6 w-6 text-primary" />
                 </div>
               </div>
             </CardContent>
@@ -484,8 +484,8 @@ export function BulkOperationsManager({
                   <p className="text-sm font-medium text-muted-foreground">Success Rate</p>
                   <p className="text-2xl font-bold">{bulkOpsData.operationStats.successRate}%</p>
                 </div>
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Target className="h-6 w-6 text-green-600" />
+                <div className="p-2 bg-success/10 rounded-lg">
+                  <Target className="h-6 w-6 text-success" />
                 </div>
               </div>
             </CardContent>
@@ -498,8 +498,8 @@ export function BulkOperationsManager({
                   <p className="text-sm font-medium text-muted-foreground">Avg Time</p>
                   <p className="text-2xl font-bold">{bulkOpsData.operationStats.avgExecutionTime}</p>
                 </div>
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <Clock className="h-6 w-6 text-purple-600" />
+                <div className="p-2 bg-accent/10 rounded-lg">
+                  <Clock className="h-6 w-6 text-accent" />
                 </div>
               </div>
             </CardContent>
@@ -512,8 +512,8 @@ export function BulkOperationsManager({
                   <p className="text-sm font-medium text-muted-foreground">Items Processed</p>
                   <p className="text-2xl font-bold">{bulkOpsData.operationStats.totalItemsProcessed}</p>
                 </div>
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <FileText className="h-6 w-6 text-orange-600" />
+                <div className="p-2 bg-[var(--color-chart-orange)]/10 rounded-lg">
+                  <FileText className="h-6 w-6 text-[var(--color-chart-orange)]" />
                 </div>
               </div>
             </CardContent>
@@ -526,8 +526,8 @@ export function BulkOperationsManager({
                   <p className="text-sm font-medium text-muted-foreground">Clients Affected</p>
                   <p className="text-2xl font-bold">{bulkOpsData.operationStats.totalClientsAffected}</p>
                 </div>
-                <div className="p-2 bg-teal-100 rounded-lg">
-                  <Users className="h-6 w-6 text-teal-600" />
+                <div className="p-2 bg-[var(--color-chart-teal)]/10 rounded-lg">
+                  <Users className="h-6 w-6 text-[var(--color-chart-teal)]" />
                 </div>
               </div>
             </CardContent>
@@ -551,7 +551,7 @@ export function BulkOperationsManager({
                 <CardContent className="p-6">
                   <div className="space-y-4">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-100 rounded-lg">
+                      <div className="p-2 bg-primary/10 rounded-lg">
                         {getOperationIcon(operation.id)}
                       </div>
                       <div>
@@ -593,7 +593,7 @@ export function BulkOperationsManager({
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-4 flex-1">
-                      <div className="p-2 bg-gray-100 rounded-lg">
+                      <div className="p-2 bg-muted/10 rounded-lg">
                         {getOperationIcon(operation.type)}
                       </div>
                       
@@ -630,7 +630,7 @@ export function BulkOperationsManager({
                         {operation.results && (
                           <div className="space-y-2">
                             <div className="flex items-center gap-4 text-sm">
-                              <span className="text-green-600">✓ {operation.results.successful} successful</span>
+                              <span className="text-success">✓ {operation.results.successful} successful</span>
                               {operation.results.failed > 0 && (
                                 <span className="text-red-600">✗ {operation.results.failed} failed</span>
                               )}

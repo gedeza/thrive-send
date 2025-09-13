@@ -20,7 +20,7 @@ export async function GET(
     const listingId = params.id;
 
     // Find the user first
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { clerkId: userId }
     });
 
@@ -32,7 +32,7 @@ export async function GET(
     }
 
     // Find user's review for this listing
-    const userReview = await prisma.marketplaceReview.findFirst({
+    const userReview = await db.marketplaceReview.findFirst({
       where: {
         listingId: listingId,
         userId: user.id

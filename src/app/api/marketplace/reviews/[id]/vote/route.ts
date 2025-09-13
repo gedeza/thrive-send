@@ -23,7 +23,7 @@ export async function POST(
     const { helpful } = voteSchema.parse(body);
 
     // Check if user exists
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { clerkId: userId }
     });
 
@@ -32,7 +32,7 @@ export async function POST(
     }
 
     // Check if review exists
-    const review = await prisma.marketplaceReview.findUnique({
+    const review = await db.marketplaceReview.findUnique({
       where: { id: reviewId }
     });
 

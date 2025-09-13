@@ -88,7 +88,38 @@ interface LinkData {
   percentage: number;
 }
 
-// Metric Card Component matching the pattern from other pages
+// Color scheme types for semantic styling
+type CardColor = 'primary' | 'success' | 'warning' | 'info' | 'danger';
+
+// Semantic color schemes following the same pattern as other analytics components
+const colorSchemes: Record<CardColor, string> = {
+  primary: "bg-primary/10 text-primary border-primary/20 dark:bg-primary/5 dark:border-primary/30",
+  success: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800/50",
+  warning: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800/50",
+  info: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-800/50",
+  danger: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-400 dark:border-red-800/50",
+};
+
+// Get semantic color based on metric type and performance
+const getMetricColor = (title: string, value: any, change?: number): CardColor => {
+  const numericValue = typeof value === 'string' ? parseFloat(value.replace('%', '')) : value;
+  
+  if (title.toLowerCase().includes('bounce') || title.toLowerCase().includes('unsubscribe')) {
+    return numericValue > 2 ? 'danger' : 'success';
+  }
+  if (title.toLowerCase().includes('open') || title.toLowerCase().includes('click')) {
+    return numericValue > 20 ? 'success' : numericValue > 10 ? 'warning' : 'info';
+  }
+  if (title.toLowerCase().includes('conversion')) {
+    return numericValue > 5 ? 'success' : numericValue > 2 ? 'warning' : 'info';
+  }
+  if (change !== undefined) {
+    return change > 0 ? 'success' : change < -5 ? 'danger' : 'warning';
+  }
+  return 'primary';
+};
+
+// Metric Card Component with semantic colors following analytics components pattern
 interface MetricCardProps {
   title: string;
   value: string | number;
@@ -97,12 +128,17 @@ interface MetricCardProps {
   change?: number;
   isLoading?: boolean;
   compact?: boolean;
+  colorScheme?: CardColor;
 }
 
-function MetricCard({ title, value, description, icon, change, isLoading, compact = false }: MetricCardProps) {
+function MetricCard({ title, value, description, icon, change, isLoading, compact = false, colorScheme }: MetricCardProps) {
+  // Auto-determine color scheme if not provided
+  const effectiveColorScheme = colorScheme || getMetricColor(title, value, change);
+  const colorClasses = colorSchemes[effectiveColorScheme];
+
   if (isLoading) {
     return (
-      <Card>
+      <Card className="border shadow-sm bg-card">
         <CardContent className={cn("p-4", compact && "p-3")}>
           <div className="flex items-center justify-between">
             <div className="space-y-2">
@@ -118,27 +154,28 @@ function MetricCard({ title, value, description, icon, change, isLoading, compac
   }
 
   return (
-    <Card className="hover:shadow-sm transition-shadow">
+    <Card className={cn("hover:shadow-md transition-all duration-200 border shadow-sm", colorClasses)}>
       <CardContent className={cn("p-4", compact && "p-3")}>
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <p className={cn("text-sm text-muted-foreground", compact && "text-xs")}>{title}</p>
+            <p className={cn("text-sm font-medium opacity-80", compact && "text-xs")}>{title}</p>
             <p className={cn("text-2xl font-bold", compact && "text-lg font-semibold")}>
               {typeof value === 'number' ? value.toLocaleString() : value}
             </p>
             {description && (
-              <p className={cn("text-xs text-muted-foreground", compact && "text-xs")}>{description}</p>
+              <p className={cn("text-xs opacity-70", compact && "text-xs")}>{description}</p>
             )}
             {change !== undefined && (
-              <div className={`flex items-center text-xs ${
-                change >= 0 ? 'text-success' : 'text-destructive'
-              }`}>
-                <TrendingUp className="mr-1 h-3 w-3" />
+              <div className={cn(
+                "flex items-center text-xs font-medium",
+                change >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+              )}>
+                <TrendingUp className={cn("mr-1 h-3 w-3", change < 0 && "rotate-180")} />
                 {change >= 0 ? '+' : ''}{change.toFixed(1)}%
               </div>
             )}
           </div>
-          <div className="text-primary">
+          <div className="opacity-80">
             {icon}
           </div>
         </div>
@@ -308,20 +345,20 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
         </div>
       </div>
 
-      {/* Date Range */}
-      <Card>
+      {/* Date Range with Enhanced Styling */}
+      <Card className="border shadow-sm bg-card">
         <CardContent className="p-3">
           <div className="flex items-center justify-between">
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20 hover:bg-primary/15">
               {new Date(dateRange.start).toLocaleDateString()} - {new Date(dateRange.end).toLocaleDateString()}
             </Badge>
-            <span className="text-xs text-muted-foreground">Campaign ID: {params.id}</span>
+            <span className="text-xs text-muted-foreground font-medium">Campaign ID: {params.id}</span>
           </div>
         </CardContent>
       </Card>
 
-      {/* Primary Metrics */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Primary Metrics with Semantic Colors */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {metricsData?.primary ? (
           metricsData.primary.map((metric: any, index: number) => (
           <MetricCard 
@@ -332,10 +369,11 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
             icon={getIconComponent(metric.icon)}
             change={metric.change}
             isLoading={loading}
+            colorScheme={getMetricColor(metric.title, metric.value, metric.change)}
           />
           ))
         ) : (
-          // Loading state for primary metrics
+          // Loading state for primary metrics with semantic colors
           Array.from({ length: 4 }).map((_, index) => (
             <MetricCard 
               key={`loading-primary-${index}`}
@@ -344,13 +382,14 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
               description="Loading metric data..."
               icon={<div className="h-5 w-5 bg-muted rounded animate-pulse" />}
               isLoading={true}
+              colorScheme="info"
             />
           ))
         )}
       </div>
 
-      {/* Secondary Metrics */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Secondary Metrics with Semantic Colors */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {metricsData?.secondary ? (
           metricsData.secondary.map((metric: any, index: number) => (
           <MetricCard 
@@ -360,11 +399,12 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
             description={metric.description}
             icon={getIconComponent(metric.icon)}
             isLoading={loading}
-            compact 
+            compact
+            colorScheme={getMetricColor(metric.title, metric.value)}
           />
           ))
         ) : (
-          // Loading state for secondary metrics
+          // Loading state for secondary metrics with semantic colors
           Array.from({ length: 4 }).map((_, index) => (
             <MetricCard 
               key={`loading-secondary-${index}`}
@@ -374,6 +414,7 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
               icon={<div className="h-4 w-4 bg-muted rounded animate-pulse" />}
               isLoading={true}
               compact
+              colorScheme="info"
             />
           ))
         )}
@@ -393,52 +434,56 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-3">
           <div className="grid gap-3 md:grid-cols-2">
-            {/* Delivery Funnel */}
-            <Card>
+            {/* Delivery Funnel with Enhanced Styling */}
+            <Card className="border shadow-sm bg-card">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2 text-primary">
                   <Target className="h-4 w-4" />
                   Delivery Funnel
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-3 pt-0">
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {metricsData?.funnel ? (
                     metricsData.funnel.map((item: any, index: number) => (
-                      <div key={item.label} className="flex items-center justify-between py-1">
-                        <div className="flex items-center gap-2">
-                          <div className={cn("w-2 h-2 rounded-full", item.color)} />
+                      <div key={item.label} className="flex items-center justify-between py-2 rounded-lg bg-muted/30 px-3">
+                        <div className="flex items-center gap-3">
+                          <div className={cn("w-3 h-3 rounded-full shadow-sm", item.color || "bg-primary")} />
                           <span className="text-sm font-medium">{item.label}</span>
                         </div>
                         <div className="text-right">
-                          <div className="text-sm font-semibold">{item.value.toLocaleString()}</div>
-                          <div className="text-xs text-muted-foreground">{item.percentage}%</div>
+                          <div className="text-sm font-bold text-primary">{item.value?.toLocaleString() || 0}</div>
+                          <div className="text-xs text-muted-foreground font-medium">{item.percentage || 0}%</div>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-4 text-muted-foreground">
-                      <p className="text-sm">Loading delivery funnel data...</p>
+                    <div className="text-center py-6 text-muted-foreground bg-muted/20 rounded-lg">
+                      <Target className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm font-medium">Loading delivery funnel data...</p>
                     </div>
                   )}
                 </div>
               </CardContent>
             </Card>
             
-            {/* Key Insights */}
-            <Card>
+            {/* Key Insights with Enhanced Styling */}
+            <Card className="border shadow-sm bg-card">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2 text-primary">
                   <BarChart3 className="h-4 w-4" />
                   Key Insights
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-3 pt-0">
-                <div className="space-y-2 text-sm">
+                <div className="space-y-3 text-sm">
                   {keyInsights.map((insight, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <div className={`w-1 h-4 ${insight.color} rounded`} />
-                      <span dangerouslySetInnerHTML={{ __html: insight.text }} />
+                    <div key={index} className="flex items-start gap-3 p-2 rounded-lg bg-muted/20 hover:bg-muted/30 transition-colors">
+                      <div className={`w-1.5 h-5 mt-0.5 ${insight.color || 'bg-primary'} rounded-full shadow-sm`} />
+                      <span 
+                        className="flex-1 font-medium leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: insight.text }} 
+                      />
                     </div>
                   ))}
                 </div>
@@ -446,10 +491,13 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
             </Card>
           </div>
           
-          {/* Campaign Performance Component */}
-          <Card>
+          {/* Campaign Performance Component with Enhanced Styling */}
+          <Card className="border shadow-sm bg-card">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Campaign Performance</CardTitle>
+              <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
+                Campaign Performance
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-3 pt-0">
               <CampaignPerformance
@@ -463,92 +511,127 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
           </Card>
         </TabsContent>
         
-        {/* Devices Tab */}
+        {/* Devices Tab with Enhanced Semantic Colors */}
         <TabsContent value="devices" className="space-y-3">
-          <Card>
+          <Card className="border shadow-sm bg-card">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2 text-primary">
                 <Monitor className="h-4 w-4" />
                 Device Performance
               </CardTitle>
             </CardHeader>
             <CardContent className="p-3 pt-0">
-              <div className="grid gap-2 sm:grid-cols-3">
-                {(deviceData && Array.isArray(deviceData) ? deviceData : fallbackDeviceData).map((device: any) => (
-                  <div key={device.device} className="p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center gap-2 mb-2">
-                      {getIconComponent(device.icon)}
-                      <span className="text-sm font-medium">{device.device}</span>
-                    </div>
-                    <div className="space-y-1">
-                      <div className={cn("text-lg font-bold", device.color)}>
-                        {loading ? (
-                          <Skeleton className="h-6 w-16" />
-                        ) : (
-                          device.count.toLocaleString()
-                        )}
+              <div className="grid gap-4 sm:grid-cols-3">
+                {(deviceData && Array.isArray(deviceData) ? deviceData : fallbackDeviceData).map((device: any, index: number) => {
+                  const deviceColorScheme: CardColor = device.percentage > 50 ? 'success' : device.percentage > 30 ? 'primary' : 'info';
+                  const colorClasses = colorSchemes[deviceColorScheme];
+                  
+                  return (
+                    <div key={device.device} className={cn(
+                      "p-4 border rounded-lg hover:shadow-md transition-all duration-200",
+                      colorClasses
+                    )}>
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="opacity-80">
+                          {getIconComponent(device.icon)}
+                        </div>
+                        <span className="text-sm font-semibold">{device.device}</span>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {loading ? (
-                          <Skeleton className="h-3 w-20" />
-                        ) : (
-                          `${device.percentage}% of total opens`
-                        )}
+                      <div className="space-y-2">
+                        <div className="text-xl font-bold">
+                          {loading ? (
+                            <Skeleton className="h-6 w-16" />
+                          ) : (
+                            device.count.toLocaleString()
+                          )}
+                        </div>
+                        <div className="text-xs font-medium opacity-70">
+                          {loading ? (
+                            <Skeleton className="h-3 w-20" />
+                          ) : (
+                            `${device.percentage}% of total opens`
+                          )}
+                        </div>
+                        <div className="w-full bg-black/10 dark:bg-white/10 rounded-full h-2 mt-2">
+                          <div
+                            className="bg-current h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${device.percentage}%` }}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Links Tab */}
+        {/* Links Tab with Enhanced Semantic Colors */}
         <TabsContent value="links" className="space-y-3">
-          <Card>
+          <Card className="border shadow-sm bg-card">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2 text-primary">
                 <ExternalLink className="h-4 w-4" />
                 Top Clicked Links
               </CardTitle>
             </CardHeader>
             <CardContent className="p-3 pt-0">
-              <div className="space-y-2">
-                {(linkData && Array.isArray(linkData) ? linkData : fallbackLinksData).map((link: any, index: number) => (
-                  <div key={link.url} className="flex items-center justify-between p-2 border rounded hover:bg-muted/50 transition-colors">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">#{index + 1}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium truncate">
-                            {loading ? <Skeleton className="h-4 w-32" /> : link.label}
+              <div className="space-y-3">
+                {(linkData && Array.isArray(linkData) ? linkData : fallbackLinksData).map((link: any, index: number) => {
+                  const linkColorScheme: CardColor = index === 0 ? 'success' : index < 3 ? 'primary' : 'info';
+                  const colorClasses = colorSchemes[linkColorScheme];
+                  
+                  return (
+                    <div key={link.url} className={cn(
+                      "flex items-center justify-between p-3 border rounded-lg hover:shadow-md transition-all duration-200",
+                      colorClasses
+                    )}>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center justify-center w-6 h-6 rounded-full bg-current/20 text-xs font-bold">
+                            #{index + 1}
                           </div>
-                          <div className="text-xs text-muted-foreground truncate">
-                            {loading ? <Skeleton className="h-3 w-48" /> : link.url}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-semibold truncate">
+                              {loading ? <Skeleton className="h-4 w-32" /> : link.label}
+                            </div>
+                            <div className="text-xs opacity-70 truncate">
+                              {loading ? <Skeleton className="h-3 w-48" /> : link.url}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="text-right ml-2">
-                      <div className="text-sm font-semibold text-primary">
-                        {loading ? <Skeleton className="h-4 w-12" /> : link.clicks.toLocaleString()}
+                      <div className="text-right ml-3">
+                        <div className="text-sm font-bold">
+                          {loading ? <Skeleton className="h-4 w-12" /> : link.clicks.toLocaleString()}
+                        </div>
+                        <div className="text-xs font-medium opacity-70">
+                          {loading ? <Skeleton className="h-3 w-8" /> : `${link.percentage}%`}
+                        </div>
+                        <div className="w-12 bg-black/10 dark:bg-white/10 rounded-full h-1 mt-1">
+                          <div
+                            className="bg-current h-1 rounded-full transition-all duration-300"
+                            style={{ width: `${Math.min(link.percentage, 100)}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {loading ? <Skeleton className="h-3 w-8" /> : `${link.percentage}%`}
-                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* A/B Testing Tab */}
+        {/* A/B Testing Tab with Enhanced Styling */}
         <TabsContent value="ab_testing" className="space-y-3">
-          <Card>
+          <Card className="border shadow-sm bg-card">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">A/B Test Analytics</CardTitle>
+              <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
+                <Target className="h-4 w-4" />
+                A/B Test Analytics
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-3 pt-0">
               <ABTestAnalytics
@@ -562,11 +645,14 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
           </Card>
         </TabsContent>
 
-        {/* Attribution Tab */}
+        {/* Attribution Tab with Enhanced Styling */}
         <TabsContent value="attribution" className="space-y-3">
-          <Card>
+          <Card className="border shadow-sm bg-card">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Multi-Channel Attribution</CardTitle>
+              <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
+                Multi-Channel Attribution
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-3 pt-0">
               <MultiChannelAttribution
@@ -580,11 +666,14 @@ export default function CampaignAnalyticsPage({ params }: { params: { id: string
           </Card>
         </TabsContent>
 
-        {/* Audience Insights Tab */}
+        {/* Audience Insights Tab with Enhanced Styling */}
         <TabsContent value="audience" className="space-y-3">
-          <Card>
+          <Card className="border shadow-sm bg-card">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Audience Insights</CardTitle>
+              <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Audience Insights
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-3 pt-0">
               <AudienceInsights

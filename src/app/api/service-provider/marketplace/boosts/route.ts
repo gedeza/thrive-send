@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 
 // Simple in-memory storage for demo boosts when database is unavailable
 const sessionBoosts = new Map<string, any[]>();
@@ -173,7 +173,7 @@ export async function GET(request: NextRequest) {
     try {
       console.log('Attempting to fetch marketplace boosts from database...');
       
-      databaseBoosts = await prisma.boostProduct.findMany({
+      databaseBoosts = await db.boostProduct.findMany({
         where: {
           isActive: true,
           ...(type && type !== 'all' ? { type } : {}),
@@ -267,7 +267,7 @@ export async function POST(request: NextRequest) {
       console.log('Attempting to create boost purchase in database...');
       
       // 1. Validate the boost exists and is available
-      const boostProduct = await prisma.boostProduct.findFirst({
+      const boostProduct = await db.boostProduct.findFirst({
         where: {
           id: boostId,
           isActive: true
@@ -282,7 +282,7 @@ export async function POST(request: NextRequest) {
       }
 
       // 2. Verify client belongs to organization
-      const client = await prisma.client.findFirst({
+      const client = await db.client.findFirst({
         where: {
           id: clientId,
           organizationId: organizationId
@@ -321,7 +321,7 @@ export async function POST(request: NextRequest) {
       }
 
       // 4. Create purchase record
-      purchaseResponse = await prisma.boostPurchase.create({
+      purchaseResponse = await db.boostPurchase.create({
         data: {
           boostProductId: boostId,
           clientId,
@@ -359,7 +359,7 @@ export async function POST(request: NextRequest) {
       });
 
       // 5. Create revenue record
-      await prisma.marketplaceRevenue.create({
+      await db.marketplaceRevenue.create({
         data: {
           organizationId,
           clientId,

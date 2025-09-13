@@ -136,7 +136,7 @@ function generateCampaignMetrics(campaignId: string, startDate: Date, endDate: D
         label: 'Sent',
         value: recipients,
         percentage: 100,
-        color: 'bg-slate-600'
+        color: 'bg-muted-foreground'
       },
       {
         label: 'Delivered',

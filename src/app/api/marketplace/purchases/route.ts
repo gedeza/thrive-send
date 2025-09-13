@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     // Get user from database, create if doesn't exist
     console.log('Marketplace purchases API: Looking up user with clerkId:', userId);
     
-    let dbUser = await prisma.user.findUnique({
+    let dbUser = await db.user.findUnique({
       where: { clerkId: userId }
     });
     
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
       console.log('Marketplace purchases API: User not found in database, creating placeholder user');
       // Create a minimal user record for now
       try {
-        dbUser = await prisma.user.create({
+        dbUser = await db.user.create({
           data: {
             clerkId: userId,
             email: `user-${userId.slice(-8)}@temp.com`, // Temporary email
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
     // Verify user has access to organization (for now, skip strict verification)
     console.log('Marketplace purchases API: Checking organization membership for user:', dbUser.id, 'org:', organizationId);
     
-    const membership = await prisma.organizationMember.findFirst({
+    const membership = await db.organizationMember.findFirst({
       where: {
         userId: dbUser.id,
         organizationId
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get purchases with related data
-    const purchases = await prisma.boostPurchase.findMany({
+    const purchases = await db.boostPurchase.findMany({
       where: filters,
       take: limit,
       skip: offset,
@@ -159,7 +159,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Get total count
-    const totalCount = await prisma.boostPurchase.count({
+    const totalCount = await db.boostPurchase.count({
       where: filters
     });
 
@@ -213,7 +213,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user has access to organization and client
-    const membership = await prisma.organizationMember.findFirst({
+    const membership = await db.organizationMember.findFirst({
       where: {
         userId,
         organizationId
@@ -225,7 +225,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify client belongs to organization
-    const client = await prisma.client.findFirst({
+    const client = await db.client.findFirst({
       where: {
         id: clientId,
         organizationId
@@ -237,7 +237,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get boost product details
-    const boostProduct = await prisma.boostProduct.findUnique({
+    const boostProduct = await db.boostProduct.findUnique({
       where: { id: boostProductId }
     });
 
@@ -251,7 +251,7 @@ export async function POST(request: NextRequest) {
     expiresAt.setDate(expiresAt.getDate() + durationDays);
 
     // Create purchase record
-    const purchase = await prisma.boostPurchase.create({
+    const purchase = await db.boostPurchase.create({
       data: {
         boostProductId,
         clientId,
@@ -290,7 +290,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Update boost product statistics
-    await prisma.boostProduct.update({
+    await db.boostProduct.update({
       where: { id: boostProductId },
       data: {
         reviews: { increment: 1 }

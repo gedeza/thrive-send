@@ -335,7 +335,7 @@ export default function MultiClientAnalyticsPage() {
                     <p className="text-sm">Multi-channel campaigns outperform single-channel by 25%</p>
                   </div>
                   <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-warning rounded-full mt-2" />
+                    <div className="w-2 h-2 bg-destructive rounded-full mt-2" />
                     <p className="text-sm">3 clients need optimization for better conversion rates</p>
                   </div>
                 </div>

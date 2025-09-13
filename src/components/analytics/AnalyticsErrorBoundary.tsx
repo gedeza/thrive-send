@@ -80,7 +80,7 @@ export class AnalyticsErrorBoundary extends React.Component<
               </p>
               
               {process.env.NODE_ENV === 'development' && this.state.error && (
-                <details className="text-left text-xs bg-muted p-3 rounded-md">
+                <details className="text-left text-xs bg-muted/50 p-3 rounded-md">
                   <summary className="cursor-pointer font-medium mb-2">
                     Error Details (Development)
                   </summary>

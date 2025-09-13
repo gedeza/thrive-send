@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,10 +14,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Organization ID required' }, { status: 400 });
     }
 
-    // DEVELOPMENT MODE: Allow testing without authentication
-    // TODO: Remove this in production
     if (!userId) {
-      console.log('🚧 DEV MODE: Service Provider Revenue - No auth required');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Add real-time variance to make revenue data appear dynamic
@@ -178,7 +176,7 @@ export async function GET(request: NextRequest) {
       }
 
       // 1. Get revenue metrics from MarketplaceRevenue table
-      const revenueRecords = await prisma.marketplaceRevenue.findMany({
+      const revenueRecords = await db.marketplaceRevenue.findMany({
         where: {
           organizationId,
           transactionDate: {
@@ -200,7 +198,7 @@ export async function GET(request: NextRequest) {
       });
 
       // 2. Get boost purchases for detailed breakdown
-      const boostPurchases = await prisma.boostPurchase.findMany({
+      const boostPurchases = await db.boostPurchase.findMany({
         where: {
           organizationId,
           purchaseDate: {

@@ -192,14 +192,14 @@ export function ProjectTemplateIntegration({
   return (
     <div className="space-y-6">
       {/* Project Context Header */}
-      <Card className="bg-gradient-to-r from-slate-50/80 to-blue-50/80 border-slate-200">
+      <Card className="bg-gradient-to-r from-muted/50 to-primary/5 border-primary/20">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-slate-900">
+          <CardTitle className="flex items-center gap-2 text-primary">
             <Briefcase className="h-5 w-5" />
             Project Communication Templates
           </CardTitle>
-          <div className="flex flex-wrap items-center gap-3 text-sm text-slate-700">
-            <Badge variant="outline" className="bg-slate-100 text-slate-800">
+          <div className="flex flex-wrap items-center gap-3 text-sm text-primary">
+            <Badge variant="outline" className="bg-primary/10 text-primary">
               {projectType.replace('-', ' ')}
             </Badge>
             <Badge variant="outline" className="bg-blue-100 text-blue-800">

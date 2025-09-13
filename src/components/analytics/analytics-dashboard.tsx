@@ -20,17 +20,17 @@ export interface AnalyticsFilter {
 
 // Map metric keys to Tailwind color classes for numbers/text
 const metricValueColors: Record<string, string> = {
-  openRate:    "text-primary-600",
-  clickRate:   "text-primary-500",
-  recipients:  "text-neutral-text",
-  delivered:   "text-secondary-600",
-  opened:      "text-primary-600",
-  clicks:      "text-primary-500",
-  clicked:     "text-primary-500",
-  unsubscribed:"text-accent-600",
-  bounced:     "text-accent-600"
+  openRate:    "text-primary",
+  clickRate:   "text-primary",
+  recipients:  "text-primary",
+  delivered:   "text-primary",
+  opened:      "text-primary",
+  clicks:      "text-primary",
+  clicked:     "text-primary",
+  unsubscribed:"text-primary",
+  bounced:     "text-primary"
 };
-const metricLabelColor = "text-neutral-text-light";
+const metricLabelColor = "text-muted-foreground";
 
 interface AnalyticsDashboardProps {
   metrics?: AnalyticMetric[];
@@ -100,22 +100,22 @@ export function AnalyticsDashboard({
   return (
     <section data-testid="analytics-dashboard">
       {dateRange && (
-        <div data-testid="analytics-date-range" className="mb-4 flex items-center text-sm font-medium text-gray-500">
-          <span className="px-2 py-1 rounded bg-slate-100 text-gray-900 font-semibold tracking-wider">
+        <div data-testid="analytics-date-range" className="mb-4 flex items-center text-sm font-medium text-muted-foreground">
+          <span className="px-2 py-1 rounded bg-primary/10 text-primary font-semibold tracking-wider">
             {new Date(dateRange.start).toLocaleDateString()} - {new Date(dateRange.end).toLocaleDateString()}
           </span>
         </div>
       )}
       
       {metrics.length === 0 ? (
-        <p data-testid="analytics-empty" className="text-gray-500 font-medium text-base">No analytics data available</p>
+        <p data-testid="analytics-empty" className="text-muted-foreground font-medium text-base">No analytics data available</p>
       ) : (
         <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {metrics.map((m) => (
             <div 
               key={m.key} 
               data-testid={`analytics-metric-${m.key}`} 
-              className="flex flex-col items-start border rounded-xl bg-gradient-to-br from-slate-50 to-white px-4 py-5 shadow group hover:shadow-md transition"
+              className="flex flex-col items-start border rounded-xl bg-gradient-to-br from-muted/50 to-background px-4 py-5 shadow group hover:shadow-md transition"
             >
               <span className={`${metricLabelColor} text-base mb-1 font-medium`}>{m.label}</span>
               <span
@@ -123,8 +123,8 @@ export function AnalyticsDashboard({
                   ${
                     metricValueColors[m.key] ??
                     (typeof m.value === "number"
-                      ? "text-slate-900"
-                      : "text-blue-700")
+                      ? "text-primary"
+                      : "text-primary")
                   }
                   text-2xl font-extrabold font-mono tracking-tight select-text
                   group-hover:scale-105 group-hover:shadow-sm transition

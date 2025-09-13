@@ -27,9 +27,9 @@ export default function MultiClientCampaignPage() {
       
       {/* Page Header */}
       <div className="text-center mb-8">
-        <div className="flex items-center justify-center gap-3 mb-4">
+        <div className="flex items-center justify-center gap-3 mb-6">
           <Users className="h-8 w-8 text-primary" />
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold text-foreground">
             Multi-Client Campaigns
           </h1>
         </div>
@@ -90,11 +90,11 @@ export default function MultiClientCampaignPage() {
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Revenue Impact</p>
-                <p className="text-3xl font-bold text-warning">$32.1K</p>
+                <p className="text-3xl font-bold text-primary">$32.1K</p>
                 <p className="text-sm text-muted-foreground">This month</p>
               </div>
-              <div className="p-3 bg-warning/10 rounded-full">
-                <BarChart3 className="h-6 w-6 text-warning" />
+              <div className="p-3 bg-primary/10 rounded-full">
+                <BarChart3 className="h-6 w-6 text-primary" />
               </div>
             </div>
           </CardContent>

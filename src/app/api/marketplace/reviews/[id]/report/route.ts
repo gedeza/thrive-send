@@ -24,7 +24,7 @@ export async function POST(
     const { reason, description } = reportSchema.parse(body);
 
     // Check if user exists
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { clerkId: userId }
     });
 
@@ -33,7 +33,7 @@ export async function POST(
     }
 
     // Check if review exists
-    const review = await prisma.marketplaceReview.findUnique({
+    const review = await db.marketplaceReview.findUnique({
       where: { id: reviewId },
       include: {
         listing: {
@@ -53,7 +53,7 @@ export async function POST(
     // Create a report using the existing Report model
     // Note: The existing Report model seems to be campaign-focused,
     // but we can adapt it for marketplace reviews
-    const report = await prisma.report.create({
+    const report = await db.report.create({
       data: {
         type: 'marketplace_review',
         description: `Review Report - Reason: ${reason}${description ? `. Details: ${description}` : ''}`,

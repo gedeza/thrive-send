@@ -269,43 +269,6 @@ export const defaultSidebarItems: SidebarItemWithRoles[] = [
       }
     ]
   },
-  {
-    key: "templates",
-    label: "Templates",
-    icon: <FileText size={18} />,
-    href: "/templates",
-    // No roles specified = available to everyone
-    children: [
-      {
-        key: "templates-browse",
-        label: "Browse Templates",
-        icon: <FileText size={16} />,
-        href: "/templates",
-        // No roles = available to everyone
-      },
-      {
-        key: "templates-library",
-        label: "Service Provider Library",
-        icon: <Folder size={16} />,
-        href: "/templates/library",
-        roles: ["admin", "manager"], // Service provider template management
-      },
-      {
-        key: "templates-client-specific",
-        label: "Client-Specific Templates",
-        icon: <Users size={16} />,
-        href: "/templates/client-specific",
-        roles: ["admin", "manager"], // Templates customized for specific clients
-      },
-      {
-        key: "templates-create",
-        label: "Create Template",
-        icon: <Plus size={16} />,
-        href: "/templates/create",
-        roles: ["admin", "user"], // Template creation
-      }
-    ]
-  },
   // REMOVED: Projects - Not part of B2B2G PRD specification
   // {
   //   key: "projects",
@@ -366,10 +329,10 @@ export const defaultSidebarItems: SidebarItemWithRoles[] = [
  * based on user role
  */
 export const CRITICAL_ITEMS_BY_ROLE: Record<Role, string[]> = {
-  admin: ["dashboard", "templates", "marketplace", "marketplace-moderation", "settings"],
-  manager: ["dashboard", "templates", "marketplace"],
-  user: ["dashboard", "templates", "marketplace"],
-  viewer: ["dashboard", "templates"],
+  admin: ["dashboard", "service-provider-templates", "marketplace", "marketplace-moderation", "settings"],
+  manager: ["dashboard", "service-provider-templates", "marketplace"],
+  user: ["dashboard", "service-provider-templates", "marketplace"],
+  viewer: ["dashboard", "service-provider-templates"],
   guest: ["dashboard"]
 };
 
@@ -386,7 +349,7 @@ export function ensureSidebarItems(items: SidebarItem[]): SidebarItem[] {
   const existingKeys = new Set(items.map(item => item.key));
   
   // Default to admin critical items if no role-specific logic is provided
-  const criticalKeys = ["dashboard", "templates", "settings"];
+  const criticalKeys = ["dashboard", "service-provider-templates", "settings"];
   
   // Add any missing critical items from defaults
   for (const criticalKey of criticalKeys) {

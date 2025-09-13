@@ -24,7 +24,7 @@ export async function GET(
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const schedule = await prisma.schedule.findUnique({
+    const schedule = await db.schedule.findUnique({
       where: { contentId: params.id },
     });
 
@@ -57,7 +57,7 @@ export async function POST(
     const { frequency, startDate, endDate, timezone, recurrence } = scheduleSchema.parse(body);
 
     // Check if content exists and user has permission
-    const content = await prisma.content.findUnique({
+    const content = await db.content.findUnique({
       where: { id: params.id },
       include: { author: true },
     });
@@ -71,7 +71,7 @@ export async function POST(
     }
 
     // Create or update schedule
-    const schedule = await prisma.schedule.upsert({
+    const schedule = await db.schedule.upsert({
       where: { contentId: params.id },
       create: {
         contentId: params.id,
@@ -93,7 +93,7 @@ export async function POST(
     });
 
     // Update content status
-    await prisma.content.update({
+    await db.content.update({
       where: { id: params.id },
       data: {
         status: 'SCHEDULED',
@@ -133,7 +133,7 @@ export async function DELETE(
     }
 
     // Check if content exists and user has permission
-    const content = await prisma.content.findUnique({
+    const content = await db.content.findUnique({
       where: { id: params.id },
       include: { author: true },
     });
@@ -147,12 +147,12 @@ export async function DELETE(
     }
 
     // Delete schedule
-    await prisma.schedule.delete({
+    await db.schedule.delete({
       where: { contentId: params.id },
     });
 
     // Update content status
-    await prisma.content.update({
+    await db.content.update({
       where: { id: params.id },
       data: {
         status: 'DRAFT',

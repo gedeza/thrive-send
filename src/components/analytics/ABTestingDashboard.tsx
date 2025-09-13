@@ -340,11 +340,11 @@ export function ABTestingDashboard({ className }: ABTestingDashboardProps) {
 
   const getStatusBadge = (status: ABTest['status']) => {
     const statusConfig = {
-      draft: { color: 'bg-gray-100 text-gray-700', icon: Clock },
+      draft: { color: 'bg-muted/50 text-muted-foreground', icon: Clock },
       running: { color: 'bg-green-100 text-green-700', icon: Play },
       paused: { color: 'bg-yellow-100 text-yellow-700', icon: Pause },
       completed: { color: 'bg-blue-100 text-blue-700', icon: CheckCircle },
-      archived: { color: 'bg-gray-100 text-gray-500', icon: Square }
+      archived: { color: 'bg-muted/50 text-muted-foreground', icon: Square }
     };
 
     const config = statusConfig[status];

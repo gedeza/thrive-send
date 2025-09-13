@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     // TODO: Re-enable database queries later when schema is stable  
     /*
     // Get all clients for metrics calculation
-    const clients = await prisma.client.findMany({
+    const clients = await db.client.findMany({
       where: {
         organizationId,
         status: 'ACTIVE',

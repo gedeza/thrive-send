@@ -17,7 +17,7 @@ export async function GET(
     const contentId = params.id;
     
     // Get the user to check organization membership
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { clerkId: userId },
       include: { organizationMemberships: true },
     });
@@ -30,7 +30,7 @@ export async function GET(
     const organizationIds = user.organizationMemberships.map(m => m.organizationId);
 
     // Verify that the content exists and user has access
-    const content = await prisma.content.findFirst({
+    const content = await db.content.findFirst({
       where: {
         id: contentId,
         authorId: user.id, // Use internal user ID, not Clerk ID
@@ -42,7 +42,7 @@ export async function GET(
     }
 
     // Get all lists that contain this content and belong to user's organizations
-    const contentLists = await prisma.contentList.findMany({
+    const contentLists = await db.contentList.findMany({
       where: {
         AND: [
           {

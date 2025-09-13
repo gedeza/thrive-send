@@ -94,12 +94,12 @@ export function MultiChannelAttribution({ campaignId, dateRange }: MultiChannelA
                 <div key={channelName} className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="font-medium">{channelName}</span>
-                    <div className="text-sm text-gray-500 text-right">
+                    <div className="text-sm text-muted-foreground text-right">
                       <div>{conversions.toLocaleString()} conversions</div>
                       {revenue > 0 && <div>${revenue.toLocaleString()} revenue</div>}
                     </div>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-muted/50 rounded-full h-2">
                     <div
                       className="bg-blue-600 h-2 rounded-full"
                       style={{ width: `${totalConversions > 0 ? (conversions / totalConversions) * 100 : 0}%` }}
@@ -138,7 +138,7 @@ export function MultiChannelAttribution({ campaignId, dateRange }: MultiChannelA
         </TabsContent>
       </Tabs>
 
-      <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+      <div className="mt-6 p-4 bg-muted/50 rounded-lg">
         <h3 className="text-lg font-semibold mb-2">Attribution Summary</h3>
         <div className="space-y-2">
           <div className="flex justify-between">

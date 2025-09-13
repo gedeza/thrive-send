@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user from database
-    const dbUser = await prisma.user.findUnique({
+    const dbUser = await db.user.findUnique({
       where: { clerkId: userId }
     });
 
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify user has access to organization
-    const membership = await prisma.organizationMember.findFirst({
+    const membership = await db.organizationMember.findFirst({
       where: {
         userId: dbUser.id,
         organizationId
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get clients that user has access to
-    const clients = await prisma.client.findMany({
+    const clients = await db.client.findMany({
       where: {
         organizationId,
         status: 'ACTIVE'

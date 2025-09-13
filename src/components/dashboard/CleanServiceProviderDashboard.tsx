@@ -84,10 +84,10 @@ const MetricCardSkeleton = () => (
     <CardContent className="p-6">
       <div className="flex items-center justify-between">
         <div className="space-y-2">
-          <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
-          <div className="h-8 w-16 bg-gray-200 rounded animate-pulse" />
+          <div className="h-4 w-24 bg-primary/20 rounded animate-pulse" />
+          <div className="h-8 w-16 bg-primary/20 rounded animate-pulse" />
         </div>
-        <div className="h-12 w-12 bg-gray-200 rounded-lg animate-pulse" />
+        <div className="h-12 w-12 bg-primary/10 border border-primary/20 rounded-lg animate-pulse" />
       </div>
     </CardContent>
   </Card>
@@ -110,9 +110,9 @@ const EnhancedMetricCard = ({
   color: string;
 }) => {
   const getChangeColor = () => {
-    if (changeType === 'up') return 'text-green-600';
-    if (changeType === 'down') return 'text-red-600';
-    return 'text-gray-400';
+    if (changeType === 'up') return 'text-success';
+    if (changeType === 'down') return 'text-destructive';
+    return 'text-muted-foreground';
   };
 
   const getChangeIcon = () => {
@@ -153,28 +153,28 @@ const QuickActionsSection = () => {
       label: 'New Campaign',
       description: 'Create multi-client campaign',
       icon: BarChart3,
-      color: 'bg-blue-50 text-blue-600',
+      color: 'bg-primary/10 text-primary',
       onClick: () => window.location.href = '/campaigns/new'
     },
     {
       label: 'Add Client',
       description: 'Onboard new client',
       icon: Users,
-      color: 'bg-green-50 text-green-600',
+      color: 'bg-success/10 text-success',
       onClick: () => window.location.href = '/clients/new'
     },
     {
       label: 'View Analytics',
       description: 'Detailed performance analysis',
       icon: TrendingUp,
-      color: 'bg-purple-50 text-purple-600',
+      color: 'bg-accent/10 text-accent',
       onClick: () => window.location.href = '/analytics?tab=service-provider'
     },
     {
       label: 'Generate Report',
       description: 'Cross-client performance report',
       icon: Activity,
-      color: 'bg-orange-50 text-orange-600',
+      color: 'bg-[var(--color-chart-orange)]/10 text-[var(--color-chart-orange)]',
       onClick: () => window.location.href = '/reports'
     }
   ];
@@ -191,7 +191,7 @@ const QuickActionsSection = () => {
               key={index}
               variant="ghost"
               onClick={action.onClick}
-              className="h-auto p-4 flex flex-col items-start space-y-2 hover:bg-gray-50"
+              className="h-auto p-4 flex flex-col items-start space-y-2 hover:bg-muted/10"
             >
               <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${action.color}`}>
                 <action.icon className="h-4 w-4" />
@@ -221,10 +221,10 @@ const RecentActivitySection = ({ activities }: { activities: Activity[] }) => {
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'success': return 'text-green-600 bg-green-50';
-      case 'warning': return 'text-yellow-600 bg-yellow-50';
-      case 'error': return 'text-red-600 bg-red-50';
-      default: return 'text-blue-600 bg-blue-50';
+      case 'success': return 'text-success bg-success/10';
+      case 'warning': return 'text-orange-600 bg-orange-50';
+      case 'error': return 'text-destructive bg-destructive/10';
+      default: return 'text-primary bg-primary/10';
     }
   };
 
@@ -279,7 +279,7 @@ const ClientRankingsSection = ({ clients }: { clients: ClientSummary[] }) => {
           {topClients.map((client, index) => (
             <div key={client.id} className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-xs font-bold">
+                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-muted/20 text-xs font-bold">
                   {index + 1}
                 </div>
                 <div>
@@ -290,7 +290,7 @@ const ClientRankingsSection = ({ clients }: { clients: ClientSummary[] }) => {
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-sm font-bold text-green-600">
+                <div className="text-sm font-bold text-success">
                   {client.performanceScore.toFixed(1)}
                 </div>
                 <div className="text-xs text-muted-foreground">Score</div>
@@ -387,8 +387,8 @@ export function CleanServiceProviderDashboard({
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-bold">Service Provider Dashboard</h2>
           <div className="flex gap-2">
-            <div className="w-32 h-10 bg-gray-200 rounded animate-pulse" />
-            <div className="w-24 h-10 bg-gray-200 rounded animate-pulse" />
+            <div className="w-32 h-10 bg-primary/20 rounded animate-pulse" />
+            <div className="w-24 h-10 bg-primary/20 rounded animate-pulse" />
           </div>
         </div>
         
@@ -398,7 +398,7 @@ export function CleanServiceProviderDashboard({
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-80 bg-gray-200 rounded-lg animate-pulse" />
+            <div key={i} className="h-80 bg-primary/10 rounded-lg animate-pulse" />
           ))}
         </div>
       </div>
@@ -442,7 +442,7 @@ export function CleanServiceProviderDashboard({
               change={5.2}
               changeType="up"
               icon={Users}
-              color="bg-blue-50 text-blue-600"
+              color="bg-primary/10 border border-primary/20 text-primary"
             />
             <EnhancedMetricCard
               title="Active Campaigns"
@@ -450,7 +450,7 @@ export function CleanServiceProviderDashboard({
               change={8.1}
               changeType="up"
               icon={BarChart3}
-              color="bg-green-50 text-green-600"
+              color="bg-primary/10 border border-primary/20 text-primary"
             />
             <EnhancedMetricCard
               title="Total Revenue"
@@ -458,7 +458,7 @@ export function CleanServiceProviderDashboard({
               change={12.3}
               changeType="up"
               icon={DollarSign}
-              color="bg-purple-50 text-purple-600"
+              color="bg-primary/10 border border-primary/20 text-primary"
             />
             <EnhancedMetricCard
               title="Team Utilization"
@@ -466,7 +466,7 @@ export function CleanServiceProviderDashboard({
               change={-2.1}
               changeType="down"
               icon={Activity}
-              color="bg-orange-50 text-orange-600"
+              color="bg-primary/10 border border-primary/20 text-primary"
             />
           </div>
 
@@ -483,7 +483,7 @@ export function CleanServiceProviderDashboard({
           <Card>
             <CardContent className="p-8 text-center">
               <div className="flex justify-center mb-4">
-                <BarChart3 className="h-12 w-12 text-blue-600" />
+                <BarChart3 className="h-12 w-12 text-primary" />
               </div>
               <h3 className="text-lg font-semibold mb-2">Advanced Analytics</h3>
               <p className="text-muted-foreground mb-4">
@@ -515,7 +515,7 @@ export function CleanServiceProviderDashboard({
           <Card>
             <CardContent className="p-8 text-center">
               <div className="flex justify-center mb-4">
-                <DollarSign className="h-12 w-12 text-gray-400" />
+                <DollarSign className="h-12 w-12 text-muted-foreground" />
               </div>
               <h3 className="text-lg font-semibold mb-2">Revenue Dashboard</h3>
               <p className="text-muted-foreground mb-4">

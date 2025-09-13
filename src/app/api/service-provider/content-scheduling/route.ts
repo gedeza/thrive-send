@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
@@ -277,7 +277,7 @@ export async function GET(request: NextRequest) {
 
     // TODO: Replace with actual database query when schema is ready
     /*
-    const scheduledContent = await prisma.scheduledContent.findMany({
+    const scheduledContent = await db.scheduledContent.findMany({
       where: {
         serviceProviderId: organizationId,
         ...(clientId && { clientId }),
@@ -294,7 +294,7 @@ export async function GET(request: NextRequest) {
       orderBy: { scheduledDate: 'asc' }
     });
 
-    const schedulingTemplates = await prisma.schedulingTemplate.findMany({
+    const schedulingTemplates = await db.schedulingTemplate.findMany({
       where: {
         serviceProviderId: organizationId
       }
@@ -401,7 +401,7 @@ export async function POST(request: NextRequest) {
     // TODO: Replace with actual database operations and scheduling service
     /*
     if (action === 'create_schedule') {
-      const schedule = await prisma.scheduledContent.create({
+      const schedule = await db.scheduledContent.create({
         data: {
           id: scheduleId,
           contentId,
@@ -480,7 +480,7 @@ export async function PATCH(request: NextRequest) {
 
     // TODO: Replace with actual database update and scheduling service control
     /*
-    const schedule = await prisma.scheduledContent.update({
+    const schedule = await db.scheduledContent.update({
       where: { 
         id: scheduleId,
         serviceProviderId: organizationId 

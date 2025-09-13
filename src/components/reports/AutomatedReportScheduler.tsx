@@ -47,6 +47,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useServiceProvider } from '@/context/ServiceProviderContext';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/components/ui/use-toast';
 
 // Types for automated reporting
 interface ScheduledReport {
@@ -85,7 +86,95 @@ interface ReportTemplate {
   sections: string[];
 }
 
-// Demo data
+// Live API service functions
+async function fetchScheduledReports(organizationId: string): Promise<{reports: ScheduledReport[], isDemoData: boolean} | null> {
+  try {
+    const response = await fetch(`/api/service-provider/reports/automated?organizationId=${organizationId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      reports: data.reports || [],
+      isDemoData: data.isDemoData || false
+    };
+  } catch (error) {
+    console.error('Failed to fetch scheduled reports:', error);
+    return null;
+  }
+}
+
+async function createScheduledReport(organizationId: string, reportData: Partial<ScheduledReport>): Promise<ScheduledReport | null> {
+  try {
+    const response = await fetch('/api/service-provider/reports/automated', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        organizationId,
+        ...reportData
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.report;
+  } catch (error) {
+    console.error('Failed to create scheduled report:', error);
+    return null;
+  }
+}
+
+async function updateScheduledReport(reportId: string, organizationId: string, action: string, updateData?: any): Promise<boolean> {
+  try {
+    const response = await fetch('/api/service-provider/reports/automated', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        reportId,
+        organizationId,
+        action,
+        updateData
+      }),
+    });
+
+    return response.ok;
+  } catch (error) {
+    console.error('Failed to update scheduled report:', error);
+    return false;
+  }
+}
+
+async function deleteScheduledReport(reportId: string, organizationId: string): Promise<boolean> {
+  try {
+    const response = await fetch(`/api/service-provider/reports/automated?reportId=${reportId}&organizationId=${organizationId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    return response.ok;
+  } catch (error) {
+    console.error('Failed to delete scheduled report:', error);
+    return false;
+  }
+}
+
+// Demo data (kept for reference but not used)
 const demoScheduledReports: ScheduledReport[] = [
   {
     id: 'report-1',
@@ -373,9 +462,10 @@ interface CreateReportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreateReport: (report: Partial<ScheduledReport>) => void;
+  isCreating?: boolean;
 }
 
-function CreateReportDialog({ open, onOpenChange, onCreateReport }: CreateReportDialogProps) {
+function CreateReportDialog({ open, onOpenChange, onCreateReport, isCreating = false }: CreateReportDialogProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<ReportTemplate | null>(null);
   const [formData, setFormData] = useState({
     title: '',
@@ -615,9 +705,16 @@ function CreateReportDialog({ open, onOpenChange, onCreateReport }: CreateReport
           </Button>
           <Button 
             onClick={handleSubmit}
-            disabled={!selectedTemplate || !formData.title || !formData.recipients}
+            disabled={!selectedTemplate || !formData.title || !formData.recipients || isCreating}
           >
-            Create Report
+            {isCreating ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Creating Report...
+              </>
+            ) : (
+              'Create Report'
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -626,19 +723,75 @@ function CreateReportDialog({ open, onOpenChange, onCreateReport }: CreateReport
 }
 
 export default function AutomatedReportScheduler() {
-  const [reports, setReports] = useState<ScheduledReport[]>(demoScheduledReports);
+  const [reports, setReports] = useState<ScheduledReport[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDemoData, setIsDemoData] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isCreatingReport, setIsCreatingReport] = useState(false);
   const { state: { organizationId } } = useServiceProvider();
+  const { toast } = useToast();
 
-  const handleToggleStatus = (reportId: string) => {
-    setReports(prevReports =>
-      prevReports.map(report =>
-        report.id === reportId
-          ? { ...report, status: report.status === 'active' ? 'paused' : 'active' }
-          : report
-      )
-    );
+  // Load scheduled reports from API
+  const loadReports = async () => {
+    if (!organizationId) return;
+    
+    setIsLoading(true);
+    try {
+      const result = await fetchScheduledReports(organizationId);
+      if (result) {
+        setReports(result.reports);
+        setIsDemoData(result.isDemoData);
+        setError(null);
+      } else {
+        setError('Failed to load scheduled reports');
+      }
+    } catch (err) {
+      console.error('Reports loading error:', err);
+      setError('Failed to load scheduled reports');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load reports on component mount
+  useEffect(() => {
+    loadReports();
+  }, [organizationId]);
+
+  const handleToggleStatus = async (reportId: string) => {
+    if (!organizationId) return;
+
+    const report = reports.find(r => r.id === reportId);
+    if (!report) return;
+
+    const newStatus = report.status === 'active' ? 'paused' : 'active';
+    const action = newStatus === 'active' ? 'resume' : 'pause';
+
+    const success = await updateScheduledReport(reportId, organizationId, action);
+    
+    if (success) {
+      // Update local state immediately for better UX
+      setReports(prevReports =>
+        prevReports.map(r =>
+          r.id === reportId
+            ? { ...r, status: newStatus as any }
+            : r
+        )
+      );
+      
+      toast({
+        title: `Report ${action === 'resume' ? 'Resumed' : 'Paused'}`,
+        description: `"${report.title}" has been ${action === 'resume' ? 'resumed' : 'paused'} successfully.`,
+        variant: "default"
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: `Failed to ${action} the report. Please try again.`,
+        variant: "destructive"
+      });
+    }
   };
 
   const handleEdit = (report: ScheduledReport) => {
@@ -646,8 +799,30 @@ export default function AutomatedReportScheduler() {
     console.log('Edit report:', report);
   };
 
-  const handleDelete = (reportId: string) => {
-    setReports(prevReports => prevReports.filter(report => report.id !== reportId));
+  const handleDelete = async (reportId: string) => {
+    if (!organizationId) return;
+
+    const report = reports.find(r => r.id === reportId);
+    if (!report) return;
+
+    const success = await deleteScheduledReport(reportId, organizationId);
+    
+    if (success) {
+      // Update local state immediately
+      setReports(prevReports => prevReports.filter(r => r.id !== reportId));
+      
+      toast({
+        title: "Report Deleted",
+        description: `"${report.title}" has been permanently deleted.`,
+        variant: "default"
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to delete the report. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleRunNow = async (reportId: string) => {
@@ -665,16 +840,49 @@ export default function AutomatedReportScheduler() {
     }, 2000);
   };
 
-  const handleCreateReport = (newReportData: Partial<ScheduledReport>) => {
-    const newReport: ScheduledReport = {
-      ...newReportData,
-      id: `report-${Date.now()}`,
-      status: 'active',
-      nextRun: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Tomorrow
-      createdAt: new Date().toISOString()
-    } as ScheduledReport;
+  const handleCreateReport = async (newReportData: Partial<ScheduledReport>) => {
+    if (!organizationId) {
+      toast({
+        title: "Error",
+        description: "Organization ID is required to create a report.",
+        variant: "destructive"
+      });
+      return;
+    }
 
-    setReports(prevReports => [...prevReports, newReport]);
+    setIsCreatingReport(true);
+    
+    try {
+      const createdReport = await createScheduledReport(organizationId, newReportData);
+      
+      if (createdReport) {
+        // Show success toast
+        toast({
+          title: "Report Created Successfully!",
+          description: `"${createdReport.title}" has been scheduled and will run ${createdReport.frequency}.`,
+          variant: "default"
+        });
+        
+        // Refresh the reports list to show the new report
+        await loadReports();
+      } else {
+        // Show error toast if creation failed
+        toast({
+          title: "Failed to Create Report",
+          description: "There was an error creating your report. Please try again.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error creating report:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while creating the report.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreatingReport(false);
+    }
   };
 
   const activeReports = reports.filter(r => r.status === 'active').length;
@@ -795,6 +1003,7 @@ export default function AutomatedReportScheduler() {
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
         onCreateReport={handleCreateReport}
+        isCreating={isCreatingReport}
       />
     </div>
   );

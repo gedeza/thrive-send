@@ -118,27 +118,27 @@ export function EnhancedApprovalWorkflows({
     switch (status) {
       case 'pending_review':
         return { 
-          color: 'bg-warning/10 text-warning border-warning/20', 
+          color: 'bg-muted/50 text-muted-foreground border border-muted/20', 
           icon: <Clock className="h-3 w-3" /> 
         };
       case 'approved':
         return { 
-          color: 'bg-success/10 text-success border-success/20', 
+          color: 'bg-success/10 text-success border border-success/20', 
           icon: <CheckCircle className="h-3 w-3" /> 
         };
       case 'needs_revision':
         return { 
-          color: 'bg-primary/10 text-primary border-primary/20', 
+          color: 'bg-destructive/10 text-destructive border border-destructive/20', 
           icon: <Edit className="h-3 w-3" /> 
         };
       case 'rejected':
         return { 
-          color: 'bg-destructive/10 text-destructive border-destructive/20', 
+          color: 'bg-destructive/10 text-destructive border border-destructive/20', 
           icon: <XCircle className="h-3 w-3" /> 
         };
       default:
         return { 
-          color: 'bg-muted text-muted-foreground border-muted/20', 
+          color: 'bg-muted text-muted-foreground border border-muted/20', 
           icon: <AlertCircle className="h-3 w-3" /> 
         };
     }
@@ -148,13 +148,13 @@ export function EnhancedApprovalWorkflows({
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
       case 'high':
-        return 'bg-destructive/10 text-destructive border-destructive/20';
+        return 'bg-destructive/10 text-destructive border border-destructive/20';
       case 'medium':
-        return 'bg-warning/10 text-warning border-warning/20';
+        return 'bg-primary/10 text-primary border border-primary/20';
       case 'low':
-        return 'bg-success/10 text-success border-success/20';
+        return 'bg-muted/50 text-muted-foreground border border-muted/20';
       default:
-        return 'bg-muted text-muted-foreground border-muted/20';
+        return 'bg-muted text-muted-foreground border border-muted/20';
     }
   };
 
@@ -321,10 +321,10 @@ export function EnhancedApprovalWorkflows({
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Pending Review</p>
-                  <p className="text-2xl font-bold text-warning">{workflowData.summary.statusCounts.pending_review}</p>
+                  <p className="text-2xl font-bold text-primary">{workflowData.summary.statusCounts.pending_review}</p>
                 </div>
-                <div className="p-2 bg-warning/10 rounded-lg">
-                  <Clock className="h-6 w-6 text-warning" />
+                <div className="p-2 bg-primary/10 border border-primary/20 rounded-lg">
+                  <Clock className="h-6 w-6 text-primary" />
                 </div>
               </div>
             </CardContent>
@@ -337,7 +337,7 @@ export function EnhancedApprovalWorkflows({
                   <p className="text-sm font-medium text-muted-foreground">Approved</p>
                   <p className="text-2xl font-bold text-success">{workflowData.summary.statusCounts.approved}</p>
                 </div>
-                <div className="p-2 bg-success/10 rounded-lg">
+                <div className="p-2 bg-success/10 border border-success/20 rounded-lg">
                   <CheckCircle className="h-6 w-6 text-success" />
                 </div>
               </div>
@@ -351,7 +351,7 @@ export function EnhancedApprovalWorkflows({
                   <p className="text-sm font-medium text-muted-foreground">Needs Revision</p>
                   <p className="text-2xl font-bold text-primary">{workflowData.summary.statusCounts.needs_revision}</p>
                 </div>
-                <div className="p-2 bg-primary/10 rounded-lg">
+                <div className="p-2 bg-primary/10 border border-primary/20 rounded-lg">
                   <Edit className="h-6 w-6 text-primary" />
                 </div>
               </div>
@@ -365,7 +365,7 @@ export function EnhancedApprovalWorkflows({
                   <p className="text-sm font-medium text-muted-foreground">Avg Time</p>
                   <p className="text-2xl font-bold">{workflowData.summary.avgApprovalTime}</p>
                 </div>
-                <div className="p-2 bg-primary/10 rounded-lg">
+                <div className="p-2 bg-primary/10 border border-primary/20 rounded-lg">
                   <BarChart3 className="h-6 w-6 text-primary" />
                 </div>
               </div>
@@ -427,7 +427,7 @@ export function EnhancedApprovalWorkflows({
           {/* Approval Items List */}
           <div className="space-y-4">
             {/* Select All Header */}
-            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
               <Checkbox
                 checked={selectedItems.length === workflowData?.approvalItems.length && workflowData?.approvalItems.length > 0}
                 onCheckedChange={handleSelectAll}
@@ -505,7 +505,7 @@ export function EnhancedApprovalWorkflows({
                       {item.comments.length > 0 && (
                         <div className="space-y-2">
                           <h4 className="text-sm font-medium">Latest Comment:</h4>
-                          <div className="p-3 bg-gray-50 rounded-lg">
+                          <div className="p-3 bg-muted/50 rounded-lg">
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-sm font-medium">{item.comments[0].author}</span>
                               <span className="text-xs text-muted-foreground">
@@ -624,7 +624,7 @@ export function EnhancedApprovalWorkflows({
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-muted-foreground">Avg Approval Time</p>
                       <p className="text-3xl font-bold">{statsData.avgApprovalTime}h</p>
-                      <div className="flex items-center justify-center gap-1 text-sm text-success">
+                      <div className="flex items-center justify-center gap-1 text-sm text-primary">
                         <TrendingUp className="h-4 w-4" />
                         <span>12% faster</span>
                       </div>
@@ -637,7 +637,7 @@ export function EnhancedApprovalWorkflows({
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-muted-foreground">Approval Rate</p>
                       <p className="text-3xl font-bold">{statsData.approvalRate}%</p>
-                      <div className="flex items-center justify-center gap-1 text-sm text-success">
+                      <div className="flex items-center justify-center gap-1 text-sm text-primary">
                         <TrendingUp className="h-4 w-4" />
                         <span>+3.2%</span>
                       </div>
@@ -677,13 +677,13 @@ export function EnhancedApprovalWorkflows({
                 <CardContent>
                   <div className="space-y-4">
                     {statsData.bottlenecks.map((bottleneck) => (
-                      <div key={bottleneck.step} className="flex items-center justify-between p-3 bg-warning/10 rounded-lg">
+                      <div key={bottleneck.step} className="flex items-center justify-between p-3 bg-primary/10 border border-primary/20 rounded-lg">
                         <div className="space-y-1">
                           <h4 className="font-medium capitalize">{bottleneck.step.replace('_', ' ')}</h4>
                           <p className="text-sm text-muted-foreground">{bottleneck.count} items affected</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-warning">{bottleneck.avgTime.toFixed(1)}h</p>
+                          <p className="font-semibold text-primary">{bottleneck.avgTime.toFixed(1)}h</p>
                           <p className="text-sm text-muted-foreground">avg delay</p>
                         </div>
                       </div>

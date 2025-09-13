@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user from database
-    const dbUser = await prisma.user.findUnique({
+    const dbUser = await db.user.findUnique({
       where: { clerkId: userId }
     });
 
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify user has access to organization
-    const membership = await prisma.organizationMember.findFirst({
+    const membership = await db.organizationMember.findFirst({
       where: {
         userId: dbUser.id,
         organizationId
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get organization's boost products
-    const products = await prisma.boostProduct.findMany({
+    const products = await db.boostProduct.findMany({
       where: {
         organizationId
       },
@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
     const validatedData = BoostProductSchema.parse(body);
 
     // Get user from database
-    const dbUser = await prisma.user.findUnique({
+    const dbUser = await db.user.findUnique({
       where: { clerkId: userId }
     });
 
@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user has access to organization and appropriate role
-    const membership = await prisma.organizationMember.findFirst({
+    const membership = await db.organizationMember.findFirst({
       where: {
         userId: dbUser.id,
         organizationId,
@@ -185,7 +185,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the boost product
-    const product = await prisma.boostProduct.create({
+    const product = await db.boostProduct.create({
       data: {
         name: validatedData.name,
         description: validatedData.description,
@@ -267,7 +267,7 @@ export async function PUT(request: NextRequest) {
     const validatedData = BoostProductSchema.partial().parse(updateData);
 
     // Get user from database
-    const dbUser = await prisma.user.findUnique({
+    const dbUser = await db.user.findUnique({
       where: { clerkId: userId }
     });
 
@@ -276,7 +276,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Verify user has access to organization and the product belongs to them
-    const membership = await prisma.organizationMember.findFirst({
+    const membership = await db.organizationMember.findFirst({
       where: {
         userId: dbUser.id,
         organizationId,
@@ -291,7 +291,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Verify product exists and belongs to organization
-    const existingProduct = await prisma.boostProduct.findFirst({
+    const existingProduct = await db.boostProduct.findFirst({
       where: {
         id: productId,
         organizationId
@@ -303,7 +303,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update the product
-    const updatedProduct = await prisma.boostProduct.update({
+    const updatedProduct = await db.boostProduct.update({
       where: { id: productId },
       data: {
         ...validatedData,
@@ -369,7 +369,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Get user from database
-    const dbUser = await prisma.user.findUnique({
+    const dbUser = await db.user.findUnique({
       where: { clerkId: userId }
     });
 
@@ -378,7 +378,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Verify user has admin access
-    const membership = await prisma.organizationMember.findFirst({
+    const membership = await db.organizationMember.findFirst({
       where: {
         userId: dbUser.id,
         organizationId,
@@ -391,7 +391,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if product has active purchases
-    const activePurchases = await prisma.boostPurchase.count({
+    const activePurchases = await db.boostPurchase.count({
       where: {
         boostProductId: productId,
         status: 'active'
@@ -405,7 +405,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Delete the product (this will also handle cascading deletes)
-    await prisma.boostProduct.delete({
+    await db.boostProduct.delete({
       where: {
         id: productId,
         organizationId // Extra safety check

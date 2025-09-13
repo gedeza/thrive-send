@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user has access to this client
-    const client = await prisma.client.findFirst({
+    const client = await db.client.findFirst({
       where: {
         id: clientId,
         organization: {

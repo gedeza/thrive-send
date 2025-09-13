@@ -25,14 +25,14 @@ export async function GET(request: NextRequest) {
     // Get user from database, create if doesn't exist
     console.log('Marketplace revenue API: Looking up user with clerkId:', userId);
     
-    let dbUser = await prisma.user.findUnique({
+    let dbUser = await db.user.findUnique({
       where: { clerkId: userId }
     });
 
     if (!dbUser) {
       console.log('Marketplace revenue API: User not found in database, creating placeholder user');
       try {
-        dbUser = await prisma.user.create({
+        dbUser = await db.user.create({
           data: {
             clerkId: userId,
             email: `user-${userId.slice(-8)}@temp.com`,
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     // Verify user has access to organization (for now, skip strict verification)
     console.log('Marketplace revenue API: Checking organization membership for user:', dbUser.id, 'org:', organizationId);
     
-    const membership = await prisma.organizationMember.findFirst({
+    const membership = await db.organizationMember.findFirst({
       where: {
         userId: dbUser.id,
         organizationId
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
     const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
 
     // Get all purchases for the organization
-    const allPurchases = await prisma.boostPurchase.findMany({
+    const allPurchases = await db.boostPurchase.findMany({
       where: {
         organizationId
       },

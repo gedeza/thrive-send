@@ -133,7 +133,7 @@ export function CrossClientAnalytics({
     } else if (trend === 'down' || (value && value < 0)) {
       return <ArrowDown className="h-4 w-4 text-red-600" />;
     }
-    return <Minus className="h-4 w-4 text-gray-400" />;
+    return <Minus className="h-4 w-4 text-muted-foreground" />;
   }, []);
 
   const getPerformanceColor = useCallback((score: number) => {
@@ -230,19 +230,19 @@ export function CrossClientAnalytics({
         <div className="flex justify-between items-center">
           <div>
             <h2 className="text-2xl font-bold">Cross-Client Analytics</h2>
-            <div className="w-96 h-4 bg-gray-200 rounded animate-pulse mt-2" />
+            <div className="w-96 h-4 bg-muted/50 rounded animate-pulse mt-2" />
           </div>
           <div className="flex gap-2">
-            <div className="w-32 h-10 bg-gray-200 rounded animate-pulse" />
-            <div className="w-24 h-10 bg-gray-200 rounded animate-pulse" />
+            <div className="w-32 h-10 bg-muted/50 rounded animate-pulse" />
+            <div className="w-24 h-10 bg-muted/50 rounded animate-pulse" />
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-32 bg-gray-200 rounded-lg animate-pulse" />
+            <div key={i} className="h-32 bg-muted/50 rounded-lg animate-pulse" />
           ))}
         </div>
-        <div className="h-96 bg-gray-200 rounded-lg animate-pulse" />
+        <div className="h-96 bg-muted/50 rounded-lg animate-pulse" />
       </div>
     );
   }
@@ -250,7 +250,7 @@ export function CrossClientAnalytics({
   if (!crossClientData) {
     return (
       <Card className="p-8 text-center">
-        <Info className="h-8 w-8 mx-auto mb-4 text-gray-400" />
+        <Info className="h-8 w-8 mx-auto mb-4 text-muted-foreground" />
         <h3 className="text-lg font-semibold mb-2">No Analytics Data</h3>
         <p className="text-muted-foreground">
           Cross-client analytics data is not available yet.
@@ -386,10 +386,10 @@ export function CrossClientAnalytics({
 
         <TabsContent value="overview" className="space-y-6">
           {/* Filters and Controls */}
-          <div className="flex flex-col sm:flex-row gap-4 p-4 bg-gray-50 rounded-lg">
+          <div className="flex flex-col sm:flex-row gap-4 p-4 bg-muted/50 rounded-lg">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search clients..."
                   value={searchQuery}
@@ -539,10 +539,10 @@ export function CrossClientAnalytics({
               <CardContent>
                 <div className="space-y-4">
                   {crossClientData.clientRankings.byOverallPerformance.slice(0, 5).map((ranking: ClientRanking, index: number) => (
-                    <div key={ranking.clientId} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                    <div key={ranking.clientId} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${
-                          index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-500' : 'bg-gray-300'
+                          index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-muted/50' : index === 2 ? 'bg-orange-500' : 'bg-muted/50'
                         }`}>
                           {ranking.rank}
                         </div>
@@ -583,7 +583,7 @@ export function CrossClientAnalytics({
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {Object.entries(crossClientData.contentTypeDistribution).map(([type, count]) => (
-                    <div key={type} className="text-center p-4 bg-gray-50 rounded-lg">
+                    <div key={type} className="text-center p-4 bg-muted/50 rounded-lg">
                       <p className="text-2xl font-bold text-blue-600">{count}</p>
                       <p className="text-sm text-muted-foreground capitalize">{type}</p>
                     </div>
@@ -602,7 +602,7 @@ export function CrossClientAnalytics({
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {Object.entries(crossClientData.platformDistribution).map(([platform, count]) => (
-                    <div key={platform} className="text-center p-4 bg-gray-50 rounded-lg">
+                    <div key={platform} className="text-center p-4 bg-muted/50 rounded-lg">
                       <p className="text-2xl font-bold text-green-600">{count}</p>
                       <p className="text-sm text-muted-foreground">{platform}</p>
                     </div>
@@ -638,7 +638,7 @@ export function CrossClientAnalytics({
                           <Badge variant="outline" className={`${
                             insight.impact === 'high' ? 'border-red-200 text-red-700' :
                             insight.impact === 'medium' ? 'border-yellow-200 text-yellow-700' :
-                            'border-gray-200 text-gray-700'
+                            'border-primary/20 text-muted-foreground'
                           }`}>
                             {insight.impact} impact
                           </Badge>

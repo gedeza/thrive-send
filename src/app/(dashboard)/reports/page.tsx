@@ -114,7 +114,7 @@ interface ScheduledReport {
   runCount: number;
 }
 
-// Demo reports data
+// Legacy demo data (removed - now using live APIs)
 const demoReports: Report[] = [
   {
     id: 'report-1',
@@ -336,11 +336,11 @@ function ReportCard({ report, onDownload, onDelete, onDuplicate }: ReportCardPro
   const typeIcon = getTypeIcon(report.type);
 
   return (
-    <Card className="hover:shadow-lg transition-all duration-200">
+    <Card className="card-enhanced border-l-2 border-primary/20 hover:shadow-professional transition-shadow duration-200">
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2 mb-2">
-            <div className="p-2 bg-primary/10 rounded-lg">
+            <div className="p-2 bg-primary/10 border border-primary/20 rounded-lg">
               {typeIcon}
             </div>
             <Badge className={cn("text-xs", getStatusColor(report.status))}>
@@ -482,7 +482,7 @@ function TemplateCard({ template, onUse }: TemplateCardProps) {
 
   return (
     <Card 
-      className="hover:shadow-lg transition-all duration-200"
+      className="card-enhanced border-l-2 border-muted/20 hover:shadow-professional transition-shadow duration-200"
       role="article"
       aria-labelledby={`template-title-${template.id}`}
       aria-describedby={`template-desc-${template.id}`}
@@ -490,7 +490,7 @@ function TemplateCard({ template, onUse }: TemplateCardProps) {
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2 mb-2">
-            <div className="p-2 bg-primary/10 rounded-lg">
+            <div className="p-2 bg-primary/10 border border-primary/20 rounded-lg">
               {typeIcon}
             </div>
             {template.isPopular && (
@@ -825,60 +825,60 @@ export default function AdvancedReportsPage() {
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="hover:shadow-md transition-shadow">
+          <Card className="card-enhanced border-l-2 border-primary/20 hover:shadow-professional transition-shadow duration-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">{REPORTS_TEXT.STATS.TOTAL_REPORTS}</p>
-                  <p className="text-2xl font-bold">{reports.length}</p>
+                  <p className="text-2xl font-bold text-primary">{reports.length}</p>
                   <p className="text-xs text-success mt-1">+3 {REPORTS_TEXT.STATS.THIS_MONTH.toLowerCase()}</p>
                 </div>
-                <div className="p-3 bg-primary/10 rounded-full">
+                <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
                   <FileText className="h-6 w-6 text-primary" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow">
+          <Card className="card-enhanced border-l-2 border-primary/20 hover:shadow-professional transition-shadow duration-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">{REPORTS_TEXT.STATS.SCHEDULED_REPORTS}</p>
-                  <p className="text-2xl font-bold">{scheduledReports.length}</p>
+                  <p className="text-2xl font-bold text-primary">{scheduledReports.length}</p>
                   <p className="text-xs text-primary mt-1">2 running {REPORTS_TEXT.FREQUENCY.WEEKLY.toLowerCase()}</p>
                 </div>
-                <div className="p-3 bg-primary/10 rounded-full">
+                <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
                   <Calendar className="h-6 w-6 text-primary" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow">
+          <Card className="card-enhanced border-l-2 border-muted/20 hover:shadow-professional transition-shadow duration-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">{REPORTS_TEXT.STATS.TEMPLATES_AVAILABLE}</p>
-                  <p className="text-2xl font-bold">{templates.length}</p>
-                  <p className="text-xs text-accent mt-1">3 popular picks</p>
+                  <p className="text-2xl font-bold text-primary">{templates.length}</p>
+                  <p className="text-xs text-muted-foreground mt-1">3 popular picks</p>
                 </div>
-                <div className="p-3 bg-accent/10 rounded-full">
-                  <Bookmark className="h-6 w-6 text-accent" />
+                <div className="p-3 bg-muted/10 border border-muted/20 rounded-lg">
+                  <Bookmark className="h-6 w-6 text-muted-foreground" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow">
+          <Card className="card-enhanced border-l-2 border-success/20 hover:shadow-professional transition-shadow duration-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">{REPORTS_TEXT.STATS.REPORTS_GENERATED}</p>
-                  <p className="text-2xl font-bold">47</p>
+                  <p className="text-2xl font-bold text-success">47</p>
                   <p className="text-xs text-success mt-1">{REPORTS_TEXT.TIME_PERIODS.THIS_QUARTER}</p>
                 </div>
-                <div className="p-3 bg-success/10 rounded-full">
+                <div className="p-3 bg-success/10 border border-success/20 rounded-lg">
                   <Award className="h-6 w-6 text-success" />
                 </div>
               </div>
@@ -1081,7 +1081,7 @@ export default function AdvancedReportsPage() {
               aria-label="Scheduled reports list"
             >
               {scheduledReports.map((schedule) => (
-                <Card key={schedule.id} className="hover:shadow-md transition-shadow">
+                <Card key={schedule.id} className="card-enhanced border-l-2 border-primary/20 hover:shadow-professional transition-shadow duration-200">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div>

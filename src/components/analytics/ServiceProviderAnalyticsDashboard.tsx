@@ -287,7 +287,7 @@ export const ServiceProviderAnalyticsDashboard = React.memo(function ServiceProv
     } else if (trend === 'down' || (value && value < 0)) {
       return <ArrowDown className="h-4 w-4 text-red-600" />;
     }
-    return <Minus className="h-4 w-4 text-gray-400" />;
+    return <Minus className="h-4 w-4 text-muted-foreground" />;
   }, []);
 
   const getInsightIcon = useCallback((type: string) => {
@@ -381,19 +381,19 @@ export const ServiceProviderAnalyticsDashboard = React.memo(function ServiceProv
         <div className="flex justify-between items-center">
           <div>
             <h2 className="text-2xl font-bold">Service Provider Analytics</h2>
-            <div className="w-64 h-4 bg-gray-200 rounded animate-pulse mt-2" />
+            <div className="w-64 h-4 bg-muted/50 rounded animate-pulse mt-2" />
           </div>
           <div className="flex gap-2">
-            <div className="w-32 h-10 bg-gray-200 rounded animate-pulse" />
-            <div className="w-24 h-10 bg-gray-200 rounded animate-pulse" />
+            <div className="w-32 h-10 bg-muted/50 rounded animate-pulse" />
+            <div className="w-24 h-10 bg-muted/50 rounded animate-pulse" />
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-32 bg-gray-200 rounded-lg animate-pulse" />
+            <div key={i} className="h-32 bg-muted/50 rounded-lg animate-pulse" />
           ))}
         </div>
-        <div className="h-80 bg-gray-200 rounded-lg animate-pulse" />
+        <div className="h-80 bg-muted/50 rounded-lg animate-pulse" />
       </div>
     );
   }
@@ -447,13 +447,13 @@ export const ServiceProviderAnalyticsDashboard = React.memo(function ServiceProv
                   <p className="text-2xl font-bold">{serviceProviderMetrics.totalClients}</p>
                   <div className="flex items-center gap-1 mt-1">
                     {getTrendIcon('up', serviceProviderMetrics.growthMetrics.clientGrowthRate)}
-                    <span className="text-sm text-green-600">
+                    <span className="text-sm text-success">
                       {formatPercentage(serviceProviderMetrics.growthMetrics.clientGrowthRate)}
                     </span>
                   </div>
                 </div>
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Users className="h-6 w-6 text-blue-600" />
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Users className="h-6 w-6 text-primary" />
                 </div>
               </div>
             </CardContent>
@@ -467,13 +467,13 @@ export const ServiceProviderAnalyticsDashboard = React.memo(function ServiceProv
                   <p className="text-2xl font-bold">{formatCurrency(serviceProviderMetrics.totalRevenue)}</p>
                   <div className="flex items-center gap-1 mt-1">
                     {getTrendIcon('up', serviceProviderMetrics.growthMetrics.revenueGrowthRate)}
-                    <span className="text-sm text-green-600">
+                    <span className="text-sm text-success">
                       {formatPercentage(serviceProviderMetrics.growthMetrics.revenueGrowthRate)}
                     </span>
                   </div>
                 </div>
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <DollarSign className="h-6 w-6 text-green-600" />
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <DollarSign className="h-6 w-6 text-primary" />
                 </div>
               </div>
             </CardContent>
@@ -489,8 +489,8 @@ export const ServiceProviderAnalyticsDashboard = React.memo(function ServiceProv
                     of {serviceProviderMetrics.totalCampaigns} total
                   </p>
                 </div>
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <Activity className="h-6 w-6 text-purple-600" />
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Activity className="h-6 w-6 text-primary" />
                 </div>
               </div>
             </CardContent>
@@ -506,8 +506,8 @@ export const ServiceProviderAnalyticsDashboard = React.memo(function ServiceProv
                     Client satisfaction: {serviceProviderMetrics.avgClientSatisfaction.toFixed(1)}/5.0
                   </p>
                 </div>
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <Target className="h-6 w-6 text-orange-600" />
+                <div className="p-2 bg-[var(--color-chart-orange)]/10 rounded-lg">
+                  <Target className="h-6 w-6 text-[var(--color-chart-orange)]" />
                 </div>
               </div>
             </CardContent>
@@ -526,21 +526,21 @@ export const ServiceProviderAnalyticsDashboard = React.memo(function ServiceProv
               </Badge>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <div className="text-center p-4 bg-muted/50 rounded-lg">
                 <p className="text-sm text-muted-foreground">Client Revenue</p>
-                <p className="text-xl font-bold text-blue-600">
+                <p className="text-xl font-bold text-primary">
                   {formatCurrency(serviceProviderMetrics.totalRevenue - serviceProviderMetrics.marketplaceRevenue)}
                 </p>
               </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
+              <div className="text-center p-4 bg-muted/50 rounded-lg">
                 <p className="text-sm text-muted-foreground">Marketplace Revenue</p>
-                <p className="text-xl font-bold text-green-600">
+                <p className="text-xl font-bold text-primary">
                   {formatCurrency(serviceProviderMetrics.marketplaceRevenue)}
                 </p>
               </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
+              <div className="text-center p-4 bg-muted/50 rounded-lg">
                 <p className="text-sm text-muted-foreground">Average per Client</p>
-                <p className="text-xl font-bold text-purple-600">
+                <p className="text-xl font-bold text-primary">
                   {formatCurrency(serviceProviderMetrics.totalRevenue / serviceProviderMetrics.totalClients)}
                 </p>
               </div>
@@ -558,7 +558,7 @@ export const ServiceProviderAnalyticsDashboard = React.memo(function ServiceProv
           <CardContent>
             <div className="space-y-4">
               {crossClientData.insights.slice(0, 3).map((insight: AnalyticsInsight, index: number) => (
-                <div key={insight.id || index} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
+                <div key={insight.id || index} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
                   {getInsightIcon(insight.type)}
                   <div className="flex-1">
                     <h4 className="font-medium text-sm">{insight.title}</h4>
