@@ -303,8 +303,15 @@ export function useRealTimeAnalytics(params: AnalyticsParams = {}) {
       return; // Already connected
     }
 
+    // Skip connection if WebSocket is not enabled in development
+    if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_WEBSOCKET_ENABLED !== 'true') {
+      console.log('📊 WebSocket disabled in development mode');
+      setConnectionStatus('disconnected');
+      return;
+    }
+
     setConnectionStatus('connecting');
-    
+
     try {
       // Use secure WebSocket in production, regular in development
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -448,7 +455,13 @@ export function useRealTimeAnalytics(params: AnalyticsParams = {}) {
   // Auto-reconnect when enabled
   useEffect(() => {
     if (isRealTimeEnabled && connectionStatus === 'disconnected' && reconnectAttempts === 0) {
-      connectWebSocket();
+      // Only try to connect in production or if WebSocket server is available
+      if (process.env.NODE_ENV === 'production' || process.env.NEXT_PUBLIC_WEBSOCKET_ENABLED === 'true') {
+        connectWebSocket();
+      } else {
+        console.log('📊 Real-time analytics disabled in development (WebSocket server not available)');
+        setConnectionStatus('disconnected');
+      }
     }
   }, [isRealTimeEnabled, connectionStatus, reconnectAttempts, connectWebSocket]);
 

@@ -350,8 +350,10 @@ export const UltraOptimizedAnalyticsDashboard = memo<UltraOptimizedAnalyticsDash
             >
               {realTimeEnabled && realTimeAnalytics.isConnected ? (
                 <Wifi className="h-4 w-4 animate-pulse" />
-              ) : realTimeEnabled && realTimeAnalytics.hasError ? (
+              ) : realTimeEnabled && realTimeAnalytics.hasError && process.env.NODE_ENV === 'production' ? (
                 <WifiOff className="h-4 w-4 text-red-500" />
+              ) : realTimeEnabled && realTimeAnalytics.connectionStatus === 'connecting' ? (
+                <Wifi className="h-4 w-4 animate-spin" />
               ) : (
                 <Zap className="h-4 w-4" />
               )}
