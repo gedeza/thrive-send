@@ -82,7 +82,7 @@ export const handleApiError = (error: unknown) => {
     {
       error: "Internal server error",
       ...(process.env.NODE_ENV === "development" && {
-        details: error instanceof Error ? error.message : String(error),
+        details: _error instanceof Error ? _error.message : String(_error),
       }),
     },
     { status: 500 }

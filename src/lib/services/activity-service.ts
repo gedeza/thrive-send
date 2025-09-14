@@ -53,7 +53,7 @@ export class ActivityService {
       this.eventSource.onerror = (error) => {
         errorLogger.log('Activity stream error', {
           variant: 'error',
-          context: { error: error instanceof Error ? error.message : String(error) },
+          context: { error: _error instanceof Error ? _error.message : String(_error) },
           component: 'ActivityService',
         });
         this.disconnectEventSource();
@@ -63,7 +63,7 @@ export class ActivityService {
     } catch (_error) {
       errorLogger.log('Failed to connect to activity stream', {
         variant: 'error',
-        context: { error: error instanceof Error ? error.message : String(error) },
+        context: { error: _error instanceof Error ? _error.message : String(_error) },
         component: 'ActivityService',
       });
     }
@@ -132,7 +132,7 @@ export class ActivityService {
     } catch (_error) {
       errorLogger.log('Failed to fetch activities', {
         variant: 'error',
-        context: { error: error instanceof Error ? error.message : String(error) },
+        context: { error: _error instanceof Error ? _error.message : String(_error) },
         component: 'ActivityService',
       });
       throw _error;
@@ -201,7 +201,7 @@ export class ActivityService {
     } catch (_error) {
       errorLogger.log('Failed to record activity', {
         variant: 'error',
-        context: { error: error instanceof Error ? error.message : String(error) },
+        context: { error: _error instanceof Error ? _error.message : String(_error) },
         component: 'ActivityService',
       });
       throw _error;

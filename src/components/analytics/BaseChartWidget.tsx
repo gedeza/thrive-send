@@ -51,7 +51,7 @@ const BaseChartWidget: React.FC<BaseChartWidgetProps> = ({
                 Failed to load chart data
               </p>
               <p className="text-xs text-muted-foreground">
-                {error instanceof Error ? error.message : String(error)}
+                {_error instanceof Error ? _error.message : String(_error)}
               </p>
             </div>
             {onRetry && (

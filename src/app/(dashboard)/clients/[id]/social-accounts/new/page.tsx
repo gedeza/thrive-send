@@ -59,7 +59,7 @@ export default function AddSocialAccountPage() {
       router.refresh();
     } catch (_error) {
       console.error("", _error);
-      toast.error(error instanceof Error ? error.message : "Failed to add social account");
+      toast.error(_error instanceof Error ? _error.message : "Failed to add social account");
     } finally {
       setIsSubmitting(false);
     }

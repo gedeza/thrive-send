@@ -109,14 +109,14 @@ export async function PATCH(
   } catch (_error) {
     console.error("[SETTINGS_PATCH] Error:", {
       error,
-      message: error instanceof Error ? error.message : "Unknown error",
+      message: _error instanceof Error ? _error.message : "Unknown error",
       stack: error instanceof Error ? error.stack : undefined,
       params,
       userId: (await auth()).userId
     });
     
     // Ensure we're always returning a JSON response
-    const errorMessage = error instanceof Error ? error.message : "Internal Error";
+    const errorMessage = _error instanceof Error ? _error.message : "Internal Error";
     return NextResponse.json(
       { error: errorMessage },
       { status: 500, headers: corsHeaders() }
@@ -245,13 +245,13 @@ export async function PUT(
   } catch (_error) {
     console.error("[SETTINGS_PUT] Error:", {
       error,
-      message: error instanceof Error ? error.message : "Unknown error",
+      message: _error instanceof Error ? _error.message : "Unknown error",
       stack: error instanceof Error ? error.stack : undefined,
       params,
       userId: (await auth()).userId
     });
     
-    const errorMessage = error instanceof Error ? error.message : "Internal Error";
+    const errorMessage = _error instanceof Error ? _error.message : "Internal Error";
     return NextResponse.json(
       { error: errorMessage },
       { status: 500, headers: corsHeaders() }
@@ -315,7 +315,7 @@ export async function GET(
 
   } catch (_error) {
     console.error("", _error);
-    const errorMessage = error instanceof Error ? error.message : "Internal Error";
+    const errorMessage = _error instanceof Error ? _error.message : "Internal Error";
     return NextResponse.json(
       { error: errorMessage },
       { status: 500, headers: corsHeaders() }

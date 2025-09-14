@@ -177,7 +177,7 @@ export default function AddClientPage() {
       console.error("", _error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create client",
+        description: _error instanceof Error ? _error.message : "Failed to create client",
         variant: "destructive",
       });
     } finally {

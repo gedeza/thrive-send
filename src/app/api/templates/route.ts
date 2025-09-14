@@ -154,7 +154,7 @@ export async function POST(req: NextRequest) {
   } catch (_error) {
     console.error("", _error);
     return NextResponse.json(
-      { error: "Failed to create template", details: error instanceof Error ? error.message : "Unknown error" },
+      { error: "Failed to create template", details: _error instanceof Error ? _error.message : "Unknown error" },
       { status: 500 }
     );
   }

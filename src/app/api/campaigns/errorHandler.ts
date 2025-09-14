@@ -41,7 +41,7 @@ export function handleApiError(error: unknown): NextResponse {
   return NextResponse.json(
     { 
       error: "Something went wrong",
-      details: error instanceof Error ? error.message : String(error)
+      details: _error instanceof Error ? _error.message : String(_error)
     }, 
     { status: 500 }
   );

@@ -48,7 +48,7 @@ export async function GET(
   } catch (_error) {
     console.error("[MEMBERS_GET] Error:", {
       error,
-      message: error instanceof Error ? error.message : "Unknown error",
+      message: _error instanceof Error ? _error.message : "Unknown error",
       stack: error instanceof Error ? error.stack : undefined,
     });
     return new NextResponse("Internal Error", { status: 500 });

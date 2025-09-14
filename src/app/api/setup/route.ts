@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
   } catch (_error) {
     console.error("[SETUP_POST] Error details:", {
       error,
-      message: error instanceof Error ? error.message : "Unknown error",
+      message: _error instanceof Error ? _error.message : "Unknown error",
       stack: error instanceof Error ? error.stack : undefined,
     });
     return new NextResponse("Internal Error", { status: 500 });

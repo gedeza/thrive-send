@@ -40,7 +40,7 @@ class ErrorLogger {
 
   private async sendToErrorTracking(error: ErrorLog): Promise<void> {
     // TODO: Integrate with error tracking service (e.g., Sentry, LogRocket)
-    console.error("", _error);
+    console.error("", error);
   }
 
   log(

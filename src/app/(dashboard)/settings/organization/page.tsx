@@ -123,7 +123,7 @@ export default function OrganizationSettingsPage() {
       console.error("", _error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update organization settings",
+        description: _error instanceof Error ? _error.message : "Failed to update organization settings",
         variant: "destructive",
       });
     } finally {

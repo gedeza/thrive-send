@@ -290,7 +290,7 @@ export class OrganizationService {
     } catch (_error) {
       console.error("[OrganizationService] Error updating settings:", {
         error,
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: _error instanceof Error ? _error.message : "Unknown error",
         stack: error instanceof Error ? error.stack : undefined,
         organizationId,
         settings,
