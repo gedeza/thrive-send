@@ -25,6 +25,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/components/ui/use-toast';
 import Link from 'next/link';
+import { SharedSegmentModal } from '@/components/audiences/SharedSegmentModal';
 
 interface SharedSegment {
   id: string;
@@ -71,6 +72,7 @@ export default function SharedSegmentsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [efficiencyFilter, setEfficiencyFilter] = useState('all');
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const {
     data: sharedSegments = [],
@@ -167,7 +169,7 @@ export default function SharedSegmentsPage() {
           </p>
         </div>
 
-        <Button>
+        <Button onClick={() => setShowCreateModal(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Create Shared Segment
         </Button>
@@ -393,7 +395,7 @@ export default function SharedSegmentsPage() {
                   }
                 </p>
                 {!searchQuery && typeFilter === 'all' && efficiencyFilter === 'all' && sharedSegments.length === 0 && (
-                  <Button>
+                  <Button onClick={() => setShowCreateModal(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     Create Shared Segment
                   </Button>
@@ -403,6 +405,12 @@ export default function SharedSegmentsPage() {
           )}
         </div>
       )}
+
+      {/* Create Shared Segment Modal */}
+      <SharedSegmentModal
+        open={showCreateModal}
+        onOpenChange={setShowCreateModal}
+      />
     </div>
   );
 }
