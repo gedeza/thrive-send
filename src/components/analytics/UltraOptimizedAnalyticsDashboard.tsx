@@ -13,8 +13,8 @@ import { TrendingUp, TrendingDown, Activity, Eye, Users, MousePointer, RefreshCw
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Lazy load heavy components for better performance
-const AdvancedFilters = lazy(() => import('./AdvancedFilters'));
-const ExportReporting = lazy(() => import('./ExportReporting'));
+const AdvancedFilters = lazy(() => import('./AdvancedFilters').then(module => ({ default: module.AdvancedFilters })));
+const ExportReporting = lazy(() => import('./ExportReporting').then(module => ({ default: module.ExportReporting })));
 
 interface UltraOptimizedAnalyticsDashboardProps {
   className?: string;
