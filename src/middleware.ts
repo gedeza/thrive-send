@@ -3,7 +3,15 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
-import { db as prisma } from "@/lib/db";
+// Lazy import database to prevent blocking server startup
+let prisma: any = null;
+const getPrisma = async () => {
+  if (!prisma) {
+    const { db } = await import("@/lib/db");
+    prisma = db;
+  }
+  return prisma;
+};
 
 // Role-based access control middleware - simplified for development
 async function checkRoleAccess(request: NextRequest, userId: string) {

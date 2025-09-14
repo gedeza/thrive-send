@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -55,70 +55,51 @@ export default function ServiceProviderDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Fetch live dashboard data from API
-  useEffect(() => {
-    async function fetchDashboardData() {
-      console.log('🔍 ServiceProvider Dashboard: Checking organization...', { 
-        organization: organization?.id, 
-        user: user?.id 
-      });
-      
-      if (!organization?.id) {
-        console.log('❌ ServiceProvider Dashboard: No organization ID found');
-        setError('No organization found. Please ensure you are part of an organization.');
-        setLoading(false);
-        return;
-      }
-      
-      try {
-        setLoading(true);
-        setError(null);
-        
-        console.log(`🚀 ServiceProvider Dashboard: Fetching data for org ${organization.id}`);
-        
-        const response = await fetch(
-          `/api/service-provider/dashboard?organizationId=${organization.id}`,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-          }
-        );
-        
-        console.log('🔍 ServiceProvider Dashboard: API Response:', {
-          status: response.status,
-          statusText: response.statusText,
-          ok: response.ok
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-          throw new Error(errorData.error || `API Error: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('✅ ServiceProvider Dashboard: Data received:', {
-          organizationName: data.organizationName,
-          clientCount: data.clientSummary?.length,
-          metricsKeys: Object.keys(data.metrics || {})
-        });
-        
-        setDashboardData(data);
-        setError(null);
-      } catch (err) {
-        console.error('❌ ServiceProvider Dashboard: Error details:', err);
-        setError(`Failed to load dashboard: ${err instanceof Error ? err.message : 'Unknown error'}`);
-      } finally {
-        setLoading(false);
-      }
+  // OPTIMIZED: Memoized fetch function to prevent unnecessary re-renders
+  const fetchDashboardData = useCallback(async () => {
+    if (!organization?.id) {
+      setError('No organization found. Please ensure you are part of an organization.');
+      setLoading(false);
+      return;
     }
     
-    fetchDashboardData();
-  }, [organization?.id, user?.id]);
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch(
+        `/api/service-provider/dashboard?organizationId=${organization.id}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        }
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `API Error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setDashboardData(data);
+      setError(null);
+    } catch (err) {
+      console.error('❌ ServiceProvider Dashboard: Error details:', err);
+      setError(`Failed to load dashboard: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setLoading(false);
+    }
+  }, [organization?.id]);
 
-  // Generate features with live data integration
-  const features = [
+  // Fetch data when organization changes
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  // OPTIMIZED: Memoized features to prevent recalculation
+  const features = useMemo(() => [
     {
       title: 'Template Library',
       description: 'Cross-client template sharing with advanced customization',
@@ -164,10 +145,10 @@ export default function ServiceProviderDashboard() {
       completed: true,
       priority: 5
     }
-  ];
+  ], [loading, dashboardData]);
 
-  // Generate quick stats with live data
-  const quickStats = [
+  // OPTIMIZED: Memoized quick stats
+  const quickStats = useMemo(() => [
     { 
       label: 'Active Clients', 
       value: loading ? '...' : (dashboardData?.metrics?.activeClients?.toString() || '0'), 
@@ -188,7 +169,7 @@ export default function ServiceProviderDashboard() {
       value: loading ? '...' : `+${dashboardData?.metrics?.growthRate?.toFixed(1) || '0'}%`, 
       icon: <TrendingUp className="h-5 w-5" /> 
     }
-  ];
+  ], [loading, dashboardData]);
   
   // Loading state
   if (loading) {

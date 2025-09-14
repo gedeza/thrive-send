@@ -63,73 +63,11 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import ClientAssignmentManager from '@/components/team/ClientAssignmentManager';
+import { TEAM_CONSTANTS, ROLE_CONFIG, STATUS_CONFIG } from '@/constants/team-constants';
 
 // Types are now imported from the hook
 
-// Minimalist role configuration - Typography hierarchy over color
-const roleConfig = {
-  OWNER: { 
-    label: 'Owner', 
-    description: 'Full system access and management',
-    level: 10,
-    priority: 'highest'
-  },
-  ADMIN: { 
-    label: 'Administrator', 
-    description: 'Administrative access and user management',
-    level: 9,
-    priority: 'highest'
-  },
-  MANAGER: { 
-    label: 'Manager', 
-    description: 'Team and project management',
-    level: 8,
-    priority: 'high'
-  },
-  CLIENT_MANAGER: { 
-    label: 'Client Manager', 
-    description: 'Client relationship management',
-    level: 7,
-    priority: 'high'
-  },
-  APPROVER: { 
-    label: 'Approver', 
-    description: 'Content approval authority',
-    level: 6,
-    priority: 'medium'
-  },
-  PUBLISHER: { 
-    label: 'Publisher', 
-    description: 'Content publishing and distribution',
-    level: 5,
-    priority: 'medium'
-  },
-  REVIEWER: { 
-    label: 'Reviewer', 
-    description: 'Content review and quality assurance',
-    level: 4,
-    priority: 'medium'
-  },
-  ANALYST: { 
-    label: 'Analyst', 
-    description: 'Analytics and performance tracking',
-    level: 3,
-    priority: 'medium'
-  },
-  CONTENT_CREATOR: { 
-    label: 'Content Creator', 
-    description: 'Content creation and development',
-    level: 2,
-    priority: 'standard'
-  },
-} as const;
-
-// Simplified status configuration - Success color only for active status
-const statusConfig = {
-  ACTIVE: { label: 'Active', isSuccess: true },
-  PENDING: { label: 'Pending', isSuccess: false },
-  INACTIVE: { label: 'Inactive', isSuccess: false },
-} as const;
+// Use imported configurations from constants
 
 function getInitials(name: string) {
   const words = name.split(' ');
@@ -287,7 +225,7 @@ function MetricCard({ title, value, description, icon, change, isLoading, trend 
 
 // Enhanced role styling functions for team member cards
 const getRoleCardStyle = (role: ServiceProviderRole) => {
-  const config = roleConfig[role];
+  const config = ROLE_CONFIG[role];
   if (config.level >= 9) return 'card-enhanced border-l-2 border-destructive/20';
   if (config.level >= 7) return 'card-enhanced border-l-2 border-primary/20';
   if (config.level >= 5) return 'card-enhanced border-l-2 border-success/20';
@@ -295,7 +233,7 @@ const getRoleCardStyle = (role: ServiceProviderRole) => {
 };
 
 const getRoleBadgeStyle = (role: ServiceProviderRole) => {
-  const config = roleConfig[role];
+  const config = ROLE_CONFIG[role];
   if (config.level >= 9) return 'bg-destructive/10 text-destructive border border-destructive/20';
   if (config.level >= 7) return 'bg-primary/10 text-primary border border-primary/20';
   if (config.level >= 5) return 'bg-success/10 text-success border border-success/20';
@@ -311,8 +249,8 @@ interface TeamMemberCardProps {
 }
 
 function TeamMemberCard({ member, onEdit, onDelete, onViewDetails }: TeamMemberCardProps) {
-  const roleInfo = roleConfig[member.role];
-  const statusInfo = statusConfig[member.status];
+  const roleInfo = ROLE_CONFIG[member.role];
+  const statusInfo = STATUS_CONFIG[member.status];
   const cardStyle = getRoleCardStyle(member.role);
   const roleBadgeStyle = getRoleBadgeStyle(member.role);
 
@@ -556,10 +494,10 @@ export default function TeamManagementPage() {
             <div className="p-2 bg-primary/10 rounded-xl">
               <Users className="h-8 w-8 text-primary" />
             </div>
-            <h1 className="text-3xl font-bold text-foreground">Team Management</h1>
+            <h1 className="text-3xl font-bold text-foreground">{TEAM_CONSTANTS.TEAM_MANAGEMENT_TITLE}</h1>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Manage your service provider team, assign roles, and track performance across all client accounts.
+            {TEAM_CONSTANTS.TEAM_MANAGEMENT_DESCRIPTION}
           </p>
         </div>
 
@@ -568,7 +506,7 @@ export default function TeamManagementPage() {
           <Button asChild>
             <Link href="/team/invite" className="inline-flex items-center">
               <UserPlus className="mr-2 h-4 w-4" />
-              Invite Team Member
+              {TEAM_CONSTANTS.INVITE_TEAM_MEMBER}
             </Link>
           </Button>
         </div>
@@ -576,33 +514,33 @@ export default function TeamManagementPage() {
         {/* Team metrics - Unified styling */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <MetricCard
-            title="Total Members"
+            title={TEAM_CONSTANTS.TOTAL_MEMBERS}
             value={stats?.totalMembers || 0}
-            description="Team members in organization"
+            description={TEAM_CONSTANTS.TOTAL_MEMBERS_DESC}
             icon={<Users className="h-6 w-6" />}
             isLoading={loading}
           />
-          
+
           <MetricCard
-            title="Active Members"
+            title={TEAM_CONSTANTS.ACTIVE_MEMBERS}
             value={stats?.activeMembers || 0}
-            description="Currently active team members"
+            description={TEAM_CONSTANTS.ACTIVE_MEMBERS_DESC}
             icon={<UserCheck className="h-6 w-6" />}
             isLoading={loading}
           />
-          
+
           <MetricCard
-            title="Pending Invitations"
+            title={TEAM_CONSTANTS.PENDING_INVITATIONS}
             value={stats?.pendingInvitations || 0}
-            description="Awaiting acceptance"
+            description={TEAM_CONSTANTS.PENDING_INVITATIONS_DESC}
             icon={<Mail className="h-6 w-6" />}
             isLoading={loading}
           />
-          
+
           <MetricCard
-            title="Avg Performance"
+            title={TEAM_CONSTANTS.AVG_PERFORMANCE}
             value={`${stats?.averagePerformance || 0}/5`}
-            description="Team performance rating"
+            description={TEAM_CONSTANTS.AVG_PERFORMANCE_DESC}
             icon={<Award className="h-6 w-6" />}
             isLoading={loading}
           />
@@ -611,8 +549,8 @@ export default function TeamManagementPage() {
         {/* Tabs for different team management views */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="members">Team Members</TabsTrigger>
-            <TabsTrigger value="assignments">Client Assignments</TabsTrigger>
+            <TabsTrigger value="members">{TEAM_CONSTANTS.TAB_TEAM_MEMBERS}</TabsTrigger>
+            <TabsTrigger value="assignments">{TEAM_CONSTANTS.TAB_CLIENT_ASSIGNMENTS}</TabsTrigger>
           </TabsList>
           
           <TabsContent value="members" className="space-y-6">

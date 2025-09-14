@@ -46,5 +46,12 @@ export const createRedisConnection = (): Redis => {
   return redis;
 };
 
-// Singleton Redis connection for queue operations
-export const queueRedisConnection = createRedisConnection();
+// Singleton Redis connection for queue operations (lazy initialization)
+let _queueRedisConnection: Redis | null = null;
+
+export const getQueueRedisConnection = (): Redis => {
+  if (!_queueRedisConnection) {
+    _queueRedisConnection = createRedisConnection();
+  }
+  return _queueRedisConnection;
+};

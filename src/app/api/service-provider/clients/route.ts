@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
           data: {
             id: organizationId.startsWith('org_') ? `org-${Date.now()}` : organizationId,
             name: 'Auto-created Organization',
+            slug: organizationId.startsWith('org_') ? `auto-${Date.now()}` : `auto-${organizationId}`,
             clerkOrganizationId: organizationId.startsWith('org_') ? organizationId : null,
           }
         });
@@ -243,6 +244,7 @@ export async function POST(request: NextRequest) {
           data: {
             id: organizationId.startsWith('org_') ? `org-${Date.now()}` : organizationId,
             name: 'Auto-created Organization',
+            slug: organizationId.startsWith('org_') ? `auto-${Date.now()}` : `auto-${organizationId}`,
             clerkOrganizationId: organizationId.startsWith('org_') ? organizationId : null,
           }
         });

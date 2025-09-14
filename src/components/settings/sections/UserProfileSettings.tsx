@@ -1,24 +1,76 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useUser } from '@clerk/nextjs';
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
 import { 
-  Camera, 
   User, 
   Mail, 
-  Globe, 
-  MapPin, 
-  Building2, 
-  Calendar,\n  AlertCircle,\n  Check,\n  Loader2\n} from 'lucide-react';\nimport { useSettings } from '@/contexts/SettingsContext';\nimport { cn } from '@/lib/utils';\n\n// Form validation schema\nconst profileSchema = z.object({\n  firstName: z.string()\n    .min(2, 'First name must be at least 2 characters')\n    .max(50, 'First name must be less than 50 characters'),\n  lastName: z.string()\n    .min(2, 'Last name must be at least 2 characters')\n    .max(50, 'Last name must be less than 50 characters'),\n  bio: z.string()\n    .max(500, 'Bio must be less than 500 characters')\n    .optional(),\n  website: z.string()\n    .url('Please enter a valid URL')\n    .optional()\n    .or(z.literal('')),\n  location: z.string()\n    .max(100, 'Location must be less than 100 characters')\n    .optional(),\n  company: z.string()\n    .max(100, 'Company must be less than 100 characters')\n    .optional(),\n  role: z.string()\n    .max(100, 'Role must be less than 100 characters')\n    .optional()\n});\n\ntype ProfileFormData = z.infer<typeof profileSchema>;\n\n// Avatar upload component\ninterface AvatarUploadProps {\n  currentImageUrl?: string;\n  userName: string;\n  onImageChange: (imageUrl: string) => void;\n  disabled?: boolean;\n}\n\nfunction AvatarUpload({ currentImageUrl, userName, onImageChange, disabled }: AvatarUploadProps) {\n  const [uploading, setUploading] = useState(false);\n  const [dragOver, setDragOver] = useState(false);\n  \n  // Get user initials for fallback\n  const getInitials = (name: string) => {\n    return name\n      .split(' ')\n      .map(n => n[0])\n      .join('')\n      .toUpperCase()\n      .slice(0, 2);\n  };\n  \n  const handleFileUpload = async (file: File) => {\n    if (!file.type.startsWith('image/')) {\n      alert('Please select an image file');\n      return;\n    }\n    \n    if (file.size > 5 * 1024 * 1024) { // 5MB limit\n      alert('Image size must be less than 5MB');\n      return;\n    }\n    \n    setUploading(true);\n    \n    try {\n      // Create FormData for upload\n      const formData = new FormData();\n      formData.append('file', file);\n      formData.append('type', 'avatar');\n      \n      const response = await fetch('/api/upload', {\n        method: 'POST',\n        body: formData,\n      });\n      \n      if (response.ok) {\n        const { url } = await response.json();\n        onImageChange(url);\n      } else {\n        throw new Error('Upload failed');\n      }\n    } catch (_error) {\n      console.error("", _error);\n      alert('Failed to update profile picture. Please try again.');\n    }\n  };\n  \n  // Show loading state\n  if (!isLoaded) {\n    return (\n      <div className=\"flex items-center justify-center h-64\">\n        <div className=\"flex flex-col items-center gap-4\">\n          <Loader2 className=\"h-8 w-8 animate-spin text-muted-foreground\" />\n          <p className=\"text-sm text-muted-foreground\">Loading profile...</p>\n        </div>\n      </div>\n    );\n  }\n  \n  if (!user) {\n    return (\n      <Alert variant=\"destructive\">\n        <AlertCircle className=\"h-4 w-4\" />\n        <AlertDescription>\n          Unable to load user profile. Please refresh the page and try again.\n        </AlertDescription>\n      </Alert>\n    );\n  }\n  \n  const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User';\n  \n  return (\n    <div className=\"space-y-8\">\n      {/* Profile Picture Section */}\n      <Card>\n        <CardHeader>\n          <CardTitle className=\"flex items-center gap-2\">\n            <Camera className=\"h-5 w-5\" />\n            Profile Picture\n          </CardTitle>\n        </CardHeader>\n        <CardContent>\n          <AvatarUpload\n            currentImageUrl={user.imageUrl}\n            userName={userName}\n            onImageChange={handleAvatarChange}\n            disabled={state.saving}\n          />\n        </CardContent>\n      </Card>\n      \n      {/* Basic Information */}\n      <Card>\n        <CardHeader>\n          <CardTitle className=\"flex items-center gap-2\">\n            <User className=\"h-5 w-5\" />\n            Basic Information\n          </CardTitle>\n        </CardHeader>\n        <CardContent>\n          <form onSubmit={handleSubmit(onSubmit)} className=\"space-y-6\">\n            {/* Name Fields */}\n            <div className=\"grid grid-cols-1 md:grid-cols-2 gap-4\">\n              <div className=\"space-y-2\">\n                <Label htmlFor=\"firstName\">First Name *</Label>\n                <Input\n                  id=\"firstName\"\n                  {...register('firstName')}\n                  placeholder=\"Enter your first name\"\n                  disabled={state.saving}\n                />\n                {errors.firstName && (\n                  <p className=\"text-sm text-destructive\">{errors.firstName.message}</p>\n                )}\n              </div>\n              \n              <div className=\"space-y-2\">\n                <Label htmlFor=\"lastName\">Last Name *</Label>\n                <Input\n                  id=\"lastName\"\n                  {...register('lastName')}\n                  placeholder=\"Enter your last name\"\n                  disabled={state.saving}\n                />\n                {errors.lastName && (\n                  <p className=\"text-sm text-destructive\">{errors.lastName.message}</p>\n                )}\n              </div>\n            </div>\n            \n            {/* Email (Read-only) */}\n            <div className=\"space-y-2\">\n              <Label htmlFor=\"email\">Email Address</Label>\n              <div className=\"relative\">\n                <Mail className=\"absolute left-3 top-3 h-4 w-4 text-muted-foreground\" />\n                <Input\n                  id=\"email\"\n                  value={user.primaryEmailAddress?.emailAddress || ''}\n                  readOnly\n                  className=\"pl-10 bg-muted/50\"\n                />\n              </div>\n              <p className=\"text-xs text-muted-foreground\">\n                Email address is managed by your authentication provider\n              </p>\n            </div>\n            \n            {/* Bio */}\n            <div className=\"space-y-2\">\n              <Label htmlFor=\"bio\">Bio</Label>\n              <Textarea\n                id=\"bio\"\n                {...register('bio')}\n                placeholder=\"Tell us about yourself...\"\n                rows={4}\n                disabled={state.saving}\n                className=\"resize-none\"\n              />\n              <div className=\"flex justify-between items-center\">\n                {errors.bio && (\n                  <p className=\"text-sm text-destructive\">{errors.bio.message}</p>\n                )}\n                <p className=\"text-xs text-muted-foreground ml-auto\">\n                  {watch('bio')?.length || 0}/500 characters\n                </p>\n              </div>\n            </div>\n            \n            <Separator />\n            \n            {/* Professional Information */}\n            <div className=\"space-y-4\">\n              <h3 className=\"text-sm font-semibold text-foreground\">Professional Information</h3>\n              \n              <div className=\"grid grid-cols-1 md:grid-cols-2 gap-4\">\n                <div className=\"space-y-2\">\n                  <Label htmlFor=\"company\">Company</Label>\n                  <div className=\"relative\">\n                    <Building2 className=\"absolute left-3 top-3 h-4 w-4 text-muted-foreground\" />\n                    <Input\n                      id=\"company\"\n                      {...register('company')}\n                      placeholder=\"Your company name\"\n                      className=\"pl-10\"\n                      disabled={state.saving}\n                    />\n                  </div>\n                  {errors.company && (\n                    <p className=\"text-sm text-destructive\">{errors.company.message}</p>\n                  )}\n                </div>\n                \n                <div className=\"space-y-2\">\n                  <Label htmlFor=\"role\">Role/Title</Label>\n                  <Input\n                    id=\"role\"\n                    {...register('role')}\n                    placeholder=\"Your job title\"\n                    disabled={state.saving}\n                  />\n                  {errors.role && (\n                    <p className=\"text-sm text-destructive\">{errors.role.message}</p>\n                  )}\n                </div>\n              </div>\n            </div>\n            \n            <Separator />\n            \n            {/* Contact Information */}\n            <div className=\"space-y-4\">\n              <h3 className=\"text-sm font-semibold text-foreground\">Contact Information</h3>\n              \n              <div className=\"grid grid-cols-1 md:grid-cols-2 gap-4\">\n                <div className=\"space-y-2\">\n                  <Label htmlFor=\"website\">Website</Label>\n                  <div className=\"relative\">\n                    <Globe className=\"absolute left-3 top-3 h-4 w-4 text-muted-foreground\" />\n                    <Input\n                      id=\"website\"\n                      {...register('website')}\n                      placeholder=\"https://yourwebsite.com\"\n                      className=\"pl-10\"\n                      disabled={state.saving}\n                    />\n                  </div>\n                  {errors.website && (\n                    <p className=\"text-sm text-destructive\">{errors.website.message}</p>\n                  )}\n                </div>\n                \n                <div className=\"space-y-2\">\n                  <Label htmlFor=\"location\">Location</Label>\n                  <div className=\"relative\">\n                    <MapPin className=\"absolute left-3 top-3 h-4 w-4 text-muted-foreground\" />\n                    <Input\n                      id=\"location\"\n                      {...register('location')}\n                      placeholder=\"City, Country\"\n                      className=\"pl-10\"\n                      disabled={state.saving}\n                    />\n                  </div>\n                  {errors.location && (\n                    <p className=\"text-sm text-destructive\">{errors.location.message}</p>\n                  )}\n                </div>\n              </div>\n            </div>\n            \n            {/* Account Information */}\n            <Separator />\n            \n            <div className=\"space-y-4\">\n              <h3 className=\"text-sm font-semibold text-foreground\">Account Information</h3>\n              \n              <div className=\"grid grid-cols-1 md:grid-cols-2 gap-4\">\n                <div className=\"space-y-2\">\n                  <Label>Member Since</Label>\n                  <div className=\"flex items-center gap-2 text-sm text-muted-foreground\">\n                    <Calendar className=\"h-4 w-4\" />\n                    {new Date(user.createdAt!).toLocaleDateString('en-US', {\n                      year: 'numeric',\n                      month: 'long',\n                      day: 'numeric'\n                    })}\n                  </div>\n                </div>\n                \n                <div className=\"space-y-2\">\n                  <Label>Account Status</Label>\n                  <div className=\"flex items-center gap-2\">\n                    <Badge variant=\"default\" className=\"bg-green-100 text-green-800\">\n                      <Check className=\"h-3 w-3 mr-1\" />\n                      Active\n                    </Badge>\n                  </div>\n                </div>\n              </div>\n            </div>\n            \n            {/* Form Actions */}\n            <div className=\"flex items-center justify-between pt-6 border-t\">\n              <div className=\"flex items-center gap-2\">\n                {saveStatus === 'saved' && (\n                  <div className=\"flex items-center gap-2 text-green-600\">\n                    <Check className=\"h-4 w-4\" />\n                    <span className=\"text-sm\">Profile updated successfully</span>\n                  </div>\n                )}\n                {saveStatus === 'error' && (\n                  <div className=\"flex items-center gap-2 text-red-600\">\n                    <AlertCircle className=\"h-4 w-4\" />\n                    <span className=\"text-sm\">Failed to update profile</span>\n                  </div>\n                )}\n              </div>\n              \n              <Button\n                type=\"submit\"\n                disabled={!isDirty || saveStatus === 'saving'}\n                className=\"min-w-[120px]\"\n              >\n                {saveStatus === 'saving' ? (\n                  <>\n                    <Loader2 className=\"h-4 w-4 mr-2 animate-spin\" />\n                    Saving...\n                  </>\n                ) : (\n                  'Save Changes'\n                )}\n              </Button>\n            </div>\n          </form>\n        </CardContent>\n      </Card>\n    </div>\n  );\n}"
+  Phone, 
+  MapPin
+} from 'lucide-react';
+
+export default function UserProfileSettings() {
+  return (
+    <div className="space-y-8">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="h-5 w-5" />
+            Profile Information
+          </CardTitle>
+          <CardDescription>
+            Update your personal information and contact details.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="firstName">First Name</Label>
+              <Input
+                id="firstName"
+                placeholder="Enter your first name"
+                defaultValue="John"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input
+                id="lastName"
+                placeholder="Enter your last name"
+                defaultValue="Doe"
+              />
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="email">Email Address</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                className="pl-10"
+                defaultValue="john.doe@example.com"
+              />
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between pt-4 border-t">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline">Profile synced</Badge>
+            </div>
+            <Button>
+              Save Changes
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

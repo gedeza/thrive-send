@@ -17,12 +17,7 @@ export const metadata: Metadata = {
   title: 'ThriveSend',
   description: 'Your all-in-one marketing platform',
   icons: {
-    icon: [
-      {
-        url: '/favicon.svg',
-        type: 'image/svg+xml',
-      }
-    ]
+    icon: '/favicon.ico'
   },
 };
 

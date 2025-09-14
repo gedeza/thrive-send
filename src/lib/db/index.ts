@@ -1,6 +1,5 @@
 import { ReadReplicaManager, createReadReplicaConfig } from './read-replica-manager';
 import { DatabaseRouter, createDatabaseRouterConfig } from './database-router';
-import { enhancedPrisma } from './enhanced-prisma-client';
 import { logger } from '../utils/logger';
 
 // Global database instances
@@ -393,11 +392,12 @@ export class DatabaseService {
     replicas: any;
   }> {
     try {
-      const [enhancedHealth, routingHealth] = await Promise.all([
-        enhancedPrisma.healthCheck(),
+      const [enhancedPrisma, routingHealth] = await Promise.all([
+        getEnhancedPrisma(),
         this.router.healthCheck(),
       ]);
-
+      
+      const enhancedHealth = await enhancedPrisma.healthCheck();
       const overall = enhancedHealth.healthy && routingHealth.healthy;
 
       return {
@@ -408,7 +408,7 @@ export class DatabaseService {
       };
 
     } catch (_error) {
-      logger.error('Database service health check failed', error as Error);
+      logger.error('Database service health check failed', _error as Error);
       return {
         healthy: false,
         enhanced: null,
@@ -421,11 +421,12 @@ export class DatabaseService {
   /**
    * Get comprehensive database statistics
    */
-  getStats(): {
+  async getStats(): Promise<{
     routing: any;
     replicas: any;
     enhanced: any;
-  } {
+  }> {
+    const enhancedPrisma = await getEnhancedPrisma();
     return {
       routing: this.router.getRoutingStats(),
       replicas: getReadReplicaManager().getConnectionStats(),
@@ -529,8 +530,23 @@ export const contactDb = {
   },
 };
 
-// Export singleton database service
-export const databaseService = new DatabaseService();
+// Lazy initialization for singleton database service
+let _databaseService: DatabaseService | null = null;
+export const getDatabaseService = (): DatabaseService => {
+  if (!_databaseService) {
+    _databaseService = new DatabaseService();
+  }
+  return _databaseService;
+};
+
+// Lazy initialization for database proxy
+let _db: any = null;
+export const getDb = (): any => {
+  if (!_db) {
+    _db = getDatabaseProxy();
+  }
+  return _db;
+};
 
 // Export all database classes and functions
 export { 
@@ -540,11 +556,14 @@ export {
   createDatabaseRouterConfig 
 };
 
-// For backward compatibility, export enhanced prisma
-export { enhancedPrisma };
+// Lazy export for enhanced prisma - only import when needed
+export const getEnhancedPrisma = async () => {
+  const { enhancedPrisma } = await import('./enhanced-prisma-client');
+  return enhancedPrisma;
+};
 
-// Export the standard proxy as default database interface
-export const db = getDatabaseProxy();
+// Export the standard proxy as default database interface (lazy)
+export { getDb as db };
 
-// For backward compatibility with API routes expecting 'prisma' import
-export const prisma = getDatabaseProxy();
+// For backward compatibility with API routes expecting 'prisma' import (lazy)
+export { getDb as prisma };

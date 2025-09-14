@@ -1,8 +1,15 @@
-import React, { useMemo, useCallback, memo } from 'react';
+import React, { useMemo, useCallback, memo, useState, useRef, useEffect, Suspense } from 'react';
 import { useTheme } from 'next-themes';
 import { getBaseChartOptions, getChartColors, validateChartData } from '@/lib/analytics/chart-theme';
 import BaseChartWidget from './BaseChartWidget';
 import ChartJS from './ChartSetup';
+import { Skeleton } from '@/components/ui/skeleton';
+import { throttle, debounce } from 'lodash-es';
+
+// Lazy loaded chart components for better performance
+const LazyBar = React.lazy(() => import('react-chartjs-2').then(module => ({ default: module.Bar })));
+const LazyLine = React.lazy(() => import('react-chartjs-2').then(module => ({ default: module.Line })));
+const LazyPie = React.lazy(() => import('react-chartjs-2').then(module => ({ default: module.Pie })));
 
 /**
  * Optimized Chart Components with useMemo for performance
@@ -23,7 +30,31 @@ interface OptimizedChartProps {
 }
 
 /**
- * Memoized data transformer for chart data
+ * Intersection Observer hook for lazy chart rendering
+ */
+const useIntersectionObserver = (ref: React.RefObject<Element>, options: IntersectionObserverInit = {}) => {
+  const [isIntersecting, setIsIntersecting] = useState(false);
+  const [hasBeenVisible, setHasBeenVisible] = useState(false);
+
+  useEffect(() => {
+    if (!ref.current) return;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      setIsIntersecting(entry.isIntersecting);
+      if (entry.isIntersecting && !hasBeenVisible) {
+        setHasBeenVisible(true);
+      }
+    }, { threshold: 0.1, ...options });
+
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [hasBeenVisible]);
+
+  return { isIntersecting, hasBeenVisible };
+};
+
+/**
+ * Enhanced memoized data transformer with performance optimizations
  */
 const useChartData = (data: unknown, isDark: boolean, chartType: 'bar' | 'pie' | 'line') => {
   return useMemo(() => {

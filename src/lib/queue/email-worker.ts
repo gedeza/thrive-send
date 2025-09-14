@@ -1,5 +1,5 @@
 import { Worker, Job } from 'bullmq';
-import { queueRedisConnection } from './redis-connection';
+import { getQueueRedisConnection } from './redis-connection';
 import { logger } from '../utils/logger';
 import { 
   EmailJobData, 
@@ -500,7 +500,7 @@ export const emailWorker = new Worker<EmailJobData>(
   'email-processing',
   processEmailJob,
   {
-    connection: queueRedisConnection,
+    connection: getQueueRedisConnection(),
     concurrency: WORKER_CONCURRENCY,
     stalledInterval: WORKER_STALLED_INTERVAL,
     maxStalledCount: WORKER_MAX_STALLED_COUNT,

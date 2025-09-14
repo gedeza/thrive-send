@@ -29,6 +29,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { TEAM_CONSTANTS, ROLE_CONFIG, CLIENT_ROLE_OPTIONS } from '@/constants/team-constants';
 import {
   Alert,
   AlertDescription,
@@ -197,7 +198,7 @@ export default function InviteTeamMemberPage() {
   });
 
   const selectedRole = watch('role') as ServiceProviderRole;
-  const selectedRoleConfig = selectedRole ? roleConfig[selectedRole] : null;
+  const selectedRoleConfig = selectedRole ? ROLE_CONFIG[selectedRole] : null;
 
   // Load available clients
   useEffect(() => {
@@ -220,7 +221,7 @@ export default function InviteTeamMemberPage() {
         // Handle client loading error
         toast({
           title: "Error",
-          description: "Failed to load clients",
+          description: TEAM_CONSTANTS.FAILED_LOAD_CLIENTS,
           variant: "destructive",
         });
       } finally {
@@ -239,7 +240,7 @@ export default function InviteTeamMemberPage() {
     if (clientAssignments.find(ca => ca.clientId === clientId)) {
       toast({
         title: "Error",
-        description: "Client already assigned",
+        description: TEAM_CONSTANTS.CLIENT_ALREADY_ASSIGNED,
         variant: "destructive",
       });
       return;
@@ -262,7 +263,7 @@ export default function InviteTeamMemberPage() {
 
   // Update client assignment role
   const updateClientAssignmentRole = (clientId: string, role: 'MANAGER' | 'CREATOR' | 'REVIEWER' | 'ANALYST') => {
-    const roleOption = clientRoleOptions.find(r => r.value === role);
+    const roleOption = CLIENT_ROLE_OPTIONS.find(r => r.value === role);
     if (!roleOption) return;
 
     setClientAssignments(clientAssignments.map(ca => 
@@ -278,8 +279,8 @@ export default function InviteTeamMemberPage() {
 
       if (!organizationId) {
         toast({
-          title: "Error",
-          description: "No organization selected",
+          title: TEAM_CONSTANTS.INVITATION_FAILED,
+          description: TEAM_CONSTANTS.NO_ORGANIZATION,
           variant: "destructive",
         });
         return;
@@ -319,9 +320,9 @@ export default function InviteTeamMemberPage() {
 
       toast({
         title: "Success!",
-        description: data.sendEmail 
-          ? `Invitation sent to ${data.email} successfully!`
-          : `Team member ${data.firstName} ${data.lastName} added successfully!`,
+        description: data.sendEmail
+          ? TEAM_CONSTANTS.INVITATION_SUCCESS.replace('{email}', data.email)
+          : TEAM_CONSTANTS.MEMBER_ADDED_SUCCESS.replace('{name}', `${data.firstName} ${data.lastName}`),
       });
 
       router.push('/team');
@@ -330,7 +331,7 @@ export default function InviteTeamMemberPage() {
       // Handle invitation sending error
       toast({
         title: "Error",
-        description: `Failed to send invitation: ${error instanceof Error ? error.message : 'Please try again.'}`,
+        description: `Failed to send invitation: ${_error instanceof Error ? _error.message : 'Please try again.'}`,
         variant: "destructive",
       });
     } finally {

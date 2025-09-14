@@ -1,5 +1,5 @@
 import { Queue, Job, QueueEvents } from 'bullmq';
-import { queueRedisConnection } from './redis-connection';
+import { getQueueRedisConnection } from './redis-connection';
 import { logger } from '../utils/logger';
 import { 
   EmailJobData, 
@@ -12,9 +12,14 @@ import {
   CampaignEmailJob
 } from './types';
 
-// Email Queue Configuration
-const emailQueue = new Queue<EmailJobData>('email-processing', {
-  connection: queueRedisConnection,
+// Email Queue Configuration (lazy initialization)
+let _emailQueue: Queue<EmailJobData> | null = null;
+let _queueEvents: QueueEvents | null = null;
+
+const getEmailQueue = () => {
+  if (!_emailQueue) {
+    _emailQueue = new Queue<EmailJobData>('email-processing', {
+      connection: getQueueRedisConnection(),
   defaultJobOptions: {
     removeOnComplete: 100, // Keep last 100 completed jobs
     removeOnFail: 50,      // Keep last 50 failed jobs
@@ -24,38 +29,47 @@ const emailQueue = new Queue<EmailJobData>('email-processing', {
       delay: 2000,         // Start with 2 seconds, then 4, 8, etc.
     },
   },
-});
+    });
+  }
+  return _emailQueue;
+};
 
-// Queue events handler
-const queueEvents = new QueueEvents('email-processing', {
-  connection: queueRedisConnection,
-});
+const getQueueEvents = () => {
+  if (!_queueEvents) {
+    _queueEvents = new QueueEvents('email-processing', {
+      connection: getQueueRedisConnection(),
+    });
 
-queueEvents.on('completed', ({ jobId, returnvalue }: { jobId: string; returnvalue: unknown }) => {
-  logger.queueEvent('job_completed', jobId, {
-    status: 'completed',
-    returnValue: returnvalue
-  });
-});
+    // Set up event handlers
+    _queueEvents.on('completed', ({ jobId, returnvalue }: { jobId: string; returnvalue: unknown }) => {
+      logger.queueEvent('job_completed', jobId, {
+        status: 'completed',
+        returnValue: returnvalue
+      });
+    });
 
-queueEvents.on('failed', ({ jobId, failedReason }: { jobId: string; failedReason: string }) => {
-  logger.queueEvent('job_failed', jobId, {
-    status: 'failed',
-    error: failedReason
-  });
-});
+    _queueEvents.on('failed', ({ jobId, failedReason }: { jobId: string; failedReason: string }) => {
+      logger.queueEvent('job_failed', jobId, {
+        status: 'failed',
+        error: failedReason
+      });
+    });
 
-queueEvents.on('stalled', ({ jobId }: { jobId: string }) => {
-  logger.queueEvent('job_stalled', jobId, { 
-    status: 'stalled' 
-  });
-});
+    _queueEvents.on('stalled', ({ jobId }: { jobId: string }) => {
+      logger.queueEvent('job_stalled', jobId, { 
+        status: 'stalled' 
+      });
+    });
 
-queueEvents.on('waiting', ({ jobId }: { jobId: string }) => {
-  logger.queueEvent('job_waiting', jobId, {
-    status: 'waiting'
-  });
-});
+    _queueEvents.on('waiting', ({ jobId }: { jobId: string }) => {
+      logger.queueEvent('job_waiting', jobId, {
+        status: 'waiting'
+      });
+    });
+  }
+  return _queueEvents;
+};
+
 
 // Queue Management Class
 export class EmailQueueManager {
@@ -67,7 +81,7 @@ export class EmailQueueManager {
     options: EmailJobOptions = {}
   ): Promise<Job<EmailJobData>> {
     try {
-      const job = await emailQueue.add(
+      const job = await getEmailQueue().add(
         'process-single-email',
         {
           type: 'single_email',
@@ -117,7 +131,7 @@ export class EmailQueueManager {
         const batch = recipients.slice(i, i + batchSize);
         const batchId = `${emailData.campaignId}-batch-${Math.floor(i / batchSize) + 1}`;
 
-        const job = await emailQueue.add(
+        const job = await getEmailQueue().add(
           'process-bulk-email',
           {
             type: 'bulk_email',
@@ -171,7 +185,7 @@ export class EmailQueueManager {
         ? Math.max(0, emailData.scheduledFor.getTime() - Date.now())
         : options.delay;
 
-      const job = await emailQueue.add(
+      const job = await getEmailQueue().add(
         'process-newsletter',
         {
           type: 'newsletter',
@@ -221,7 +235,7 @@ export class EmailQueueManager {
       for (let i = 0; i < recipients.length; i += batchSize) {
         const batch = recipients.slice(i, i + batchSize);
 
-        const job = await emailQueue.add(
+        const job = await getEmailQueue().add(
           'process-campaign-email',
           {
             type: 'campaign_email',
@@ -266,11 +280,11 @@ export class EmailQueueManager {
    */
   static async getQueueStats(): Promise<QueueStats | null> {
     try {
-      const waiting = await emailQueue.getWaiting();
-      const active = await emailQueue.getActive();
-      const completed = await emailQueue.getCompleted();
-      const failed = await emailQueue.getFailed();
-      const delayed = await emailQueue.getDelayed();
+      const waiting = await getEmailQueue().getWaiting();
+      const active = await getEmailQueue().getActive();
+      const completed = await getEmailQueue().getCompleted();
+      const failed = await getEmailQueue().getFailed();
+      const delayed = await getEmailQueue().getDelayed();
 
       const stats: QueueStats = {
         waiting: waiting.length,
@@ -295,15 +309,15 @@ export class EmailQueueManager {
     try {
       switch (status) {
         case 'waiting':
-          return await emailQueue.getWaiting();
+          return await getEmailQueue().getWaiting();
         case 'active':
-          return await emailQueue.getActive();
+          return await getEmailQueue().getActive();
         case 'completed':
-          return await emailQueue.getCompleted();
+          return await getEmailQueue().getCompleted();
         case 'failed':
-          return await emailQueue.getFailed();
+          return await getEmailQueue().getFailed();
         case 'delayed':
-          return await emailQueue.getDelayed();
+          return await getEmailQueue().getDelayed();
         default:
           return [];
       }
@@ -318,7 +332,7 @@ export class EmailQueueManager {
    */
   static async pauseQueue(): Promise<void> {
     try {
-      await emailQueue.pause();
+      await getEmailQueue().pause();
       logger.info('Email queue paused');
     } catch (_error) {
       logger.error('Failed to pause queue', error);
@@ -331,7 +345,7 @@ export class EmailQueueManager {
    */
   static async resumeQueue(): Promise<void> {
     try {
-      await emailQueue.resume();
+      await getEmailQueue().resume();
       logger.info('Email queue resumed');
     } catch (_error) {
       logger.error('Failed to resume queue', error);
@@ -349,22 +363,22 @@ export class EmailQueueManager {
     try {
       switch (status) {
         case 'waiting':
-          await emailQueue.clean(0, 0, 'wait');
+          await getEmailQueue().clean(0, 0, 'wait');
           break;
         case 'active':
-          await emailQueue.clean(0, 0, 'active');
+          await getEmailQueue().clean(0, 0, 'active');
           break;
         case 'completed':
-          await emailQueue.clean(0, 0, 'completed');
+          await getEmailQueue().clean(0, 0, 'completed');
           break;
         case 'failed':
-          await emailQueue.clean(0, 0, 'failed');
+          await getEmailQueue().clean(0, 0, 'failed');
           break;
         case 'delayed':
-          await emailQueue.clean(0, 0, 'delayed');
+          await getEmailQueue().clean(0, 0, 'delayed');
           break;
         case 'all':
-          await emailQueue.obliterate({ force: true });
+          await getEmailQueue().obliterate({ force: true });
           break;
       }
       
@@ -380,7 +394,7 @@ export class EmailQueueManager {
    */
   static async getJob(jobId: string): Promise<Job<EmailJobData> | undefined> {
     try {
-      return await emailQueue.getJob(jobId);
+      return await getEmailQueue().getJob(jobId);
     } catch (_error) {
       logger.error('Failed to get job', error, { jobId });
       return undefined;
@@ -392,7 +406,7 @@ export class EmailQueueManager {
    */
   static async retryJob(jobId: string): Promise<void> {
     try {
-      const job = await emailQueue.getJob(jobId);
+      const job = await getEmailQueue().getJob(jobId);
       if (job) {
         await job.retry();
         logger.info('Job retried', { jobId });
@@ -404,4 +418,4 @@ export class EmailQueueManager {
   }
 }
 
-export { emailQueue, queueEvents };
+export { getEmailQueue as emailQueue, getQueueEvents as queueEvents };

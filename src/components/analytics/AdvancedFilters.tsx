@@ -319,132 +319,241 @@ export function AdvancedFilters({ onFiltersChange, savedFilters = [], className 
   const renderConditionValue = (condition: FilterCondition, groupId: string) => {
     const fieldConfig = FILTER_FIELDS[condition.field as keyof typeof FILTER_FIELDS];
     
-    switch (fieldConfig?.type) {
-      case 'number':
-        if (condition.operator === 'between') {
-          return (
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                value={condition.value?.[0] || ''}
-                onChange={(e) => updateCondition(groupId, condition.id, {
-                  value: [e.target.value, condition.value?.[1] || '']
-                })}
-                placeholder="Min"
-                className="w-20"
-              />
-              <span className="text-muted-foreground">and</span>
-              <Input
-                type="number"
-                value={condition.value?.[1] || ''}
-                onChange={(e) => updateCondition(groupId, condition.id, {
-                  value: [condition.value?.[0] || '', e.target.value]
-                })}
-                placeholder="Max"
-                className="w-20"
-              />
-            </div>
-          );
-        }
-        return (
-          <Input
-            type="number"
-            value={condition.value || ''}
-            onChange={(e) => updateCondition(groupId, condition.id, { value: e.target.value })}
-            placeholder="Enter value"
-            className="w-32"
-          />
-        );
-
-      case 'select':
-        return (
-          <Select
-            value={condition.value}
-            onValueChange={(value) => updateCondition(groupId, condition.id, { value })}
-          >
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="Select option" />
-            </SelectTrigger>
-            <SelectContent>
-              {fieldConfig.options?.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        );
-
-      case 'multiselect':
-        return (
-          <div className="w-60">
-            <div className="flex flex-wrap gap-1 mb-2">
-              {(condition.value as string[] || []).map((val) => (
-                <Badge key={val} variant="secondary" className="text-xs bg-primary/10 text-primary border border-primary/20">
-                  {val}
-                  <X 
-                    className="ml-1 h-3 w-3 cursor-pointer hover:text-destructive" 
-                    onClick={() => {
-                      const newValue = (condition.value as string[]).filter(v => v !== val);
+    // Safety check for invalid field configuration
+    if (!fieldConfig) {
+      return (
+        <Input
+          value={String(condition.value || '')}
+          onChange={(e) => updateCondition(groupId, condition.id, { value: e.target.value })}
+          placeholder="Enter value"
+          className="w-32"
+        />
+      );
+    }
+    
+    // Comprehensive error handling wrapper
+    try {
+      switch (fieldConfig.type) {
+        case 'number':
+          if (condition.operator === 'between') {
+            // Enhanced array value handling with proper type checking
+            let arrayValue: string[];
+            if (Array.isArray(condition.value)) {
+              arrayValue = condition.value.map(v => String(v || ''));
+            } else if (typeof condition.value === 'string' && condition.value.includes(',')) {
+              arrayValue = condition.value.split(',').map(v => v.trim());
+            } else {
+              arrayValue = ['', ''];
+            }
+            
+            return (
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  value={arrayValue[0] || ''}
+                  onChange={(e) => {
+                    try {
+                      const newValue = [e.target.value, arrayValue[1] || ''];
                       updateCondition(groupId, condition.id, { value: newValue });
-                    }}
-                  />
-                </Badge>
-              ))}
-            </div>
+                    } catch (error) {
+                      console.warn('Error updating condition min value:', error);
+                    }
+                  }}
+                  placeholder="Min"
+                  className="w-20"
+                />
+                <span className="text-muted-foreground">and</span>
+                <Input
+                  type="number"
+                  value={arrayValue[1] || ''}
+                  onChange={(e) => {
+                    try {
+                      const newValue = [arrayValue[0] || '', e.target.value];
+                      updateCondition(groupId, condition.id, { value: newValue });
+                    } catch (error) {
+                      console.warn('Error updating condition max value:', error);
+                    }
+                  }}
+                  placeholder="Max"
+                  className="w-20"
+                />
+              </div>
+            );
+          }
+          return (
+            <Input
+              type="number"
+              value={String(condition.value || '')}
+              onChange={(e) => {
+                try {
+                  updateCondition(groupId, condition.id, { value: e.target.value });
+                } catch (error) {
+                  console.warn('Error updating number condition:', error);
+                }
+              }}
+              placeholder="Enter value"
+              className="w-32"
+            />
+          );
+
+        case 'select':
+          return (
             <Select
+              value={String(condition.value || '')}
               onValueChange={(value) => {
-                const currentValues = condition.value as string[] || [];
-                if (!currentValues.includes(value)) {
-                  updateCondition(groupId, condition.id, { value: [...currentValues, value] });
+                try {
+                  updateCondition(groupId, condition.id, { value });
+                } catch (error) {
+                  console.warn('Error updating select condition:', error);
                 }
               }}
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Add option" />
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Select option" />
               </SelectTrigger>
               <SelectContent>
-                {fieldConfig.options?.filter(option => 
-                  !(condition.value as string[] || []).includes(option)
-                ).map((option) => (
+                {fieldConfig.options?.map((option) => (
                   <SelectItem key={option} value={option}>
                     {option}
                   </SelectItem>
-                ))}
+                )) || []}
               </SelectContent>
             </Select>
-          </div>
-        );
+          );
 
-      case 'date':
-        return (
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="w-40 justify-start text-left font-normal">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {condition.value ? format(condition.value, 'PPP') : 'Pick a date'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={condition.value}
-                onSelect={(date) => updateCondition(groupId, condition.id, { value: date })}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        );
+        case 'multiselect':
+          // Safe multiselect value handling
+          let multiselectValue: string[];
+          if (Array.isArray(condition.value)) {
+            multiselectValue = condition.value.filter(v => typeof v === 'string');
+          } else if (typeof condition.value === 'string' && condition.value) {
+            multiselectValue = condition.value.split(',').map(v => v.trim()).filter(Boolean);
+          } else {
+            multiselectValue = [];
+          }
 
-      default:
-        return (
-          <Input
-            value={condition.value || ''}
-            onChange={(e) => updateCondition(groupId, condition.id, { value: e.target.value })}
-            placeholder="Enter value"
-            className="w-32"
-          />
-        );
+          return (
+            <div className="w-60">
+              <div className="flex flex-wrap gap-1 mb-2">
+                {multiselectValue.map((val, index) => (
+                  <Badge key={`${val}-${index}`} variant="secondary" className="text-xs bg-primary/10 text-primary border border-primary/20">
+                    {val}
+                    <X 
+                      className="ml-1 h-3 w-3 cursor-pointer hover:text-destructive" 
+                      onClick={() => {
+                        try {
+                          const newValue = multiselectValue.filter(v => v !== val);
+                          updateCondition(groupId, condition.id, { value: newValue });
+                        } catch (error) {
+                          console.warn('Error removing multiselect value:', error);
+                        }
+                      }}
+                    />
+                  </Badge>
+                ))}
+              </div>
+              <Select
+                onValueChange={(value) => {
+                  try {
+                    if (!multiselectValue.includes(value)) {
+                      updateCondition(groupId, condition.id, { value: [...multiselectValue, value] });
+                    }
+                  } catch (error) {
+                    console.warn('Error adding multiselect value:', error);
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Add option" />
+                </SelectTrigger>
+                <SelectContent>
+                  {fieldConfig.options?.filter(option => 
+                    !multiselectValue.includes(option)
+                  ).map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  )) || []}
+                </SelectContent>
+              </Select>
+            </div>
+          );
+
+        case 'date':
+          // Safe date handling with proper validation
+          let dateValue: Date | undefined;
+          if (condition.value instanceof Date) {
+            dateValue = condition.value;
+          } else if (typeof condition.value === 'string' && condition.value) {
+            try {
+              dateValue = new Date(condition.value);
+              if (isNaN(dateValue.getTime())) {
+                dateValue = undefined;
+              }
+            } catch {
+              dateValue = undefined;
+            }
+          }
+
+          return (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-40 justify-start text-left font-normal">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateValue ? format(dateValue, 'PPP') : 'Pick a date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={dateValue}
+                  onSelect={(date) => {
+                    try {
+                      updateCondition(groupId, condition.id, { value: date });
+                    } catch (error) {
+                      console.warn('Error updating date condition:', error);
+                    }
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          );
+
+        default:
+          return (
+            <Input
+              value={String(condition.value || '')}
+              onChange={(e) => {
+                try {
+                  updateCondition(groupId, condition.id, { value: e.target.value });
+                } catch (error) {
+                  console.warn('Error updating default condition:', error);
+                }
+              }}
+              placeholder="Enter value"
+              className="w-32"
+            />
+          );
+      }
+    } catch (error) {
+      console.error('Error in renderConditionValue:', error, { condition, groupId });
+      // Fallback to simple input on any error
+      return (
+        <Input
+          value={String(condition.value || '')}
+          onChange={(e) => {
+            try {
+              updateCondition(groupId, condition.id, { value: e.target.value });
+            } catch (updateError) {
+              console.warn('Error in fallback input:', updateError);
+            }
+          }}
+          placeholder="Enter value"
+          className="w-32 border-yellow-200 bg-yellow-50"
+          title="Using fallback input due to error"
+        />
+      );
     }
   };
 

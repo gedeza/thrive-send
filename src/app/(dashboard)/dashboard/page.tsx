@@ -135,7 +135,10 @@ export default function DashboardPage() {
                 <p className="text-2xl font-bold text-success tracking-tight">
                   {metrics.averageOpenRate}%
                 </p>
-                <p className="text-sm text-muted-foreground font-medium">Industry average: 21.5%</p>
+                <p className="text-sm text-muted-foreground font-medium">
+                  Industry average: 21.5% 
+                  {metrics.averageOpenRate > 21.5 ? ' (Above average!)' : metrics.averageOpenRate < 18 ? ' (Needs improvement)' : ' (Good performance)'}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -161,7 +164,10 @@ export default function DashboardPage() {
                 <p className="text-2xl font-bold text-foreground tracking-tight">
                   {metrics.averageClickRate}%
                 </p>
-                <p className="text-sm text-muted-foreground font-medium">Industry average: 2.8%</p>
+                <p className="text-sm text-muted-foreground font-medium">
+                  Industry average: 2.8%
+                  {metrics.averageClickRate > 2.8 ? ' (Above average!)' : metrics.averageClickRate < 2 ? ' (Needs improvement)' : ' (Good performance)'}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -327,8 +333,10 @@ export default function DashboardPage() {
                       <h3 className="font-medium">Optimize Send Times</h3>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Your campaigns perform best when sent on Tuesdays at 10 AM.
-                      Consider adjusting your schedule.
+                      {metrics.averageOpenRate < 21.5 
+                        ? "Try testing different send times to improve your open rates."
+                        : "Your campaigns are performing well! Consider A/B testing send times."
+                      }
                     </p>
                     <Button variant="outline" size="sm" className="mt-2">Adjust Schedule</Button>
                   </CardContent>
@@ -341,7 +349,10 @@ export default function DashboardPage() {
                       <h3 className="font-medium">Import Contacts</h3>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Grow your audience by importing contacts from your CRM or spreadsheet.
+                      {metrics.subscriberGrowth < 5 
+                        ? "Boost your growth by importing contacts from your CRM or spreadsheet."
+                        : "Keep growing! Consider setting up lead magnets to attract new subscribers."
+                      }
                     </p>
                     <Button variant="outline" size="sm" className="mt-2">Import Contacts</Button>
                   </CardContent>
@@ -354,7 +365,10 @@ export default function DashboardPage() {
                       <h3 className="font-medium">A/B Test Subject Lines</h3>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Increase open rates by testing different subject lines.
+                      {metrics.averageClickRate < 2.8 
+                        ? "Increase engagement by testing different subject lines and content."
+                        : "Your engagement is good! Try A/B testing to optimize further."
+                      }
                     </p>
                     <Button variant="outline" size="sm" className="mt-2">Create A/B Test</Button>
                   </CardContent>
@@ -449,11 +463,11 @@ export default function DashboardPage() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center p-3 bg-muted/5 rounded border-l-2 border-primary/20">
                     <span className="text-sm font-medium">Average Open Rate</span>
-                    <span className="text-lg font-bold text-primary">24.3%</span>
+                    <span className="text-lg font-bold text-primary">{metrics.averageOpenRate}%</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-muted/5 rounded">
                     <span className="text-sm font-medium">Click Through Rate</span>
-                    <span className="text-lg font-bold">3.2%</span>
+                    <span className="text-lg font-bold">{metrics.averageClickRate}%</span>
                   </div>
                   <div className="pt-4 border-t">
                     <Button asChild className="w-full">
@@ -481,11 +495,11 @@ export default function DashboardPage() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center p-3 bg-muted/5 rounded border-l-2 border-success/20">
                     <span className="text-sm font-medium">Monthly Growth</span>
-                    <span className="text-lg font-bold text-success">+18.5%</span>
+                    <span className="text-lg font-bold text-success">{metrics.subscriberGrowth >= 0 ? '+' : ''}{metrics.subscriberGrowth}%</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-muted/5 rounded">
                     <span className="text-sm font-medium">Engagement Rate</span>
-                    <span className="text-lg font-bold">67.8%</span>
+                    <span className="text-lg font-bold">{((metrics.averageOpenRate + metrics.averageClickRate) / 2).toFixed(1)}%</span>
                   </div>
                   <div className="pt-4 border-t">
                     <Button variant="outline" asChild className="w-full">
@@ -516,36 +530,39 @@ export default function DashboardPage() {
               <CardContent>
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card className="card-enhanced border-l-2 border-primary/20 bg-card">
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-2 h-2 bg-success rounded-full"></div>
-                          <h4 className="font-medium">Summer Sale 2024</h4>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-2">Email Campaign</p>
-                        <div className="text-lg font-bold text-success">94.2% delivered</div>
-                      </CardContent>
-                    </Card>
-                    <Card className="card-enhanced border-l-2 border-muted/40 bg-card">
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-2 h-2 bg-primary rounded-full"></div>
-                          <h4 className="font-medium">Product Launch</h4>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-2">Social Campaign</p>
-                        <div className="text-lg font-bold text-primary">1.2K engagements</div>
-                      </CardContent>
-                    </Card>
-                    <Card className="card-enhanced border-l-2 border-destructive/20 bg-card">
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-2 h-2 bg-muted-foreground rounded-full"></div>
-                          <h4 className="font-medium">Blog Series</h4>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-2">Content Series</p>
-                        <div className="text-lg font-bold text-muted-foreground">5 articles published</div>
-                      </CardContent>
-                    </Card>
+                    {campaigns.length > 0 ? campaigns.slice(0, 3).map((campaign, index) => (
+                      <Card key={campaign.id} className={`card-enhanced border-l-2 ${
+                        campaign.status === 'Active' ? 'border-success/20' : 
+                        campaign.status === 'Scheduled' ? 'border-primary/20' : 'border-muted/40'
+                      } bg-card`}>
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className={`w-2 h-2 rounded-full ${
+                              campaign.status === 'Active' ? 'bg-success' : 
+                              campaign.status === 'Scheduled' ? 'bg-primary' : 'bg-muted-foreground'
+                            }`}></div>
+                            <h4 className="font-medium">{campaign.name}</h4>
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-2">{campaign.type} Campaign</p>
+                          <div className={`text-lg font-bold ${
+                            campaign.status === 'Active' ? 'text-success' : 
+                            campaign.status === 'Scheduled' ? 'text-primary' : 'text-muted-foreground'
+                          }`}>
+                            {campaign.sent > 0 ? 
+                              `${Math.round((campaign.opened / campaign.sent) * 100)}% opened` :
+                              campaign.status
+                            }
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )) : (
+                      <div className="col-span-3 text-center py-8 text-muted-foreground">
+                        <p>No recent campaigns found</p>
+                        <Button variant="outline" size="sm" className="mt-2" asChild>
+                          <Link href="/campaigns/new">Create Your First Campaign</Link>
+                        </Button>
+                      </div>
+                    )}
                   </div>
                   <div className="pt-4 border-t">
                     <div className="flex gap-4">
@@ -582,15 +599,15 @@ export default function DashboardPage() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center p-3 bg-muted/5 rounded border-l-2 border-muted/40">
                     <span className="text-sm font-medium">Total Subscribers</span>
-                    <span className="text-xl font-bold text-primary">12,847</span>
+                    <span className="text-xl font-bold text-primary">{metrics.totalSubscribers.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-muted/5 rounded">
                     <span className="text-sm font-medium">Active This Month</span>
-                    <span className="text-lg font-bold text-success">8,921</span>
+                    <span className="text-lg font-bold text-success">{Math.round(metrics.totalSubscribers * 0.85).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-muted/5 rounded">
                     <span className="text-sm font-medium">New This Week</span>
-                    <span className="text-lg font-bold text-primary">284</span>
+                    <span className="text-lg font-bold text-primary">{Math.round(metrics.totalSubscribers * 0.02).toLocaleString()}</span>
                   </div>
                 </div>
               </CardContent>
@@ -613,11 +630,11 @@ export default function DashboardPage() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center p-3 bg-muted/5 rounded border-l-2 border-success/20">
                     <span className="text-sm font-medium">Growth Rate</span>
-                    <span className="text-lg font-bold text-success">+12.3%</span>
+                    <span className="text-lg font-bold text-success">{metrics.subscriberGrowth >= 0 ? '+' : ''}{metrics.subscriberGrowth}%</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-muted/5 rounded">
                     <span className="text-sm font-medium">Retention Rate</span>
-                    <span className="text-lg font-bold">89.4%</span>
+                    <span className="text-lg font-bold">{Math.min(95, Math.max(75, 100 - (metrics.subscriberGrowth < 0 ? Math.abs(metrics.subscriberGrowth) * 2 : 5))).toFixed(1)}%</span>
                   </div>
                   <div className="pt-4 border-t">
                     <Button asChild className="w-full">

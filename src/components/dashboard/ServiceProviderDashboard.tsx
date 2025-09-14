@@ -300,7 +300,7 @@ function ClientSpecificDashboard({ client }: { client: any }) {
         <CardContent className="p-4 lg:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center space-x-4">
-              <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center overflow-hidden flex-shrink-0"
+              <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center overflow-hidden flex-shrink-0">
                 {client.logoUrl ? (
                   <img 
                     src={client.logoUrl} 

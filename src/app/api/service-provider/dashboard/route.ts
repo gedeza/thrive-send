@@ -69,131 +69,121 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Apply same organization lookup logic as other APIs
-    let orgExists = await db.organization.findUnique({
-      where: { id: organizationId }
-    });
+    // OPTIMIZED: Single query to get organization, user access, and all related data
+    const [orgExists, user] = await Promise.all([
+      // Organization lookup with fallback
+      organizationId.startsWith('org_') 
+        ? db.organization.findUnique({ where: { clerkOrganizationId: organizationId } })
+        : db.organization.findUnique({ where: { id: organizationId } }),
+      
+      // User lookup
+      db.user.findUnique({ where: { clerkId: userId }, select: { id: true } })
+    ]);
 
-    if (!orgExists && organizationId.startsWith('org_')) {
-      orgExists = await db.organization.findUnique({
-        where: { clerkOrganizationId: organizationId }
-      });
-    }
-
-    if (!orgExists) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+    if (!orgExists || !user) {
+      return NextResponse.json({ 
+        error: !orgExists ? 'Organization not found' : 'User not found' 
+      }, { status: 404 });
     }
 
     const dbOrganizationId = orgExists.id;
 
-    // Verify user has access to this organization
-    const user = await db.user.findUnique({
-      where: { clerkId: userId }
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    const userMembership = await db.organizationMember.findFirst({
-      where: {
-        userId: user.id,
-        organizationId: dbOrganizationId,
-      },
-    });
-
-    if (!userMembership) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
-    }
-
-    const organization = orgExists;
-    if (!organization) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
-    }
-
-    // Get organization with related data for metrics calculation
-    const orgWithData = await db.organization.findUnique({
-      where: { id: dbOrganizationId },
-      include: {
-        campaigns: {
-          select: {
-            id: true,
-            name: true,
-            status: true,
-            budget: true,
-            createdAt: true,
-          },
-        },
-        content: {
-          select: {
-            id: true,
-            title: true,
-            status: true,
-            createdAt: true,
-          },
-        },
-        members: {
-          select: {
-            id: true,
-            role: true,
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
+    // OPTIMIZED: Single comprehensive query for all dashboard data
+    const [userMembership, dashboardData] = await Promise.all([
+      // User access verification
+      db.organizationMember.findFirst({
+        where: { userId: user.id, organizationId: dbOrganizationId },
+        select: { id: true }
+      }),
+      
+      // Single query for all dashboard data with optimized includes
+      db.organization.findUnique({
+        where: { id: dbOrganizationId },
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          campaigns: {
+            select: {
+              id: true,
+              name: true,
+              status: true,
+              budget: true,
+              createdAt: true,
+              clientId: true,
+              client: { select: { id: true, name: true } }
             },
+            orderBy: { createdAt: 'desc' }
           },
-        },
-      },
-    });
-
-    if (!orgWithData) {
-      return NextResponse.json({ error: 'Organization data not found' }, { status: 404 });
-    }
-
-    // Calculate enhanced metrics
-    const totalCampaigns = orgWithData.campaigns.length;
-    const activeCampaigns = orgWithData.campaigns.filter(c => c.status === 'active').length;
-    const totalContent = orgWithData.content.length;
-    const publishedContent = orgWithData.content.filter(c => c.status === 'PUBLISHED').length;
-    const teamMembers = orgWithData.members.length;
-
-    // PRODUCTION: Fetch real client data from database FIRST
-    const realClients = await db.client.findMany({
-      where: {
-        organizationId: dbOrganizationId
-      },
-      include: {
-        campaigns: {
-          where: { status: 'active' },
-          select: { 
-            id: true,
-            content: {
-              where: {
-                publishedAt: {
-                  gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
-                }
-              },
-              select: { 
-                id: true, 
-                updatedAt: true,
-                analytics: {
-                  select: {
-                    engagementRate: true
+          content: {
+            select: {
+              id: true,
+              title: true,
+              status: true,
+              createdAt: true,
+              updatedAt: true
+            },
+            orderBy: { updatedAt: 'desc' },
+            take: 50
+          },
+          members: {
+            select: { id: true },
+            take: 1
+          },
+          clients: {
+            select: {
+              id: true,
+              name: true,
+              status: true,
+              industry: true,
+              monthlyBudget: true,
+              updatedAt: true,
+              campaigns: {
+                where: { status: 'active' },
+                select: { 
+                  id: true,
+                  content: {
+                    where: {
+                      publishedAt: {
+                        gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+                      }
+                    },
+                    select: { 
+                      id: true, 
+                      updatedAt: true,
+                      analytics: {
+                        select: { engagementRate: true }
+                      }
+                    }
                   }
                 }
               }
             }
           }
         }
-      }
-    });
+      })
+    ]);
 
-    // PRODUCTION: Enhanced metrics calculation using real data
+    if (!userMembership) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+    }
+
+    if (!dashboardData) {
+      return NextResponse.json({ error: 'Dashboard data not found' }, { status: 404 });
+    }
+
+    // OPTIMIZED: Calculate metrics from single query result
+    const clients = dashboardData.clients;
+    const campaigns = dashboardData.campaigns;
+    const content = dashboardData.content;
+    
+    const totalCampaigns = campaigns.length;
+    const activeCampaigns = campaigns.filter(c => c.status === 'active').length;
+    const publishedContent = content.filter(c => c.status === 'PUBLISHED').length;
+
     const metrics: ServiceProviderMetrics = {
-      totalClients: realClients.length,
-      activeClients: realClients.filter(client => client.status === 'ACTIVE').length,
+      totalClients: clients.length,
+      activeClients: clients.filter(client => client.status === 'ACTIVE').length,
       totalCampaigns,
       activeCampaigns,
       totalRevenue: 15250, // Demo calculation
@@ -208,7 +198,8 @@ export async function GET(request: Request) {
       growthRate: 12.5,
     };
 
-    const clientSummary: ClientSummary[] = realClients.map(client => {
+    // OPTIMIZED: Process client summary from existing data
+    const clientSummary: ClientSummary[] = clients.map(client => {
       const activeCampaigns = client.campaigns.length;
       
       // Get all content from all campaigns
@@ -234,74 +225,43 @@ export async function GET(request: Request) {
       };
     });
 
-    console.log(`✅ Fetched ${clientSummary.length} real clients for organization ${dbOrganizationId}`);
-
-    // PRODUCTION: Fetch real recent activity from database
-    const recentActivities = await Promise.all([
-      // Campaign activities
-      db.campaign.findMany({
-        where: {
-          organizationId: dbOrganizationId,
-          createdAt: {
-            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
-          }
-        },
-        include: { client: { select: { id: true, name: true } } },
-        orderBy: { createdAt: 'desc' },
-        take: 5
-      }),
-      // Content activities
-      db.content.findMany({
-        where: {
-          organizationId: dbOrganizationId,
-          updatedAt: {
-            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
-          }
-        },
-        select: {
-          id: true,
-          title: true,
-          status: true,
-          updatedAt: true
-        },
-        orderBy: { updatedAt: 'desc' },
-        take: 5
-      })
-    ]);
-
-    const [campaigns, content] = recentActivities;
-    const allActivities = [
-      ...campaigns.map(campaign => ({
-        id: `campaign-${campaign.id}`,
-        type: 'campaign_created',
-        description: `New campaign "${campaign.name}" created`,
-        clientId: campaign.clientId || 'unknown',
-        clientName: campaign.client?.name || 'Unknown Client',
-        timestamp: campaign.createdAt,
-        severity: 'success' as const
-      })),
-      ...content.map(item => ({
-        id: `content-${item.id}`,
-        type: item.status === 'PUBLISHED' ? 'content_published' : 
-              item.status === 'PENDING_REVIEW' ? 'approval_pending' : 'content_updated',
-        description: item.status === 'PUBLISHED' 
-          ? `Content "${item.title}" published successfully`
-          : item.status === 'PENDING_REVIEW'
-          ? `Content "${item.title}" awaiting approval`
-          : `Content "${item.title}" updated`,
-        clientId: undefined,
-        clientName: undefined,
-        timestamp: item.updatedAt,
-        severity: item.status === 'PUBLISHED' ? 'success' as const :
-                 item.status === 'PENDING_REVIEW' ? 'warning' as const : 'info' as const
-      }))
-    ];
-
-    const recentActivity: Activity[] = allActivities
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(0, 10);
-
-    console.log(`✅ Fetched ${recentActivity.length} real activities for organization`);
+    // OPTIMIZED: Build recent activities from existing data (no additional queries)
+    const recentActivity: Activity[] = [
+      // Recent campaigns (already filtered and sorted)
+      ...campaigns
+        .filter(campaign => campaign.createdAt >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
+        .slice(0, 5)
+        .map(campaign => ({
+          id: `campaign-${campaign.id}`,
+          type: 'campaign_created',
+          description: `New campaign "${campaign.name}" created`,
+          clientId: campaign.clientId || 'unknown',
+          clientName: campaign.client?.name || 'Unknown Client',
+          timestamp: campaign.createdAt,
+          severity: 'success' as const
+        })),
+      
+      // Recent content (already filtered and sorted)
+      ...content
+        .filter(item => item.updatedAt >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
+        .slice(0, 5)
+        .map(item => ({
+          id: `content-${item.id}`,
+          type: item.status === 'PUBLISHED' ? 'content_published' : 
+                item.status === 'PENDING_REVIEW' ? 'approval_pending' : 'content_updated',
+          description: item.status === 'PUBLISHED' 
+            ? `Content "${item.title}" published successfully`
+            : item.status === 'PENDING_REVIEW'
+            ? `Content "${item.title}" awaiting approval`
+            : `Content "${item.title}" updated`,
+          clientId: undefined,
+          clientName: undefined,
+          timestamp: item.updatedAt,
+          severity: item.status === 'PUBLISHED' ? 'success' as const :
+                   item.status === 'PENDING_REVIEW' ? 'warning' as const : 'info' as const
+        }))
+    ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+     .slice(0, 10);
 
     // Generate demo performance trends
     const performanceTrends = [
@@ -311,17 +271,23 @@ export async function GET(request: Request) {
       { date: '2025-01-04', clients: 3, campaigns: 25, revenue: 15250 },
     ];
 
-    const dashboardData: DashboardResponse = {
-      organizationId: organization.id,
-      organizationName: organization.name,
-      organizationType: (organization.type as 'service_provider' | 'enterprise') || 'service_provider',
+    const response: DashboardResponse = {
+      organizationId: dashboardData.id,
+      organizationName: dashboardData.name,
+      organizationType: (dashboardData.type as 'service_provider' | 'enterprise') || 'service_provider',
       metrics,
       clientSummary,
       recentActivity,
       performanceTrends,
     };
 
-    return NextResponse.json(dashboardData);
+    // Add cache headers for improved performance
+    return NextResponse.json(response, {
+      headers: {
+        'Cache-Control': 'private, max-age=60, stale-while-revalidate=300',
+        'X-Response-Time': Date.now() - request.headers.get('x-start-time') || '0'
+      }
+    });
 
   } catch (error) {
     console.error("Dashboard API Error:", error);

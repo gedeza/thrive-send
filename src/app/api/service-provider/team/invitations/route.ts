@@ -122,7 +122,7 @@ export async function GET(request: NextRequest) {
     return createSuccessResponse(allInvitations, 200, 'Invitations retrieved successfully');
 
   } catch (_error) {
-    return handleApiError(error);
+    return handleApiError(_error);
   }
 }
 
