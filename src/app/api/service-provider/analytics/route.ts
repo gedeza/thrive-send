@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Find organization
-    let organization = await db.organization.findFirst({
+    const organization = await db.organization.findFirst({
       where: {
         OR: [
           { id: organizationId },

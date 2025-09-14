@@ -25,6 +25,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/components/ui/use-toast';
 import Link from 'next/link';
+import { SharedSegmentModal } from '@/components/audiences/SharedSegmentModal';
 
 interface SharedSegment {
   id: string;
@@ -47,6 +48,14 @@ interface SharedSegment {
     size: number;
     audienceId: string;
     audienceName: string;
+  }>;
+  targetingRules?: Array<{
+    id: string;
+    name: string;
+    type: string;
+    operator: string;
+    value: any;
+    conditions: any;
   }>;
   performance: {
     totalReach: number;
@@ -71,6 +80,8 @@ export default function SharedSegmentsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [efficiencyFilter, setEfficiencyFilter] = useState('all');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingSegment, setEditingSegment] = useState<SharedSegment | null>(null);
 
   const {
     data: sharedSegments = [],
@@ -134,6 +145,20 @@ export default function SharedSegmentsPage() {
     return colors[efficiency as keyof typeof colors] || 'text-muted-foreground bg-muted/10';
   };
 
+  const handleDuplicateSegment = (segment: SharedSegment) => {
+    const duplicatedSegment = {
+      ...segment,
+      id: `duplicate-${Date.now()}`,
+      name: `${segment.name} (Copy)`,
+    };
+    setEditingSegment(duplicatedSegment);
+    setShowCreateModal(true);
+    toast({
+      title: 'Segment Duplicated',
+      description: 'You can now modify the duplicated segment before saving',
+    });
+  };
+
   if (!organizationId) {
     return (
       <div className="container mx-auto py-8 max-w-6xl">
@@ -167,7 +192,7 @@ export default function SharedSegmentsPage() {
           </p>
         </div>
 
-        <Button>
+        <Button onClick={() => setShowCreateModal(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Create Shared Segment
         </Button>
@@ -377,7 +402,15 @@ export default function SharedSegmentsPage() {
         <div className="space-y-6">
           {filteredSegments.length > 0 ? (
             filteredSegments.map((segment) => (
-              <SharedSegmentCard key={segment.id} segment={segment} />
+              <SharedSegmentCard
+                key={segment.id}
+                segment={segment}
+                onEdit={(segment) => {
+                  setEditingSegment(segment);
+                  setShowCreateModal(true);
+                }}
+                onDuplicate={handleDuplicateSegment}
+              />
             ))
           ) : (
             <Card>
@@ -393,7 +426,7 @@ export default function SharedSegmentsPage() {
                   }
                 </p>
                 {!searchQuery && typeFilter === 'all' && efficiencyFilter === 'all' && sharedSegments.length === 0 && (
-                  <Button>
+                  <Button onClick={() => setShowCreateModal(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     Create Shared Segment
                   </Button>
@@ -403,11 +436,31 @@ export default function SharedSegmentsPage() {
           )}
         </div>
       )}
+
+      {/* Create/Edit Shared Segment Modal */}
+      <SharedSegmentModal
+        open={showCreateModal}
+        onOpenChange={(open) => {
+          setShowCreateModal(open);
+          if (!open) {
+            setEditingSegment(null);
+          }
+        }}
+        editingSegment={editingSegment}
+      />
     </div>
   );
 }
 
-function SharedSegmentCard({ segment }: { segment: SharedSegment }) {
+function SharedSegmentCard({
+  segment,
+  onEdit,
+  onDuplicate
+}: {
+  segment: SharedSegment;
+  onEdit?: (segment: SharedSegment) => void;
+  onDuplicate?: (segment: SharedSegment) => void;
+}) {
   const typeColor = getTypeColor(segment.type);
   const efficiencyColor = getEfficiencyColor(segment.performance.efficiency);
 
@@ -443,11 +496,19 @@ function SharedSegmentCard({ segment }: { segment: SharedSegment }) {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onDuplicate?.(segment)}
+            >
               <Copy className="h-4 w-4 mr-1" />
               Duplicate
             </Button>
-            <Button variant="outline" size="sm">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit?.(segment)}
+            >
               <Settings className="h-4 w-4 mr-1" />
               Edit
             </Button>

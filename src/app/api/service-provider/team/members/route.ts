@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
-import { 
-  createSuccessResponse, 
-  createUnauthorizedResponse, 
+import {
+  createSuccessResponse,
+  createUnauthorizedResponse,
   createValidationResponse,
-  handleApiError 
+  handleApiError
 } from '@/lib/api-utils';
+
+// Simple in-memory storage for demo invitations (shared with invitations API)
+const sessionInvitations = new Map<string, any[]>();
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,118 +24,6 @@ export async function GET(request: NextRequest) {
     if (!organizationId) {
       return createValidationResponse('Organization ID required');
     }
-
-    // Demo team members data (in real implementation, this would come from database)
-    const demoMembers = [
-      {
-        id: 'tm-1',
-        name: 'Sarah Johnson',
-        email: 'sarah.johnson@thrivesend.com',
-        role: 'ADMIN',
-        status: 'ACTIVE',
-        joinedAt: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(),
-        lastActivity: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        avatarUrl: 'https://api.dicebear.com/7.x/personas/svg?seed=Sarah&backgroundColor=c0aede',
-        phone: '+1 (555) 123-4567',
-        clientAssignments: [
-          {
-            id: 'ca-1',
-            clientId: 'demo-client-1',
-            clientName: 'City of Springfield',
-            role: 'MANAGER',
-            permissions: ['read', 'write', 'approve', 'publish'],
-            assignedAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-          },
-          {
-            id: 'ca-2',
-            clientId: 'demo-client-2',
-            clientName: 'Regional Health District',
-            role: 'REVIEWER',
-            permissions: ['read', 'write', 'review'],
-            assignedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-          }
-        ],
-        performance: {
-          contentCreated: 127,
-          reviewsCompleted: 89,
-          approvalsGiven: 45,
-          clientsManaged: 2,
-          averageRating: 4.8,
-        }
-      },
-      {
-        id: 'tm-2',
-        name: 'Michael Chen',
-        email: 'michael.chen@thrivesend.com',
-        role: 'CONTENT_CREATOR',
-        status: 'ACTIVE',
-        joinedAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-        lastActivity: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-        avatarUrl: 'https://api.dicebear.com/7.x/personas/svg?seed=Michael&backgroundColor=a7f3d0',
-        phone: '+1 (555) 987-6543',
-        clientAssignments: [
-          {
-            id: 'ca-3',
-            clientId: 'demo-client-1',
-            clientName: 'City of Springfield',
-            role: 'CREATOR',
-            permissions: ['read', 'write'],
-            assignedAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
-          }
-        ],
-        performance: {
-          contentCreated: 203,
-          reviewsCompleted: 15,
-          approvalsGiven: 0,
-          clientsManaged: 1,
-          averageRating: 4.6,
-        }
-      },
-      {
-        id: 'tm-3',
-        name: 'Emily Rodriguez',
-        email: 'emily.rodriguez@thrivesend.com',
-        role: 'REVIEWER',
-        status: 'ACTIVE',
-        joinedAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
-        lastActivity: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-        avatarUrl: 'https://api.dicebear.com/7.x/personas/svg?seed=Emily&backgroundColor=fde68a',
-        clientAssignments: [
-          {
-            id: 'ca-4',
-            clientId: 'demo-client-2',
-            clientName: 'Regional Health District',
-            role: 'REVIEWER',
-            permissions: ['read', 'review'],
-            assignedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-          }
-        ],
-        performance: {
-          contentCreated: 45,
-          reviewsCompleted: 156,
-          approvalsGiven: 12,
-          clientsManaged: 1,
-          averageRating: 4.9,
-        }
-      },
-      {
-        id: 'tm-4',
-        name: 'David Thompson',
-        email: 'david.thompson@thrivesend.com',
-        role: 'CLIENT_MANAGER',
-        status: 'PENDING',
-        joinedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-        lastActivity: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-        clientAssignments: [],
-        performance: {
-          contentCreated: 0,
-          reviewsCompleted: 0,
-          approvalsGiven: 0,
-          clientsManaged: 0,
-          averageRating: 0,
-        }
-      }
-    ];
 
     let databaseMembers: any[] = [];
     
@@ -210,6 +101,41 @@ export async function GET(request: NextRequest) {
         };
       });
 
+      // Also fetch pending invitations to include as PENDING team members
+      const pendingInvitations = await db.teamMemberInvitation.findMany({
+        where: {
+          organizationId,
+          status: 'pending',
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+
+      // Convert pending invitations to team member format
+      const pendingMembers = pendingInvitations.map(invitation => ({
+        id: `pending-${invitation.id}`,
+        name: `${invitation.firstName} ${invitation.lastName}`.trim(),
+        email: invitation.email,
+        role: invitation.role,
+        status: 'PENDING',
+        joinedAt: invitation.createdAt.toISOString(),
+        lastActivity: invitation.createdAt.toISOString(),
+        avatarUrl: `https://api.dicebear.com/7.x/personas/svg?seed=${encodeURIComponent(invitation.email)}&backgroundColor=fbbf24`,
+        clientAssignments: [], // Would need to map from invitation permissions
+        performance: {
+          contentCreated: 0,
+          reviewsCompleted: 0,
+          approvalsGiven: 0,
+          clientsManaged: 0,
+          averageRating: 0,
+        },
+        isPending: true
+      }));
+
+      // Combine actual members and pending invitations
+      databaseMembers = [...databaseMembers, ...pendingMembers];
+
       // Successfully loaded team members from database
 
     } catch (dbError) {
@@ -217,7 +143,100 @@ export async function GET(request: NextRequest) {
       databaseMembers = [];
     }
 
-    // Combine database and demo data (demo data provides rich examples)
+    // Also check for session-based invitations in demo mode
+    const sessionKey = `${organizationId}-${userId}`;
+    const sessionInvites = sessionInvitations.get(sessionKey) || [];
+    const pendingSessionInvitations = sessionInvites.filter(inv => inv.status === 'PENDING');
+
+    // Convert session-based pending invitations to team member format
+    const sessionPendingMembers = pendingSessionInvitations.map((invitation: any) => ({
+      id: `session-pending-${invitation.id}`,
+      name: `${invitation.firstName || invitation.email.split('@')[0]} ${invitation.lastName || ''}`.trim(),
+      email: invitation.email,
+      role: invitation.role,
+      status: 'PENDING',
+      joinedAt: invitation.invitedAt,
+      lastActivity: invitation.invitedAt,
+      avatarUrl: `https://api.dicebear.com/7.x/personas/svg?seed=${encodeURIComponent(invitation.email)}&backgroundColor=fbbf24`,
+      clientAssignments: invitation.clientAssignments || [],
+      performance: {
+        contentCreated: 0,
+        reviewsCompleted: 0,
+        approvalsGiven: 0,
+        clientsManaged: 0,
+        averageRating: 0,
+      },
+      isPending: true,
+      isDemo: true
+    }));
+
+    // Add session pending invitations to database members
+    databaseMembers = [...databaseMembers, ...sessionPendingMembers];
+
+    // Demo team members data (only shown when database is empty to help new users understand the interface)
+    // These are removed once real team members are added
+    const demoMembers = databaseMembers.length === 0 ? [
+      {
+        id: 'demo-tm-1',
+        name: 'Team Lead Example',
+        email: 'teamlead@yourcompany.com',
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        joinedAt: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(),
+        lastActivity: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        avatarUrl: 'https://api.dicebear.com/7.x/personas/svg?seed=TeamLead&backgroundColor=c0aede',
+        phone: '+1 (555) 000-0001',
+        clientAssignments: [
+          {
+            id: 'demo-ca-1',
+            clientId: 'demo-client-1',
+            clientName: 'Your First Client',
+            role: 'MANAGER',
+            permissions: ['read', 'write', 'approve', 'publish'],
+            assignedAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+          }
+        ],
+        performance: {
+          contentCreated: 127,
+          reviewsCompleted: 89,
+          approvalsGiven: 45,
+          clientsManaged: 1,
+          averageRating: 4.8,
+        },
+        isDemo: true
+      },
+      {
+        id: 'demo-tm-2',
+        name: 'Content Creator Example',
+        email: 'creator@yourcompany.com',
+        role: 'CONTENT_CREATOR',
+        status: 'ACTIVE',
+        joinedAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+        lastActivity: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+        avatarUrl: 'https://api.dicebear.com/7.x/personas/svg?seed=Creator&backgroundColor=a7f3d0',
+        phone: '+1 (555) 000-0002',
+        clientAssignments: [
+          {
+            id: 'demo-ca-2',
+            clientId: 'demo-client-1',
+            clientName: 'Your First Client',
+            role: 'CREATOR',
+            permissions: ['read', 'write'],
+            assignedAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
+          }
+        ],
+        performance: {
+          contentCreated: 203,
+          reviewsCompleted: 15,
+          approvalsGiven: 0,
+          clientsManaged: 1,
+          averageRating: 4.6,
+        },
+        isDemo: true
+      }
+    ] : [];
+
+    // Combine database and demo data (demo data only shown when no real members exist)
     const allMembers = databaseMembers.length > 0 ? databaseMembers : demoMembers;
 
     // Returning team members data

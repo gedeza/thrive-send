@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Find organization by ID (could be either database ID or Clerk org ID)
-    let organization = await db.organization.findFirst({
+    const organization = await db.organization.findFirst({
       where: {
         OR: [
           { id: organizationId },
@@ -305,7 +305,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Find organization by ID
-    let organization = await db.organization.findFirst({
+    const organization = await db.organization.findFirst({
       where: {
         OR: [
           { id: serviceProviderId },

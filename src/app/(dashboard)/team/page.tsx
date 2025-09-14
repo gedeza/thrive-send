@@ -278,7 +278,7 @@ function TeamMemberCard({ member, onEdit, onDelete, onViewDetails }: TeamMemberC
                 <Badge className={cn("text-xs px-2 py-1", roleBadgeStyle)}>
                   {roleInfo.label}
                 </Badge>
-                <Badge 
+                <Badge
                   className={cn(
                     "text-xs px-2 py-1",
                     statusInfo.isSuccess ? "bg-success/10 text-success border border-success/20" : "bg-muted/10 text-muted-foreground border border-muted/20"
@@ -286,35 +286,72 @@ function TeamMemberCard({ member, onEdit, onDelete, onViewDetails }: TeamMemberC
                 >
                   {statusInfo.label}
                 </Badge>
+                {(member as any).isDemo && (
+                  <Badge className="text-xs px-2 py-1 bg-blue/10 text-blue border border-blue/20">
+                    Demo
+                  </Badge>
+                )}
+                {(member as any).isPending && (
+                  <Badge className="text-xs px-2 py-1 bg-orange/10 text-orange border border-orange/20">
+                    Pending Invitation
+                  </Badge>
+                )}
               </div>
             </div>
           </div>
           
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onViewDetails?.(member)}>
-                <Eye className="h-4 w-4 mr-2" />
-                View Details
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEdit?.(member)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Member
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                onClick={() => onDelete?.(member)}
-                className="text-destructive"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Remove Member
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {!(member as any).isDemo && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {(member as any).isPending ? (
+                  // Pending invitation actions
+                  <>
+                    <DropdownMenuItem onClick={() => onViewDetails?.(member)}>
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Invitation
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {/* TODO: Resend invitation */}}>
+                      <Mail className="h-4 w-4 mr-2" />
+                      Resend Invitation
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => onDelete?.(member)}
+                      className="text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Cancel Invitation
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  // Active member actions
+                  <>
+                    <DropdownMenuItem onClick={() => onViewDetails?.(member)}>
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onEdit?.(member)}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Member
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => onDelete?.(member)}
+                      className="text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Remove Member
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
         {/* Performance metrics - Unified styling */}
@@ -587,7 +624,7 @@ export default function TeamManagementPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Roles</SelectItem>
-                      {Object.entries(roleConfig).map(([role, config]) => (
+                      {Object.entries(ROLE_CONFIG).map(([role, config]) => (
                         <SelectItem key={role} value={role}>
                           {config.label}
                         </SelectItem>
@@ -693,6 +730,31 @@ export default function TeamManagementPage() {
               </Card>
             )}
 
+            {/* Demo data info banner */}
+            {!loading && !error && filteredMembers.length > 0 && filteredMembers.some((m: any) => m.isDemo) && (
+              <Card className="bg-blue/5 border-blue/20 mb-6">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue/10 rounded-lg border border-blue/20">
+                      <Users className="h-5 w-5 text-blue" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-blue mb-1">Demo Team Members</h4>
+                      <p className="text-sm text-blue/80">
+                        These are example team members to help you understand the interface. They will automatically disappear when you add your first real team member.
+                      </p>
+                    </div>
+                    <Button asChild size="sm" className="bg-blue hover:bg-blue/90">
+                      <Link href="/team/invite" className="inline-flex items-center gap-2">
+                        <UserPlus className="h-4 w-4" />
+                        Add Real Member
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Team members grid */}
             {!loading && !error && filteredMembers.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -739,7 +801,7 @@ export default function TeamManagementPage() {
                 {selectedMember?.name}
               </DialogTitle>
               <DialogDescription>
-                {selectedMember?.email} • {selectedMember && roleConfig[selectedMember.role].label}
+                {selectedMember?.email} • {selectedMember && ROLE_CONFIG[selectedMember.role].label}
               </DialogDescription>
             </DialogHeader>
             
@@ -872,7 +934,7 @@ export default function TeamManagementPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.entries(roleConfig).map(([role, config]) => (
+                      {Object.entries(ROLE_CONFIG).map(([role, config]) => (
                         <SelectItem key={role} value={role}>
                           {config.label}
                         </SelectItem>
@@ -931,7 +993,7 @@ export default function TeamManagementPage() {
                     <p className="font-medium">{selectedMember.name}</p>
                     <p className="text-sm text-muted-foreground">{selectedMember.email}</p>
                     <p className="text-sm text-muted-foreground">
-                      {roleConfig[selectedMember.role].label} • {selectedMember.clientAssignments.length} client assignments
+                      {ROLE_CONFIG[selectedMember.role].label} • {selectedMember.clientAssignments.length} client assignments
                     </p>
                   </div>
                 </div>

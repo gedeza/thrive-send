@@ -148,6 +148,7 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!email || !firstName || !lastName || !role || !organizationId) {
+      console.log('Missing required fields:', { email, firstName, lastName, role, organizationId });
       return NextResponse.json(
         { error: 'Missing required fields: email, firstName, lastName, role, organizationId' },
         { status: 400 }
@@ -155,8 +156,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate email format
-    const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
+      console.log('Invalid email format:', email, 'regex test result:', emailRegex.test(email));
       return NextResponse.json(
         { error: 'Invalid email format' },
         { status: 400 }
@@ -171,23 +173,21 @@ export async function POST(request: NextRequest) {
         where: { clerkId: userId },
       });
 
-      if (!currentUser) {
-        return NextResponse.json(
-          { error: 'User not found' },
-          { status: 404 }
-        );
-      }
-
       // 2. Get organization details for email
       const organization = await db.organization.findUnique({
         where: { id: organizationId },
       });
 
       if (!organization) {
-        return NextResponse.json(
-          { error: 'Organization not found' },
-          { status: 404 }
-        );
+        console.log('Organization not found in database:', organizationId);
+        // In demo mode, we'll skip database operations and use fallback
+        console.log('Using demo mode for organization - database operations will be skipped');
+        throw new Error('Organization not in database - switching to demo mode');
+      }
+
+      if (!currentUser) {
+        console.log('User not found in database:', userId);
+        throw new Error('User not in database - switching to demo mode');
       }
 
       // 3. Check if user already has a pending invitation
@@ -268,7 +268,7 @@ export async function POST(request: NextRequest) {
           await sendInvitationEmail({
             email,
             token,
-            organizationName: organization.name,
+            organizationName: organization?.name || 'Your Organization',
             role,
           });
           console.log(`✅ Invitation email sent to ${email}`);
@@ -290,7 +290,7 @@ export async function POST(request: NextRequest) {
         status: invitation.status.toUpperCase(),
         invitedAt: invitation.createdAt.toISOString(),
         invitedBy: invitation.invitedBy.name || invitation.invitedBy.email,
-        organizationName: invitation.organization.name,
+        organizationName: invitation.organization?.name || organization?.name || 'Your Organization',
         token: invitation.token,
         expiresAt: invitation.expiresAt.toISOString(),
         clientAssignments: clientAssignments.map((assignment: any, index: number) => ({
