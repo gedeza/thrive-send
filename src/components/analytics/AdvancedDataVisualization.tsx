@@ -48,7 +48,8 @@ import {
   Sparkles,
   Palette,
   Sliders,
-  RefreshCw
+  RefreshCw,
+  CheckCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, addDays, subDays, startOfWeek, endOfWeek } from 'date-fns';
