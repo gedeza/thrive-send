@@ -15,19 +15,22 @@ import { Progress } from '@/components/ui/progress';
 import { toast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { 
-  CalendarIcon, 
-  Loader2, 
-  ArrowRight, 
-  ArrowLeft, 
-  Target, 
+import {
+  CalendarIcon,
+  Loader2,
+  ArrowRight,
+  ArrowLeft,
+  Target,
   Calendar as CalendarIconSolid,
   DollarSign,
   Settings,
   Check,
   Info,
-  Lightbulb
+  Lightbulb,
+  Sparkles
 } from 'lucide-react';
+import { CampaignTemplate } from '@/types/campaign';
+import CampaignTemplateSelector from './CampaignTemplateSelector';
 import { createCampaign } from '@/lib/api';
 import { CampaignStatus, CampaignGoalType, ScheduleFrequency } from '@prisma/client';
 import { useOrganization } from '@clerk/nextjs';
@@ -66,6 +69,13 @@ type CampaignFormData = z.infer<typeof campaignFormSchema>;
 
 // --- Multi-Step Wizard Configuration ---
 const WIZARD_STEPS = [
+  {
+    id: 'template',
+    title: 'Choose Template',
+    description: 'Start with a proven template or create from scratch',
+    icon: Sparkles,
+    fields: []
+  },
   {
     id: 'basics',
     title: 'Campaign Basics',
@@ -129,6 +139,7 @@ const CreateCampaign: React.FC = () => {
   const [isLoadingClients, setIsLoadingClients] = useState(false);
   const [templateData, setTemplateData] = useState<any>(null);
   const [isLoadingTemplate, setIsLoadingTemplate] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<CampaignTemplate | null>(null);
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -238,8 +249,14 @@ const CreateCampaign: React.FC = () => {
   // Check if current step is valid
   const isCurrentStepValid = () => {
     const currentStepConfig = WIZARD_STEPS[currentStep];
+
+    // Template step is always valid (user can continue with or without template)
+    if (currentStepConfig.id === 'template') {
+      return true;
+    }
+
     const fieldValues = form.getValues();
-    
+
     return currentStepConfig.fields.every(field => {
       const value = fieldValues[field as keyof CampaignFormData];
       // Handle optional fields like clientId (can be 'none')
@@ -362,11 +379,55 @@ const CreateCampaign: React.FC = () => {
     form.setValue(field, value);
   };
 
+  // Handle template selection
+  const handleTemplateSelect = (template: CampaignTemplate | null) => {
+    setSelectedTemplate(template);
+
+    if (template) {
+      // Pre-fill form with template data
+      form.setValue('name', template.campaignData.name);
+      if (template.campaignData.description) {
+        form.setValue('description', template.campaignData.description);
+      }
+      if (template.campaignData.startDate) {
+        form.setValue('startDate', template.campaignData.startDate);
+      }
+      if (template.campaignData.endDate) {
+        form.setValue('endDate', template.campaignData.endDate);
+      }
+      if (template.campaignData.budget) {
+        form.setValue('budget', template.campaignData.budget.toString());
+      }
+      if (template.campaignData.goalType) {
+        form.setValue('goalType', template.campaignData.goalType);
+      }
+
+      toast({
+        title: "Template Selected",
+        description: `Campaign pre-filled with "${template.name}" template data.`,
+      });
+    }
+  };
+
+  // Handle template continue (move to next step)
+  const handleTemplateContinue = () => {
+    setCompletedSteps(prev => [...prev, 0]); // Mark template step as completed
+    setCurrentStep(1); // Move to basics step
+  };
+
   // Render step content
   const renderStepContent = () => {
     const currentStepConfig = WIZARD_STEPS[currentStep];
-    
+
     switch (currentStepConfig.id) {
+      case 'template':
+        return (
+          <CampaignTemplateSelector
+            onTemplateSelect={handleTemplateSelect}
+            onContinue={handleTemplateContinue}
+          />
+        );
+
       case 'basics':
         return (
           <div className="space-y-6">
@@ -883,60 +944,62 @@ const CreateCampaign: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Navigation Buttons */}
-          <div className="flex justify-between">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={prevStep}
-              disabled={currentStep === 0}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Previous
-            </Button>
-            
-            <div className="flex gap-2">
+          {/* Navigation Buttons - Hidden for template step as it has its own navigation */}
+          {WIZARD_STEPS[currentStep].id !== 'template' && (
+            <div className="flex justify-between">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => form.reset()}
-                disabled={isSubmitting}
+                onClick={prevStep}
+                disabled={currentStep === 0}
+                className="flex items-center gap-2"
               >
-                Reset
+                <ArrowLeft className="h-4 w-4" />
+                Previous
               </Button>
-              
-              {currentStep < totalSteps - 1 ? (
+
+              <div className="flex gap-2">
                 <Button
                   type="button"
-                  onClick={nextStep}
-                  disabled={!isCurrentStepValid()}
-                  className="flex items-center gap-2"
+                  variant="outline"
+                  onClick={() => form.reset()}
+                  disabled={isSubmitting}
                 >
-                  Next
-                  <ArrowRight className="h-4 w-4" />
+                  Reset
                 </Button>
-              ) : (
-                <Button
-                  type="submit"
-                  disabled={isSubmitting || !isCurrentStepValid()}
-                  className="flex items-center gap-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Creating Campaign...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="h-4 w-4" />
-                      Create Campaign
-                    </>
-                  )}
-                </Button>
-              )}
+
+                {currentStep < totalSteps - 1 ? (
+                  <Button
+                    type="button"
+                    onClick={nextStep}
+                    disabled={!isCurrentStepValid()}
+                    className="flex items-center gap-2"
+                  >
+                    Next
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting || !isCurrentStepValid()}
+                    className="flex items-center gap-2"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Creating Campaign...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4" />
+                        Create Campaign
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </form>
       </Form>
     </div>
