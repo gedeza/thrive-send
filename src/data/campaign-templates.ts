@@ -667,6 +667,7 @@ export const TECH_GDPR_TEMPLATE: CampaignTemplate = {
 // Export all templates
 export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
   DIRECTOR_LIABILITY_TEMPLATE,
+  MUNICIPALITY_ENGAGEMENT_TEMPLATE,
   HEALTHCARE_COMPLIANCE_TEMPLATE,
   TECH_GDPR_TEMPLATE
 ];
@@ -677,6 +678,11 @@ export const TEMPLATE_CATEGORIES = {
     name: 'Legal & Compliance',
     description: 'Templates for legal compliance and risk management',
     templates: ['director-liability-awareness']
+  },
+  PUBLIC_SECTOR: {
+    name: 'Public Sector',
+    description: 'Templates for municipalities and government organizations',
+    templates: ['municipality-public-engagement']
   },
   HEALTHCARE: {
     name: 'Healthcare',
