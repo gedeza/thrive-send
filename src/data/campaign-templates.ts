@@ -298,8 +298,8 @@ export const MUNICIPALITY_ENGAGEMENT_TEMPLATE: CampaignTemplate = {
     timeToResults: '3-6 weeks'
   },
   campaignData: {
-    name: 'eThekwini Metro Citizen Engagement Initiative',
-    description: 'This campaign targets residents of eThekwini Metro to improve communication about municipal services, increase participation in community meetings, and enhance citizen satisfaction. The campaign focuses on service delivery updates, community participation opportunities, and transparent governance communication.',
+    name: 'Municipal Citizen Engagement Initiative',
+    description: 'This campaign targets municipal residents to improve communication about municipal services, increase participation in community meetings, and enhance citizen satisfaction. The campaign focuses on service delivery updates, community participation opportunities, and transparent governance communication.',
     startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     endDate: new Date(Date.now() + 56 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     budget: 8000,
@@ -310,12 +310,12 @@ export const MUNICIPALITY_ENGAGEMENT_TEMPLATE: CampaignTemplate = {
     {
       id: 'blog-service-delivery',
       type: 'blog',
-      title: 'eThekwini Metro Service Delivery Update: What You Need to Know',
-      content: `# eThekwini Metro Service Delivery Update: What You Need to Know
+      title: 'Municipal Service Delivery Update: What You Need to Know',
+      content: `# Municipal Service Delivery Update: What You Need to Know
 
 ## Your Voice Matters - New Ways to Connect with Your Municipality
 
-Residents of eThekwini Metro, we're committed to improving how we serve you. Here's what's changing and how you can get involved.
+Dear residents, we're committed to improving how we serve you. Here's what's changing and how you can get involved.
 
 ## Recent Service Improvements
 ✅ New online portal for service requests
@@ -350,7 +350,7 @@ Find your ward councillor and upcoming meeting dates.`,
       title: 'Free Community Participation Guide',
       content: `# Your Voice, Your Community: Free Participation Guide
 
-## eThekwini Metro Community Engagement Handbook
+## Municipal Community Engagement Handbook
 ### How to Make Your Voice Heard in Local Government
 
 **What You'll Get:**
@@ -369,17 +369,17 @@ Find your ward councillor and upcoming meeting dates.`,
 [Email Input Form]
 [Get My Free Guide Button]
 
-*Join 5,000+ engaged eThekwini residents building a better community.*`,
+*Join 5,000+ engaged Municipal residents building a better community.*`,
       scheduledFor: 'week-1-day-1'
     }
   ],
   emailSequences: [
     {
       id: 'email-1-welcome',
-      subject: '🏛️ Welcome to eThekwini Community Connect (Your Participation Guide Inside)',
+      subject: '🏛️ Welcome to Municipal Community Connect (Your Participation Guide Inside)',
       content: `Dear {{firstName}},
 
-Thank you for downloading the "eThekwini Metro Community Participation Guide."
+Thank you for downloading the "Municipal Community Participation Guide."
 
 **Your guide is attached** - this is your complete resource for engaging with your local government.
 
@@ -400,8 +400,8 @@ Most residents don't know how to effectively engage with their municipality. Thi
 
 **Important:** Our next community meeting is {{nextMeetingDate}} at {{meetingLocation}}. Come with questions - we're here to listen.
 
-Building a better eThekwini together,
-eThekwini Metro Communications Team
+Building a better Municipal together,
+Municipal Communications Team
 
 P.S. Have an urgent service request? Use our new online portal: [Link]`,
       delayDays: 0,
@@ -439,7 +439,7 @@ A: Attend our monthly budget consultations. Next session: [Date]
 
 See you at the meeting!
 
-eThekwini Metro Team`,
+Municipal Team`,
       delayDays: 5,
       triggerEvent: 'guide_download'
     },
@@ -485,7 +485,7 @@ We believe engaged residents build stronger communities. Will you join us?
 
 Best regards,
 [Community Engagement Manager Name]
-eThekwini Metro
+Municipal
 
 P.S. All participants receive priority access to municipal services and direct communication with department heads.`,
       delayDays: 14,
@@ -496,23 +496,23 @@ P.S. All participants receive priority access to municipal services and direct c
     {
       id: 'facebook-1',
       platform: 'facebook',
-      content: '🏛️ eThekwini residents! Did you know you can track your service requests online 24/7?\n\nNew features now live:\n✅ Real-time status updates\n✅ Photo uploads for requests\n✅ SMS notifications\n✅ Historical request tracking\n\n📱 Download our Community Participation Guide to learn how: [Link]\n\n#eThekwiniMetro #ServiceDelivery #CommunityFirst',
+      content: '🏛️ Municipal residents! Did you know you can track your service requests online 24/7?\n\nNew features now live:\n✅ Real-time status updates\n✅ Photo uploads for requests\n✅ SMS notifications\n✅ Historical request tracking\n\n📱 Download our Community Participation Guide to learn how: [Link]\n\n#MunicipalMetro #ServiceDelivery #CommunityFirst',
       scheduledFor: 'week-1-day-2',
-      hashtags: ['eThekwiniMetro', 'ServiceDelivery', 'CommunityFirst']
+      hashtags: ['MunicipalMetro', 'ServiceDelivery', 'CommunityFirst']
     },
     {
       id: 'twitter-1',
       platform: 'twitter',
-      content: '📢 Community Meeting Alert!\n\n📅 This Thursday, 6PM\n📍 [Community Hall Name]\n🗣️ Open floor for all questions\n\nTopics: Budget update, infrastructure plans, youth programs\n\nCan\'t attend? Watch live: [Link]\n\n#eThekwiniMeets #CommunityEngagement',
+      content: '📢 Community Meeting Alert!\n\n📅 This Thursday, 6PM\n📍 [Community Hall Name]\n🗣️ Open floor for all questions\n\nTopics: Budget update, infrastructure plans, youth programs\n\nCan\'t attend? Watch live: [Link]\n\n#MunicipalMeets #CommunityEngagement',
       scheduledFor: 'week-1-day-3',
-      hashtags: ['eThekwiniMeets', 'CommunityEngagement']
+      hashtags: ['MunicipalMeets', 'CommunityEngagement']
     },
     {
       id: 'facebook-2',
       platform: 'facebook',
-      content: '🎯 RESULTS UPDATE: Thanks to YOUR feedback!\n\n✅ 847 potholes filled this month\n✅ 12 new streetlights installed\n✅ 3 parks renovated\n✅ 95% service request completion rate\n\nYour voice = Real change! 💪\n\nGet involved: Download our free participation guide [Link]\n\n#ResultsThatMatter #CommunityPower #eThekwini',
+      content: '🎯 RESULTS UPDATE: Thanks to YOUR feedback!\n\n✅ 847 potholes filled this month\n✅ 12 new streetlights installed\n✅ 3 parks renovated\n✅ 95% service request completion rate\n\nYour voice = Real change! 💪\n\nGet involved: Download our free participation guide [Link]\n\n#ResultsThatMatter #CommunityPower #Municipal',
       scheduledFor: 'week-2-day-1',
-      hashtags: ['ResultsThatMatter', 'CommunityPower', 'eThekwini']
+      hashtags: ['ResultsThatMatter', 'CommunityPower', 'Municipal']
     },
     {
       id: 'twitter-2',
@@ -524,9 +524,9 @@ P.S. All participants receive priority access to municipal services and direct c
     {
       id: 'facebook-3',
       platform: 'facebook',
-      content: '🌟 SUCCESS STORY: Meet Sarah from Chatsworth\n\n"I used the online portal to report a broken streetlight. Within 48 hours, it was fixed! The SMS updates kept me informed throughout."\n\n👏 This is what community engagement looks like!\n\nYour turn: [Portal Link]\n\n#CommunitySuccess #ServiceDelivery #eThekwiniWorks',
+      content: '🌟 SUCCESS STORY: Meet Sarah, a local resident\n\n"I used the online portal to report a broken streetlight. Within 48 hours, it was fixed! The SMS updates kept me informed throughout."\n\n👏 This is what community engagement looks like!\n\nYour turn: [Portal Link]\n\n#CommunitySuccess #ServiceDelivery #MunicipalWorks',
       scheduledFor: 'week-3-day-2',
-      hashtags: ['CommunitySuccess', 'ServiceDelivery', 'eThekwiniWorks']
+      hashtags: ['CommunitySuccess', 'ServiceDelivery', 'MunicipalWorks']
     },
     {
       id: 'twitter-3',
@@ -538,9 +538,9 @@ P.S. All participants receive priority access to municipal services and direct c
     {
       id: 'facebook-4',
       platform: 'facebook',
-      content: '🎓 FREE WORKSHOP: "How to Navigate Municipal Services"\n\n📅 Saturday, 10AM-12PM\n📍 Community Center\n\nLearn:\n✅ How to submit effective service requests\n✅ Understanding municipal departments\n✅ Your rights and responsibilities\n✅ Emergency contact procedures\n\n🎁 FREE lunch + participation certificate!\n\nRegister: [Link]\n\n#CommunityWorkshop #EmpowerYourself #eThekwiniEducation',
+      content: '🎓 FREE WORKSHOP: "How to Navigate Municipal Services"\n\n📅 Saturday, 10AM-12PM\n📍 Community Center\n\nLearn:\n✅ How to submit effective service requests\n✅ Understanding municipal departments\n✅ Your rights and responsibilities\n✅ Emergency contact procedures\n\n🎁 FREE lunch + participation certificate!\n\nRegister: [Link]\n\n#CommunityWorkshop #EmpowerYourself #MunicipalEducation',
       scheduledFor: 'week-4-day-1',
-      hashtags: ['CommunityWorkshop', 'EmpowerYourself', 'eThekwiniEducation']
+      hashtags: ['CommunityWorkshop', 'EmpowerYourself', 'MunicipalEducation']
     },
     {
       id: 'twitter-4',
@@ -561,7 +561,7 @@ P.S. All participants receive priority access to municipal services and direct c
     demographics: ['Age 25-65', 'Community Leaders', 'Property Owners', 'Local Business Owners', 'Parents'],
     industries: ['Government', 'Education', 'Healthcare', 'Local Business', 'Community Organizations'],
     jobTitles: ['Community Leader', 'Ward Committee Member', 'Local Business Owner', 'Resident', 'Ratepayer'],
-    locations: ['eThekwini Metro', 'Durban', 'Pinetown', 'Chatsworth', 'Phoenix', 'Amanzimtoti', 'Hillcrest']
+    locations: ['Municipal Area', 'Urban Centers', 'Suburban Areas', 'Township Areas', 'Rural Districts', 'City Center', 'Outlying Areas']
   },
   successMetrics: {
     primary: 'Increase citizen engagement by 40%',
