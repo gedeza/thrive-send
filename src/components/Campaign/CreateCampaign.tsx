@@ -29,7 +29,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { CampaignTemplate } from '@/types/campaign';
-import CampaignTemplateSelector from './CampaignTemplateSelector';
+import { SmartTemplateSelector } from '@/components/campaigns/SmartTemplateSelector';
 import { createCampaign } from '@/lib/api';
 import { CampaignStatus, CampaignGoalType, ScheduleFrequency } from '@prisma/client';
 import { useOrganization } from '@clerk/nextjs';
@@ -457,7 +457,7 @@ const CreateCampaign: React.FC = () => {
       case 'template':
         return (
           <div>
-            <CampaignTemplateSelector
+            <SmartTemplateSelector
               onTemplateSelect={handleTemplateSelect}
               onContinue={handleTemplateContinue}
             />

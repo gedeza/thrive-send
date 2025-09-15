@@ -22,6 +22,7 @@ ThriveSend is a comprehensive content marketing platform that helps organization
 - **NEW: Comprehensive performance optimization with 40-60% API improvement and lazy loading**
 - **NEW: Complete marketplace review system with moderation, voting, and analytics**
 - **NEW: Comprehensive SEO optimization tools with keyword research and content analysis**
+- **NEW: Intelligent campaign routing system with context-aware navigation and smart hints**
 
 ### 🎉 Phase 1 Complete - Production Ready!
 ThriveSend is now feature-complete and ready for production deployment. All core features have been implemented with comprehensive testing and optimization.
@@ -293,6 +294,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - [API Documentation](https://api.thrivesend.com/docs)
 - [User Guide](https://docs.thrivesend.com/guide)
+- [Intelligent Campaign Routing Guide](DOCS/user-guides/intelligent-campaign-routing.md)
 - [Video Tutorials](https://thrivesend.com/tutorials)
 - [Community Forum](https://community.thrivesend.com)
 

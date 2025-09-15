@@ -19,6 +19,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
+import { ContextualTemplateWidget } from "@/components/campaigns/ContextualTemplateWidget";
 
 export default function DashboardPage() {
   const { data: dashboardData, isLoading, error } = useDashboardData();
@@ -310,7 +311,16 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </div>
-          
+
+          {/* Smart Template Recommendations - Stage 2B */}
+          <div className="mt-4">
+            <ContextualTemplateWidget
+              context="dashboard"
+              limit={3}
+              className="max-w-4xl mx-auto"
+            />
+          </div>
+
           {/* Action Items */}
           <Card className="card-enhanced border-l-2 border-muted/40 bg-card">
             <CardHeader className="pb-4">
