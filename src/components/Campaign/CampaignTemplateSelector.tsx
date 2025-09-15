@@ -16,7 +16,14 @@ import {
   ArrowRight,
   Clock,
   BarChart3,
-  Sparkles
+  Sparkles,
+  ChevronDown,
+  ChevronRight,
+  Home,
+  Building,
+  Stethoscope,
+  Monitor,
+  ShoppingBag
 } from 'lucide-react';
 import { CAMPAIGN_TEMPLATES, TEMPLATE_CATEGORIES } from '@/data/campaign-templates';
 import { CampaignTemplate } from '@/types/campaign';
@@ -32,6 +39,13 @@ const CampaignTemplateSelector: React.FC<CampaignTemplateSelectorProps> = ({
 }) => {
   const [selectedTemplate, setSelectedTemplate] = useState<CampaignTemplate | null>(null);
   const [hoveredTemplate, setHoveredTemplate] = useState<string | null>(null);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    'LEGAL_COMPLIANCE': true, // Keep most popular section expanded by default
+    'FINANCIAL_SERVICES': false,
+    'REAL_ESTATE': false,
+    'RETAIL_ECOMMERCE': false,
+    'PUBLIC_SECTOR': false
+  });
 
   const handleTemplateClick = (template: CampaignTemplate) => {
     setSelectedTemplate(template);
@@ -41,6 +55,44 @@ const CampaignTemplateSelector: React.FC<CampaignTemplateSelectorProps> = ({
   const handleStartFromScratch = () => {
     setSelectedTemplate(null);
     onTemplateSelect(null);
+  };
+
+  const toggleSection = (sectionKey: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [sectionKey]: !prev[sectionKey]
+    }));
+  };
+
+  const getCategoryIcon = (categoryKey: string) => {
+    switch (categoryKey) {
+      case 'LEGAL_COMPLIANCE':
+        return <Target className="h-5 w-5" />;
+      case 'FINANCIAL_SERVICES':
+        return <DollarSign className="h-5 w-5" />;
+      case 'REAL_ESTATE':
+        return <Home className="h-5 w-5" />;
+      case 'RETAIL_ECOMMERCE':
+        return <ShoppingBag className="h-5 w-5" />;
+      case 'PUBLIC_SECTOR':
+        return <Building className="h-5 w-5" />;
+      default:
+        return <Lightbulb className="h-5 w-5" />;
+    }
+  };
+
+  const getTemplatesByCategory = () => {
+    const categorizedTemplates: Record<string, CampaignTemplate[]> = {};
+
+    // Group templates by category
+    Object.keys(TEMPLATE_CATEGORIES).forEach(categoryKey => {
+      const category = TEMPLATE_CATEGORIES[categoryKey as keyof typeof TEMPLATE_CATEGORIES];
+      categorizedTemplates[categoryKey] = CAMPAIGN_TEMPLATES.filter(
+        template => category.templates.includes(template.id)
+      );
+    });
+
+    return categorizedTemplates;
   };
 
   const getDifficultyColor = (difficulty: string) => {
@@ -60,6 +112,14 @@ const CampaignTemplateSelector: React.FC<CampaignTemplateSelectorProps> = ({
     switch (industry.toLowerCase()) {
       case 'legal & compliance':
         return <Target className="h-5 w-5" />;
+      case 'financial services':
+        return <DollarSign className="h-5 w-5" />;
+      case 'real estate':
+        return <Home className="h-5 w-5" />;
+      case 'retail & e-commerce':
+        return <ShoppingBag className="h-5 w-5" />;
+      case 'public sector':
+        return <Building className="h-5 w-5" />;
       case 'healthcare':
         return <Users className="h-5 w-5" />;
       case 'technology':
@@ -68,6 +128,8 @@ const CampaignTemplateSelector: React.FC<CampaignTemplateSelectorProps> = ({
         return <Lightbulb className="h-5 w-5" />;
     }
   };
+
+  const categorizedTemplates = getTemplatesByCategory();
 
   return (
     <div className="space-y-6">
@@ -85,187 +147,181 @@ const CampaignTemplateSelector: React.FC<CampaignTemplateSelectorProps> = ({
         </p>
       </div>
 
-      {/* Featured Template - Director Liability */}
-      <div className="relative">
-        <div className="absolute -top-3 left-6 z-10">
-          <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-lg">
-            <Crown className="h-3 w-3 mr-1" />
-            MOST POPULAR
-          </Badge>
-        </div>
+      {/* Industry Categories */}
+      <div className="space-y-4">
+        {Object.keys(TEMPLATE_CATEGORIES).map((categoryKey) => {
+          const category = TEMPLATE_CATEGORIES[categoryKey as keyof typeof TEMPLATE_CATEGORIES];
+          const categoryTemplates = categorizedTemplates[categoryKey] || [];
+          const isExpanded = expandedSections[categoryKey];
+          const isMostPopular = categoryKey === 'LEGAL_COMPLIANCE';
 
-        <Card
-          className={`cursor-pointer transition-all duration-300 hover:shadow-lg border-2 ${
-            selectedTemplate?.id === 'director-liability-awareness'
-              ? 'border-primary ring-2 ring-primary/20'
-              : 'border-border hover:border-primary/50'
-          }`}
-          onClick={() => handleTemplateClick(CAMPAIGN_TEMPLATES[0])}
-          onMouseEnter={() => setHoveredTemplate('director-liability-awareness')}
-          onMouseLeave={() => setHoveredTemplate(null)}
-        >
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                {getIndustryIcon(CAMPAIGN_TEMPLATES[0].industry)}
-                <div>
-                  <CardTitle className="text-lg">{CAMPAIGN_TEMPLATES[0].name}</CardTitle>
-                  <CardDescription className="text-sm">
-                    {CAMPAIGN_TEMPLATES[0].industry} • {CAMPAIGN_TEMPLATES[0].duration}
-                  </CardDescription>
+          if (categoryTemplates.length === 0) return null;
+
+          return (
+            <div key={categoryKey} className="space-y-3">
+              {/* Category Header */}
+              <div
+                className="flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 rounded-lg cursor-pointer transition-colors"
+                onClick={() => toggleSection(categoryKey)}
+              >
+                <div className="flex items-center gap-3">
+                  {getCategoryIcon(categoryKey)}
+                  <div>
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      {category.name}
+                      {isMostPopular && (
+                        <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white">
+                          <Crown className="h-3 w-3 mr-1" />
+                          MOST POPULAR
+                        </Badge>
+                      )}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {category.description} • {categoryTemplates.length} template{categoryTemplates.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs">
+                    {categoryTemplates.length} template{categoryTemplates.length !== 1 ? 's' : ''}
+                  </Badge>
+                  {isExpanded ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
                 </div>
               </div>
-              <Badge className={getDifficultyColor(CAMPAIGN_TEMPLATES[0].difficulty)}>
-                {CAMPAIGN_TEMPLATES[0].difficulty}
-              </Badge>
+
+              {/* Category Templates */}
+              {isExpanded && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-4">
+                  {categoryTemplates.map((template, index) => (
+                    <Card
+                      key={template.id}
+                      className={`cursor-pointer transition-all duration-200 hover:shadow-md border ${
+                        selectedTemplate?.id === template.id
+                          ? 'border-primary ring-2 ring-primary/20'
+                          : 'border-border hover:border-primary/30'
+                      } ${isMostPopular && index === 0 ? 'ring-1 ring-yellow-200' : ''}`}
+                      onClick={() => handleTemplateClick(template)}
+                      onMouseEnter={() => setHoveredTemplate(template.id)}
+                      onMouseLeave={() => setHoveredTemplate(null)}
+                    >
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2">
+                            {getIndustryIcon(template.industry)}
+                            <div>
+                              <CardTitle className="text-base">{template.name}</CardTitle>
+                              <CardDescription className="text-xs">
+                                {template.industry} • {template.duration}
+                              </CardDescription>
+                            </div>
+                          </div>
+                          <Badge className={getDifficultyColor(template.difficulty)} variant="outline">
+                            {template.difficulty}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+
+                      <CardContent className="pt-0 space-y-3">
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          {template.description}
+                        </p>
+
+                        {/* Results Preview */}
+                        <div className="grid grid-cols-3 gap-2 text-center">
+                          <div>
+                            <div className="text-sm font-semibold text-primary">
+                              {template.estimatedResults.leads}+
+                            </div>
+                            <div className="text-xs text-muted-foreground">Leads</div>
+                          </div>
+                          <div>
+                            <div className="text-sm font-semibold text-green-600">
+                              {template.estimatedResults.consultations}+
+                            </div>
+                            <div className="text-xs text-muted-foreground">Calls</div>
+                          </div>
+                          <div>
+                            <div className="text-xs font-semibold text-blue-600">
+                              {template.estimatedResults.roi.includes('%')
+                                ? template.estimatedResults.roi.split(' ')[0]
+                                : template.estimatedResults.roi}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* What's Included - Show for most popular template */}
+                        {isMostPopular && index === 0 && (
+                          <div className="space-y-2 pt-2 border-t border-border/50">
+                            <h4 className="text-xs font-medium">What's Included:</h4>
+                            <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <div className="w-1 h-1 bg-primary rounded-full"></div>
+                                {template.contentAssets.length} Content pieces
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <div className="w-1 h-1 bg-primary rounded-full"></div>
+                                {template.emailSequences.length} Email sequences
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <div className="w-1 h-1 bg-primary rounded-full"></div>
+                                {template.socialPosts.length} Social posts
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <div className="w-1 h-1 bg-primary rounded-full"></div>
+                                Complete setup
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Quick Timeline for hovered templates */}
+                        {hoveredTemplate === template.id && (
+                          <div className="mt-3 p-2 bg-primary/5 rounded-lg border border-primary/20">
+                            <div className="flex items-center gap-2 text-xs font-medium text-primary mb-1">
+                              <Clock className="h-3 w-3" />
+                              Quick Info
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              Setup: ~2 hours • Results: {template.estimatedResults.timeToResults}
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </div>
-          </CardHeader>
+          );
+        })}
 
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              {CAMPAIGN_TEMPLATES[0].description}
-            </p>
-
-            {/* Results Preview */}
-            <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">
-                  {CAMPAIGN_TEMPLATES[0].estimatedResults.leads}+
-                </div>
-                <div className="text-xs text-muted-foreground">Qualified Leads</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {CAMPAIGN_TEMPLATES[0].estimatedResults.consultations}+
-                </div>
-                <div className="text-xs text-muted-foreground">Consultations</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">400%</div>
-                <div className="text-xs text-muted-foreground">ROI</div>
-              </div>
-            </div>
-
-            {/* What's Included */}
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium">What's Included:</h4>
-              <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                  {CAMPAIGN_TEMPLATES[0].contentAssets.length} Content pieces
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                  {CAMPAIGN_TEMPLATES[0].emailSequences.length} Email sequences
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                  {CAMPAIGN_TEMPLATES[0].socialPosts.length} Social posts
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                  Complete targeting setup
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Timeline */}
-            {hoveredTemplate === 'director-liability-awareness' && (
-              <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
-                <div className="flex items-center gap-2 text-sm font-medium text-primary mb-2">
-                  <Clock className="h-4 w-4" />
-                  Campaign Timeline
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                  <div>Week 1-2: Awareness Phase</div>
-                  <div>Week 3-6: Nurturing Phase</div>
-                  <div>Setup Time: ~2 hours</div>
-                  <div>Results: 2-4 weeks</div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Other Templates */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {CAMPAIGN_TEMPLATES.slice(1).map((template) => (
+        {/* Start from Scratch Option */}
+        <div className="pt-4 border-t border-border/50">
           <Card
-            key={template.id}
-            className={`cursor-pointer transition-all duration-200 hover:shadow-md border ${
-              selectedTemplate?.id === template.id
-                ? 'border-primary ring-1 ring-primary/20'
+            className={`cursor-pointer transition-all duration-200 hover:shadow-md border-dashed max-w-md mx-auto ${
+              selectedTemplate === null
+                ? 'border-primary ring-1 ring-primary/20 bg-primary/5'
                 : 'border-border hover:border-primary/30'
             }`}
-            onClick={() => handleTemplateClick(template)}
+            onClick={handleStartFromScratch}
           >
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  {getIndustryIcon(template.industry)}
-                  <div>
-                    <CardTitle className="text-base">{template.name}</CardTitle>
-                    <CardDescription className="text-xs">
-                      {template.industry} • {template.duration}
-                    </CardDescription>
-                  </div>
-                </div>
-                <Badge className={getDifficultyColor(template.difficulty)} variant="outline">
-                  {template.difficulty}
-                </Badge>
+            <CardContent className="flex items-center gap-4 py-6">
+              <div className="p-3 bg-muted rounded-full flex-shrink-0">
+                <Lightbulb className="h-6 w-6 text-muted-foreground" />
               </div>
-            </CardHeader>
-
-            <CardContent className="pt-0 space-y-3">
-              <p className="text-xs text-muted-foreground line-clamp-2">
-                {template.description}
-              </p>
-
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <div className="text-sm font-semibold text-primary">
-                    {template.estimatedResults.leads}+
-                  </div>
-                  <div className="text-xs text-muted-foreground">Leads</div>
-                </div>
-                <div>
-                  <div className="text-sm font-semibold text-green-600">
-                    {template.estimatedResults.consultations}+
-                  </div>
-                  <div className="text-xs text-muted-foreground">Calls</div>
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-blue-600">
-                    {template.estimatedResults.roi}
-                  </div>
-                </div>
+              <div>
+                <h3 className="font-medium">Start from Scratch</h3>
+                <p className="text-sm text-muted-foreground">
+                  Create a completely custom campaign
+                </p>
               </div>
             </CardContent>
           </Card>
-        ))}
-
-        {/* Start from Scratch Option */}
-        <Card
-          className={`cursor-pointer transition-all duration-200 hover:shadow-md border-dashed ${
-            selectedTemplate === null
-              ? 'border-primary ring-1 ring-primary/20 bg-primary/5'
-              : 'border-border hover:border-primary/30'
-          }`}
-          onClick={handleStartFromScratch}
-        >
-          <CardContent className="flex flex-col items-center justify-center h-full py-8 text-center space-y-3">
-            <div className="p-3 bg-muted rounded-full">
-              <Lightbulb className="h-6 w-6 text-muted-foreground" />
-            </div>
-            <div>
-              <h3 className="font-medium">Start from Scratch</h3>
-              <p className="text-sm text-muted-foreground">
-                Create a completely custom campaign
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        </div>
       </div>
 
       {/* Action Buttons */}

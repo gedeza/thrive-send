@@ -320,6 +320,7 @@ model Campaign {
   displayId              String?                  @unique @db.VarChar(15)
   name                   String
   description            String?
+  type                   String                   @default("MARKETING")
   startDate              DateTime?
   endDate                DateTime?
   budget                 Float?
@@ -538,18 +539,27 @@ model SEO {
 }
 
 model ContentAnalytics {
-  id             String   @id @default(cuid())
-  contentId      String   @unique
-  views          Int      @default(0)
-  likes          Int      @default(0)
-  shares         Int      @default(0)
-  comments       Int      @default(0)
-  engagementRate Float    @default(0)
-  conversionRate Float    @default(0)
-  metadata       Json?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  content        Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  id               String   @id @default(cuid())
+  contentId        String   @unique
+  views            Int      @default(0)
+  likes            Int      @default(0)
+  shares           Int      @default(0)
+  comments         Int      @default(0)
+  engagementRate   Float    @default(0)
+  conversionRate   Float    @default(0)
+  totalSent        Int      @default(0)
+  opened           Int      @default(0)
+  clicked          Int      @default(0)
+  delivered        Int      @default(0)
+  unsubscribed     Int      @default(0)
+  openRate         Float    @default(0)
+  clickRate        Float    @default(0)
+  deliveryRate     Float    @default(0)
+  unsubscribeRate  Float    @default(0)
+  metadata         Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  content          Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
 
   @@index([contentId])
 }

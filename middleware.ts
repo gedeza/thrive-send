@@ -15,7 +15,9 @@ const isDevServiceProviderAPI = createRouteMatcher([
   "/api/service-provider(.*)",
   "/service-provider(.*)",
   "/api/approvals(.*)",
-  "/api/dashboard(.*)"
+  "/api/dashboard(.*)",
+  "/campaigns(.*)",
+  "/dashboard(.*)"
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

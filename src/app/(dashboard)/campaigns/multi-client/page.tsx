@@ -3,13 +3,14 @@ import Link from 'next/link';
 import { ChevronRight, Users, Target, TrendingUp, BarChart3 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { SmartCampaignHint } from '@/components/campaigns/SmartCampaignHint';
 
 export const metadata: Metadata = {
   title: 'Multi-Client Campaigns | ThriveSend',
   description: 'Manage campaigns across multiple clients with ThriveSend'
 };
 
-export default function MultiClientCampaignPage() {
+function MultiClientCampaignPageContent() {
   return (
     <div className="space-y-6">
       {/* Breadcrumbs */}
@@ -36,6 +37,11 @@ export default function MultiClientCampaignPage() {
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
           Create and manage campaigns that span across multiple clients with unified analytics and reporting.
         </p>
+
+        {/* Context-aware hint for individual campaign users */}
+        <div className="mt-4 max-w-md mx-auto">
+          <SmartCampaignHint currentPath="/campaigns/multi-client" variant="inline" />
+        </div>
       </div>
 
       {/* Quick Stats */}
@@ -204,4 +210,8 @@ export default function MultiClientCampaignPage() {
       </Card>
     </div>
   );
+}
+
+export default function MultiClientCampaignPage() {
+  return <MultiClientCampaignPageContent />;
 }

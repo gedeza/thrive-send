@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -81,14 +80,21 @@ const WIZARD_STEPS = [
     title: 'Campaign Basics',
     description: 'Give your campaign a name and description',
     icon: Target,
-    fields: ['name', 'description']
+    fields: ['name', 'description', 'goalType', 'customGoal']
   },
   {
-    id: 'goals',
-    title: 'Goals & Objectives',
-    description: 'Define what you want to achieve',
+    id: 'content',
+    title: 'Content Creation',
+    description: 'Create engaging content for your campaign',
+    icon: Lightbulb,
+    fields: []
+  },
+  {
+    id: 'audience',
+    title: 'Target Audience',
+    description: 'Define who will see your campaign',
     icon: Target,
-    fields: ['goalType', 'customGoal']
+    fields: []
   },
   {
     id: 'schedule',
@@ -148,6 +154,7 @@ const CreateCampaign: React.FC = () => {
   useEffect(() => {
     console.log('Current organization context:', organization);
   }, [organization]);
+
 
   const form = useForm<CampaignFormData>({
     resolver: zodResolver(campaignFormSchema),
@@ -259,9 +266,9 @@ const CreateCampaign: React.FC = () => {
 
     return currentStepConfig.fields.every(field => {
       const value = fieldValues[field as keyof CampaignFormData];
-      // Handle optional fields like clientId (can be 'none')
-      if (field === 'clientId' || field === 'budget' || field === 'customGoal' || field === 'description') {
-        return true; // These fields are optional
+      // Handle optional fields like clientId (can be 'none') and fields with defaults
+      if (field === 'clientId' || field === 'budget' || field === 'customGoal' || field === 'description' || field === 'status') {
+        return true; // These fields are optional or have defaults
       }
       return value !== '' && value !== null && value !== undefined;
     });
@@ -280,12 +287,38 @@ const CreateCampaign: React.FC = () => {
     setCurrentStep(prev => Math.max(prev - 1, 0));
   };
 
-  // Generate smart suggestions based on context
+  // Generate smart suggestions based on context and selected template
   const generateSuggestions = () => {
     const orgName = organization?.name || 'Your Organization';
     const currentDate = new Date();
     const nextWeek = new Date(currentDate.getTime() + 7 * 24 * 60 * 60 * 1000);
-    
+
+    // If a template is selected, generate template-specific suggestions
+    if (selectedTemplate) {
+      const template = selectedTemplate;
+      // Create a more specific name based on template
+      const templateBaseName = template.name.replace('Campaign', '').trim();
+
+      // Map specific template names to better suggestions
+      const templateNameMappings: Record<string, string> = {
+        'Director Liability Awareness': 'OHSA Compliance Drive',
+        'Financial Planning Awareness': 'Retirement Security Initiative',
+        'Real Estate Lead Generation': 'Property Market Campaign',
+        'Holiday Sales Boost': 'Holiday Sales Drive',
+        'Municipal Public Engagement': 'Community Outreach Campaign'
+      };
+
+      const suggestedName = templateNameMappings[templateBaseName] || templateBaseName;
+
+      return {
+        name: `${orgName} ${suggestedName} ${format(currentDate, 'MMM yyyy')}`,
+        startDate: template.campaignData.startDate || format(nextWeek, 'yyyy-MM-dd'),
+        endDate: template.campaignData.endDate || format(new Date(nextWeek.getTime() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
+        budget: template.campaignData.budget?.toString() || '5000'
+      };
+    }
+
+    // Fallback to generic suggestions if no template is selected
     return {
       name: `${orgName} Marketing Campaign ${format(currentDate, 'MMM yyyy')}`,
       startDate: format(nextWeek, 'yyyy-MM-dd'),
@@ -294,6 +327,7 @@ const CreateCampaign: React.FC = () => {
     };
   };
 
+  // Suggestions are generated dynamically based on current template selection
   const suggestions = generateSuggestions();
 
   const onSubmit = async (data: CampaignFormData) => {
@@ -354,17 +388,17 @@ const CreateCampaign: React.FC = () => {
       // Show success toast
       toast({
         title: "Campaign Created",
-        description: `${campaign.name} has been created successfully.`,
+        description: `${campaign.name} has been created successfully. Redirecting to campaigns...`,
         variant: "success",
       });
-      
+
       // Reset form
       form.reset();
-      
-      // Redirect to campaigns list
+
+      // Redirect to campaigns list with a longer delay to let users see the success
       setTimeout(() => {
         router.push('/campaigns');
-      }, 1500);
+      }, 2500);
       
     } catch (_error) {
       console.error("", _error);
@@ -422,33 +456,36 @@ const CreateCampaign: React.FC = () => {
     switch (currentStepConfig.id) {
       case 'template':
         return (
-          <CampaignTemplateSelector
-            onTemplateSelect={handleTemplateSelect}
-            onContinue={handleTemplateContinue}
-          />
+          <div>
+            <CampaignTemplateSelector
+              onTemplateSelect={handleTemplateSelect}
+              onContinue={handleTemplateContinue}
+            />
+          </div>
         );
 
       case 'basics':
         return (
-          <div className="space-y-6">
-            <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Lightbulb className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium text-primary">Smart Suggestion</span>
+          <div className="border-enhanced shadow-enhanced rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div className="p-6 space-y-6">
+              <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Lightbulb className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium text-primary">Smart Suggestion</span>
+                </div>
+                <p className="text-sm text-primary/80 mb-3">
+                  Based on your organization, we suggest: "{suggestions.name}"
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => applySuggestion('name', suggestions.name)}
+                  className="text-primary border-primary/30"
+                >
+                  Use Suggestion
+                </Button>
               </div>
-              <p className="text-sm text-primary/80 mb-3">
-                Based on your organization, we suggest: "{suggestions.name}"
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => applySuggestion('name', suggestions.name)}
-                className="text-primary border-primary/30"
-              >
-                Use Suggestion
-              </Button>
-            </div>
             
             <FormField
               control={form.control}
@@ -475,9 +512,9 @@ const CreateCampaign: React.FC = () => {
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea 
+                    <Textarea
                       placeholder="Describe what this campaign is about, who it targets, and what you hope to achieve..."
-                      {...field} 
+                      {...field}
                       value={field.value || ''}
                       className="min-h-[100px]"
                     />
@@ -486,12 +523,7 @@ const CreateCampaign: React.FC = () => {
                 </FormItem>
               )}
             />
-          </div>
-        );
 
-      case 'goals':
-        return (
-          <div className="space-y-6">
             <FormField
               control={form.control}
               name="goalType"
@@ -531,9 +563,9 @@ const CreateCampaign: React.FC = () => {
                 <FormItem>
                   <FormLabel>Custom Goal Description</FormLabel>
                   <FormControl>
-                    <Textarea 
+                    <Textarea
                       placeholder="Describe your specific goals and success metrics..."
-                      {...field} 
+                      {...field}
                       value={field.value || ''}
                       className="min-h-[80px]"
                     />
@@ -542,12 +574,48 @@ const CreateCampaign: React.FC = () => {
                 </FormItem>
               )}
             />
+            </div>
+          </div>
+        );
+
+      case 'content':
+        return (
+          <div className="border-enhanced shadow-enhanced rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div className="p-6 space-y-6">
+              <div className="text-center py-8">
+                <div className="p-4 bg-muted/10 rounded-lg border border-muted/20 inline-block">
+                  <Lightbulb className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <h3 className="text-lg font-medium mb-2">Content Creation Coming Soon</h3>
+                  <p className="text-sm text-muted-foreground max-w-md">
+                    Rich content editor with templates, media uploads, and AI-powered suggestions will be available here.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'audience':
+        return (
+          <div className="border-enhanced shadow-enhanced rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div className="p-6 space-y-6">
+              <div className="text-center py-8">
+                <div className="p-4 bg-muted/10 rounded-lg border border-muted/20 inline-block">
+                  <Target className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <h3 className="text-lg font-medium mb-2">Audience Selection Coming Soon</h3>
+                  <p className="text-sm text-muted-foreground max-w-md">
+                    Advanced audience targeting with segments, demographics, and behavioral filters will be available here.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         );
 
       case 'schedule':
         return (
-          <div className="space-y-6">
+          <div className="border-enhanced shadow-enhanced rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div className="p-6 space-y-6">
             <div className="bg-success/10 border border-success/20 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Info className="h-4 w-4 text-success" />
@@ -700,12 +768,14 @@ const CreateCampaign: React.FC = () => {
                 )}
               />
             </div>
+            </div>
           </div>
         );
 
       case 'budget':
         return (
-          <div className="space-y-6">
+          <div className="border-enhanced shadow-enhanced rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div className="p-6 space-y-6">
             <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
                 <DollarSign className="h-4 w-4 text-warning" />
@@ -848,6 +918,7 @@ const CreateCampaign: React.FC = () => {
                 </FormItem>
               )}
             />
+            </div>
           </div>
         );
 
@@ -923,17 +994,17 @@ const CreateCampaign: React.FC = () => {
           </div>
 
           {/* Step Content */}
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <div className="mb-8 rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div className="flex flex-col space-y-0.5 p-3">
+              <h3 className="text-xl font-semibold leading-none tracking-tight flex items-center gap-2">
                 {React.createElement(WIZARD_STEPS[currentStep].icon, { className: "h-5 w-5" })}
                 {WIZARD_STEPS[currentStep].title}
-              </CardTitle>
+              </h3>
               <p className="text-muted-foreground">
                 {WIZARD_STEPS[currentStep].description}
               </p>
-            </CardHeader>
-            <CardContent>
+            </div>
+            <div className="p-3 pt-0">
               {submitError && (
                 <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-md mb-6">
                   {submitError}
@@ -941,8 +1012,8 @@ const CreateCampaign: React.FC = () => {
               )}
               
               {renderStepContent()}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Navigation Buttons - Hidden for template step as it has its own navigation */}
           {WIZARD_STEPS[currentStep].id !== 'template' && (
@@ -980,7 +1051,12 @@ const CreateCampaign: React.FC = () => {
                   </Button>
                 ) : (
                   <Button
-                    type="submit"
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      // Trigger form submission manually after user interaction
+                      form.handleSubmit(onSubmit)();
+                    }}
                     disabled={isSubmitting || !isCurrentStepValid()}
                     className="flex items-center gap-2"
                   >
@@ -1002,6 +1078,7 @@ const CreateCampaign: React.FC = () => {
           )}
         </form>
       </Form>
+
     </div>
   );
 };

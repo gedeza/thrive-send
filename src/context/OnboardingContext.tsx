@@ -69,123 +69,60 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
   const [currentStep, setCurrentStep] = useState(0);
   const [steps, setSteps] = useState(defaultSteps);
   const [showWelcomeFlow, setShowWelcomeFlow] = useState(false);
-  const [isOnboardingComplete, setIsOnboardingComplete] = useState(false);
+  // PRODUCTION FIX: Always set onboarding as complete to avoid failed API calls
+  const [isOnboardingComplete, setIsOnboardingComplete] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
-  const { user, isLoaded } = useUser(); // Add this line
+  const { user, isLoaded } = useUser();
 
-  useEffect(() => {
-    // Only run when user is loaded and authenticated
-    if (!isLoaded || !user) return;
-    
-    // Check if user has completed onboarding
-    const checkOnboardingStatus = async () => {
-      try {
-        const response = await fetch('/api/profile/onboarding');
-        if (!response.ok) {
-          throw new Error('Failed to fetch onboarding status');
-        }
-        const data = await response.json();
-        setIsOnboardingComplete(data.hasCompletedOnboarding);
-        if (!data.hasCompletedOnboarding) {
-          setShowWelcomeFlow(true);
-        }
-      } catch (_error) {
-        // Error checking onboarding status
-        toast({
-          title: "Error",
-          description: "Failed to load onboarding status. Please try again.",
-          variant: "destructive",
-        });
-      }
-    };
-
-    checkOnboardingStatus();
-  }, [toast, isLoaded, user]); // Add isLoaded and user to dependencies
+  // PRODUCTION FIX: Removed useEffect that calls non-existent API endpoint
+  // This eliminates 404 errors and unnecessary network requests on every page load
 
   const completeStep = async (stepId: string) => {
-    try {
-      setSteps(prevSteps =>
-        prevSteps.map(step =>
-          step.id === stepId ? { ...step, isCompleted: true } : step
-        )
-      );
-
-      // If this was the last required step, mark onboarding as complete
-      const updatedSteps = steps.map(step =>
+    // PRODUCTION FIX: Simplified to avoid API calls
+    setSteps(prevSteps =>
+      prevSteps.map(step =>
         step.id === stepId ? { ...step, isCompleted: true } : step
-      );
-      
-      const allRequiredStepsCompleted = updatedSteps
-        .filter(step => step.isRequired)
-        .every(step => step.isCompleted);
+      )
+    );
 
-      if (allRequiredStepsCompleted) {
-        const response = await fetch('/api/profile/onboarding', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ hasCompletedOnboarding: true }),
-        });
+    // Check if all required steps are completed locally
+    const updatedSteps = steps.map(step =>
+      step.id === stepId ? { ...step, isCompleted: true } : step
+    );
 
-        if (!response.ok) {
-          throw new Error('Failed to update onboarding status');
-        }
+    const allRequiredStepsCompleted = updatedSteps
+      .filter(step => step.isRequired)
+      .every(step => step.isCompleted);
 
-        setIsOnboardingComplete(true);
-        toast({
-          title: "Success",
-          description: "Onboarding completed successfully!",
-        });
-      }
-    } catch (_error) {
-      // Error completing step
+    if (allRequiredStepsCompleted) {
+      setIsOnboardingComplete(true);
       toast({
-        title: "Error",
-        description: "Failed to complete step. Please try again.",
-        variant: "destructive",
+        title: "Success",
+        description: "Onboarding completed successfully!",
       });
-      throw _error;
     }
   };
 
   const skipStep = async (stepId: string) => {
-    try {
-      setSteps(prevSteps =>
-        prevSteps.map(step =>
-          step.id === stepId ? { ...step, isCompleted: true } : step
-        )
-      );
-
-      // If this was the last required step, mark onboarding as complete
-      const updatedSteps = steps.map(step =>
+    // PRODUCTION FIX: Simplified to avoid API calls
+    setSteps(prevSteps =>
+      prevSteps.map(step =>
         step.id === stepId ? { ...step, isCompleted: true } : step
-      );
-      
-      const allRequiredStepsCompleted = updatedSteps
-        .filter(step => step.isRequired)
-        .every(step => step.isCompleted);
+      )
+    );
 
-      if (allRequiredStepsCompleted) {
-        const response = await fetch('/api/profile/onboarding', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ hasCompletedOnboarding: true }),
-        });
+    // Check if all required steps are completed locally
+    const updatedSteps = steps.map(step =>
+      step.id === stepId ? { ...step, isCompleted: true } : step
+    );
 
-        if (!response.ok) {
-          throw new Error('Failed to update onboarding status');
-        }
+    const allRequiredStepsCompleted = updatedSteps
+      .filter(step => step.isRequired)
+      .every(step => step.isCompleted);
 
-        setIsOnboardingComplete(true);
-      }
-    } catch (_error) {
-      // Error skipping step
-      toast({
-        title: "Error",
-        description: "Failed to skip step. Please try again.",
-        variant: "destructive",
-      });
-      throw _error;
+    if (allRequiredStepsCompleted) {
+      setIsOnboardingComplete(true);
     }
   };
 

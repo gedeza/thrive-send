@@ -434,15 +434,6 @@ function AnalyticsPageContent() {
   const [detailedChartsLoaded, setDetailedChartsLoaded] = useState(false);
   const [loadingPhase, setLoadingPhase] = useState<'essential' | 'detailed' | 'complete'>('essential');
   
-  // Onboarding tour states
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [currentTourStep, setCurrentTourStep] = useState(0);
-  const [hasSeenTour, setHasSeenTour] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('analytics-tour-completed') === 'true';
-    }
-    return false;
-  });
   
   // Real-time analytics integration
   const {
@@ -454,44 +445,6 @@ function AnalyticsPageContent() {
     requestMetrics
   } = useRealtimeAnalytics('org-123', 'user-456'); // TODO: Get from auth context
   
-  // Tour steps configuration
-  const tourSteps = [
-    {
-      id: 'metrics-overview',
-      title: 'Key Performance Metrics',
-      description: 'These cards show your most important analytics at a glance. Each category uses color coding for quick identification.',
-      target: '[data-tour="metrics"]',
-      position: 'bottom' as const
-    },
-    {
-      id: 'data-source',
-      title: 'Data Source Indicator',
-      description: 'This badge shows whether you\'re viewing live data, service provider data, or demo data.',
-      target: '[data-tour="data-source"]',
-      position: 'bottom' as const
-    },
-    {
-      id: 'filters',
-      title: 'Advanced Filtering',
-      description: 'Use these filters to narrow down your data by time period, campaign, or platform.',
-      target: '[data-tour="filters"]',
-      position: 'bottom' as const
-    },
-    {
-      id: 'charts',
-      title: 'Performance Charts',
-      description: 'Visual insights into your data trends and platform comparisons. Charts load progressively for better performance.',
-      target: '[data-tour="charts"]',
-      position: 'top' as const
-    },
-    {
-      id: 'tabs',
-      title: 'Analytics Categories',
-      description: 'Switch between different analytics views: Audience, Engagement, Revenue, Funnels, and B2B2G insights.',
-      target: '[data-tour="tabs"]',
-      position: 'bottom' as const
-    }
-  ];
 
   // Data fetching with progressive loading
   const {
@@ -525,16 +478,6 @@ function AnalyticsPageContent() {
     }
   }, [metrics, essentialMetricsLoaded]);
   
-  // Check if user should see onboarding tour
-  useEffect(() => {
-    if (!hasSeenTour && essentialMetricsLoaded && !showOnboarding) {
-      // Show tour after essential metrics load and a brief delay
-      const timer = setTimeout(() => {
-        setShowOnboarding(true);
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [hasSeenTour, essentialMetricsLoaded, showOnboarding]);
   
   // Real-time analytics subscription effect
   useEffect(() => {
@@ -560,35 +503,6 @@ function AnalyticsPageContent() {
     };
   }, [isRealtimeConnected, activeTab, subscribe, unsubscribe, requestMetrics]);
   
-  // Onboarding tour handlers
-  const startTour = () => {
-    setShowOnboarding(true);
-    setCurrentTourStep(0);
-  };
-  
-  const nextTourStep = () => {
-    if (currentTourStep < tourSteps.length - 1) {
-      setCurrentTourStep(currentTourStep + 1);
-    } else {
-      completeTour();
-    }
-  };
-  
-  const completeTour = () => {
-    setShowOnboarding(false);
-    setHasSeenTour(true);
-    localStorage.setItem('analytics-tour-completed', 'true');
-    toast({
-      title: "Tour Completed! 🎉",
-      description: "You're all set to explore your analytics dashboard.",
-    });
-  };
-  
-  const skipTour = () => {
-    setShowOnboarding(false);
-    setHasSeenTour(true);
-    localStorage.setItem('analytics-tour-completed', 'true');
-  };
   
   // Generate actionable insights based on current data
   const generateInsights = useMemo(() => {
@@ -775,17 +689,6 @@ function AnalyticsPageContent() {
         
         <div className="flex items-center justify-end gap-2 mb-4">
           <div className="flex items-center gap-2">
-            {hasSeenTour && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={startTour}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <HelpCircle className="mr-2 h-4 w-4" />
-                Take Tour
-              </Button>
-            )}
             <Button
               variant="outline"
               size="sm"
@@ -831,7 +734,7 @@ function AnalyticsPageContent() {
         </div>
 
         {/* Filters */}
-        <Card className="mb-6" data-tour="filters">
+        <Card className="mb-6">
           <CardContent className="p-4 sm:p-6">
             {/* Mobile: Collapsible filters */}
             <div className="md:hidden">
@@ -959,7 +862,7 @@ function AnalyticsPageContent() {
         />
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as AnalyticsTab)} data-tour="tabs">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as AnalyticsTab)}>
           {/* Mobile: Dropdown tab selector */}
           <div className="md:hidden mb-4">
             <Select value={activeTab} onValueChange={(value) => setActiveTab(value as AnalyticsTab)}>
@@ -1100,7 +1003,7 @@ function AnalyticsPageContent() {
                   
                   {/* Data Source Indicator */}
                   {dataSource && (
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-full text-xs font-medium" data-tour="data-source">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-full text-xs font-medium">
                       <div className={`w-2 h-2 rounded-full ${
                         dataSource === 'live' ? 'bg-success' : 
                         dataSource === 'service-provider' ? 'bg-primary' : 'bg-warning'
@@ -1111,7 +1014,7 @@ function AnalyticsPageContent() {
                 </div>
               </div>
               
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6" data-tour="metrics">
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
                 <MetricCard
                   title="Total Views"
                   value={metrics?.totalViews || 0}
@@ -1164,7 +1067,7 @@ function AnalyticsPageContent() {
                 )}
               </div>
               
-              <div className="grid gap-4 md:grid-cols-2" data-tour="charts">
+              <div className="grid gap-4 md:grid-cols-2">
                 <Card className="card-enhanced border-l-2 border-primary/20 bg-card hover:shadow-professional transition-shadow duration-200">
                   <CardHeader className="pb-4">
                     <CardTitle className="flex items-center gap-3">
@@ -2087,93 +1990,6 @@ function AnalyticsPageContent() {
           </TabsContent>
         </Tabs>
         
-        {/* Onboarding Tour Overlay */}
-        {showOnboarding && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-auto transform">
-              <div className="p-6">
-                {/* Tour Progress */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <Lightbulb className="h-5 w-5 text-primary" />
-                    <span className="text-sm font-medium text-muted-foreground">
-                      Step {currentTourStep + 1} of {tourSteps.length}
-                    </span>
-                  </div>
-                  <Button variant="ghost" size="sm" onClick={skipTour}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-                
-                {/* Progress Bar */}
-                <div className="w-full bg-muted rounded-full h-2 mb-6">
-                  <div 
-                    className="bg-primary h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${((currentTourStep + 1) / tourSteps.length) * 100}%` }}
-                  ></div>
-                </div>
-                
-                {/* Tour Content */}
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-xl font-bold text-foreground">
-                      {tourSteps[currentTourStep]?.title}
-                    </h3>
-                    <p className="text-muted-foreground mt-2 leading-relaxed">
-                      {tourSteps[currentTourStep]?.description}
-                    </p>
-                  </div>
-                  
-                  {/* Visual indicator */}
-                  <div className="bg-primary/10 rounded-lg p-4 border border-primary/20">
-                    <div className="flex items-center gap-2 text-sm text-primary">
-                      <div className="animate-pulse">
-                        <div className="w-2 h-2 bg-primary rounded-full"></div>
-                      </div>
-                      <span>Look for the highlighted area on the dashboard</span>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Tour Navigation */}
-                <div className="flex items-center justify-between mt-6 pt-4 border-t">
-                  <Button 
-                    variant="outline" 
-                    onClick={skipTour}
-                    className="text-muted-foreground"
-                  >
-                    Skip Tour
-                  </Button>
-                  
-                  <div className="flex items-center gap-2">
-                    {currentTourStep > 0 && (
-                      <Button 
-                        variant="ghost" 
-                        onClick={() => setCurrentTourStep(currentTourStep - 1)}
-                        size="sm"
-                      >
-                        Back
-                      </Button>
-                    )}
-                    <Button onClick={nextTourStep} className="flex items-center gap-2">
-                      {currentTourStep === tourSteps.length - 1 ? (
-                        <>
-                          <CheckCircle className="h-4 w-4" />
-                          Complete
-                        </>
-                      ) : (
-                        <>
-                          Next
-                          <ArrowRight className="h-4 w-4" />
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -43,6 +43,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from '@/lib/utils';
 import DeleteCampaign from '@/components/Campaign/DeleteCampaign';
+import { SmartCampaignHint } from '@/components/campaigns/SmartCampaignHint';
+import { QuickCampaignActions } from '@/components/navigation/SmartCampaignNav';
 
 // Campaign type definition
 type CampaignStatus = "Scheduled" | "Sent" | "Draft" | "Paused" | "Archived";
@@ -99,7 +101,7 @@ function getStatusVariant(status: CampaignStatus): "default" | "secondary" | "de
   return statusMap[status];
 }
 
-export default function CampaignsPage() {
+function CampaignsPageContent() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -354,11 +356,11 @@ export default function CampaignsPage() {
     
     // Channel filter
     if (channelFilter !== 'all') {
-      filtered = filtered.filter(campaign => 
+      filtered = filtered.filter(campaign =>
         campaign.channel?.toLowerCase() === channelFilter.toLowerCase()
       );
     }
-    
+
     return filtered;
   }, [search, campaigns, statusFilter, channelFilter]);
 
@@ -382,7 +384,12 @@ export default function CampaignsPage() {
         </p>
       </div>
 
-      <div className="flex items-center justify-end gap-2 mb-8">
+      {/* Smart Navigation Hint - Stage 2A */}
+      <div className="mb-6 max-w-2xl mx-auto">
+        <SmartCampaignHint currentPath="/campaigns" variant="banner" />
+      </div>
+
+      <div className="flex items-center justify-between gap-2 mb-8">
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -393,13 +400,10 @@ export default function CampaignsPage() {
             <RefreshCcw className={cn("mr-2 h-4 w-4", (loading || statsLoading) && "animate-spin")} />
             Refresh
           </Button>
-          <Button asChild>
-            <Link href="/campaigns/new">
-              <Plus className="mr-2 h-4 w-4" />
-              New Campaign
-            </Link>
-          </Button>
         </div>
+
+        {/* Smart Context-Aware Actions */}
+        <QuickCampaignActions />
       </div>
       
       {/* Campaign Statistics */}
@@ -783,3 +787,6 @@ const CampaignCard = memo(function CampaignCard({ campaign, viewMode }: Campaign
   );
 });
 
+export default function CampaignsPage() {
+  return <CampaignsPageContent />;
+}
