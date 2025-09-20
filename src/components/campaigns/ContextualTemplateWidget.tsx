@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,7 +30,7 @@ interface ContextualTemplateWidgetProps {
   onTemplateSelect?: (templateId: string) => void;
 }
 
-export function ContextualTemplateWidget({
+export const ContextualTemplateWidget = memo(function ContextualTemplateWidget({
   context = 'dashboard',
   limit = 3,
   showDismiss = true,
@@ -46,9 +46,12 @@ export function ContextualTemplateWidget({
   });
 
   // Don't show if dismissed or still loading user context
-  if (isDismissed || userContext.isLoading || error) {
+  if (isDismissed || userContext.isLoading || error || isLoading) {
     return null;
   }
+
+  // TEMPORARY: Disable the widget until dependency issue is resolved
+  return null;
 
   // Filter recommendations based on context
   const contextualRecommendations = recommendations
@@ -300,4 +303,4 @@ export function ContextualTemplateWidget({
       </CardContent>
     </Card>
   );
-}
+});

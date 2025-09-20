@@ -1,9 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
+  reactStrictMode: false,
   swcMinify: true,
   experimental: {
-    forceSwcTransforms: true,
+    forceSwcTransforms: false,
   },
   // Exclude script files from build
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'md', 'mdx'],

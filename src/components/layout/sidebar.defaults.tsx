@@ -24,7 +24,8 @@ import {
   PieChart,
   LineChart,
   UserPlus,
-  Shield
+  Shield,
+  Sparkles
 } from "lucide-react";
 
 /**
@@ -144,10 +145,10 @@ export const defaultSidebarItems: SidebarItemWithRoles[] = [
       },
       {
         key: "campaigns-templates",
-        label: "Campaign Templates",
-        icon: <FileText size={16} />,
-        href: "/campaigns/templates",
-        roles: ["admin", "manager"], // Reusable campaign templates for multiple clients
+        label: "Browse Templates",
+        icon: <Sparkles size={16} />,
+        href: "/templates",
+        roles: ["admin", "manager", "user"], // Hybrid template explorer for all users
       },
       {
         key: "campaigns-bulk",

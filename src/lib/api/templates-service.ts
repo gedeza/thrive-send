@@ -1,19 +1,18 @@
 import { prisma } from '@/lib/prisma';
 
-// Template type definition
+// Template type definition that matches Prisma schema
 export type Template = {
   id: string;
   name: string;
   description?: string;
   category: string;
-  status: 'draft' | 'published' | 'archived';
-  lastUpdated: string;
-  createdAt?: string;
-  author: string;
+  status: string; // Changed from specific union to match Prisma
+  lastUpdated: Date | string; // Support both Date and string formats
+  createdAt?: Date | string;
   authorId: string;
   previewImage?: string;
   content?: string;
-  organizationId?: string;
+  organizationId: string; // Made required to match Prisma schema
 };
 
 // Parameters for fetching templates
@@ -86,7 +85,7 @@ export async function fetchTemplateById(id: string): Promise<Template | null> {
 /**
  * Creates a new template
  */
-export async function createTemplate(data: Omit<Template, 'id' | 'lastUpdated' | 'createdAt' | 'author' | 'authorId'> & { organizationId?: string }): Promise<Template | null> {
+export async function createTemplate(data: Omit<Template, 'id' | 'lastUpdated' | 'createdAt'> & { organizationId: string; authorId: string }): Promise<Template | null> {
   try {
     const response = await fetch('/api/templates', {
       method: 'POST',
@@ -176,9 +175,10 @@ export async function duplicateTemplate(id: string): Promise<Template | null> {
       content: template.content,
       description: template.description,
       category: template.category,
-      status: 'draft', // Always set the duplicate to draft
+      status: 'DRAFT', // Always set the duplicate to draft, using proper status value
       previewImage: template.previewImage,
       organizationId: template.organizationId,
+      authorId: template.authorId,
     });
 
     return newTemplate;

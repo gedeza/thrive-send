@@ -56,7 +56,7 @@ export function CampaignTemplates({ organizationId }: CampaignTemplatesProps) {
   useEffect(() => {
     async function fetchTemplates() {
       try {
-        const response = await fetch(`/api/campaign-templates?organizationId=${organizationId}`);
+        const response = await fetch('/api/templates');
         if (!response.ok) throw new Error('Failed to fetch templates');
         const data = await response.json();
         setTemplates(data);
@@ -73,13 +73,10 @@ export function CampaignTemplates({ organizationId }: CampaignTemplatesProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('/api/campaign-templates', {
+      const response = await fetch('/api/templates', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          organizationId,
-        }),
+        body: JSON.stringify(formData),
       });
 
       if (!response.ok) throw new Error('Failed to create template');

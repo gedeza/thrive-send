@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +29,9 @@ import {
   Sparkles
 } from 'lucide-react';
 import { CampaignTemplate } from '@/types/campaign';
+import { CAMPAIGN_TEMPLATES } from '@/data/campaign-templates';
 import { SmartTemplateSelector } from '@/components/campaigns/SmartTemplateSelector';
+import { HybridTemplateExplorer } from '@/components/templates/HybridTemplateExplorer';
 import { createCampaign } from '@/lib/api';
 import { CampaignStatus, CampaignGoalType, ScheduleFrequency } from '@prisma/client';
 import { useOrganization } from '@clerk/nextjs';
@@ -193,32 +195,40 @@ const CreateCampaign: React.FC = () => {
   const loadTemplate = async (templateId: string) => {
     setIsLoadingTemplate(true);
     try {
-      const response = await fetch(`/api/templates/${templateId}`);
-      if (response.ok) {
-        const template = await response.json();
-        setTemplateData(template);
-        
+      // Find template from static data instead of API call
+      const template = CAMPAIGN_TEMPLATES.find(t => t.id === templateId);
+
+      if (template) {
+        setSelectedTemplate(template);
+
         // Pre-fill form with template data
-        if (template.name) {
-          form.setValue('name', `${template.name} - Copy`);
+        if (template.campaignData?.name) {
+          form.setValue('name', `${template.campaignData?.name} - Copy`);
         }
-        if (template.description) {
-          form.setValue('description', template.description);
+        if (template.campaignData?.description) {
+          form.setValue('description', template.campaignData?.description);
         }
-        
+        if (template.campaignData?.goals) {
+          form.setValue('goals', template.campaignData?.goals);
+        }
+        if (template.campaignData?.budget) {
+          form.setValue('budget', template.campaignData?.budget?.toString());
+        }
+
         toast({
           title: "Template Loaded",
           description: `Campaign pre-filled with "${template.name}" template data.`,
         });
       } else {
+        console.error('Template not found:', templateId);
         toast({
           title: "Template Not Found",
           description: "The selected template could not be loaded.",
           variant: "destructive",
         });
       }
-    } catch (_error) {
-      console.error("", _error);
+    } catch (error) {
+      console.error('Error loading template:', error);
       toast({
         title: "Error Loading Template",
         description: "Failed to load template data.",
@@ -294,10 +304,10 @@ const CreateCampaign: React.FC = () => {
     const nextWeek = new Date(currentDate.getTime() + 7 * 24 * 60 * 60 * 1000);
 
     // If a template is selected, generate template-specific suggestions
-    if (selectedTemplate) {
+    if (selectedTemplate && selectedTemplate.campaignData) {
       const template = selectedTemplate;
       // Create a more specific name based on template
-      const templateBaseName = template.name.replace('Campaign', '').trim();
+      const templateBaseName = template.name ? template.name.replace('Campaign', '').trim() : '';
 
       // Map specific template names to better suggestions
       const templateNameMappings: Record<string, string> = {
@@ -312,9 +322,9 @@ const CreateCampaign: React.FC = () => {
 
       return {
         name: `${orgName} ${suggestedName} ${format(currentDate, 'MMM yyyy')}`,
-        startDate: template.campaignData.startDate || format(nextWeek, 'yyyy-MM-dd'),
-        endDate: template.campaignData.endDate || format(new Date(nextWeek.getTime() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
-        budget: template.campaignData.budget?.toString() || '5000'
+        startDate: template.campaignData?.startDate || format(nextWeek, 'yyyy-MM-dd'),
+        endDate: template.campaignData?.endDate || format(new Date(nextWeek.getTime() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
+        budget: template.campaignData?.budget?.toString() || '5000'
       };
     }
 
@@ -328,7 +338,22 @@ const CreateCampaign: React.FC = () => {
   };
 
   // Suggestions are generated dynamically based on current template selection
-  const suggestions = generateSuggestions();
+  const suggestions = useMemo(() => {
+    try {
+      return generateSuggestions();
+    } catch (error) {
+      console.warn('Error generating suggestions, using fallback:', error);
+      const orgName = organization?.name || 'Your Organization';
+      const currentDate = new Date();
+      const nextWeek = new Date(currentDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+      return {
+        name: `${orgName} Marketing Campaign ${format(currentDate, 'MMM yyyy')}`,
+        startDate: format(nextWeek, 'yyyy-MM-dd'),
+        endDate: format(new Date(nextWeek.getTime() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
+        budget: '5000'
+      };
+    }
+  }, [selectedTemplate, organization?.name]);
 
   const onSubmit = async (data: CampaignFormData) => {
     setIsSubmitting(true);
@@ -419,21 +444,23 @@ const CreateCampaign: React.FC = () => {
 
     if (template) {
       // Pre-fill form with template data
-      form.setValue('name', template.campaignData.name);
-      if (template.campaignData.description) {
-        form.setValue('description', template.campaignData.description);
+      if (template.campaignData?.name) {
+        form.setValue('name', template.campaignData?.name);
       }
-      if (template.campaignData.startDate) {
-        form.setValue('startDate', template.campaignData.startDate);
+      if (template.campaignData?.description) {
+        form.setValue('description', template.campaignData?.description);
       }
-      if (template.campaignData.endDate) {
-        form.setValue('endDate', template.campaignData.endDate);
+      if (template.campaignData?.startDate) {
+        form.setValue('startDate', template.campaignData?.startDate);
       }
-      if (template.campaignData.budget) {
-        form.setValue('budget', template.campaignData.budget.toString());
+      if (template.campaignData?.endDate) {
+        form.setValue('endDate', template.campaignData?.endDate);
       }
-      if (template.campaignData.goalType) {
-        form.setValue('goalType', template.campaignData.goalType);
+      if (template.campaignData?.budget) {
+        form.setValue('budget', template.campaignData?.budget?.toString());
+      }
+      if (template.campaignData?.goalType) {
+        form.setValue('goalType', template.campaignData?.goalType);
       }
 
       toast({
@@ -457,10 +484,21 @@ const CreateCampaign: React.FC = () => {
       case 'template':
         return (
           <div>
-            <SmartTemplateSelector
+            <HybridTemplateExplorer
               onTemplateSelect={handleTemplateSelect}
-              onContinue={handleTemplateContinue}
+              showRecommendations={true}
+              compactMode={false}
             />
+            <div className="mt-6 flex justify-end">
+              <Button
+                type="button"
+                onClick={handleTemplateContinue}
+                disabled={!selectedTemplate}
+              >
+                Continue with Template
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
           </div>
         );
 

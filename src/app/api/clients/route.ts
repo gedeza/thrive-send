@@ -156,7 +156,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(paginatedResponse);
   } catch (_error) {
-    return handleApiError(error);
+    return handleApiError(_error);
   }
 }
 
@@ -256,22 +256,22 @@ export async function POST(request: Request) {
     } catch (_error) {
       console.error("", _error);
       if (_error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2002') {
+        if (_error.code === 'P2002') {
           return NextResponse.json(
             { error: "A client with this information already exists" },
             { status: 409 }
           );
-        } else if (error.code === 'P2003') {
+        } else if (_error.code === 'P2003') {
           return NextResponse.json(
             { error: "Referenced organization does not exist" },
             { status: 400 }
           );
-        } else if (error.code === 'P1001') {
+        } else if (_error.code === 'P1001') {
           return NextResponse.json(
             { error: "Cannot connect to the database. Please try again later." },
             { status: 503 }
           );
-        } else if (error.meta?.target && typeof error.meta.target === 'string' && error.meta.target.includes('website')) {
+        } else if (_error.meta?.target && typeof _error.meta.target === 'string' && _error.meta.target.includes('website')) {
           return NextResponse.json(
             { error: "The website URL is invalid. Please use a valid URL format." },
             { status: 400 }

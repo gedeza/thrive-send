@@ -203,11 +203,17 @@ export async function GET(request: Request) {
           audiences: {
             select: {
               id: true,
-              subscribers: {
+              size: true,
+              contactLists: {
                 select: {
                   id: true,
-                  createdAt: true,
-                  status: true
+                  contacts: {
+                    select: {
+                      id: true,
+                      createdAt: true,
+                      status: true
+                    }
+                  }
                 }
               }
             }
@@ -251,7 +257,11 @@ export async function GET(request: Request) {
     
     // Calculate total subscribers across all audiences
     const totalSubscribers = dashboardData.audiences.reduce((total, audience) => {
-      return total + audience.subscribers.filter(sub => sub.status === 'ACTIVE').length;
+      // Sum all active contacts from all contact lists in this audience
+      const audienceContacts = audience.contactLists.reduce((contactTotal, contactList) => {
+        return contactTotal + contactList.contacts.filter(contact => contact.status === 'ACTIVE').length;
+      }, 0);
+      return total + audienceContacts;
     }, 0);
 
     // Calculate subscriber growth
@@ -259,9 +269,13 @@ export async function GET(request: Request) {
     thirtyDaysAgo.setDate(now.getDate() - 30);
     
     const subscribersThirtyDaysAgo = dashboardData.audiences.reduce((total, audience) => {
-      return total + audience.subscribers.filter(sub => 
-        sub.status === 'ACTIVE' && sub.createdAt <= thirtyDaysAgo
-      ).length;
+      // Sum all active contacts from all contact lists created before thirtyDaysAgo
+      const audienceContacts = audience.contactLists.reduce((contactTotal, contactList) => {
+        return contactTotal + contactList.contacts.filter(contact =>
+          contact.status === 'ACTIVE' && contact.createdAt <= thirtyDaysAgo
+        ).length;
+      }, 0);
+      return total + audienceContacts;
     }, 0);
 
     const subscriberGrowth = subscribersThirtyDaysAgo > 0 
@@ -330,10 +344,14 @@ export async function GET(request: Request) {
       const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
 
       const subscribersAtMonth = dashboardData.audiences.reduce((total, audience) => {
-        return total + audience.subscribers.filter(sub => 
-          sub.status === 'ACTIVE' && 
-          sub.createdAt <= monthEnd
-        ).length;
+        // Sum all active contacts from all contact lists created before monthEnd
+        const audienceContacts = audience.contactLists.reduce((contactTotal, contactList) => {
+          return contactTotal + contactList.contacts.filter(contact =>
+            contact.status === 'ACTIVE' &&
+            contact.createdAt <= monthEnd
+          ).length;
+        }, 0);
+        return total + audienceContacts;
       }, 0);
 
       const previousMonthSubscribers = i === 5 ? 0 : subscriberGrowthData[subscriberGrowthData.length - 1]?.count || 0;

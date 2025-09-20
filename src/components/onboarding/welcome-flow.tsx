@@ -25,6 +25,29 @@ export function WelcomeFlow({ isOpen, onClose }: WelcomeFlowProps) {
   const totalSteps = steps.length;
 
   const currentStepData = steps[currentStep];
+
+  // Handle loading state when steps are not yet available
+  if (!currentStepData || totalSteps === 0) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="h-6 w-6 text-primary" />
+              Loading...
+            </DialogTitle>
+            <DialogDescription>
+              Preparing your onboarding experience...
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-8 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   const Icon = getIconForStep(currentStepData.id);
 
   const handleNext = async () => {
@@ -129,12 +152,22 @@ function getIconForStep(stepId: string) {
       return Calendar;
     case 'account-setup':
       return Settings;
-    case 'first-content':
+    case 'first-campaign':
       return Plus;
-    case 'team-setup':
+    case 'content-creation':
+      return BarChart2;
+    case 'client-management':
+      return Users;
+    case 'multi-client-campaign':
+      return Share2;
+    case 'client-reporting':
+      return BarChart2;
+    case 'team-collaboration':
       return Users;
     case 'integrations':
       return Share2;
+    case 'advanced-features':
+      return Bell;
     default:
       return Calendar;
   }
@@ -204,7 +237,7 @@ function getStepContent(stepId: string) {
         </div>
       );
 
-    case 'first-content':
+    case 'first-campaign':
       return (
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-6">
@@ -232,7 +265,7 @@ function getStepContent(stepId: string) {
         </div>
       );
 
-    case 'team-setup':
+    case 'team-collaboration':
       return (
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-6">
@@ -254,6 +287,153 @@ function getStepContent(stepId: string) {
                 <li>• Approval workflows</li>
                 <li>• Task assignments</li>
                 <li>• Activity notifications</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'content-creation':
+      return (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="p-6 rounded-lg border bg-card">
+              <h4 className="text-xl font-medium mb-4">Content Planning</h4>
+              <ul className="space-y-2 text-lg text-muted-foreground">
+                <li>• Content calendar management</li>
+                <li>• Editorial workflows</li>
+                <li>• Publishing schedules</li>
+                <li>• Content templates</li>
+                <li>• Brand consistency</li>
+              </ul>
+            </div>
+            <div className="p-6 rounded-lg border bg-card">
+              <h4 className="text-xl font-medium mb-4">Content Creation</h4>
+              <ul className="space-y-2 text-lg text-muted-foreground">
+                <li>• Rich text editor</li>
+                <li>• Media management</li>
+                <li>• Version control</li>
+                <li>• Collaboration tools</li>
+                <li>• Preview & testing</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'client-management':
+      return (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="p-6 rounded-lg border bg-card">
+              <h4 className="text-xl font-medium mb-4">Client Organization</h4>
+              <ul className="space-y-2 text-lg text-muted-foreground">
+                <li>• Multiple client workspaces</li>
+                <li>• Client-specific branding</li>
+                <li>• Isolated content libraries</li>
+                <li>• Custom workflows</li>
+                <li>• Client access controls</li>
+              </ul>
+            </div>
+            <div className="p-6 rounded-lg border bg-card">
+              <h4 className="text-xl font-medium mb-4">Service Management</h4>
+              <ul className="space-y-2 text-lg text-muted-foreground">
+                <li>• Service provider dashboard</li>
+                <li>• Client onboarding tools</li>
+                <li>• Billing & invoicing</li>
+                <li>• Performance tracking</li>
+                <li>• White-label options</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'multi-client-campaign':
+      return (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="p-6 rounded-lg border bg-card">
+              <h4 className="text-xl font-medium mb-4">Cross-Client Campaigns</h4>
+              <ul className="space-y-2 text-lg text-muted-foreground">
+                <li>• Unified campaign management</li>
+                <li>• Template sharing</li>
+                <li>• Bulk content creation</li>
+                <li>• Cross-client analytics</li>
+                <li>• Collaborative workflows</li>
+              </ul>
+            </div>
+            <div className="p-6 rounded-lg border bg-card">
+              <h4 className="text-xl font-medium mb-4">Efficiency Tools</h4>
+              <ul className="space-y-2 text-lg text-muted-foreground">
+                <li>• Content duplication</li>
+                <li>• Automated scheduling</li>
+                <li>• Batch operations</li>
+                <li>• Client approval flows</li>
+                <li>• Performance comparison</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'client-reporting':
+      return (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="p-6 rounded-lg border bg-card">
+              <h4 className="text-xl font-medium mb-4">Automated Reports</h4>
+              <ul className="space-y-2 text-lg text-muted-foreground">
+                <li>• Scheduled report delivery</li>
+                <li>• Client-specific metrics</li>
+                <li>• Custom report templates</li>
+                <li>• White-label reports</li>
+                <li>• Executive summaries</li>
+              </ul>
+            </div>
+            <div className="p-6 rounded-lg border bg-card">
+              <h4 className="text-xl font-medium mb-4">Client Dashboards</h4>
+              <ul className="space-y-2 text-lg text-muted-foreground">
+                <li>• Real-time performance data</li>
+                <li>• Interactive visualizations</li>
+                <li>• ROI tracking</li>
+                <li>• Goal progress monitoring</li>
+                <li>• Client portal access</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'advanced-features':
+      return (
+        <div className="space-y-6">
+          <div className="grid grid-cols-3 gap-6">
+            <div className="p-6 rounded-lg border bg-card">
+              <h4 className="text-xl font-medium mb-4">Analytics</h4>
+              <ul className="space-y-2 text-lg text-muted-foreground">
+                <li>• Performance tracking</li>
+                <li>• Engagement analytics</li>
+                <li>• ROI measurement</li>
+                <li>• Custom dashboards</li>
+              </ul>
+            </div>
+            <div className="p-6 rounded-lg border bg-card">
+              <h4 className="text-xl font-medium mb-4">Automation</h4>
+              <ul className="space-y-2 text-lg text-muted-foreground">
+                <li>• Smart scheduling</li>
+                <li>• Content optimization</li>
+                <li>• Workflow automation</li>
+                <li>• AI-powered insights</li>
+              </ul>
+            </div>
+            <div className="p-6 rounded-lg border bg-card">
+              <h4 className="text-xl font-medium mb-4">Optimization</h4>
+              <ul className="space-y-2 text-lg text-muted-foreground">
+                <li>• A/B testing</li>
+                <li>• Content suggestions</li>
+                <li>• Best time optimization</li>
+                <li>• Performance insights</li>
               </ul>
             </div>
           </div>

@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       });
 
       return NextResponse.json(templates);
-    } catch (_error) {
+    } catch (error) {
       return handleApiError(error);
     }
   });
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
       });
 
       return NextResponse.json(template, { status: 201 });
-    } catch (_error) {
+    } catch (error) {
       return handleApiError(error);
     }
   });

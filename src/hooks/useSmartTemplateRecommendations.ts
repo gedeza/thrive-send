@@ -49,7 +49,16 @@ export function useSmartTemplateRecommendations(
       industry: options.industry,
       previousCampaigns: options.previousCampaigns || []
     };
-  }, [userContext, options]);
+  }, [
+    userContext.organizationType,
+    userContext.isServiceProvider,
+    userContext.hasMultipleClients,
+    userContext.clientCount,
+    options.businessModel,
+    options.experienceLevel,
+    options.industry,
+    options.previousCampaigns
+  ]);
 
   useEffect(() => {
     if (userContext.isLoading) return;
